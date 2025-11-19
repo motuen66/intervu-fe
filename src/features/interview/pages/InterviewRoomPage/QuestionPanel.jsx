@@ -7,9 +7,11 @@ import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
 import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button, Tooltip, IconButton } from "@mui/material";
 import { ROLES } from "../../../../common/constants/common.js";
+import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 
 function QuestionPanel({
     user,
+    roomStatus,
     problemData,
     isEditingProblem,
     setIsEditingProblem,
@@ -46,7 +48,7 @@ function QuestionPanel({
 
     return (
         <Box>
-            {user?.role === ROLES.INTERVIEWER && (
+            {user?.role === ROLES.INTERVIEWER && roomStatus !== INTERVIEW_ROOM_STATUS.COMPLETED && (
                 <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
                     <Button
                         variant="outlined"
@@ -59,7 +61,7 @@ function QuestionPanel({
                 </Stack>
             )}
 
-            {isEditingProblem && user?.role === ROLES.INTERVIEWER ? (
+            {isEditingProblem && user?.role === ROLES.INTERVIEWER && roomStatus !== INTERVIEW_ROOM_STATUS.COMPLETED ? (
                 // EDITING VIEW (Role 1 only)
                 <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
                     <Typography variant="h6" gutterBottom>

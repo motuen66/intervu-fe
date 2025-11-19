@@ -14,6 +14,7 @@ import { Videocam, VideocamOff, Mic, MicOff, ExpandMore } from "@mui/icons-mater
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
 function VideoPanel({
+    isReadOnly,
     myId,
     peers,
     onCall,
@@ -27,6 +28,10 @@ function VideoPanel({
     user,
     endMeeting,
 }) {
+    if (isReadOnly) {
+        return null;
+    }
+
     return (
         <Box
             sx={{

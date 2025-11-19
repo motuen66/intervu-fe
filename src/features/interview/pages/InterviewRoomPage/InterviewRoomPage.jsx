@@ -76,6 +76,7 @@ function InterviewRoomPage() {
     const [isRemoteAudioOn, setIsRemoteAudioOn] = useState(false);
     const localStreamRef = useRef(null);
     const remotePeerIdRef = useRef(null);
+    const [roomStatus, setRoomStatus] = useState(null);
     const iceCandidatesQueue = useRef([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -147,6 +148,8 @@ function InterviewRoomPage() {
         };
     }, [dragging]);
 
+    const isReadOnly = roomStatus === INTERVIEW_ROOM_STATUS.COMPLETED;
+
     const checkRoomStatus = useCallback(async () => {
         if (!user) return;
         try {
@@ -157,11 +160,11 @@ function InterviewRoomPage() {
             });
 
             const room = res.data.find(item => item.id === Number(roomId));
-            if (room.status !== INTERVIEW_ROOM_STATUS.ON_GOING &&
-                room.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
-                setError("This interview is not in progress. You will be redirected.");
+            if (!room || (room.status !== INTERVIEW_ROOM_STATUS.ON_GOING && room.status !== INTERVIEW_ROOM_STATUS.COMPLETED)) {
+                setError("This interview is not accessible. You will be redirected.");
                 setTimeout(() => navigate("/interview"), 3000);
             } else {
+                setRoomStatus(room.status);
                 setLoading(false);
             }
         } catch (err) {
@@ -977,6 +980,7 @@ function InterviewRoomPage() {
                 >
                     <QuestionPanel
                         user={user}
+                        roomStatus={roomStatus}
                         isEditingProblem={isEditingProblem}
                         setIsEditingProblem={setIsEditingProblem}
                         problemDescription={problemDescription}
@@ -1027,6 +1031,8 @@ function InterviewRoomPage() {
                         setTestResults={setTestResults}
                         user={user}
                         languages={languages}
+                        roomStatus={roomStatus}
+                        isReadOnly={isReadOnly}
                         handleEditorMount={handleEditorMount}
                     />
                 </Box>
@@ -1042,6 +1048,7 @@ function InterviewRoomPage() {
                     }}
                 >
                     <VideoPanel
+                        isReadOnly={isReadOnly}
                         myId={myId}
                         peers={peers}
                         onCall={call}

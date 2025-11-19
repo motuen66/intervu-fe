@@ -1,6 +1,7 @@
 import { Box, Button, CircularProgress, IconButton, MenuItem, Paper, Select, Stack, Tooltip, Typography } from "@mui/material";
 import CodeIcon from "@mui/icons-material/Code";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status";
 import ClearIcon from "@mui/icons-material/Clear";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -21,6 +22,7 @@ function CodeEditorPanel({
     setConsoleOutput,
     testResults,
     setTestResults,
+    roomStatus,
     user,
     handleEditorMount,
 }) {
@@ -92,7 +94,8 @@ function CodeEditorPanel({
                     flexShrink: 0,
                 }}
             >
-                {user?.role === ROLES.INTERVIEWEE ? (
+                {(user?.role === ROLES.INTERVIEWEE || (user?.role === ROLES.INTERVIEWER && roomStatus === INTERVIEW_ROOM_STATUS.COMPLETED)
+                ) ? (
                     <Select
                         value={language}
                         onChange={handleLanguageChange}
@@ -110,7 +113,7 @@ function CodeEditorPanel({
                         Language: <strong>{language.charAt(0).toUpperCase() + language.slice(1)}</strong>
                     </Typography>
                 )}
-                {user?.role === ROLES.INTERVIEWEE && (
+                {(user?.role === ROLES.INTERVIEWEE || (user?.role === ROLES.INTERVIEWER && roomStatus === INTERVIEW_ROOM_STATUS.COMPLETED)) && (
                     <>
                         <Tooltip title="Format Code (Shift+Alt+F)">
                             <IconButton onClick={formatCode} size="small">
