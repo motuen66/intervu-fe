@@ -13,6 +13,10 @@ import InterviewerProfilePage from "../../features/profiles/interviewer/page/Int
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
+import AdminDashboard from "../../features/admin/pages/AdminDashboard";
+import AuthLayout from "../layouts/AuthLayout";
+import DefaultLayout from "../layouts/DefaultLayout";
+import { authRoutes } from "./authRoutes";
 
 export const routes = [
     { path: "/", element: <Navigate to="/home" replace /> },
@@ -40,6 +44,9 @@ export const routes = [
             </ProtectedRoute>
         ),
         children: [
+            { path: "/", element: <App /> },
+            { path: "/admin", element: <AdminDashboard /> },
+            { path: "/interview", element: <InterviewRoomListPage /> },
             { path: "/interview", element: <MainLayout />, children: [{ index: true, element: <InterviewRoomListPage /> }] },
             { path: "/interview/room/:roomId", element: <InterviewRoomPage /> },
         ],
