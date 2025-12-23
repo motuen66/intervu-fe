@@ -14,9 +14,7 @@ import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
-import AuthLayout from "../layouts/AuthLayout";
-import DefaultLayout from "../layouts/DefaultLayout";
-import { authRoutes } from "./authRoutes";
+import App from "../../App";
 
 export const routes = [
     { path: "/", element: <Navigate to="/home" replace /> },
