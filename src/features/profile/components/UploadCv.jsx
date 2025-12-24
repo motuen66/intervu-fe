@@ -11,6 +11,7 @@ import {
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { callApi } from "../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../common/constants/api.js";
 import { profileEndPoints } from "../services/profileApi.js";
@@ -52,7 +53,11 @@ const UploadCv = () => {
             });
 
             if (response.success) {
-                setCvContent(response.data || "CV uploaded successfully.");
+                const content = response.data || "CV uploaded successfully.";
+                setCvContent(content);
+                if (content.startsWith('http')) {
+                    setCvFile(null);
+                }
             }
 
         } catch (error) {
@@ -67,6 +72,19 @@ const UploadCv = () => {
         setCvContent('');
     };
 
+    const handleReset = () => {
+        setCvFile(null);
+        setCvContent('');
+    };
+
+    const handleViewCv = () => {
+        if (cvContent && cvContent.startsWith('http')) {
+            window.open(cvContent, '_blank');
+        }
+    };
+
+    const isUploadSuccess = cvContent && cvContent.startsWith('http');
+
     return (
         <Box sx={{ mb: 4 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
@@ -76,102 +94,156 @@ const UploadCv = () => {
                 Upload your CV in PDF format. This will help us parse your skills and experience.
             </Typography>
 
-            {!cvFile ? (
+            {isUploadSuccess ? (
                 <Box
-                    {...getRootProps()}
                     sx={{
-                        border: '2px dashed',
-                        borderColor: isDragActive ? '#7B61FF' : 'rgba(0, 0, 0, 0.23)',
-                        borderRadius: '12px',
                         p: 4,
                         textAlign: 'center',
-                        cursor: 'pointer',
-                        backgroundColor: isDragActive ? 'rgba(123, 97, 255, 0.04)' : '#fafafa',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                            borderColor: '#7B61FF',
-                            backgroundColor: 'rgba(123, 97, 255, 0.04)',
-                        }
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(0,0,0,0.08)'
                     }}
                 >
-                    <input {...getInputProps({ accept: '.pdf' })} />
-                    <CloudUploadIcon sx={{ fontSize: 48, color: '#9e9e9e', mb: 2 }} />
-                    <Typography variant="body1" sx={{ fontWeight: 500, color: '#333', mb: 0.5 }}>
-                        <span style={{ color: '#7B61FF' }}>Click to upload</span> or drag and drop
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2e7d32' }}>
+                        CV Uploaded Successfully
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#9e9e9e' }}>
-                        PDF file only
-                    </Typography>
-                </Box>
-            ) : (
-                <Paper
-                    variant="outlined"
-                    sx={{
-                        p: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        borderRadius: '8px',
-                        mb: 2,
-                        borderColor: 'rgba(0,0,0,0.12)'
-                    }}
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                        <Button
+                            variant="outlined"
+                            onClick={handleViewCv}
+                            startIcon={<VisibilityIcon />}
                             sx={{
-                                width: 40,
-                                height: 40,
+                                borderColor: "#7B61FF",
+                                color: "#7B61FF",
+                                "&:hover": {
+                                    borderColor: "#6851d9",
+                                    backgroundColor: "rgba(123, 97, 255, 0.04)",
+                                },
+                                textTransform: "none",
                                 borderRadius: '8px',
-                                backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
                             }}
                         >
-                            <PictureAsPdfIcon sx={{ color: '#d32f2f' }} />
-                        </Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {cvFile.name}
-                        </Typography>
+                            View CV
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleReset}
+                            startIcon={<CloudUploadIcon />}
+                            sx={{
+                                background: "#7B61FF",
+                                "&:hover": {
+                                    background: "#6851d9",
+                                },
+                                textTransform: "none",
+                                borderRadius: '8px',
+                                boxShadow: 'none',
+                            }}
+                        >
+                            Upload New CV
+                        </Button>
                     </Box>
-                    <IconButton onClick={handleRemoveFile} size="small" color="error">
-                        <DeleteOutlineIcon />
-                    </IconButton>
-                </Paper>
+                </Box>
+            ) : (
+                <>
+                    {!cvFile ? (
+                        <Box
+                            {...getRootProps()}
+                            sx={{
+                                border: '2px dashed',
+                                borderColor: isDragActive ? '#7B61FF' : 'rgba(0, 0, 0, 0.23)',
+                                borderRadius: '12px',
+                                p: 4,
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                backgroundColor: isDragActive ? 'rgba(123, 97, 255, 0.04)' : '#fafafa',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    borderColor: '#7B61FF',
+                                    backgroundColor: 'rgba(123, 97, 255, 0.04)',
+                                }
+                            }}
+                        >
+                            <input {...getInputProps({ accept: '.pdf' })} />
+                            <CloudUploadIcon sx={{ fontSize: 48, color: '#9e9e9e', mb: 2 }} />
+                            <Typography variant="body1" sx={{ fontWeight: 500, color: '#333', mb: 0.5 }}>
+                                <span style={{ color: '#7B61FF' }}>Click to upload</span> or drag and drop
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#9e9e9e' }}>
+                                PDF file only
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                borderRadius: '8px',
+                                mb: 2,
+                                borderColor: 'rgba(0,0,0,0.12)'
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box
+                                    sx={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: '8px',
+                                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <PictureAsPdfIcon sx={{ color: '#d32f2f' }} />
+                                </Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    {cvFile.name}
+                                </Typography>
+                            </Box>
+                            <IconButton onClick={handleRemoveFile} size="small" color="error">
+                                <DeleteOutlineIcon />
+                            </IconButton>
+                        </Paper>
+                    )}
+
+                    <Box sx={{ display: 'flex', gap: 2, mt: 2, justifyContent: 'flex-end' }}>
+                        <Button
+                            variant="contained"
+                            onClick={handleUpload}
+                            disabled={!cvFile || isLoading}
+                            sx={{
+                                background: "#7B61FF",
+                                "&:hover": {
+                                    background: "#6851d9",
+                                },
+                                textTransform: "none",
+                                py: 1.5,
+                                px: 4,
+                                borderRadius: '8px',
+                                boxShadow: 'none',
+                                '&:disabled': {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+                                    color: 'rgba(0, 0, 0, 0.26)'
+                                }
+                            }}
+                        >
+                            {isLoading ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <CircularProgress size={20} color="inherit" />
+                                    <span>Uploading...</span>
+                                </Box>
+                            ) : (
+                                'Upload and Process CV'
+                            )}
+                        </Button>
+                    </Box>
+                </>
             )}
 
-            <Button
-                variant="contained"
-                onClick={handleUpload}
-                disabled={!cvFile || isLoading}
-                sx={{
-                    mt: 2,
-                    background: "#7B61FF",
-                    "&:hover": {
-                        background: "#6851d9",
-                    },
-                    textTransform: "none",
-                    py: 1.5,
-                    px: 4,
-                    borderRadius: '8px',
-                    boxShadow: 'none',
-                    '&:disabled': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.12)',
-                        color: 'rgba(0, 0, 0, 0.26)'
-                    }
-                }}
-            >
-                {isLoading ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <CircularProgress size={20} color="inherit" />
-                        <span>Uploading...</span>
-                    </Box>
-                ) : (
-                    'Upload and Process CV'
-                )}
-            </Button>
-
-            {cvContent && (
+            {cvContent && !cvContent.startsWith('http') && (
                 <Box sx={{ mt: 3, p: 3, bgcolor: '#f8f9fa', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.08)' }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: '#1a1a2e' }}>
                         Processed CV Content
