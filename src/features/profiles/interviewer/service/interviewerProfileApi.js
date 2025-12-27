@@ -5,7 +5,7 @@ export const interviewerProfileEndPoints = {
     GET_ALL_SKILLS: BE_BASE_URL + "/Skills?page={page}&pageSize={pageSize}",
     GET_ALL_COMPANIES: BE_BASE_URL + "/Companies?page={page}&pageSize={pageSize}",
     VIEW_OWN_INTERVIEWER_PROFILE: BE_BASE_URL + `/interviewer-profile/{id}`,
-    VIEW_PROFILE_BY_INTERVIEWEE: BE_BASE_URL + `/interviewer-profile/{id}/profile`,
+    VIEW_PROFILE_BY_INTERVIEWEE: BE_BASE_URL + `/interviewer-profile/{slugProfileUrl}/profile`,
     CREATE_INTERVIEWER_PROFILE: BE_BASE_URL + "/interviewer-profile",
     UPDATE_INTERVIEWER_PROFILE: BE_BASE_URL + `/interviewer-profile/{id}`,
 
