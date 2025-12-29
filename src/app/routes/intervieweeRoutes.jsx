@@ -1,7 +1,9 @@
 import Test from "../../features/test/pages/Test";
 import HomePage from "../../features/home/pages/HomePage";
+import PublicInterviewerProfilePage from "../../features/profiles/interviewer/page/PublicInterviewerProfilePage/PublicInterviewerProfilePage";
 
 export const intervieweeRoutes = [
     { path: "/test/:id", element: <Test /> },
     { path: "/home", element: <HomePage /> },
+    { path: "/profile/:slugProfileUrl", element: <PublicInterviewerProfilePage /> },
 ];
