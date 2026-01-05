@@ -53,7 +53,7 @@ export const routes = [
     // Public routes
     {
         element: <MainLayout />,
-        children: [{ path: "/interviewer/:id", element: <PublicInterviewerProfilePage /> }],
+        children: [{ path: "/profile/:slugProfileUrl", element: <PublicInterviewerProfilePage /> }],
     },
 
     // Interviewee specific routes
@@ -63,7 +63,7 @@ export const routes = [
                 <MainLayout />
             </ProtectedRoute>
         ),
-        children: [...intervieweeRoutes, { path: "/profile/:id", element: <InterviewerProfilePage /> }],
+        children: [...intervieweeRoutes, { path: "/profile/:profileUrl", element: <InterviewerProfilePage /> }],
     },
     {
         element: (
