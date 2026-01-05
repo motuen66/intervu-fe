@@ -5,4 +5,5 @@ export const profileEndPoints = {
     UPDATE_PROFILE: (userId) => `${BE_BASE_URL}/userprofile/${userId}`,
     UPDATE_PASSWORD: (userId) => `${BE_BASE_URL}/userprofile/${userId}/password`,
     UPDATE_AVATAR: (userId) => `${BE_BASE_URL}/userprofile/${userId}/profile-picture`,
+    UPLOAD_CV: (userId) => `${BE_BASE_URL}/userprofile/upload-cv/${userId}`,
 };
