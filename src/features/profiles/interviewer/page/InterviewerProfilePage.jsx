@@ -197,7 +197,7 @@ function InterviewerProfilePage() {
 
             if (data?.avatar) {
                 const updatedUser = { ...user, profilePicture: data.avatar };
-                // localStorage.setItem("user", JSON.stringify(updatedUser));
+                localStorage.setItem("user", JSON.stringify(updatedUser));
                 dispatch(setUserData(updatedUser));
 
                 setProfile((prev) => ({
