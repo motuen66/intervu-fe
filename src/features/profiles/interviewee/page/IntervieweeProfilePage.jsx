@@ -330,18 +330,6 @@ function IntervieweeProfilePage() {
 
                                     <InfoRow
                                         icon={<LinkIcon fontSize="small" />}
-                                        label="CV"
-                                        content={profile.cvUrl ? (
-                                            <Link href={profile.cvUrl} target="_blank" rel="noopener" sx={{ fontWeight: 500 }}>
-                                                {profile.cvUrl}
-                                            </Link>
-                                        ) : (
-                                            <Typography color="text.secondary">Not provided</Typography>
-                                        )}
-                                    />
-
-                                    <InfoRow
-                                        icon={<LinkIcon fontSize="small" />}
                                         label="Portfolio"
                                         content={
                                             editMode ? (
@@ -402,6 +390,17 @@ function IntervieweeProfilePage() {
                                             </Box>
                                         )}
                                     </Box>
+                                    <InfoRow
+                                        icon={<LinkIcon fontSize="small" />}
+                                        label="CV"
+                                        content={profile.cvUrl ? (
+                                            <Link href={profile.cvUrl} target="_blank" rel="noopener" sx={{ fontWeight: 500 }}>
+                                                {profile.cvUrl}
+                                            </Link>
+                                        ) : (
+                                            <Typography color="text.secondary">Not provided</Typography>
+                                        )}
+                                    />
                                 </CardContent>
                             </Card>
                         </Grid>
