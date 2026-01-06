@@ -14,7 +14,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { callApi } from "../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../common/constants/api.js";
-import { profileEndPoints } from "../services/profileApi.js";
+import { profileEndPoints } from "../../profile/services/profileApi.js";
 import useUser from "../../../common/hooks/useUser.jsx";
 
 const UploadCv = () => {
@@ -87,11 +87,12 @@ const UploadCv = () => {
 
     return (
         <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 200, mb: 1 }}>
                 Upload Your CV
             </Typography>
             <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
-                Upload your CV in PDF format. This will help us parse your skills and experience.
+                Upload your CV in PDF format. 
+                This will help us parse your skills and experience.
             </Typography>
 
             {isUploadSuccess ? (

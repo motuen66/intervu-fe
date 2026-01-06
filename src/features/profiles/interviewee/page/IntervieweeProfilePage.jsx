@@ -38,6 +38,8 @@ import { CameraAlt as CameraIcon } from "@mui/icons-material";
 import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
+import ConfirmModal from "../../../../common/components/ConfirmModal";
+import UploadCv from "../../components/UploadCv.jsx";
 
 import { ROLES } from "../../../../common/constants/common";
 
@@ -54,6 +56,11 @@ function IntervieweeProfilePage() {
     const [allSkills, setAllSkills] = useState([]);
     const [allSkillNames, setAllSkillNames] = useState([]);
     const [avatarKey, setAvatarKey] = useState(Date.now());
+    const [prevAvatar, setPrevAvatar] = useState(null);
+    const [pendingAvatarFile, setPendingAvatarFile] = useState(null);
+    const [pendingAvatarLocalUrl, setPendingAvatarLocalUrl] = useState(null);
+    const [showConfirmAvatar, setShowConfirmAvatar] = useState(false);
+    const [showConfirmSave, setShowConfirmSave] = useState(false);
     const dispatch = useDispatch();
 
     const endpoint = useMemo(() => {
@@ -170,6 +177,37 @@ function IntervieweeProfilePage() {
         }
     };
 
+    // Avatar confirmation handlers (moved here so modal is rendered in the main return)
+    const handleConfirmAvatar = async () => {
+        setShowConfirmAvatar(false);
+        if (!pendingAvatarFile) return;
+        try {
+            const data = await uploadImage(user.id, pendingAvatarFile);
+            if (data?.avatar) {
+                const updatedUser = { ...user, profilePicture: data.avatar };
+                try { localStorage.setItem("user", JSON.stringify(updatedUser)); } catch (e) { console.warn(e); }
+                dispatch(setUserData(updatedUser));
+                setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.avatar }, profilePicture: data.avatar }));
+                setAvatarKey(Date.now());
+            }
+        } catch (err) {
+            console.error(err);
+            setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
+        } finally {
+            setPendingAvatarFile(null);
+            setPendingAvatarLocalUrl(null);
+            setPrevAvatar(null);
+        }
+    };
+
+    const handleCancelAvatar = () => {
+        setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
+        setPendingAvatarFile(null);
+        setPendingAvatarLocalUrl(null);
+        setPrevAvatar(null);
+        setShowConfirmAvatar(false);
+    };
+
     if (!user) {
         return (
             <Box sx={{ p: 4, textAlign: "center" }}>
@@ -236,7 +274,17 @@ function IntervieweeProfilePage() {
                             {editMode ? <CloseIcon /> : <EditIcon />}
                         </IconButton>
                     )}
-                </Box>
+
+            <ConfirmModal
+                show={showConfirmAvatar}
+                title="Confirm avatar change"
+                message="Are you sure you want to change your avatar?"
+                onConfirm={handleConfirmAvatar}
+                onCancel={handleCancelAvatar}
+                confirmText="Change"
+                cancelText="Cancel"
+            />
+		</Box>
 
                 <CardContent sx={{ pt: 0 }}>
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 3 }}>
@@ -270,30 +318,20 @@ function IntervieweeProfilePage() {
                                         }}
                                     >
                                         <CameraIcon fontSize="small" />
-                                        <input hidden type="file" accept="image/*" onChange={async (e) => {
+                                        <input hidden type="file" accept="image/*" onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (!file) return;
-
                                             const localUrl = URL.createObjectURL(file);
-
+                                            setPrevAvatar(profile?.profilePicture || profile?.user?.profilePicture || "");
+                                            setPendingAvatarFile(file);
+                                            setPendingAvatarLocalUrl(localUrl);
                                             setProfile((prev) => ({
                                                 ...prev,
                                                 user: { ...(prev?.user || {}), profilePicture: localUrl },
                                                 profilePicture: localUrl,
                                             }));
-
-                                            try {
-                                                const data = await uploadImage(user.id, file);
-                                                if (data?.avatar) {
-                                                    const updatedUser = { ...user, profilePicture: data.avatar };
-                                                    try { localStorage.setItem("user", JSON.stringify(updatedUser)); } catch (e) { console.warn(e); }
-                                                    dispatch(setUserData(updatedUser));
-                                                    setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.avatar }, profilePicture: data.avatar }));
-                                                    setAvatarKey(Date.now());
-                                                }
-                                            } catch (err) {
-                                                console.error(err);
-                                            }
+                                            
+                                            setShowConfirmAvatar(true);
                                         }} />
                                     </IconButton>
                                 )}
@@ -390,52 +428,58 @@ function IntervieweeProfilePage() {
                                             </Box>
                                         )}
                                     </Box>
-                                    <InfoRow
-                                        icon={<LinkIcon fontSize="small" />}
-                                        label="CV"
-                                        content={profile.cvUrl ? (
-                                            <Link href={profile.cvUrl} target="_blank" rel="noopener" sx={{ fontWeight: 500 }}>
-                                                {profile.cvUrl}
-                                            </Link>
-                                        ) : (
-                                            <Typography color="text.secondary">Not provided</Typography>
-                                        )}
-                                    />
+                                    <UploadCv/>
                                 </CardContent>
                             </Card>
                         </Grid>
                     </Grid>
 
                     {canEdit && editMode && (
-                        <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                            <Button
-                                variant="outlined"
-                                color="inherit"
-                                startIcon={<CloseIcon />}
-                                onClick={async () => {
-                                    setEditMode(false);
-                                    await reloadProfile();
+                        <>
+                            <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                                <Button
+                                    variant="outlined"
+                                    color="inherit"
+                                    startIcon={<CloseIcon />}
+                                    onClick={async () => {
+                                        setEditMode(false);
+                                        await reloadProfile();
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    startIcon={<SaveIcon />}
+                                    onClick={() => setShowConfirmSave(true)}
+                                    disabled={saving}
+                                >
+                                    {saving ? "Saving..." : "Save changes"}
+                                </Button>
+                            </Box>
+
+                            <ConfirmModal
+                                show={showConfirmSave}
+                                title="Confirm save"
+                                message="Are you sure you want to save changes to your profile?"
+                                onConfirm={async () => {
+                                    setShowConfirmSave(false);
+                                    await handleSave();
                                 }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                startIcon={<SaveIcon />}
-                                onClick={handleSave}
-                                disabled={saving}
-                            >
-                                {saving ? "Saving..." : "Save changes"}
-                            </Button>
-                        </Box>
+                                onCancel={() => setShowConfirmSave(false)}
+                                confirmText="Save"
+                                cancelText="Cancel"
+                            />
+
+                        </>
                     )}
                 </>
             )}
         </Box>
-        
     );
 }
+
 
 function InfoRow({ icon, label, content }) {
     return (
