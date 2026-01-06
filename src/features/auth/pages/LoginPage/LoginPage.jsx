@@ -158,7 +158,19 @@ function LoginPage() {
                                     </Button>
                                 )}
                             </div>
-                            
+                            <div style={{ textAlign: 'right', marginTop: '8px', marginBottom: '8px' }}>
+                                <Typography 
+                                    onClick={() => navigate('/forgot-password')}
+                                    style={{ fontSize: '13px', color: '#7B61FF', cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
+                                    sx={{
+                                        '&:hover': {
+                                            textDecoration: 'underline'
+                                        }
+                                    }}
+                                >
+                                    Forgot password?
+                                </Typography>
+                            </div>                            
                             <div style={{ textAlign: 'center', marginTop: '16px' }}>
                                 <Typography style={{ fontSize: '14px', color: 'rgba(0,0,0,0.6)' }}>
                                     Don't have an account?{' '}
