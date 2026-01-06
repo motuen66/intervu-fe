@@ -10,6 +10,7 @@ import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
 import HomePage from "../../features/home/pages/HomePage";
 import InterviewerProfilePage from "../../features/profiles/interviewer/page/InterviewerProfilePage";
+import IntervieweeProfilePage from "../../features/profiles/interviewee/page/IntervieweeProfilePage";
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
@@ -32,7 +33,10 @@ export const routes = [
                 <MainLayout />
             </ProtectedRoute>
         ),
-        children: [{ path: "/user/profile", element: <UserProfilePage /> }],
+        children: [
+            { path: "/user/profile", element: <UserProfilePage /> },
+            { path: "/settings", element: <UserProfilePage /> },
+        ],
     },
 
     {
@@ -63,7 +67,11 @@ export const routes = [
                 <MainLayout />
             </ProtectedRoute>
         ),
-        children: [...intervieweeRoutes, { path: "/profile/:profileUrl", element: <InterviewerProfilePage /> }],
+        children: [
+            ...intervieweeRoutes,
+            { path: "/interviewee/profile", element: <IntervieweeProfilePage /> },
+            { path: "/interviewee/profile/:profileUrl", element: <IntervieweeProfilePage /> },
+        ],
     },
     {
         element: (

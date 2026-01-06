@@ -22,7 +22,7 @@ const MainLayout = () => {
       { label: 'Home', path: '/home' },
       { label: 'Interview', path: '/interview' },
       { label: 'Messages', path: '#' },
-      { label: 'Profile', path: '/user/profile' },
+      { label: 'Settings', path: '/settings' },
     ],
     // INTERVIEWER
     [
@@ -145,7 +145,13 @@ const MainLayout = () => {
                   <button
                     className="dropdown-item"
                     onClick={() => {
-                      navigate('/profile');
+                      const role = userData?.role;
+                      const path = role === ROLES.INTERVIEWER
+                        ? '/interviewer/profile'
+                        : role === ROLES.INTERVIEWEE
+                          ? '/interviewee/profile'
+                          : '/user/profile';
+                      navigate(path);
                       setIsUserDropdownOpen(false);
                     }}
                   >
