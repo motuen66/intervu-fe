@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
     Box,
@@ -8,6 +8,7 @@ import {
     IconButton,
     CircularProgress
 } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -17,11 +18,20 @@ import { METHOD } from "../../../common/constants/api.js";
 import { profileEndPoints } from "../../profile/services/profileApi.js";
 import useUser from "../../../common/hooks/useUser.jsx";
 
-const UploadCv = () => {
+const UploadCv = ({ cvUrl }) => {
+    const theme = useTheme();
     const [cvFile, setCvFile] = useState(null);
-    const [cvContent, setCvContent] = useState('');
+    const [cvContent, setCvContent] = useState(cvUrl || '');
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploadMode, setIsUploadMode] = useState(!cvUrl);
     const user = useUser();
+
+    useEffect(() => {
+        if (cvUrl) {
+            setCvContent(cvUrl);
+            setIsUploadMode(false);
+        }
+    }, [cvUrl]);
 
     const onDrop = useCallback((acceptedFiles) => {
         const file = acceptedFiles[0];
@@ -57,6 +67,7 @@ const UploadCv = () => {
                 setCvContent(content);
                 if (content.startsWith('http')) {
                     setCvFile(null);
+                    setIsUploadMode(false);
                 }
             }
 
@@ -69,12 +80,16 @@ const UploadCv = () => {
 
     const handleRemoveFile = () => {
         setCvFile(null);
-        setCvContent('');
     };
 
-    const handleReset = () => {
+    const handleStartUpload = () => {
+        setIsUploadMode(true);
         setCvFile(null);
-        setCvContent('');
+    };
+
+    const handleCancelUpload = () => {
+        setIsUploadMode(false);
+        setCvFile(null);
     };
 
     const handleViewCv = () => {
@@ -83,42 +98,43 @@ const UploadCv = () => {
         }
     };
 
-    const isUploadSuccess = cvContent && cvContent.startsWith('http');
+    const hasExistingCv = cvContent && cvContent.startsWith('http');
+    const showSuccessCard = !isUploadMode && hasExistingCv;
 
     return (
         <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 200, mb: 1 }}>
-                Upload Your CV
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: '1rem' }}>
+                CV
             </Typography>
-            <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
                 Upload your CV in PDF format. 
                 This will help us parse your skills and experience.
             </Typography>
 
-            {isUploadSuccess ? (
+            {showSuccessCard ? (
                 <Box
                     sx={{
                         p: 4,
                         textAlign: 'center',
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: theme.palette.background.default,
                         borderRadius: '12px',
-                        border: '1px solid rgba(0,0,0,0.08)'
+                        border: `1px solid ${theme.palette.divider}`
                     }}
                 >
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2e7d32' }}>
-                        CV Uploaded Successfully
-                    </Typography>
+                    {/*<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: theme.palette.success.main }}>*/}
+                    {/*    CV Uploaded Successfully*/}
+                    {/*</Typography>*/}
                     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
                         <Button
                             variant="outlined"
                             onClick={handleViewCv}
                             startIcon={<VisibilityIcon />}
                             sx={{
-                                borderColor: "#7B61FF",
-                                color: "#7B61FF",
+                                borderColor: theme.palette.primary.main,
+                                color: theme.palette.primary.main,
                                 "&:hover": {
-                                    borderColor: "#6851d9",
-                                    backgroundColor: "rgba(123, 97, 255, 0.04)",
+                                    borderColor: theme.palette.primary.dark,
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
                                 },
                                 textTransform: "none",
                                 borderRadius: '8px',
@@ -128,12 +144,12 @@ const UploadCv = () => {
                         </Button>
                         <Button
                             variant="contained"
-                            onClick={handleReset}
+                            onClick={handleStartUpload}
                             startIcon={<CloudUploadIcon />}
                             sx={{
-                                background: "#7B61FF",
+                                background: theme.palette.primary.main,
                                 "&:hover": {
-                                    background: "#6851d9",
+                                    background: theme.palette.primary.dark,
                                 },
                                 textTransform: "none",
                                 borderRadius: '8px',
@@ -151,25 +167,25 @@ const UploadCv = () => {
                             {...getRootProps()}
                             sx={{
                                 border: '2px dashed',
-                                borderColor: isDragActive ? '#7B61FF' : 'rgba(0, 0, 0, 0.23)',
+                                borderColor: isDragActive ? theme.palette.primary.main : theme.palette.divider,
                                 borderRadius: '12px',
                                 p: 4,
                                 textAlign: 'center',
                                 cursor: 'pointer',
-                                backgroundColor: isDragActive ? 'rgba(123, 97, 255, 0.04)' : '#fafafa',
+                                backgroundColor: isDragActive ? alpha(theme.palette.primary.main, 0.04) : theme.palette.background.default,
                                 transition: 'all 0.2s ease',
                                 '&:hover': {
-                                    borderColor: '#7B61FF',
-                                    backgroundColor: 'rgba(123, 97, 255, 0.04)',
+                                    borderColor: theme.palette.primary.main,
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
                                 }
                             }}
                         >
                             <input {...getInputProps({ accept: '.pdf' })} />
-                            <CloudUploadIcon sx={{ fontSize: 48, color: '#9e9e9e', mb: 2 }} />
-                            <Typography variant="body1" sx={{ fontWeight: 500, color: '#333', mb: 0.5 }}>
-                                <span style={{ color: '#7B61FF' }}>Click to upload</span> or drag and drop
+                            <CloudUploadIcon sx={{ fontSize: 48, color: theme.palette.text.disabled, mb: 2 }} />
+                            <Typography variant="body1" sx={{ fontWeight: 500, color: theme.palette.text.primary, mb: 0.5 }}>
+                                <span style={{ color: theme.palette.primary.main }}>Click to upload</span> or drag and drop
                             </Typography>
-                            <Typography variant="caption" sx={{ color: '#9e9e9e' }}>
+                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                                 PDF file only
                             </Typography>
                         </Box>
@@ -183,7 +199,7 @@ const UploadCv = () => {
                                 justifyContent: 'space-between',
                                 borderRadius: '8px',
                                 mb: 2,
-                                borderColor: 'rgba(0,0,0,0.12)'
+                                borderColor: theme.palette.divider
                             }}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -192,13 +208,13 @@ const UploadCv = () => {
                                         width: 40,
                                         height: 40,
                                         borderRadius: '8px',
-                                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                                        backgroundColor: alpha(theme.palette.error.main, 0.1),
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center'
                                     }}
                                 >
-                                    <PictureAsPdfIcon sx={{ color: '#d32f2f' }} />
+                                    <PictureAsPdfIcon sx={{ color: theme.palette.error.main }} />
                                 </Box>
                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                     {cvFile.name}
@@ -211,14 +227,32 @@ const UploadCv = () => {
                     )}
 
                     <Box sx={{ display: 'flex', gap: 2, mt: 2, justifyContent: 'flex-end' }}>
+                        {hasExistingCv && (
+                            <Button
+                                variant="outlined"
+                                onClick={handleCancelUpload}
+                                sx={{
+                                    borderColor: theme.palette.divider,
+                                    color: theme.palette.text.secondary,
+                                    "&:hover": {
+                                        borderColor: theme.palette.text.primary,
+                                        backgroundColor: alpha(theme.palette.text.primary, 0.04),
+                                    },
+                                    textTransform: "none",
+                                    borderRadius: '8px',
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                        )}
                         <Button
                             variant="contained"
                             onClick={handleUpload}
                             disabled={!cvFile || isLoading}
                             sx={{
-                                background: "#7B61FF",
+                                background: theme.palette.primary.main,
                                 "&:hover": {
-                                    background: "#6851d9",
+                                    background: theme.palette.primary.dark,
                                 },
                                 textTransform: "none",
                                 py: 1.5,
@@ -226,8 +260,8 @@ const UploadCv = () => {
                                 borderRadius: '8px',
                                 boxShadow: 'none',
                                 '&:disabled': {
-                                    backgroundColor: 'rgba(0, 0, 0, 0.12)',
-                                    color: 'rgba(0, 0, 0, 0.26)'
+                                    backgroundColor: theme.palette.action.disabledBackground,
+                                    color: theme.palette.text.disabled
                                 }
                             }}
                         >
@@ -245,11 +279,11 @@ const UploadCv = () => {
             )}
 
             {cvContent && !cvContent.startsWith('http') && (
-                <Box sx={{ mt: 3, p: 3, bgcolor: '#f8f9fa', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.08)' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: '#1a1a2e' }}>
+                <Box sx={{ mt: 3, p: 3, bgcolor: theme.palette.background.default, borderRadius: '8px', border: `1px solid ${theme.palette.divider}` }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: theme.palette.text.primary }}>
                         Processed CV Content
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#4a4a4a', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                         {cvContent}
                     </Typography>
                 </Box>

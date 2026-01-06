@@ -91,7 +91,7 @@ function IntervieweeProfilePage() {
                     setProfile({
                         ...res.data,
                         skills: (res.data.skills || []).map(normalizeToString).filter(Boolean),
-                        cvUrl: res.data.cVUrl || res.data.CVUrl || "",
+                        cvUrl: res.data.cvUrl || "",
                         portfolioUrl: res.data.portfolioUrl || "",
                         bio: res.data.bio || "",
                         currentAmount: res.data.currentAmount ?? 0,
@@ -156,7 +156,7 @@ function IntervieweeProfilePage() {
                 id: profile.id,
                 fullName: profile.user?.fullName || profile.fullName || "",
                 email: profile.user?.email || profile.email || "",
-                cvUrl: profile.cVUrl || "",
+                cvUrl: profile.cvUrl || "",
                 portfolioUrl: profile.portfolioUrl || "",
                 bio: profile.bio || "",
                 skillIds,
@@ -428,7 +428,7 @@ function IntervieweeProfilePage() {
                                             </Box>
                                         )}
                                     </Box>
-                                    <UploadCv/>
+                                    <UploadCv cvUrl={profile.cvUrl} />
                                 </CardContent>
                             </Card>
                         </Grid>
