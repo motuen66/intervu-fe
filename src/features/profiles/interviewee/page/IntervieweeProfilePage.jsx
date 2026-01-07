@@ -181,13 +181,14 @@ function IntervieweeProfilePage() {
     const handleConfirmAvatar = async () => {
         setShowConfirmAvatar(false);
         if (!pendingAvatarFile) return;
+        console
         try {
             const data = await uploadImage(user.id, pendingAvatarFile);
-            if (data?.avatar) {
-                const updatedUser = { ...user, profilePicture: data.avatar };
+            if (data?.profilePictureUrl) {
+                const updatedUser = { ...user, profilePicture: data.profilePictureUrl };
                 try { localStorage.setItem("user", JSON.stringify(updatedUser)); } catch (e) { console.warn(e); }
                 dispatch(setUserData(updatedUser));
-                setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.avatar }, profilePicture: data.avatar }));
+                setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl }, profilePicture: data.profilePictureUrl }));
                 setAvatarKey(Date.now());
             }
         } catch (err) {
