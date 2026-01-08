@@ -97,7 +97,7 @@ function InterviewerProfilePage() {
 
         return isInterviewer
             ? interviewerProfileEndPoints.VIEW_OWN_INTERVIEWER_PROFILE.replace("{id}", user.id)
-            : interviewerProfileEndPoints.VIEW_PROFILE_BY_INTERVIEWEE.replace("{id}", user.id);
+            : interviewerProfileEndPoints.VIEW_PROFILE_BY_CANDIDATE.replace("{id}", user.id);
     }, [routeId, user?.id, user?.role]);
 
     useEffect(() => {

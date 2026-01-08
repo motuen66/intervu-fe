@@ -16,7 +16,7 @@ function ProtectedRoute({ allowedRoles = [], children }) {
         alert("Session expired. Please log in again.");
         return <Navigate to="/login" />;
     } else if (!allowedRoles.includes(userData?.role)) {
-        if (userData?.role === ROLES.INTERVIEWEE) return <Navigate to="/home" />;
+        if (userData?.role === ROLES.CANDIDATE) return <Navigate to="/home" />;
         if (userData?.role === ROLES.INTERVIEWER) return <Navigate to="/interview" />;
         if (userData?.role === ROLES.ADMIN) return <Navigate to="/login" />;
     } else {
