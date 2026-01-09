@@ -14,13 +14,13 @@ import {
     CircularProgress,
     Alert
 } from '@mui/material';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import StarIcon from '@mui/icons-material/Star';
+// import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+// import StarIcon from '@mui/icons-material/Star';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { profileEndPoints } from '../services/profileApi';
 import toast from 'react-hot-toast';
-import UploadCv from "../components/UploadCv.jsx";
+// import UploadCv from "../components/UploadCv.jsx";
 
 export default function UserProfilePage() {
     const [loading, setLoading] = useState(true);
@@ -280,10 +280,6 @@ export default function UserProfilePage() {
                                     Update email
                                 </Button>
                             </Box>
-
-                            <Divider sx={{ my: 4 }} />
-
-                            <UploadCv/>
 
                             <Divider sx={{ my: 4 }} />
 
