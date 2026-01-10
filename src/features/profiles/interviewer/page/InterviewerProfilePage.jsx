@@ -41,6 +41,7 @@ import { CameraAlt as CameraIcon } from "@mui/icons-material";
 import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
+import ConfirmModal from "../../../../common/components/ConfirmModal";
 import BankSelection from "./BankSelection";
 
 function getRoleFromJwt() {
@@ -78,6 +79,11 @@ function InterviewerProfilePage() {
     const [allSkills, setAllSkills] = useState([]);
     const [allCompanies, setAllCompanies] = useState([]);
     const [avatarKey, setAvatarKey] = useState(Date.now());
+    const [prevAvatar, setPrevAvatar] = useState(null);
+    const [pendingAvatarFile, setPendingAvatarFile] = useState(null);
+    const [pendingAvatarLocalUrl, setPendingAvatarLocalUrl] = useState(null);
+    const [showConfirmAvatar, setShowConfirmAvatar] = useState(false);
+    const [showConfirmSave, setShowConfirmSave] = useState(false);
 
     const tokenRole = useMemo(() => {
         const r = getRoleFromJwt();
@@ -180,34 +186,56 @@ function InterviewerProfilePage() {
         );
     }
 
-    const onPick = async (e) => {
+    const onPick = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const localUrl = URL.createObjectURL(file);
+        setPrevAvatar(profile?.profilePicture || profile?.user?.profilePicture || "");
+        setPendingAvatarFile(file);
+        setPendingAvatarLocalUrl(localUrl);
 
         setProfile((prev) => ({
             ...prev,
             user: { ...(prev?.user || {}), profilePicture: localUrl },
+            profilePicture: localUrl,
         }));
+        setShowConfirmAvatar(true);
+    };
 
+    const handleConfirmAvatar = async () => {
+        setShowConfirmAvatar(false);
+        console.log("Pending avatar file:", pendingAvatarFile);
+        if (!pendingAvatarFile) return;
+        console.log("Uploading avatar for user ID:", user.id);
         try {
-            const data = await uploadImage(user.id, file);
-            console.log("ollo", data);
-
-            if (data?.avatar) {
-                const updatedUser = { ...user, profilePicture: data.avatar };
-                localStorage.setItem("user", JSON.stringify(updatedUser));
+            const data = await uploadImage(user.id, pendingAvatarFile);
+            console.log("Uploaded avatar data:", data);
+            if (data?.profilePictureUrl) {
+                const updatedUser = { ...user, profilePicture: data.profilePictureUrl };
+                try { localStorage.setItem("user", JSON.stringify(updatedUser)); } catch (e) { console.warn(e); }
                 dispatch(setUserData(updatedUser));
-
-                setProfile((prev) => ({
-                    ...prev,
-                    user: { ...(prev?.user || {}), profilePicture: data.avatar },
-                }));
+                setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl }, profilePicture: data.profilePictureUrl }));
+                setAvatarKey(Date.now());
             }
+            
         } catch (err) {
             console.error(err);
+            setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
+        } finally {
+            setPendingAvatarFile(null);
+            setPendingAvatarLocalUrl(null);
+            setPrevAvatar(null);
         }
+    };
+
+    const handleCancelAvatar = () => {
+        // revert preview
+        setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
+        setPendingAvatarFile(null);
+        setPendingAvatarLocalUrl(null);
+        setPrevAvatar(null);
+        setShowConfirmAvatar(false);
     };
 
     const avatarUrl = profile?.profilePicture || profile?.user?.profilePicture || "";
@@ -341,6 +369,16 @@ function InterviewerProfilePage() {
                         );
                     })()}
                 </Box>
+
+                <ConfirmModal
+                    show={showConfirmAvatar}
+                    title="Confirm avatar change"
+                    message="Are you sure you want to change your avatar?"
+                    onConfirm={handleConfirmAvatar}
+                    onCancel={handleCancelAvatar}
+                    confirmText="Change"
+                    cancelText="Cancel"
+                />
 
                 <CardContent sx={{ pt: 0 }}>
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 3 }}>
@@ -689,20 +727,35 @@ function InterviewerProfilePage() {
 
             {/* Save Button */}
             {editMode && profile && (
-                <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                    <Button variant="outlined" onClick={() => setEditMode(false)} disabled={saving}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        size="large"
-                        startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                        onClick={handleSave}
-                        disabled={saving}
-                    >
-                        {saving ? "Saving..." : "Save Changes"}
-                    </Button>
-                </Box>
+                <>
+                    <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                        <Button variant="outlined" onClick={() => setEditMode(false)} disabled={saving}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            size="large"
+                            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                            onClick={() => setShowConfirmSave(true)}
+                            disabled={saving}
+                        >
+                            {saving ? "Saving..." : "Save Changes"}
+                        </Button>
+                    </Box>
+
+                    <ConfirmModal
+                        show={showConfirmSave}
+                        title="Confirm save"
+                        message="Are you sure you want to save changes to your profile?"
+                        onConfirm={async () => {
+                            setShowConfirmSave(false);
+                            await handleSave();
+                        }}
+                        onCancel={() => setShowConfirmSave(false)}
+                        confirmText="Save"
+                        cancelText="Cancel"
+                    />
+                </>
             )}
 
             {!loading && !profile && !error && (
