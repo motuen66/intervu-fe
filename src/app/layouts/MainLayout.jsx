@@ -17,7 +17,7 @@ const MainLayout = () => {
   };
 
   const menuItems = [
-    // INTERVIEWEE
+    // CANDIDATE
     [
       { label: 'Home', path: '/home' },
       { label: 'Interview', path: '/interview' },
@@ -39,7 +39,7 @@ const MainLayout = () => {
     ],
   ];
 
-  const currentMenuItems = menuItems[userData?.role] || menuItems[ROLES.INTERVIEWEE];
+  const currentMenuItems = menuItems[userData?.role] || menuItems[ROLES.CANDIDATE];
 
   const isMenuItemActive = (path) => location.pathname === path;
 
@@ -91,7 +91,7 @@ const MainLayout = () => {
             </div>
 
             {/* Upgrade Button */}
-            {userData?.role === ROLES.INTERVIEWEE && (
+            {userData?.role === ROLES.CANDIDATE && (
               <button className="upgrade-btn">Upgrade Pro</button>
             )}
 
@@ -148,8 +148,8 @@ const MainLayout = () => {
                       const role = userData?.role;
                       const path = role === ROLES.INTERVIEWER
                         ? '/interviewer/profile'
-                        : role === ROLES.INTERVIEWEE
-                          ? '/interviewee/profile'
+                        : role === ROLES.CANDIDATE
+                          ? '/candidate/profile'
                           : '/user/profile';
                       navigate(path);
                       setIsUserDropdownOpen(false);

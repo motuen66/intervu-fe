@@ -2,7 +2,7 @@ import MainLayout from "../layouts/MainLayout";
 import { adminRoutes } from "./adminRoutes";
 import { authRoutes } from "./authRoutes";
 import { interviewerRoutes } from "./interviewerRoutes";
-import { intervieweeRoutes } from "./intervieweeRoutes";
+import { candidateRoutes } from "./candidateRoutes.jsx";
 import { Navigate } from "react-router-dom";
 import PublicInterviewerProfilePage from "../../features/profiles/interviewer/page/PublicInterviewerProfilePage/PublicInterviewerProfilePage";
 import EmptyLayout from "../layouts/EmptyLayout";
@@ -10,7 +10,7 @@ import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
 import HomePage from "../../features/home/pages/HomePage";
 import InterviewerProfilePage from "../../features/profiles/interviewer/page/InterviewerProfilePage";
-import IntervieweeProfilePage from "../../features/profiles/interviewee/page/IntervieweeProfilePage";
+import CandidateProfilePage from "../../features/profiles/candidate/page/CandidateProfilePage.jsx";
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
@@ -29,7 +29,7 @@ export const routes = [
     // Profile route - accessible by all authenticated users
     {
         element: (
-            <ProtectedRoute allowedRoles={[ROLES.INTERVIEWEE, ROLES.INTERVIEWER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER, ROLES.ADMIN]}>
                 <MainLayout />
             </ProtectedRoute>
         ),
@@ -41,7 +41,7 @@ export const routes = [
 
     {
         element: (
-            <ProtectedRoute allowedRoles={[ROLES.INTERVIEWEE, ROLES.INTERVIEWER]}>
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER]}>
                 <EmptyLayout />
             </ProtectedRoute>
         ),
@@ -60,17 +60,17 @@ export const routes = [
         children: [{ path: "/profile/:slugProfileUrl", element: <PublicInterviewerProfilePage /> }],
     },
 
-    // Interviewee specific routes
+    // Candidate specific routes
     {
         element: (
-            <ProtectedRoute allowedRoles={[ROLES.INTERVIEWEE]}>
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE]}>
                 <MainLayout />
             </ProtectedRoute>
         ),
         children: [
-            ...intervieweeRoutes,
-            { path: "/interviewee/profile", element: <IntervieweeProfilePage /> },
-            { path: "/interviewee/profile/:profileUrl", element: <IntervieweeProfilePage /> },
+            ...candidateRoutes,
+            { path: "/candidate/profile", element: <CandidateProfilePage /> },
+            { path: "/candidate/profile/:profileUrl", element: <CandidateProfilePage /> },
         ],
     },
     {

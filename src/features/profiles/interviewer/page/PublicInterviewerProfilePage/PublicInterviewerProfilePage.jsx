@@ -64,7 +64,7 @@ function PublicInterviewerProfilePage() {
             setError(null);
             const res = await callApi({
                 method: METHOD.GET,
-                endpoint: interviewerProfileEndPoints.VIEW_PROFILE_BY_INTERVIEWEE.replace("{slugProfileUrl}", slugProfileUrl),
+                endpoint: interviewerProfileEndPoints.VIEW_PROFILE_BY_CANDIDATE.replace("{slugProfileUrl}", slugProfileUrl),
             });
             setProfile(res.data);
         } catch (e) {

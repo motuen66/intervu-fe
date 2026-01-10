@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
-import { intervieweeProfileEndPoints } from "../service/intervieweeProfileApi";
+import { candidateProfileEndPoints } from "../service/candidateProfileApi.js";
 import {
     Avatar,
     Box,
@@ -43,7 +43,7 @@ import UploadCv from "../../components/UploadCv.jsx";
 
 import { ROLES } from "../../../../common/constants/common";
 
-function IntervieweeProfilePage() {
+function CandidateProfilePage() {
     const { id: routeId, slugProfileUrl, profileUrl } = useParams();
     const user = useUser();
 
@@ -66,13 +66,13 @@ function IntervieweeProfilePage() {
     const endpoint = useMemo(() => {
         const slug = slugProfileUrl || profileUrl;
         if (slug) {
-            return intervieweeProfileEndPoints.VIEW_PROFILE_BY_SLUG.replace("{slugProfileUrl}", slug);
+            return candidateProfileEndPoints.VIEW_PROFILE_BY_SLUG.replace("{slugProfileUrl}", slug);
         }
         if (routeId) {
-            return intervieweeProfileEndPoints.VIEW_OWN_INTERVIEWEE_PROFILE.replace("{id}", routeId);
+            return candidateProfileEndPoints.VIEW_OWN_CANDIDATE_PROFILE.replace("{id}", routeId);
         }
         if (!user?.id) return null;
-        return intervieweeProfileEndPoints.VIEW_OWN_INTERVIEWEE_PROFILE.replace("{id}", user.id);
+        return candidateProfileEndPoints.VIEW_OWN_CANDIDATE_PROFILE.replace("{id}", user.id);
     }, [routeId, slugProfileUrl, profileUrl, user?.id]);
 
     useEffect(() => {
@@ -113,7 +113,7 @@ function IntervieweeProfilePage() {
             try {
                 const skillsRes = await callApi({
                     method: METHOD.GET,
-                    endpoint: intervieweeProfileEndPoints.GET_ALL_SKILLS.replace("{page}", "1").replace(
+                    endpoint: candidateProfileEndPoints.GET_ALL_SKILLS.replace("{page}", "1").replace(
                         "{pageSize}",
                         "100",
                     ),
@@ -134,14 +134,14 @@ function IntervieweeProfilePage() {
         fetchSkills();
     }, []);
 
-    const isInterviewee = user?.role === ROLES.INTERVIEWEE || String(user?.role).toLowerCase() === "interviewee";
+    const isCandidate = user?.role === ROLES.CANDIDATE || String(user?.role).toLowerCase() === "candidate";
     const isSelf = (!routeId && !slugProfileUrl) || String(routeId) === String(user?.id);
-    const canEdit = isInterviewee && isSelf;
+    const canEdit = isCandidate && isSelf;
 
     const handleSave = async () => {
         if (!canEdit) return;
         if (!profile) return;
-        const endpoint = intervieweeProfileEndPoints.UPDATE_INTERVIEWEE_PROFILE.replace("{id}", profile.id);
+        const endpoint = candidateProfileEndPoints.UPDATE_CANDIDATE_PROFILE.replace("{id}", profile.id);
         setSaving(true);
         setError(null);
         try {
@@ -500,4 +500,4 @@ function InfoRow({ icon, label, content }) {
     );
 }
 
-export default IntervieweeProfilePage;
+export default CandidateProfilePage;

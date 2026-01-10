@@ -92,7 +92,7 @@ function CodeEditorPanel({
                     flexShrink: 0,
                 }}
             >
-                {user?.role === ROLES.INTERVIEWEE ? (
+                {user?.role === ROLES.CANDIDATE ? (
                     <Select
                         value={language}
                         onChange={handleLanguageChange}
@@ -110,7 +110,7 @@ function CodeEditorPanel({
                         Language: <strong>{language.charAt(0).toUpperCase() + language.slice(1)}</strong>
                     </Typography>
                 )}
-                {user?.role === ROLES.INTERVIEWEE && (
+                {user?.role === ROLES.CANDIDATE && (
                     <>
                         <Tooltip title="Format Code (Shift+Alt+F)">
                             <IconButton onClick={formatCode} size="small">
