@@ -7,7 +7,22 @@ import { store } from "../../main";
 
 export const axiosInstance = axios.create({
     baseURL: BE_BASE_URL,
+    withCredentials: true
 });
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+}
 
 axiosInstance.interceptors.request.use(
     (config) => {
@@ -19,6 +34,64 @@ axiosInstance.interceptors.request.use(
     },
     (error) => Promise.reject(error),
 );
+
+axiosInstance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then(token => {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                    return axiosInstance(originalRequest);
+                }).catch(err => Promise.reject(err));
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const response = await axios.post(
+                    `${BE_BASE_URL}/account/refresh-token`,
+                    {},
+                    {
+                        withCredentials: true
+                    }
+                );
+
+                if (response.data.success) {
+                    const { accessToken } = response.data.data;
+                    
+                    localStorage.setItem("token", JSON.stringify(accessToken));
+                    
+                    originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                    
+                    processQueue(null, accessToken);
+                    
+                    return axiosInstance(originalRequest);
+                }
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                handleLogout();
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+    toast.error("Session expired. Please log in again.");
+};
 
 export const callApi = async ({ method, endpoint, arg, displaySuccessMessage = false, alertErrorMessage = false }) => {
     try {
@@ -43,12 +116,7 @@ export const callApi = async ({ method, endpoint, arg, displaySuccessMessage = f
             message: response.data?.message,
         };
     } catch (error) {
-        if (error.status == HTTP_RESPONSE_STATUS_CODE.UNAUTHORIZED) {
-            confirm("Unauthorized access. Please log in again.");
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            window.location.href = "/login";
-        } else if (error.status == HTTP_RESPONSE_STATUS_CODE.FORBIDDENT) {
+        if (error.status == HTTP_RESPONSE_STATUS_CODE.FORBIDDENT) {
             toast.error("You do not have permission to perform this action.");
             window.location.href = "/";
         } else if (alertErrorMessage) {
