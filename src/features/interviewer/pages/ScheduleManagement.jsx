@@ -214,7 +214,7 @@ const ScheduleManagement = () => {
             } else {
                 result = await dispatch(
                     addAvailability({
-                        interviewerId: userId,
+                        coachId: userId,
                         startTime,
                         endTime,
                     })
