@@ -4,6 +4,9 @@ import { useSelector } from 'react-redux';
 import './MainLayout.css';
 import { Container } from '@mui/material';
 import { ROLES } from '../../common/constants/common';
+import { callApi } from '../../common/utils/apiConnector';
+import { METHOD } from '../../common/constants/api';
+import { authEndPoints } from '../../features/auth/services/authApi';
 
 const MainLayout = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -11,9 +14,18 @@ const MainLayout = () => {
   const location = useLocation();
   const { userData } = useSelector((state) => state.auth || {});
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await callApi({
+        method: METHOD.POST,
+        endpoint: authEndPoints.LOGOUT_API
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.clear();
+      navigate('/login');
+    }
   };
 
   const menuItems = [

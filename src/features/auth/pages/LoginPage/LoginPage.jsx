@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import useLoading from "../../../../common/hooks/useLoading";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -13,6 +14,12 @@ import { ROLES } from "../../../../common/constants/common";
 function LoginPage() {
     const isLoading = useLoading();
     const dispatch = useDispatch();
+    
+    useEffect(() => {
+        localStorage.clear();
+        dispatch(setUserData(null));
+        dispatch(setToken(null));
+    }, [dispatch]);
     const {
         register,
         handleSubmit,
