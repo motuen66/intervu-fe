@@ -7,7 +7,7 @@ export const uploadImage = async (userId, file) => {
     if (!file) throw new Error("file is required");
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("profilePicture", file);
 
     const endpoint = firebaseEndPoints.UPLOAD_AVATAR.replace("{id}", userId);
 

@@ -658,8 +658,8 @@ function InterviewRoomPage() {
             clearTimeout(sendCodeTimeout.current);
         }
 
-        // Only the interviewee sends code changes automatically.
-        if (user?.role === ROLES.INTERVIEWEE) {
+        // Only the candidate sends code changes automatically.
+        if (user?.role === ROLES.CANDIDATE) {
             sendCodeTimeout.current = setTimeout(() => {
                 connRef.current.invoke("SendCode", roomId, value, language).catch(console.error);
             }, 300); // Send after 300ms of inactivity

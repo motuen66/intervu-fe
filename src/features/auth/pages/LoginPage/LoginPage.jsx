@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import useLoading from "../../../../common/hooks/useLoading";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -13,6 +14,12 @@ import { ROLES } from "../../../../common/constants/common";
 function LoginPage() {
     const isLoading = useLoading();
     const dispatch = useDispatch();
+    
+    useEffect(() => {
+        localStorage.clear();
+        dispatch(setUserData(null));
+        dispatch(setToken(null));
+    }, [dispatch]);
     const {
         register,
         handleSubmit,
@@ -158,7 +165,19 @@ function LoginPage() {
                                     </Button>
                                 )}
                             </div>
-                            
+                            <div style={{ textAlign: 'right', marginTop: '8px', marginBottom: '8px' }}>
+                                <Typography 
+                                    onClick={() => navigate('/forgot-password')}
+                                    style={{ fontSize: '13px', color: '#7B61FF', cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
+                                    sx={{
+                                        '&:hover': {
+                                            textDecoration: 'underline'
+                                        }
+                                    }}
+                                >
+                                    Forgot password?
+                                </Typography>
+                            </div>                            
                             <div style={{ textAlign: 'center', marginTop: '16px' }}>
                                 <Typography style={{ fontSize: '14px', color: 'rgba(0,0,0,0.6)' }}>
                                     Don't have an account?{' '}

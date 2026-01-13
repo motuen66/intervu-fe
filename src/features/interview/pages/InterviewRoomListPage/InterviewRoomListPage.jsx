@@ -43,8 +43,8 @@ function InterviewRoomListPage() {
     useEffect(() => {
         if (user) {
             fetchRooms();
-            // Check for pending feedbacks only if the user is an interviewee
-            if (user.role === ROLES.INTERVIEWEE) {
+            // Check for pending feedbacks only if the user is an candidate
+            if (user.role === ROLES.CANDIDATE) {
                 checkPendingFeedbacks();
             }
         }
@@ -109,7 +109,7 @@ function InterviewRoomListPage() {
                             Manage your scheduled and ongoing interviews
                         </Typography>
                     </Box>
-                    {user?.role === ROLES.INTERVIEWEE && (
+                    {user?.role === ROLES.CANDIDATE && (
                         <Button 
                             variant="outlined" 
                             onClick={() => handleOpenFeedbackModal('all')}
@@ -267,9 +267,9 @@ function RoomCard({ user, room }) {
     };
 
     const getParticipantLabel = (room) => {
-        if (user.role === ROLES.INTERVIEWEE) return `Interview with: ${room.interviewerId}`;
+        if (user.role === ROLES.CANDIDATE) return `Interview with: ${room.interviewerId}`;
         if (user.role === ROLES.INTERVIEWER) return `Interview with: ${room.studentId}`;
-        return `Interview with interviewer:${room.interviewerId} / interviewee:${room.intervieweeId}`;
+        return `Interview with interviewer:${room.interviewerId} / candidate:${room.candidateId}`;
     };
 
     const isPastInterview = room.status === INTERVIEW_ROOM_STATUS.COMPLETED;

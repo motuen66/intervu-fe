@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo} from "react";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../../service/interviewerProfileApi";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import {
     Avatar,
     Box,
@@ -34,7 +34,8 @@ function PublicInterviewerProfilePage() {
     const [error, setError] = useState(null);
     const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
-    const { id } = useParams();
+    const { slugProfileUrl } = useParams();
+
 
     // Handle payos callback params
     const [searchParams] = useSearchParams();
@@ -42,9 +43,10 @@ function PublicInterviewerProfilePage() {
     const paymentStatus = searchParams.get("status");
 
     useEffect(() => {
-        if (id) fetchProfile();
+        if (slugProfileUrl) fetchProfile();
+
         if (orderCode && paymentStatus === PAYOS_TRANSACTION_STATUS.PAID) checkTransactionStatus();
-    }, [id, orderCode, paymentStatus]);
+    }, [slugProfileUrl, orderCode, paymentStatus]);
 
     const checkTransactionStatus = async () => {
         const { data } = await callApi({
@@ -62,7 +64,7 @@ function PublicInterviewerProfilePage() {
             setError(null);
             const res = await callApi({
                 method: METHOD.GET,
-                endpoint: interviewerProfileEndPoints.VIEW_PROFILE_BY_INTERVIEWEE.replace("{id}", id),
+                endpoint: interviewerProfileEndPoints.VIEW_PROFILE_BY_CANDIDATE.replace("{slugProfileUrl}", slugProfileUrl),
             });
             setProfile(res.data);
         } catch (e) {
@@ -400,7 +402,7 @@ function PublicInterviewerProfilePage() {
             <BookingSlotDialog
                 open={bookingDialogOpen}
                 onClose={() => setBookingDialogOpen(false)}
-                interviewerId={id}
+                interviewerId={profile?.user?.id}
                 onSlotSelected={handleSlotSelected}
             />
         </Container>

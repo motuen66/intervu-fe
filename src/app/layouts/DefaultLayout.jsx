@@ -4,18 +4,29 @@ import useUser from "../../common/hooks/useUser";
 import { AppBar, Toolbar, Container, Typography, Box, CssBaseline, Button, Avatar } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { setToken, setUserData } from "../../common/store/authSlice";
+import { callApi } from "../../common/utils/apiConnector";
+import { METHOD } from "../../common/constants/api";
+import { authEndPoints } from "../../features/auth/services/authApi";
 
 const DefaultLayout = () => {
     const { userData } = useSelector((state) => state.auth || {});
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        dispatch(setUserData(null));
-        dispatch(setToken(null));
-        navigate("/");
+    const logout = async () => {
+        try {
+            await callApi({
+                method: METHOD.POST,
+                endpoint: authEndPoints.LOGOUT_API
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.clear();
+            dispatch(setUserData(null));
+            dispatch(setToken(null));
+            navigate("/");
+        }
     };
 
     return (

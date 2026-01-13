@@ -4,6 +4,9 @@ import { useSelector } from 'react-redux';
 import './MainLayout.css';
 import { Container } from '@mui/material';
 import { ROLES } from '../../common/constants/common';
+import { callApi } from '../../common/utils/apiConnector';
+import { METHOD } from '../../common/constants/api';
+import { authEndPoints } from '../../features/auth/services/authApi';
 
 const MainLayout = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -11,18 +14,27 @@ const MainLayout = () => {
   const location = useLocation();
   const { userData } = useSelector((state) => state.auth || {});
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await callApi({
+        method: METHOD.POST,
+        endpoint: authEndPoints.LOGOUT_API
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.clear();
+      navigate('/login');
+    }
   };
 
   const menuItems = [
-    // INTERVIEWEE
+    // CANDIDATE
     [
       { label: 'Home', path: '/home' },
       { label: 'Interview', path: '/interview' },
       { label: 'Messages', path: '#' },
-      { label: 'Profile', path: '/user/profile' },
+      { label: 'Settings', path: '/settings' },
     ],
     // INTERVIEWER
     [
@@ -39,7 +51,7 @@ const MainLayout = () => {
     ],
   ];
 
-  const currentMenuItems = menuItems[userData?.role] || menuItems[ROLES.INTERVIEWEE];
+  const currentMenuItems = menuItems[userData?.role] || menuItems[ROLES.CANDIDATE];
 
   const isMenuItemActive = (path) => location.pathname === path;
 
@@ -91,7 +103,7 @@ const MainLayout = () => {
             </div>
 
             {/* Upgrade Button */}
-            {userData?.role === ROLES.INTERVIEWEE && (
+            {userData?.role === ROLES.CANDIDATE && (
               <button className="upgrade-btn">Upgrade Pro</button>
             )}
 
@@ -145,7 +157,13 @@ const MainLayout = () => {
                   <button
                     className="dropdown-item"
                     onClick={() => {
-                      navigate('/profile');
+                      const role = userData?.role;
+                      const path = role === ROLES.INTERVIEWER
+                        ? '/interviewer/profile'
+                        : role === ROLES.CANDIDATE
+                          ? '/candidate/profile'
+                          : '/user/profile';
+                      navigate(path);
                       setIsUserDropdownOpen(false);
                     }}
                   >

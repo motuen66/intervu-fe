@@ -19,6 +19,7 @@ function InterviewerCard({
   const fullName = user?.fullName || profile.fullName || user?.name || profile.name;
   const email = user?.email || profile.email;
   const profilePicture = user?.profilePicture || profile.profilePicture;
+  const slugProfileUrl = user?.slugProfileUrl;
 
   const displayName = fullName || email?.split('@')[0] || 'Anonymous User';
 
@@ -50,9 +51,12 @@ function InterviewerCard({
   // Rating data (use real data or default)
   const rating = interviewer.rating || profile.rating || 5.0;
   const sessionsCount = interviewer.sessionsCount || profile.sessionsCount || 0;
+;
 
   const handleBookNow = () => {
-    navigate(`/interviewer/${id}`);
+    if (!slugProfileUrl) return;
+    navigate(`/profile/${slugProfileUrl}`, 
+    );
   };
 
   return (
