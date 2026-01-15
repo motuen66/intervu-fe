@@ -78,22 +78,24 @@ function PublicInterviewerProfilePage() {
     const handleSlotSelected = async (slot) => {
         setSelectedSlot(slot);
 
-        console.log("Selected slot:", slot);
         const returnUrl = window.location.origin + window.location.pathname;
         const { data } = await callApi({
             method: METHOD.POST,
             endpoint: interviewerProfileEndPoints.BOOK_INTERVIEW,
             arg: {
-                interviewerId: slot.interviewerId,
-                interviewerAvailabilityId: slot.id,
+                coachId: slot.coachId,
+                coachAvailabilityId: slot.id,
                 returnUrl: returnUrl,
             },
+            displaySuccessMessage: true,
+            alertErrorMessage: true
         });
 
         if (data && data.checkOutUrl) {
             window.location.href = data.checkOutUrl;
+        } else if (data.isPaid) {
+            toast.success("Interview booked successfully, your payment has been processed.");
         }
-        console.log("checkOutUrl:", data.checkOutUrl);
     };
 
     const avatarLetter = useMemo(() => profile?.user?.fullName?.trim()?.charAt(0)?.toUpperCase() || "?", [profile]);

@@ -107,8 +107,8 @@ export const callApi = async ({ method, endpoint, arg, displaySuccessMessage = f
         if (!response.data.success) {
             throw new Error(response.data.message);
         }
-        if (displaySuccessMessage) {
-            toast.success(response.data.message || "Successful");
+        if (displaySuccessMessage && response.data.message) {
+            toast.success(response.data.message);
         }
         return {
             success: response.data?.success,
