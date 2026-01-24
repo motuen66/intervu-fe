@@ -39,6 +39,7 @@ import {
 } from "@mui/icons-material";
 import { CameraAlt as CameraIcon } from "@mui/icons-material";
 import { uploadImage } from "../../../../firebase/service/storage";
+import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
@@ -218,8 +219,10 @@ function InterviewerProfilePage() {
                 setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl }, profilePicture: data.profilePictureUrl }));
                 setAvatarKey(Date.now());
             }
+            toast.success("Avatar updated successfully.");
             
         } catch (err) {
+            toast.error("Failed to update avatar.");
             console.error(err);
             setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
         } finally {
@@ -293,7 +296,9 @@ function InterviewerProfilePage() {
                 setSaveSuccess(true);
                 setProfile((prev) => ({ ...prev, ...payload }));
                 dispatch(setUserData(res.data.user));
+                toast.success("Profile updated successfully!");
             } else {
+                toast.error("Failed to save profile.");
                 setError(res.message || "Failed to save profile.");
             }
         } catch (err) {
@@ -326,11 +331,11 @@ function InterviewerProfilePage() {
 
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1100, mx: "auto" }}>
-            <Fade in={saveSuccess}>
+            {/* <Fade in={saveSuccess}>
                 <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSaveSuccess(false)}>
                     Profile updated successfully!
                 </Alert>
-            </Fade>
+            </Fade> */}
 
             <Card
                 elevation={0}
