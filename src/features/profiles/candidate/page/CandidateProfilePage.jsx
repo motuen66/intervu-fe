@@ -42,6 +42,7 @@ import ConfirmModal from "../../../../common/components/ConfirmModal";
 import UploadCv from "../../components/UploadCv.jsx";
 
 import { ROLES } from "../../../../common/constants/common";
+import toast from "react-hot-toast";
 
 function CandidateProfilePage() {
     const { id: routeId, slugProfileUrl, profileUrl } = useParams();
@@ -167,7 +168,9 @@ function CandidateProfilePage() {
                 setEditMode(false);
                 setSaveSuccess(true);
                 setProfile((prev) => ({ ...prev, ...payload }));
+                toast.success("Profile updated successfully!");
             } else {
+                toast.error("Failed to save profile.");
                 setError(res.message || "Failed to save profile.");
             }
         } catch (err) {
@@ -191,7 +194,9 @@ function CandidateProfilePage() {
                 setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl }, profilePicture: data.profilePictureUrl }));
                 setAvatarKey(Date.now());
             }
+            toast.success("Avatar updated successfully.");
         } catch (err) {
+            toast.error("Failed to update avatar.");
             console.error(err);
             setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
         } finally {
@@ -239,11 +244,11 @@ function CandidateProfilePage() {
 
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1100, mx: "auto" }}>
-            <Fade in={saveSuccess}>
+            {/* <Fade in={saveSuccess}>
                 <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSaveSuccess(false)}>
                     Profile updated successfully!
                 </Alert>
-            </Fade>
+            </Fade> */}
 
             <Card
                 elevation={0}
