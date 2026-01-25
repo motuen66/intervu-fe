@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
-import { interviewerProfileEndPoints } from "../service/interviewerProfileApi";
+import { interviewerProfileEndPoints } from "../service/coachProfileApi";
 import {
     Avatar,
     Box,

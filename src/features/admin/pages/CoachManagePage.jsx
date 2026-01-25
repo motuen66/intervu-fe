@@ -1,5 +1,5 @@
 import { useState } from "react";
-import CreateInterviewerProfileDialog from "../../profiles/interviewer/page/CreateInterviewerProfileDialog";
+import CreateInterviewerProfileDialog from "../../profiles/coach/page/CreateInterviewerProfileDialog";
 import { Button, Typography } from "@mui/material";
 
 function InterviewerManagePage() {

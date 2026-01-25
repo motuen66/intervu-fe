@@ -1,6 +1,6 @@
 import { Avatar, Dialog, Grid, TextField, Typography, Button } from "@mui/material";
 import { useMemo, useState } from "react";
-import { interviewerProfileEndPoints } from "../service/interviewerProfileApi";
+import { interviewerProfileEndPoints } from "../service/coachProfileApi";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 

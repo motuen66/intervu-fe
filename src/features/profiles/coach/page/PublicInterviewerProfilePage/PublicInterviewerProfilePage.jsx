@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo} from "react";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
-import { interviewerProfileEndPoints } from "../../service/interviewerProfileApi";
+import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
 import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import {
     Avatar,
