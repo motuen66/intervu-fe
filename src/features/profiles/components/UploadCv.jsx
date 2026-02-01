@@ -17,8 +17,10 @@ import { callApi } from "../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../common/constants/api.js";
 import { profileEndPoints } from "../../profile/services/profileApi.js";
 import useUser from "../../../common/hooks/useUser.jsx";
+import { candidateProfileEndPoints } from "../candidate/service/candidateProfileApi.js";
 
-const UploadCv = ({ cvUrl }) => {
+const UploadCv = ({ profile }) => {
+    const [cvUrl, setCvUrl] = useState(profile.cvUrl);
     const theme = useTheme();
     const [cvFile, setCvFile] = useState(null);
     const [cvContent, setCvContent] = useState(cvUrl || '');
@@ -78,6 +80,35 @@ const UploadCv = ({ cvUrl }) => {
         }
     };
 
+    const handleDeleteCv = async () => {
+        if (!user?.id) return;
+
+        setIsLoading(true);
+        try {
+            const payload = {
+                id: profile.id,
+                fullName: profile.fullName || "",
+                email: profile.email || "",
+                cvUrl: "",
+            };
+            const response = await callApi({
+                method: METHOD.PUT,
+                endpoint: candidateProfileEndPoints.UPDATE_CANDIDATE_PROFILE.replace("{id}", profile.id),
+                arg: payload,
+            });
+
+            if (response.success) {
+                setCvContent('');
+                setCvFile(null);
+                setIsUploadMode(true);
+            }
+        } catch (error) {
+            console.error('Error deleting CV:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleRemoveFile = () => {
         setCvFile(null);
     };
@@ -112,23 +143,67 @@ const UploadCv = ({ cvUrl }) => {
             </Typography>
 
             {showSuccessCard ? (
-                <Box
+                <Paper
+                    variant="outlined"
                     sx={{
-                        p: 4,
-                        textAlign: 'center',
-                        backgroundColor: theme.palette.background.default,
+                        p: 3,
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 2,
                         borderRadius: '12px',
-                        border: `1px solid ${theme.palette.divider}`
+                        borderColor: theme.palette.divider,
+                        backgroundColor: alpha(theme.palette.primary.main, 0.02)
                     }}
                 >
-                    {/*<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: theme.palette.success.main }}>*/}
-                    {/*    CV Uploaded Successfully*/}
-                    {/*</Typography>*/}
-                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+                        <Box
+                            sx={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: '12px',
+                                backgroundColor: alpha(theme.palette.error.main, 0.1),
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <PictureAsPdfIcon sx={{ color: theme.palette.error.main, fontSize: 24 }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                                Current CV
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                                PDF Document • Uploaded
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Button
                             variant="outlined"
                             onClick={handleViewCv}
                             startIcon={<VisibilityIcon />}
+                            sx={{
+                                color: theme.palette.primary.main,
+                                "&:hover": {
+                                    borderColor: theme.palette.primary.dark,
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                                },
+                                textTransform: "none",
+                                borderRadius: '8px',
+                            }}
+                        >
+                            View
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={handleStartUpload}
+                            disabled={isLoading}
+                            startIcon={<CloudUploadIcon />}
                             sx={{
                                 borderColor: theme.palette.primary.main,
                                 color: theme.palette.primary.main,
@@ -140,26 +215,28 @@ const UploadCv = ({ cvUrl }) => {
                                 borderRadius: '8px',
                             }}
                         >
-                            View CV
+                            Upload New
                         </Button>
                         <Button
-                            variant="contained"
-                            onClick={handleStartUpload}
-                            startIcon={<CloudUploadIcon />}
+                            variant="outlined"
+                            onClick={handleDeleteCv}
+                            disabled={isLoading}
                             sx={{
-                                background: theme.palette.primary.main,
+                                borderColor: theme.palette.error.main,
+                                color: theme.palette.error.main,
+                                minWidth: 0,
+                                px: 1.5,
                                 "&:hover": {
-                                    background: theme.palette.primary.dark,
+                                    backgroundColor: alpha(theme.palette.error.main, 0.04),
+                                    borderColor: theme.palette.error.dark,
                                 },
-                                textTransform: "none",
                                 borderRadius: '8px',
-                                boxShadow: 'none',
                             }}
                         >
-                            Upload New CV
+                            <DeleteOutlineIcon />
                         </Button>
                     </Box>
-                </Box>
+                </Paper>
             ) : (
                 <>
                     {!cvFile ? (
