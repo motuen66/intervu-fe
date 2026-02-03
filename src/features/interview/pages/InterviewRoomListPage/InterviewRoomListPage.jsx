@@ -267,9 +267,9 @@ function RoomCard({ user, room }) {
     };
 
     const getParticipantLabel = (room) => {
-        if (user.role === ROLES.CANDIDATE) return `Interview with: ${room.interviewerId}`;
-        if (user.role === ROLES.INTERVIEWER) return `Interview with: ${room.studentId}`;
-        return `Interview with interviewer:${room.interviewerId} / candidate:${room.candidateId}`;
+        if (user.role === ROLES.CANDIDATE) return `Interview with: ${room.coachId}`;
+        if (user.role === ROLES.INTERVIEWER) return `Interview with: ${room.candidateId}`;
+        return `Interview with interviewer:${room.coachId} / candidate:${room.candidateId}`;
     };
 
     const isPastInterview = room.status === INTERVIEW_ROOM_STATUS.COMPLETED;

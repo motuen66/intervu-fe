@@ -156,7 +156,7 @@ function InterviewRoomPage() {
                 endpoint: `/interviewroom`,
             });
 
-            const room = res.data.find(item => item.id === Number(roomId));
+            const room = res.data.find(item => item.id === roomId);
             if (room.status !== INTERVIEW_ROOM_STATUS.ON_GOING &&
                 room.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
                 setError("This interview is not in progress. You will be redirected.");
