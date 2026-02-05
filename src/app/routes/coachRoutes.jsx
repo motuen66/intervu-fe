@@ -1,5 +1,5 @@
 import ScheduleManagement from "../../features/coach/pages/ScheduleManagement.jsx";
-import InterviewerProfilePage from "../../features/profiles/coach/page/InterviewerProfilePage.js";
+import InterviewerProfilePage from "../../features/profiles/coach/page/InterviewerProfilePage.jsx";
 import CandidateProfilePage from "../../features/profiles/candidate/page/CandidateProfilePage.jsx";
 
 export const interviewerRoutes = [
