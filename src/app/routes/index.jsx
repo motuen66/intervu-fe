@@ -1,15 +1,15 @@
 import MainLayout from "../layouts/MainLayout";
 import { adminRoutes } from "./adminRoutes";
 import { authRoutes } from "./authRoutes";
-import { interviewerRoutes } from "./interviewerRoutes";
+import { interviewerRoutes } from "./coachRoutes.jsx";
 import { candidateRoutes } from "./candidateRoutes.jsx";
 import { Navigate } from "react-router-dom";
-import PublicInterviewerProfilePage from "../../features/profiles/interviewer/page/PublicInterviewerProfilePage/PublicInterviewerProfilePage";
+import PublicInterviewerProfilePage from "../../features/profiles/coach/page/PublicInterviewerProfilePage/PublicInterviewerProfilePage.js";
 import EmptyLayout from "../layouts/EmptyLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
 import HomePage from "../../features/home/pages/HomePage";
-import InterviewerProfilePage from "../../features/profiles/interviewer/page/InterviewerProfilePage";
+import InterviewerProfilePage from "../../features/profiles/coach/page/InterviewerProfilePage.js";
 import CandidateProfilePage from "../../features/profiles/candidate/page/CandidateProfilePage.jsx";
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
