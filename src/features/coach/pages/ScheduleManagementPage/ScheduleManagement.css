@@ -32,9 +32,9 @@
 
 /* Buttons - Match Intervu theme (Outlined style by default) */
 :global(.fc .fc-button-primary) {
-    background-color: #FFFFFF !important;
-    border: 1.5px solid #E5E7EB !important;
-    color: #374151 !important;
+    background-color: #4F46E5 !important;
+    border: 1.5px solid #4F46E5 !important;
+    color: #FFFFFF !important;
     font-weight: 600 !important;
     text-transform: none !important;
     font-size: 0.875rem !important;
@@ -46,9 +46,9 @@
 }
 
 :global(.fc .fc-button-primary:hover:not(:disabled)) {
-    background-color: #F9FAFB !important;
+    background-color: #4F46E5 !important;
     border-color: #4F46E5 !important;
-    color: #4F46E5 !important;
+    color: #FFFFFF !important;
     box-shadow: none !important;
 }
 
@@ -61,8 +61,8 @@
 }
 
 :global(.fc .fc-button-primary:not(:disabled).fc-button-active:hover) {
-    background-color: #4338CA !important;
-    border-color: #4338CA !important;
+    background-color: #4F46E5 !important;
+    border-color: #4F46E5 !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
 }
@@ -126,7 +126,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Past Events - Disabled Style with Striped Pattern */
+/* Past Events - Disabled Style with Striped Pattern */                         
 :global(.fc-event.past-event) {
     opacity: 0.5;
     background-color: #9CA3AF !important; /* gray-400 */
@@ -211,5 +211,44 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    background: #4F46E5;
+}
+
+/* Calendar toolbar and button styles moved from inline sx in ScheduleManagement.jsx */
+:global(.fc .fc-button) {
+    all: unset;
+    display: inline-block;
+    background-color: #4F46E5;
+    border: 1.5px solid #4F46E5;
+    color: #FFFFFF;
+    font-weight: 600;
+    text-transform: none;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+    cursor: pointer;
+    line-height: normal;
+    text-align: center;
+    vertical-align: middle;
+    user-select: none;
+}
+
+:global(.fc .fc-button:hover) {
+    background-color: #4338CA;
+    border-color: #4338CA;
+    color: #FFFFFF;
+}
+
+:global(.fc .fc-button-active) {
+    background-color: #4338CA !important;
+    border-color: #4338CA !important;
+    color: #FFFFFF !important;
+}
+
+:global(.fc .fc-toolbar-title) {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #4F46E5;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
 }

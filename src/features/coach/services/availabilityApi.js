@@ -27,11 +27,11 @@ export const getAvailabilitiesByMonth = async (interviewerId, month, year) => {
             // This prevents JavaScript from interpreting them as local time
             const normalizedData = data.data.map(item => ({
                 ...item,
-                startTime: item.startTime && !item.startTime.endsWith('Z') 
-                    ? item.startTime + 'Z' 
+                startTime: item.startTime && !item.startTime.endsWith('Z')
+                    ? item.startTime + 'Z'
                     : item.startTime,
-                endTime: item.endTime && !item.endTime.endsWith('Z') 
-                    ? item.endTime + 'Z' 
+                endTime: item.endTime && !item.endTime.endsWith('Z')
+                    ? item.endTime + 'Z'
                     : item.endTime,
             }));
             console.log("Normalized availabilities (with Z suffix):", normalizedData);

@@ -29,7 +29,7 @@ export const routes = [
     // Profile route - accessible by all authenticated users
     {
         element: (
-            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.COACH, ROLES.ADMIN]}>
                 <MainLayout />
             </ProtectedRoute>
         ),
