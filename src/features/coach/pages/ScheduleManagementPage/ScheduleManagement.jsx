@@ -159,14 +159,12 @@ const ScheduleManagement = () => {
                     : "",
             duplicateDates: []
         });
-
         setOpenModal(true);
     };
 
 
     const handleDeleteClick = (id) => {
         setSelectedItem(id);
-        // setConfirmType("delete");
         setConfirmOpen(true);
     };
 
@@ -183,7 +181,6 @@ const ScheduleManagement = () => {
         const start = selectInfo.start;
         const end = selectInfo.end;
 
-        // Prevent creating in the past
         if (start < new Date()) {
             toast.error("Cannot create availability in the past");
             selectInfo.view.calendar.unselect();
@@ -294,14 +291,6 @@ const ScheduleManagement = () => {
 
             if (editAvailability.fulfilled.match(result)) {
                 toast.success("Availability updated successfully");
-                
-                // Refresh the calendar data
-                const month = currentDate.getMonth() + 1;
-                const year = currentDate.getFullYear();
-                const refetch = dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
-                if (refetch && typeof refetch.then === 'function') {
-                    refetch.then(r => console.log('refetch availabilities result:', r)).catch(e => console.error('refetch availabilities error:', e));
-                }
             } else {
                 // Revert the change on error
                 info.revert();
@@ -417,6 +406,16 @@ const ScheduleManagement = () => {
 
                 toast.dismiss(loadingToast);
                 toast.success("Availability updated and duplicated successfully");
+
+                const month = currentDate.getMonth() + 1;
+                const year = currentDate.getFullYear();
+
+                await dispatch(fetchAvailabilitiesByMonth({
+                    interviewerId: userId,
+                    month,
+                    year
+                }));
+
             } else {
                 // Create all slots
                 for (const p of payloads) {
@@ -426,16 +425,20 @@ const ScheduleManagement = () => {
 
                 toast.dismiss(loadingToast);
                 toast.success("Availability slots created successfully");
+
+                const month = currentDate.getMonth() + 1;
+                const year = currentDate.getFullYear();
+
+                await dispatch(fetchAvailabilitiesByMonth({
+                    interviewerId: userId,
+                    month,
+                    year
+                }));
+
             }
 
             setOpenModal(false);
             setEditingId(null);
-            const month = currentDate.getMonth() + 1;
-            const year = currentDate.getFullYear();
-            const refetch = dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
-            if (refetch && typeof refetch.then === 'function') {
-                refetch.then(r => console.log('refetch availabilities result:', r)).catch(e => console.error('refetch availabilities error:', e));
-            }
 
         } catch (err) {
             toast.dismiss(loadingToast);
@@ -487,6 +490,7 @@ const ScheduleManagement = () => {
             backgroundColor,
             borderColor,
             classNames,
+            editable: !isPast && !isBooked,
             extendedProps: {
                 isPast,
                 isBooked: isBooked,
@@ -508,10 +512,6 @@ const ScheduleManagement = () => {
                 const resultAction = await dispatch(removeAvailability(selectedItem));
                 if (removeAvailability.fulfilled.match(resultAction)) {
                     toast.success("Availability slot deleted");
-                    // Reload availabilities
-                    const month = currentDate.getMonth() + 1;
-                    const year = currentDate.getFullYear();
-                    dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
                 } else {
                     showError(resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability");
                 }
@@ -588,80 +588,87 @@ const ScheduleManagement = () => {
                                 overflow: "hidden",
                             }}
                         >
-                            <Box sx={{ p: 3 }}>
-                                {loading ? (
-                                    <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                            <Box sx={{ p: 3, position: "relative" }}>
+                                {loading && (
+                                    <Box
+                                        sx={{
+                                            position: "absolute",
+                                            top: 0, left: 0, right: 0, bottom: 0,
+                                            display: "flex", justifyContent: "center", alignItems: "center",
+                                            bgcolor: "rgba(255,255,255,0.4)",
+                                            zIndex: 2,
+                                            borderRadius: "12px",
+                                        }}
+                                    >
                                         <CircularProgress />
                                     </Box>
-                                ) : (
-                                    <FullCalendar
-                                        ref={calendarRef}
-                                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                        initialView="timeGridWeek"
-                                        headerToolbar={{
-                                            left: "prev,next today",
-                                            center: "title",
-                                            right: "dayGridMonth,timeGridWeek,timeGridDay",
-                                        }}
-                                        buttonText={{
-                                            today: "Today",
-                                            month: "Month",
-                                            week: "Week",
-                                            day: "Day",
-                                        }}
-                                        events={calendarEvents}
-                                        eventClick={(info) => {
-                                            if (info.event.extendedProps.isPast) {
-                                                toast.error("Cannot edit past availability slots");
-                                                return;
-                                            }
-
-                                            // Candidate profiles are not shown on this page anymore
-
-                                            const avail = availabilities.find(
-                                                (a) => String(a.id) === String(info.event.id)
-                                            );
-                                            if (avail) {
-                                                handleEditClick(avail);
-                                            }
-                                        }}
-                                        selectable={true}
-                                        selectMirror={true}
-                                        select={handleDateSelect}
-                                        editable={true}
-                                        eventDrop={handleEventChange}
-                                        eventResize={handleEventChange}
-                                        eventResizableFromStart={true}
-                                        eventDurationEditable={true}
-                                        snapDuration="00:15:00"
-                                        selectOverlap={false}
-                                        eventOverlap={false}
-                                        eventAllow={(dropInfo, draggedEvent) => {
-                                            // Prevent dragging past events
-                                            if (draggedEvent.extendedProps.isPast) {
-                                                return false;
-                                            }
-                                            // Prevent dragging booked slots
-                                            if (draggedEvent.extendedProps.isBooked) {
-                                                return false;
-                                            }
-                                            return true;
-                                        }}
-                                        datesSet={(info) => {
-                                            setCurrentDate(info.start);
-                                            // Update selected date based on current view
-                                            const calendarApi = calendarRef.current?.getApi();
-                                            if (calendarApi) {
-                                                const view = calendarApi.view;
-                                                if (view.type === 'timeGridDay') {
-                                                    setSelectedDate(view.currentStart);
-                                                }
-                                            }
-                                        }}
-                                        height="auto"
-                                        timeZone="UTC"
-                                    />
                                 )}
+                                <FullCalendar
+                                    ref={calendarRef}
+                                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                                    initialView="timeGridWeek"
+                                    headerToolbar={{
+                                        left: "prev,next today",
+                                        center: "title",
+                                        right: "dayGridMonth,timeGridWeek,timeGridDay",
+                                    }}
+                                    buttonText={{
+                                        today: "Today",
+                                        month: "Month",
+                                        week: "Week",
+                                        day: "Day",
+                                    }}
+                                    events={calendarEvents}
+                                    eventClick={(info) => {
+                                        if (info.event.extendedProps.isPast) {
+                                            toast.error("Cannot edit past availability slots");
+                                            return;
+                                        }
+
+
+                                        const avail = availabilities.find(
+                                            (a) => String(a.id) === String(info.event.id)
+                                        );
+                                        if (avail) {
+                                            handleEditClick(avail);
+                                        }
+                                    }}
+                                    selectable={true}
+                                    selectMirror={true}
+                                    select={handleDateSelect}
+                                    editable={true}
+                                    eventDrop={handleEventChange}
+                                    eventResize={handleEventChange}
+                                    eventResizableFromStart={true}
+                                    eventDurationEditable={true}
+                                    snapDuration="00:15:00"
+                                    selectOverlap={false}
+                                    eventOverlap={false}
+                                    eventAllow={(dropInfo, draggedEvent) => {
+                                        // Prevent dragging past events
+                                        if (draggedEvent.extendedProps.isPast) {
+                                            return false;
+                                        }
+                                        // Prevent dragging booked slots
+                                        if (draggedEvent.extendedProps.isBooked) {
+                                            return false;
+                                        }
+                                        return true;
+                                    }}
+                                    datesSet={(info) => {
+                                        setCurrentDate(info.start);
+                                        // Update selected date based on current view
+                                        const calendarApi = calendarRef.current?.getApi();
+                                        if (calendarApi) {
+                                            const view = calendarApi.view;
+                                            if (view.type === 'timeGridDay') {
+                                                setSelectedDate(view.currentStart);
+                                            }
+                                        }
+                                    }}
+                                    height="auto"
+                                    timeZone="UTC"
+                                />
                             </Box>
                         </Card>
 
