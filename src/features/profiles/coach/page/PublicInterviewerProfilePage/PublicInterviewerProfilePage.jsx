@@ -84,8 +84,8 @@ function PublicInterviewerProfilePage() {
             method: METHOD.POST,
             endpoint: interviewerProfileEndPoints.BOOK_INTERVIEW,
             arg: {
-                interviewerId: slot.interviewerId,
-                interviewerAvailabilityId: slot.id,
+                coachId: slot.coachId,
+                coachAvailabilityId: slot.id,
                 returnUrl: returnUrl,
             },
         });
