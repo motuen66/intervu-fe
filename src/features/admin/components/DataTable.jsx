@@ -28,7 +28,12 @@ export default function DataTable({
     onPageChange,
     onPageSizeChange,
     loading = false,
-    actions = true
+    actions = true,
+    onEdit,
+    onDelete,
+    onView,
+    showIndex = false,
+    showHeader = true
 }) {
     const handleChangePage = (event, newPage) => {
         onPageChange?.(newPage);
@@ -42,10 +47,13 @@ export default function DataTable({
     const renderCellValue = (row, column) => {
         const value = row[column.field];
         
+        // Get display value (after render function if exists)
+        const displayValue = column.render ? column.render(value, row) : value;
+        
         if (column.type === 'chip') {
             return (
                 <Chip 
-                    label={value} 
+                    label={displayValue} 
                     size="small"
                     sx={{
                         background: column.chipColor?.(value) || 'rgba(123,97,255,0.2)',
@@ -62,11 +70,14 @@ export default function DataTable({
         }
         
         if (column.type === 'date') {
-            return new Date(value).toLocaleDateString('vi-VN');
+            if (!value) return '-';
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return '-';
+            return date.toLocaleDateString('vi-VN');
         }
         
         if (column.render) {
-            return column.render(value, row);
+            return displayValue;
         }
         
         return value || '-';
@@ -75,34 +86,40 @@ export default function DataTable({
     return (
         <Paper 
             sx={{ 
-                background: 'rgba(255,255,255,0.95)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(123,97,255,0.2)',
+                background: '#ffffff',
+                border: '1px solid #eef0f5',
                 borderRadius: '12px',
                 overflow: 'hidden',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
+                boxShadow: '0 8px 20px rgba(17,24,39,0.04)'
             }}
         >
-            <Box sx={{ p: 3, borderBottom: '1px solid rgba(123,97,255,0.15)' }}>
-                <Typography variant="h6" sx={{ color: '#1a1a2e', fontWeight: 700 }}>
-                    {title}
-                </Typography>
-            </Box>
+            {showHeader && (
+                <Box sx={{ p: 2, borderBottom: '1px solid #eef0f5' }}>
+                    <Typography variant="h6" sx={{ color: '#111827', fontWeight: 700, fontSize: '14px' }}>
+                        {title}
+                    </Typography>
+                </Box>
+            )}
             
             <TableContainer>
                 <Table>
                     <TableHead>
-                        <TableRow sx={{ background: 'rgba(123,97,255,0.08)' }}>
+                        <TableRow sx={{ background: '#f8fafc' }}>
+                            {showIndex && (
+                                <TableCell sx={{ borderBottom: '1px solid #eef0f5', width: 56, color: '#94a3b8', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                                    STT
+                                </TableCell>
+                            )}
                             {columns.map((column) => (
                                 <TableCell 
                                     key={column.field}
                                     sx={{ 
-                                        color: 'rgba(0,0,0,0.7)',
+                                        color: '#94a3b8',
                                         fontWeight: 700,
-                                        fontSize: '12px',
+                                        fontSize: '10px',
                                         textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                        borderBottom: '1px solid rgba(123,97,255,0.15)'
+                                        letterSpacing: '0.6px',
+                                        borderBottom: '1px solid #eef0f5'
                                     }}
                                 >
                                     {column.headerName}
@@ -111,11 +128,11 @@ export default function DataTable({
                             {actions && (
                                 <TableCell 
                                     sx={{ 
-                                        color: 'rgba(0,0,0,0.7)',
+                                        color: '#94a3b8',
                                         fontWeight: 700,
-                                        fontSize: '12px',
+                                        fontSize: '10px',
                                         textTransform: 'uppercase',
-                                        borderBottom: '1px solid rgba(123,97,255,0.15)'
+                                        borderBottom: '1px solid #eef0f5'
                                     }}
                                 >
                                     Actions
@@ -127,7 +144,7 @@ export default function DataTable({
                         {loading ? (
                             <TableRow>
                                 <TableCell 
-                                    colSpan={columns.length + (actions ? 1 : 0)} 
+                                    colSpan={columns.length + (actions ? 1 : 0) + (showIndex ? 1 : 0)} 
                                     sx={{ 
                                         textAlign: 'center', 
                                         py: 8,
@@ -140,7 +157,7 @@ export default function DataTable({
                         ) : !Array.isArray(data) || data.length === 0 ? (
                             <TableRow>
                                 <TableCell 
-                                    colSpan={columns.length + (actions ? 1 : 0)} 
+                                    colSpan={columns.length + (actions ? 1 : 0) + (showIndex ? 1 : 0)} 
                                     sx={{ 
                                         textAlign: 'center', 
                                         py: 8,
@@ -157,51 +174,66 @@ export default function DataTable({
                                     key={row.id || index}
                                     sx={{
                                         '&:hover': {
-                                            background: 'rgba(123,97,255,0.08)'
+                                            background: '#f8fafc'
                                         }
                                     }}
                                 >
+                                    {showIndex && (
+                                        <TableCell sx={{ borderBottom: '1px solid #eef0f5', color: '#94a3b8', fontSize: '12px' }}>
+                                            {index + 1}
+                                        </TableCell>
+                                    )}
                                     {columns.map((column) => (
                                         <TableCell 
                                             key={column.field}
                                             sx={{ 
-                                                color: '#1a1a2e',
-                                                borderBottom: '1px solid rgba(123,97,255,0.08)'
+                                                color: '#1f2937',
+                                                fontSize: '12px',
+                                                borderBottom: '1px solid #eef0f5'
                                             }}
                                         >
                                             {renderCellValue(row, column)}
                                         </TableCell>
                                     ))}
                                     {actions && (
-                                        <TableCell sx={{ borderBottom: '1px solid rgba(123,97,255,0.08)' }}>
+                                        <TableCell sx={{ borderBottom: '1px solid #eef0f5' }}>
                                             <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                                <IconButton 
-                                                    size="small"
-                                                    sx={{ 
-                                                        color: '#7B61FF',
-                                                        '&:hover': { background: 'rgba(123,97,255,0.1)' }
-                                                    }}
-                                                >
-                                                    <VisibilityIcon fontSize="small" />
-                                                </IconButton>
-                                                <IconButton 
-                                                    size="small"
-                                                    sx={{ 
-                                                        color: '#4ade80',
-                                                        '&:hover': { background: 'rgba(74,222,128,0.1)' }
-                                                    }}
-                                                >
-                                                    <EditIcon fontSize="small" />
-                                                </IconButton>
-                                                <IconButton 
-                                                    size="small"
-                                                    sx={{ 
-                                                        color: '#f87171',
-                                                        '&:hover': { background: 'rgba(248,113,113,0.1)' }
-                                                    }}
-                                                >
-                                                    <DeleteIcon fontSize="small" />
-                                                </IconButton>
+                                                {onView && (
+                                                    <IconButton 
+                                                        size="small"
+                                                        onClick={() => onView(row)}
+                                                        sx={{ 
+                                                            color: '#64748b',
+                                                            '&:hover': { background: '#f1f5f9' }
+                                                        }}
+                                                    >
+                                                        <VisibilityIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
+                                                {onEdit && (
+                                                    <IconButton 
+                                                        size="small"
+                                                        onClick={() => onEdit(row)}
+                                                        sx={{ 
+                                                            color: '#22c55e',
+                                                            '&:hover': { background: '#ecfdf3' }
+                                                        }}
+                                                    >
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
+                                                {onDelete && (
+                                                    <IconButton 
+                                                        size="small"
+                                                        onClick={() => onDelete(row)}
+                                                        sx={{ 
+                                                            color: '#ef4444',
+                                                            '&:hover': { background: '#fef2f2' }
+                                                        }}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
                                             </Box>
                                         </TableCell>
                                     )}
@@ -221,13 +253,16 @@ export default function DataTable({
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 25, 50]}
                 sx={{
-                    color: 'rgba(0,0,0,0.7)',
-                    borderTop: '1px solid rgba(123,97,255,0.15)',
+                    color: '#64748b',
+                    borderTop: '1px solid #eef0f5',
+                    '.MuiTablePagination-toolbar': {
+                        paddingRight: 12
+                    },
                     '.MuiTablePagination-select': {
-                        color: '#1a1a2e'
+                        color: '#1f2937'
                     },
                     '.MuiTablePagination-selectIcon': {
-                        color: 'rgba(0,0,0,0.7)'
+                        color: '#64748b'
                     }
                 }}
             />

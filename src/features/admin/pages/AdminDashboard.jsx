@@ -3,11 +3,18 @@ import {
     Box, 
     Container, 
     Grid, 
-    Typography, 
-    Tabs, 
-    Tab,
-    CircularProgress 
+    CircularProgress,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import PeopleIcon from '@mui/icons-material/People';
 import BusinessIcon from '@mui/icons-material/Business';
 import PersonIcon from '@mui/icons-material/Person';
@@ -16,14 +23,26 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import StarIcon from '@mui/icons-material/Star';
 import StatsCard from '../components/StatsCard';
 import DataTable from '../components/DataTable';
+import UserFormModal from '../components/UserFormModal';
+import toast from 'react-hot-toast';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
+import './AdminDashboard.css';
 
 export default function AdminDashboard() {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [stats, setStats] = useState(null);
     const [activeTab, setActiveTab] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [openUserModal, setOpenUserModal] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [userFormMode, setUserFormMode] = useState('create');
+    const [roleFilter, setRoleFilter] = useState('all');
+    const [emailSearch, setEmailSearch] = useState('');
     
     // Pagination states for each tab
     const [usersData, setUsersData] = useState({ data: [], total: 0, page: 0, pageSize: 10 });
@@ -34,31 +53,34 @@ export default function AdminDashboard() {
 
     // Fetch stats on mount
     useEffect(() => {
-        fetchStats();
+        fetchAllData();
     }, []);
 
-    // Fetch data when tab changes
-    useEffect(() => {
-        switch(activeTab) {
-            case 0: fetchUsers(usersData.page, usersData.pageSize); break;
-            case 1: fetchCompanies(companiesData.page, companiesData.pageSize); break;
-            case 2: fetchPayments(paymentsData.page, paymentsData.pageSize); break;
-            case 3: fetchFeedbacks(feedbacksData.page, feedbacksData.pageSize); break;
-            case 4: fetchInterviewers(interviewersData.page, interviewersData.pageSize); break;
-        }
-    }, [activeTab]);
-
-    const fetchStats = async () => {
+    const fetchAllData = async () => {
         setLoading(true);
-        const response = await callApi({
-            method: METHOD.GET,
-            endpoint: adminEndPoints.GET_STATS,
-        });
-        console.log('📊 Stats Response:', response);
-        if (response?.success) {
-            setStats(response.data);
+        try {
+            const [usersRes, companiesRes, interviewersRes] = await Promise.all([
+                callApi({ method: METHOD.GET, endpoint: `${adminEndPoints.GET_USERS}?page=1&pageSize=1` }),
+                callApi({ method: METHOD.GET, endpoint: `${adminEndPoints.GET_COMPANIES}?page=1&pageSize=1` }),
+                callApi({ method: METHOD.GET, endpoint: `${adminEndPoints.GET_INTERVIEWERS}?page=1&pageSize=1` }),
+            ]);
+
+            // Calculate stats from totalItems
+            const calculatedStats = {
+                totalUsers: usersRes?.data?.totalItems || 0,
+                totalCompanies: companiesRes?.data?.totalItems || 0,
+                totalInterviewers: interviewersRes?.data?.totalItems || 0,
+                totalPayments: 0,
+                totalFeedbacks: 0,
+                averageRating: 0
+            };
+            
+            setStats(calculatedStats);
+        } catch (error) {
+            console.error('Error fetching stats:', error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const fetchUsers = async (page = 0, pageSize = 10) => {
@@ -151,13 +173,120 @@ export default function AdminDashboard() {
         setLoading(false);
     };
 
+    // User Management Handlers
+    const handleAddUser = () => {
+        setSelectedUser(null);
+        setUserFormMode('create');
+        setOpenUserModal(true);
+    };
+
+    const handleEditUser = (user) => {
+        setSelectedUser(user);
+        setUserFormMode('edit');
+        setOpenUserModal(true);
+    };
+
+    const handleDeleteUser = (user) => {
+        const userId = typeof user === 'string' ? user : user?.id;
+        setSelectedUserId(userId);
+        setOpenDeleteDialog(true);
+    };
+
+    const confirmDeleteUser = async () => {
+        if (!selectedUserId) {
+            toast.error('User ID is missing');
+            return;
+        }
+
+        const { success, message } = await callApi({
+            method: METHOD.DELETE,
+            endpoint: adminEndPoints.DELETE_USER(selectedUserId),
+        });
+
+        if (success) {
+            toast.success('User deleted successfully');
+            setOpenDeleteDialog(false);
+            fetchUsers(usersData.page, usersData.pageSize);
+        } else {
+            toast.error(message || 'Failed to delete user');
+        }
+    };
+
+    const handleSubmitUserForm = async (formData, onError) => {
+        const endpoint = userFormMode === 'create' 
+            ? adminEndPoints.CREATE_USER
+            : adminEndPoints.UPDATE_USER(selectedUser.id);
+        
+        const method = userFormMode === 'create' ? METHOD.POST : METHOD.PUT;
+
+        const { success, message, data } = await callApi({
+            method,
+            endpoint,
+            arg: formData,
+        });
+
+        if (success) {
+            toast.success(userFormMode === 'create' ? 'User created successfully' : 'User updated successfully');
+            setOpenUserModal(false);
+            fetchUsers(usersData.page, usersData.pageSize);
+        } else {
+            // Kiểm tra lỗi email trùng
+            if (message && message.toLowerCase().includes('email')) {
+                onError?.(message);
+            } else {
+                toast.error(message || `Failed to ${userFormMode} user`);
+            }
+        }
+    };
+
+    // Role mapping
+    const roleMap = {
+        0: 'Candidate',
+        1: 'Coach',
+        2: 'Admin'
+    };
+
+    const getRoleLabel = (roleValue) => {
+        return roleMap[roleValue] || roleValue;
+    };
+
+    const normalizeRoleValue = (roleValue) => {
+        if (typeof roleValue === 'number') return roleValue;
+        if (typeof roleValue === 'string') {
+            const normalized = roleValue.toLowerCase();
+            if (normalized === 'candidate') return 0;
+            if (normalized === 'coach') return 1;
+            if (normalized === 'admin') return 2;
+        }
+        return roleValue;
+    };
+
+    const filteredUsersByRole = roleFilter === 'all'
+        ? usersData.data
+        : (usersData.data || []).filter((user) => normalizeRoleValue(user.role) === Number(roleFilter));
+
+    const filteredUsers = (filteredUsersByRole || []).filter((user) => {
+        if (!emailSearch.trim()) return true;
+        return (user.email || '').toLowerCase().includes(emailSearch.trim().toLowerCase());
+    });
+
     // Table columns configurations
     const usersColumns = [
         { field: 'id', headerName: 'ID', width: 70 },
         { field: 'fullName', headerName: 'Full Name', width: 200 },
         { field: 'email', headerName: 'Email', width: 250 },
-        { field: 'role', headerName: 'Role', type: 'chip', chipColor: (val) => val === 'ADMIN' ? 'rgba(248,113,113,0.3)' : 'rgba(123,97,255,0.3)' },
-        { field: 'createdAt', headerName: 'Created At', type: 'date' },
+        { 
+            field: 'role', 
+            headerName: 'Role', 
+            type: 'chip', 
+            render: (val) => getRoleLabel(val),
+            chipColor: (val) => {
+                const roleLabel = getRoleLabel(val);
+                if (roleLabel === 'Admin') return 'rgba(248,113,113,0.3)';
+                if (roleLabel === 'Coach') return 'rgba(74,222,128,0.3)';
+                return 'rgba(123,97,255,0.3)';
+            }
+        }
     ];
 
     const companiesColumns = [
@@ -199,198 +328,84 @@ export default function AdminDashboard() {
         { field: 'createdAt', headerName: 'Created At', type: 'date' },
     ];
 
+    const currentMeta = {
+        title: 'Dashboard',
+        subtitle: 'Overview statistics for the platform.'
+    };
+
     return (
-        <Box sx={{ 
-            minHeight: '100vh', 
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #e8eaf6 50%, #f3e5f5 100%)',
-            py: 4
-        }}>
-            <Container maxWidth="xl">
-                {/* Header */}
-                <Box sx={{ mb: 4 }}>
-                    <Typography variant="h3" sx={{ 
-                        color: '#1a1a2e', 
-                        fontWeight: 800, 
-                        mb: 1,
-                        background: 'linear-gradient(135deg, #7B61FF 0%, #B794F6 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                    }}>
-                        Admin Dashboard
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: 'rgba(0,0,0,0.6)' }}>
-                        Manage your platform with ease
-                    </Typography>
-                </Box>
+        <Container maxWidth="xl" className="admin-page">
+            <div className="admin-page-header">
+                <div>
+                    <h2 className="admin-page-title">{currentMeta.title}</h2>
+                    <p className="admin-page-subtitle">{currentMeta.subtitle}</p>
+                </div>
+                {currentMeta.action && (
+                    <button className="admin-primary-btn" onClick={currentMeta.onAction}>
+                        + {currentMeta.action}
+                    </button>
+                )}
+            </div>
 
-                {/* Stats Cards */}
-                {loading && !stats ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                        <CircularProgress sx={{ color: '#7B61FF' }} />
-                    </Box>
-                ) : (
-                    <Grid container spacing={3} sx={{ mb: 4 }}>
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
-                            <StatsCard 
-                                title="Total Users" 
-                                value={stats?.totalUsers} 
-                                icon={PeopleIcon}
-                                color="#7B61FF"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
-                            <StatsCard 
-                                title="Total Companies" 
-                                value={stats?.totalCompanies} 
-                                icon={BusinessIcon}
-                                color="#4ade80"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
-                            <StatsCard 
-                                title="Total Interviewers" 
-                                value={stats?.totalInterviewers} 
-                                icon={PersonIcon}
-                                color="#60a5fa"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
-                            <StatsCard 
-                                title="Total Payments" 
-                                value={stats?.totalPayments} 
-                                icon={PaymentIcon}
-                                color="#f59e0b"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
-                            <StatsCard 
-                                title="Total Feedbacks" 
-                                value={stats?.totalFeedbacks} 
-                                icon={FeedbackIcon}
-                                color="#8b5cf6"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
-                            <StatsCard 
-                                title="Avg Rating" 
-                                value={parseFloat(stats?.averageRating || 0).toFixed(2)} 
-                                icon={StarIcon}
-                                color="#fbbf24"
-                            />
-                        </Grid>
+            {loading && !stats ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                    <CircularProgress sx={{ color: '#7B61FF' }} />
+                </Box>
+            ) : (
+                <Grid container spacing={3} sx={{ mb: 2 }}>
+                    <Grid item xs={12} sm={6} md={4} lg={2}>
+                        <StatsCard 
+                            title="Total Users" 
+                            value={stats?.totalUsers} 
+                            icon={PeopleIcon}
+                            color="#7B61FF"
+                        />
                     </Grid>
-                )}
-
-                {/* Tabs for different data tables */}
-                <Box sx={{ 
-                    background: 'rgba(255,255,255,0.9)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(123,97,255,0.2)',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    mb: 3,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                }}>
-                    <Tabs 
-                        value={activeTab} 
-                        onChange={(e, val) => setActiveTab(val)}
-                        sx={{
-                            borderBottom: '1px solid rgba(123,97,255,0.15)',
-                            '& .MuiTab-root': {
-                                color: 'rgba(0,0,0,0.6)',
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                fontSize: '14px',
-                                '&.Mui-selected': {
-                                    color: '#7B61FF'
-                                }
-                            },
-                            '& .MuiTabs-indicator': {
-                                backgroundColor: '#7B61FF',
-                                height: '3px',
-                                borderRadius: '3px 3px 0 0'
-                            }
-                        }}
-                    >
-                        <Tab label="Users" />
-                        <Tab label="Companies" />
-                        <Tab label="Payments" />
-                        <Tab label="Feedbacks" />
-                        <Tab label="Interviewers" />
-                    </Tabs>
-                </Box>
-
-                {/* Data Tables */}
-                {activeTab === 0 && (
-                    <DataTable 
-                        title="Users Management"
-                        columns={usersColumns}
-                        data={usersData.data}
-                        totalItems={usersData.total}
-                        page={usersData.page}
-                        pageSize={usersData.pageSize}
-                        onPageChange={(newPage) => fetchUsers(newPage, usersData.pageSize)}
-                        onPageSizeChange={(newSize) => fetchUsers(0, newSize)}
-                        loading={loading}
-                    />
-                )}
-
-                {activeTab === 1 && (
-                    <DataTable 
-                        title="Companies Management"
-                        columns={companiesColumns}
-                        data={companiesData.data}
-                        totalItems={companiesData.total}
-                        page={companiesData.page}
-                        pageSize={companiesData.pageSize}
-                        onPageChange={(newPage) => fetchCompanies(newPage, companiesData.pageSize)}
-                        onPageSizeChange={(newSize) => fetchCompanies(0, newSize)}
-                        loading={loading}
-                    />
-                )}
-
-                {activeTab === 2 && (
-                    <DataTable 
-                        title="Payments Management"
-                        columns={paymentsColumns}
-                        data={paymentsData.data}
-                        totalItems={paymentsData.total}
-                        page={paymentsData.page}
-                        pageSize={paymentsData.pageSize}
-                        onPageChange={(newPage) => fetchPayments(newPage, paymentsData.pageSize)}
-                        onPageSizeChange={(newSize) => fetchPayments(0, newSize)}
-                        loading={loading}
-                    />
-                )}
-
-                {activeTab === 3 && (
-                    <DataTable 
-                        title="Feedbacks Management"
-                        columns={feedbacksColumns}
-                        data={feedbacksData.data}
-                        totalItems={feedbacksData.total}
-                        page={feedbacksData.page}
-                        pageSize={feedbacksData.pageSize}
-                        onPageChange={(newPage) => fetchFeedbacks(newPage, feedbacksData.pageSize)}
-                        onPageSizeChange={(newSize) => fetchFeedbacks(0, newSize)}
-                        loading={loading}
-                    />
-                )}
-
-                {activeTab === 4 && (
-                    <DataTable 
-                        title="Interviewers Management"
-                        columns={interviewersColumns}
-                        data={interviewersData.data}
-                        totalItems={interviewersData.total}
-                        page={interviewersData.page}
-                        pageSize={interviewersData.pageSize}
-                        onPageChange={(newPage) => fetchInterviewers(newPage, interviewersData.pageSize)}
-                        onPageSizeChange={(newSize) => fetchInterviewers(0, newSize)}
-                        loading={loading}
-                    />
-                )}
-            </Container>
-        </Box>
+                    <Grid item xs={12} sm={6} md={4} lg={2}>
+                        <StatsCard 
+                            title="Total Companies" 
+                            value={stats?.totalCompanies} 
+                            icon={BusinessIcon}
+                            color="#4ade80"
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4} lg={2}>
+                        <StatsCard 
+                            title="Total Interviewers" 
+                            value={stats?.totalInterviewers} 
+                            icon={PersonIcon}
+                            color="#60a5fa"
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4} lg={2}>
+                        <StatsCard 
+                            title="Total Payments" 
+                            value={stats?.totalPayments} 
+                            icon={PaymentIcon}
+                            color="#f59e0b"
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4} lg={2}>
+                        <StatsCard 
+                            title="Total Feedbacks" 
+                            value={stats?.totalFeedbacks} 
+                            icon={FeedbackIcon}
+                            color="#8b5cf6"
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4} lg={2}>
+                        <StatsCard 
+                            title="Avg Rating" 
+                            value={parseFloat(stats?.averageRating ?? stats?.avgRating ?? stats?.ratingAverage ?? 0).toFixed(2)} 
+                            icon={StarIcon}
+                            color="#fbbf24"
+                        />
+                    </Grid>
+                </Grid>
+            )}
+            {false && (
+                <div className="admin-card" />
+            )}
+        </Container>
     );
 }
