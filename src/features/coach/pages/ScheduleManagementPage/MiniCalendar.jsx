@@ -21,8 +21,10 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
         const map = {};
         availabilities.forEach((avail) => {
             // Only count future/current slots
-            if (new Date(avail.endTime) >= new Date()) {
-                const dateStr = new Date(avail.startTime).toISOString().split("T")[0];
+            const startDate = new Date(avail.startTime);
+            const endDate = new Date(avail.endTime);
+            if (endDate >= new Date()) {
+                const dateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
                 if (!map[dateStr]) {
                     map[dateStr] = 0;
                 }
@@ -82,10 +84,10 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     };
 
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
-    
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
     // Get selected date string for comparison
-    const selectedDateStr = selectedDate ? selectedDate.toISOString().split("T")[0] : null;
+    const selectedDateStr = selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}` : null;
 
     // Generate calendar grid
     const calendarDays = [];

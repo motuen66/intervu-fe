@@ -18,15 +18,18 @@ import {
     Card,
     Stack,
     CircularProgress,
+    CardContent,
 } from "@mui/material";
 import { IoAdd } from "react-icons/io5";
-import { getAllInterviewTypes} from "../../../admin/services/interviewTypeApi";
-import "./ScheduleManagement.css";
+import { getAllInterviewTypes } from "../../../admin/services/interviewTypeApi";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
 import UpdateAvailableSlotDialog from "./UpdateAvailableSlotDialog";
 import MiniCalendar from "./MiniCalendar";
 import { AVAILABILITY_SLOTS_STATUS, getAvailabilityColors } from "../../../../common/constants/status";
+import StatusLegend from "./StatusLegend";
+import UpcomingSessionBlog from "./UpcomingSessionBlog";
+import "./ScheduleManagement.css";
 
 const ScheduleManagement = () => {
     const dispatch = useDispatch();
@@ -34,7 +37,6 @@ const ScheduleManagement = () => {
     const authState = useSelector((state) => state.auth);
     // auth state has userData, not user
     const userId = authState?.userData?.id;
-    const nowUtc = new Date().toISOString();
 
     const calendarRef = useRef(null);
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -43,7 +45,7 @@ const ScheduleManagement = () => {
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({
         date: "",
-        focus: 1, // Job_Description integer
+        focus: 1, // JobDescription integer
         typeId: "",
         startHour: 9,
         startMinute: 0,
@@ -53,8 +55,8 @@ const ScheduleManagement = () => {
     });
     const [interviewTypes, setInterviewTypes] = useState([]);
     const FocusEnum = {
-        General_Skills: 0,
-        Job_Description: 1,
+        GeneralSkills: 0,
+        JobDescription: 1,
     };
     const [confirmOpen, setConfirmOpen] = useState(false);
     // const [confirmType, set                                                                                                      ] = useState(null); // "update" | "delete"
@@ -62,9 +64,9 @@ const ScheduleManagement = () => {
 
     // Calculate date range for current month
     const today = new Date();
-    const minDateStr = today.toISOString().split("T")[0];
+    const minDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const maxDateStr = lastDayOfMonth.toISOString().split("T")[0];
+    const maxDateStr = `${lastDayOfMonth.getFullYear()}-${String(lastDayOfMonth.getMonth() + 1).padStart(2, "0")}-${String(lastDayOfMonth.getDate()).padStart(2, "0")}`;
 
     const showError = (message) => {
         if (!message) return;
@@ -72,16 +74,16 @@ const ScheduleManagement = () => {
     };
 
 
-    const parseUTCDate = (isoString) => {
+    const parseLocalDate = (isoString) => {
         const date = new Date(isoString);
-        return `${date.getUTCDate().toString().padStart(2, "0")}/${(date.getUTCMonth() + 1).toString().padStart(2, "0")
-            }/${date.getUTCFullYear()}`;
+        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")
+            }/${date.getFullYear()}`;
     };
 
-    const parseUTCTime = (isoString) => {
+    const parseLocalTime = (isoString) => {
         const date = new Date(isoString);
-        return `${date.getUTCHours().toString().padStart(2, "0")}:${date
-            .getUTCMinutes()
+        return `${date.getHours().toString().padStart(2, "0")}:${date
+            .getMinutes()
             .toString()
             .padStart(2, "0")}`;
     };
@@ -101,7 +103,7 @@ const ScheduleManagement = () => {
         }
     }, [userId, currentDate.getMonth(), currentDate.getFullYear()]);
 
-    // Fetch interview types for General_Skills option
+    // Fetch interview types for GeneralSkills option
     useEffect(() => {
         const loadTypes = async () => {
             try {
@@ -127,13 +129,13 @@ const ScheduleManagement = () => {
     const handleAddClick = () => {
         setEditingId(null);
         const today = new Date().toISOString().split('T')[0];
-        setFormData({ 
-            date: today, 
-            startHour: 9, 
-            startMinute: 0, 
-            endHour: 10, 
-            endMinute: 0, 
-            focus: FocusEnum.Job_Description, 
+        setFormData({
+            date: today,
+            startHour: 9,
+            startMinute: 0,
+            endHour: 10,
+            endMinute: 0,
+            focus: FocusEnum.JobDescription,
             typeId: "",
             duplicateDates: []
         });
@@ -144,17 +146,23 @@ const ScheduleManagement = () => {
         const startDate = new Date(availability.startTime);
         const endDate = new Date(availability.endTime);
 
+        // Format date as YYYY-MM-DD in local time
+        const year = startDate.getFullYear();
+        const month = String(startDate.getMonth() + 1).padStart(2, "0");
+        const day = String(startDate.getDate()).padStart(2, "0");
+        const localDateStr = `${year}-${month}-${day}`;
+
         setEditingId(availability.id);
         setFormData({
             coachId: availability.coachId,
-            date: startDate.toISOString().split("T")[0],
+            date: localDateStr,
             focus: availability.focus,
-            startHour: startDate.getUTCHours(),
-            startMinute: startDate.getUTCMinutes(),
-            endHour: endDate.getUTCHours(),
-            endMinute: endDate.getUTCMinutes(),
+            startHour: startDate.getHours(),
+            startMinute: startDate.getMinutes(),
+            endHour: endDate.getHours(),
+            endMinute: endDate.getMinutes(),
             typeId:
-                availability.focus === FocusEnum.General_Skills
+                availability.focus === FocusEnum.GeneralSkills
                     ? availability.typeId || ""
                     : "",
             duplicateDates: []
@@ -188,13 +196,19 @@ const ScheduleManagement = () => {
         }
 
         setEditingId(null);
+        // Format as YYYY-MM-DD in local time
+        const year = start.getFullYear();
+        const month = String(start.getMonth() + 1).padStart(2, "0");
+        const day = String(start.getDate()).padStart(2, "0");
+        const localDateStr = `${year}-${month}-${day}`;
+
         setFormData({
-            date: start.getUTCFullYear() + "-" + (start.getUTCMonth() + 1).toString().padStart(2, "0") + "-" + start.getUTCDate().toString().padStart(2, "0"),
-            startHour: start.getUTCHours(),
-            startMinute: start.getUTCMinutes(),
-            endHour: end.getUTCHours(),
-            endMinute: end.getUTCMinutes(),
-            focus: FocusEnum.Job_Description,
+            date: localDateStr,
+            startHour: start.getHours(),
+            startMinute: start.getMinutes(),
+            endHour: end.getHours(),
+            endMinute: end.getMinutes(),
+            focus: FocusEnum.JobDescription,
             typeId: "",
             duplicateDates: []
         });
@@ -232,7 +246,7 @@ const ScheduleManagement = () => {
 
         // Validation: Minimum duration check (15 minutes for Job Description)
         const durationMinutes = (endTime - startTime) / (1000 * 60);
-        
+
         // Get availability data from extended props or find in array
         const avail = availabilities.find(a => String(a.id) === String(availabilityId)) || {
             focus: event.extendedProps.focus,
@@ -240,20 +254,20 @@ const ScheduleManagement = () => {
             coachId: event.extendedProps.coachId || userId
         };
 
-        if (avail.focus === FocusEnum.Job_Description && durationMinutes < 30) {
+        if (avail.focus === FocusEnum.JobDescription && durationMinutes < 30) {
             toast.error("Availability must be at least 30 minutes");
             info.revert();
             return;
         }
 
         // Handle fixed duration for General Skills with type
-        if (avail.focus === FocusEnum.General_Skills && avail.typeId) {
+        if (avail.focus === FocusEnum.GeneralSkills && avail.typeId) {
             const type = interviewTypes.find(t => t.id === avail.typeId);
 
             if (type?.durationMinutes) {
                 const fixedEnd = new Date(startTime);
-                fixedEnd.setUTCMinutes(
-                    fixedEnd.getUTCMinutes() + type.durationMinutes
+                fixedEnd.setMinutes(
+                    fixedEnd.getMinutes() + type.durationMinutes
                 );
                 endTime = fixedEnd;
                 event.setEnd(fixedEnd);
@@ -261,8 +275,8 @@ const ScheduleManagement = () => {
         }
 
         // Check if the event stays within the current month
-        const eventMonth = startTime.getUTCMonth();
-        const eventYear = startTime.getUTCFullYear();
+        const eventMonth = startTime.getMonth();
+        const eventYear = startTime.getFullYear();
         const currentMonth = currentDate.getMonth();
         const currentYear = currentDate.getFullYear();
 
@@ -294,9 +308,9 @@ const ScheduleManagement = () => {
             } else {
                 // Revert the change on error
                 info.revert();
-                
-                const payloadMessage = typeof result.payload === "string" 
-                    ? result.payload 
+
+                const payloadMessage = typeof result.payload === "string"
+                    ? result.payload
                     : result.payload?.message;
                 const errMsg = payloadMessage || result.error?.message || "Failed to update availability";
                 toast.error(errMsg);
@@ -342,12 +356,12 @@ const ScheduleManagement = () => {
 
         const durationMinutes = endTotalMinutes - startTotalMinutes;
 
-        if (formData.focus === FocusEnum.Job_Description && durationMinutes < 30) {
+        if (formData.focus === FocusEnum.JobDescription && durationMinutes < 30) {
             showError("Availability must be at least 30 minutes");
             return;
         }
 
-        if (formData.focus === FocusEnum.General_Skills && !formData.typeId) {
+        if (formData.focus === FocusEnum.GeneralSkills && !formData.typeId) {
             showError("Type is required for General Skills");
             return;
         }
@@ -357,18 +371,11 @@ const ScheduleManagement = () => {
         const payloads = [];
 
         for (const dateStr of allDates) {
-            const selectedDate = new Date(dateStr);
-            const selectedDateUtc = new Date(Date.UTC(
-                selectedDate.getFullYear(),
-                selectedDate.getMonth(),
-                selectedDate.getDate()
-            ));
-
-            const startTime = new Date(selectedDateUtc);
-            startTime.setUTCHours(startHour, startMinute, 0, 0);
-
-            const endTime = new Date(selectedDateUtc);
-            endTime.setUTCHours(endHour, endMinute, 0, 0);
+            // dateStr is "YYYY-MM-DD"
+            const [year, month, day] = dateStr.split("-").map(Number);
+            
+            const startTime = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
+            const endTime = new Date(year, month - 1, day, endHour, endMinute, 0, 0);
 
             if (startTime < new Date()) {
                 showError(`Cannot create availability in the past for date: ${dateStr}`);
@@ -380,7 +387,7 @@ const ScheduleManagement = () => {
                 startTime: startTime.toISOString(),
                 endTime: endTime.toISOString(),
                 focus: formData.focus,
-                typeId: formData.focus === FocusEnum.General_Skills ? formData.typeId : null,
+                typeId: formData.focus === FocusEnum.GeneralSkills ? formData.typeId : null,
             });
         }
 
@@ -479,8 +486,8 @@ const ScheduleManagement = () => {
         }
 
         // Derive isBooked from status for backward compatibility
-        const isBooked = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.RESERVED || 
-                        Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
+        const isBooked = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.RESERVED ||
+            Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
 
         return {
             id: String(avail.id),
@@ -641,6 +648,9 @@ const ScheduleManagement = () => {
                                     eventResize={handleEventChange}
                                     eventResizableFromStart={true}
                                     eventDurationEditable={true}
+                                    // now={new Date().toISOString()}
+                                    now={new Date()} // use local time
+                                    nowIndicator={true}
                                     snapDuration="00:15:00"
                                     selectOverlap={false}
                                     eventOverlap={false}
@@ -657,7 +667,6 @@ const ScheduleManagement = () => {
                                     }}
                                     datesSet={(info) => {
                                         setCurrentDate(info.start);
-                                        // Update selected date based on current view
                                         const calendarApi = calendarRef.current?.getApi();
                                         if (calendarApi) {
                                             const view = calendarApi.view;
@@ -667,18 +676,52 @@ const ScheduleManagement = () => {
                                         }
                                     }}
                                     height="auto"
-                                    timeZone="UTC"
+                                    timeZone="local"
                                 />
                             </Box>
                         </Card>
 
-                        {/* Right Panel - Mini Calendar */}
-                        <MiniCalendar
-                            availabilities={availabilities}
-                            onDateClick={handleMiniCalendarDateClick}
-                            currentDate={currentDate}
-                            selectedDate={selectedDate}
-                        />
+                        {/* Right Panel: Mini Calendar + Quick Legend */}
+                        <Stack spacing={3}>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <MiniCalendar
+                                    availabilities={availabilities}
+                                    onDateClick={handleMiniCalendarDateClick}
+                                    currentDate={currentDate}
+                                    selectedDate={selectedDate}
+                                />
+                            </div>
+
+                            <Card
+                                sx={{
+                                    background: "white",
+                                    boxShadow: 1,
+                                    border: '1px solid',
+                                    borderColor: 'grey.200',
+                                }}
+                            >
+                                <CardContent sx={{ p: 2.5 }}>
+                                    <Box display="flex" justifyContent="space-between" mb={2}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1 }}
+                                        >
+                                            Quick Legend
+                                        </Typography>
+                                    </Box>
+
+                                    <StatusLegend />
+                                </CardContent>
+                            </Card>
+
+                            <UpcomingSessionBlog
+                                availabilities={availabilities}
+                                loading={loading}
+                                parseLocalDate={parseLocalDate}
+                                parseLocalTime={parseLocalTime}
+                            />
+                        </Stack>
+
                     </Box>
                 </Box>
 
@@ -692,7 +735,7 @@ const ScheduleManagement = () => {
                                 setEditingId(null);
                                 setFormData({
                                     date: "",
-                                    focus: FocusEnum.Job_Description,
+                                    focus: FocusEnum.JobDescription,
                                     typeId: "",
                                     startHour: 9,
                                     startMinute: 0,
@@ -719,7 +762,7 @@ const ScheduleManagement = () => {
                                 setEditingId(null);
                                 setFormData({
                                     date: "",
-                                    focus: FocusEnum.Job_Description,
+                                    focus: FocusEnum.JobDescription,
                                     typeId: "",
                                     startHour: 9,
                                     startMinute: 0,
