@@ -6,9 +6,8 @@ import { AVAILABILITY_SLOTS_STATUS, getAvailabilityColors } from "../../../../co
 const UpcomingSessionBlog = ({
     availabilities,
     loading,
-    nowUtc,
-    parseUTCDate,
-    parseUTCTime,
+    parseLocalDate,
+    parseLocalTime,
 }) => {
     const focusLabel = (focus) => {
         if (focus === 0) return "General Skills";
@@ -20,7 +19,8 @@ const UpcomingSessionBlog = ({
         return new Date(endTime) < new Date();
     }
 
-    console.log("Filtered upcomingSlots:", availabilities.filter(a => a.endTime >= nowUtc));
+    const upcomingSlots = availabilities.filter(a => new Date(a.endTime) >= new Date());
+    console.log("Filtered upcomingSlots:", upcomingSlots);
 
 
     return (
@@ -35,7 +35,7 @@ const UpcomingSessionBlog = ({
             <CardContent sx={{ p: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "text.primary" }}>
                     Upcoming Interview Slots
-                    {/* ({availabilities.filter(a => a.endTime >= nowUtc).length}) */}
+                    {/* ({upcomingSlots.length}) */}
                 </Typography>
 
                 <Stack spacing={1.5}>
@@ -43,15 +43,14 @@ const UpcomingSessionBlog = ({
                         <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
                             <CircularProgress size={24} />
                         </Box>
-                    ) : availabilities.filter(a => a.endTime >= nowUtc).length === 0 ? (
+                    ) : upcomingSlots.length === 0 ? (
                         <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 3, fontStyle: "italic" }}>
                             No upcoming slots
                         </Typography>
                     ) : (
-                        availabilities
-                            .filter(a => new Date(a.endTime) >= new Date())
+                        upcomingSlots
                             .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-                            .slice(0, 4)
+                            .slice(0, 5)
                             .map((avail) => (
                                 <Box
                                     key={avail.id}
@@ -104,11 +103,11 @@ const UpcomingSessionBlog = ({
                                     </Stack>
 
                                     <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5, fontWeight: 500 }}>
-                                        {parseUTCDate(avail.startTime)}
+                                        {parseLocalDate(avail.startTime)}
                                     </Typography>
 
                                     <Typography variant="body2" sx={{ color: "primary.main", fontWeight: 600, mb: 1 }}>
-                                        {parseUTCTime(avail.startTime)} - {parseUTCTime(avail.endTime)}
+                                        {parseLocalTime(avail.startTime)} - {parseLocalTime(avail.endTime)}
                                     </Typography>
                                 </Box>
                             ))

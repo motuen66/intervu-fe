@@ -78,7 +78,10 @@ const CreateAvailableSlotDialog = ({
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 inputProps={{
-                                    min: minDate || new Date().toISOString().split("T")[0],
+                                    min: minDate || (() => {
+                                        const now = new Date();
+                                        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                    })(),
                                     max: maxDate
                                 }}
                                 fullWidth
@@ -98,7 +101,10 @@ const CreateAvailableSlotDialog = ({
                                     value={tempDate}
                                     onChange={(e) => setTempDate(e.target.value)}
                                     inputProps={{
-                                        min: minDate || new Date().toISOString().split("T")[0],
+                                        min: minDate || (() => {
+                                            const now = new Date();
+                                            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                        })(),
                                         max: maxDate
                                     }}
                                     fullWidth
@@ -139,16 +145,16 @@ const CreateAvailableSlotDialog = ({
                                         setFormData((prev) => ({
                                             ...prev,
                                             focus: newFocus,
-                                            typeId: newFocus === FocusEnum.General_Skills ? prev.typeId : "",
+                                            typeId: newFocus === FocusEnum.GeneralSkills ? prev.typeId : "",
                                         }));
                                     }}
                                 >
-                                    <MenuItem value={FocusEnum.Job_Description}>Job Description</MenuItem>
-                                    <MenuItem value={FocusEnum.General_Skills}>General Skills</MenuItem>
+                                    <MenuItem value={FocusEnum.JobDescription}>Job Description</MenuItem>
+                                    <MenuItem value={FocusEnum.GeneralSkills}>General Skills</MenuItem>
                                 </Select>
                             </FormControl>
 
-                            {formData.focus === FocusEnum.General_Skills && (
+                            {formData.focus === FocusEnum.GeneralSkills && (
                                 <FormControl fullWidth margin="normal">
                                     <InputLabel id="type-label">Type</InputLabel>
                                     <Select
@@ -198,7 +204,7 @@ const CreateAvailableSlotDialog = ({
                                         const newHour = Number(e.target.value);
 
                                         setFormData((prev) => {
-                                            if (prev.focus !== FocusEnum.General_Skills || !prev.typeId)
+                                            if (prev.focus !== FocusEnum.GeneralSkills || !prev.typeId)
                                                 return { ...prev, startHour: newHour };
 
                                             const type = interviewTypes.find(t => t.id === prev.typeId);
@@ -242,7 +248,7 @@ const CreateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.endHour} disabled={formData.focus === FocusEnum.General_Skills} onChange={(e) => setFormData({ ...formData, endHour: e.target.value })} sx={{ borderRadius: "8px" }}>
+                                    <Select value={formData.endHour} disabled={formData.focus === FocusEnum.GeneralSkills} onChange={(e) => setFormData({ ...formData, endHour: e.target.value })} sx={{ borderRadius: "8px" }}>
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
                                                 {hour.toString().padStart(2, "0")}
@@ -252,7 +258,7 @@ const CreateAvailableSlotDialog = ({
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.endMinute} disabled={formData.focus === FocusEnum.General_Skills} onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })} sx={{ borderRadius: "8px" }}>
+                                    <Select value={formData.endMinute} disabled={formData.focus === FocusEnum.GeneralSkills} onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })} sx={{ borderRadius: "8px" }}>
                                         {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
