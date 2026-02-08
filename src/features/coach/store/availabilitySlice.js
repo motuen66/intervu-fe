@@ -88,31 +88,29 @@ const availabilitySlice = createSlice({
                 state.error = action.payload;
             });
 
-        // Create availability
+        // Create availability - update local state without toggling global loading
         builder
             .addCase(addAvailability.pending, (state) => {
-                state.loading = true;
                 state.error = null;
             })
             .addCase(addAvailability.fulfilled, (state, action) => {
-                state.loading = false;
-                // Refresh list by re-fetching or add to local state
+                // action.payload expected to be the created availability object
+                if (action.payload) {
+                    state.availabilities.push(action.payload);
+                }
             })
             .addCase(addAvailability.rejected, (state, action) => {
-                state.loading = false;
                 state.error = action.payload;
             });
 
-        // Update availability
+        // Update availability - update local state without toggling global loading
         builder
             .addCase(editAvailability.pending, (state) => {
-                state.loading = true;
                 state.error = null;
             })
             .addCase(editAvailability.fulfilled, (state, action) => {
-                state.loading = false;
                 const index = state.availabilities.findIndex(
-                    (a) => a.id === action.payload.id
+                    (a) => String(a.id) === String(action.payload.id)
                 );
                 if (index !== -1) {
                     state.availabilities[index] = {
@@ -122,24 +120,20 @@ const availabilitySlice = createSlice({
                 }
             })
             .addCase(editAvailability.rejected, (state, action) => {
-                state.loading = false;
                 state.error = action.payload;
             });
 
-        // Delete availability
+        // Delete availability - update local state without toggling global loading
         builder
             .addCase(removeAvailability.pending, (state) => {
-                state.loading = true;
                 state.error = null;
             })
             .addCase(removeAvailability.fulfilled, (state, action) => {
-                state.loading = false;
                 state.availabilities = state.availabilities.filter(
-                    (a) => a.id !== action.payload
+                    (a) => String(a.id) !== String(action.payload)
                 );
             })
             .addCase(removeAvailability.rejected, (state, action) => {
-                state.loading = false;
                 state.error = action.payload;
             });
     },
