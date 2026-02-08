@@ -252,3 +252,48 @@
     color: #4F46E5;
     font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
+
+.legend-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.legend-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.legend-text-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.legend-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155; /* slate-700 */
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.legend-description {
+  font-size: 0.625rem; /* text-[10px] */
+  color: #94a3b8; /* slate-400 */
+}
+
+/* Status specific modifications can still be handled via props or variables */
+.dot-available { background-color: #6366f1; }
+.dot-booked { background-color: #10b981; }
+.dot-reserved { background-color: #f59e0b; }
+.dot-past { background-color: #94a3b8; opacity: 0.6; }

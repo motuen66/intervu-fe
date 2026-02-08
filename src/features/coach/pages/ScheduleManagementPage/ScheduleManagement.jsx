@@ -18,15 +18,18 @@ import {
     Card,
     Stack,
     CircularProgress,
+    CardContent,
 } from "@mui/material";
 import { IoAdd } from "react-icons/io5";
-import { getAllInterviewTypes} from "../../../admin/services/interviewTypeApi";
+import { getAllInterviewTypes } from "../../../admin/services/interviewTypeApi";
 import "./ScheduleManagement.css";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
 import UpdateAvailableSlotDialog from "./UpdateAvailableSlotDialog";
 import MiniCalendar from "./MiniCalendar";
 import { AVAILABILITY_SLOTS_STATUS, getAvailabilityColors } from "../../../../common/constants/status";
+import StatusLegend from "./StatusLegend";
+import UpcomingSessionBlog from "./UpcomingSessionBlog";
 
 const ScheduleManagement = () => {
     const dispatch = useDispatch();
@@ -127,13 +130,13 @@ const ScheduleManagement = () => {
     const handleAddClick = () => {
         setEditingId(null);
         const today = new Date().toISOString().split('T')[0];
-        setFormData({ 
-            date: today, 
-            startHour: 9, 
-            startMinute: 0, 
-            endHour: 10, 
-            endMinute: 0, 
-            focus: FocusEnum.Job_Description, 
+        setFormData({
+            date: today,
+            startHour: 9,
+            startMinute: 0,
+            endHour: 10,
+            endMinute: 0,
+            focus: FocusEnum.Job_Description,
             typeId: "",
             duplicateDates: []
         });
@@ -232,7 +235,7 @@ const ScheduleManagement = () => {
 
         // Validation: Minimum duration check (15 minutes for Job Description)
         const durationMinutes = (endTime - startTime) / (1000 * 60);
-        
+
         // Get availability data from extended props or find in array
         const avail = availabilities.find(a => String(a.id) === String(availabilityId)) || {
             focus: event.extendedProps.focus,
@@ -294,9 +297,9 @@ const ScheduleManagement = () => {
             } else {
                 // Revert the change on error
                 info.revert();
-                
-                const payloadMessage = typeof result.payload === "string" 
-                    ? result.payload 
+
+                const payloadMessage = typeof result.payload === "string"
+                    ? result.payload
                     : result.payload?.message;
                 const errMsg = payloadMessage || result.error?.message || "Failed to update availability";
                 toast.error(errMsg);
@@ -479,8 +482,8 @@ const ScheduleManagement = () => {
         }
 
         // Derive isBooked from status for backward compatibility
-        const isBooked = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.RESERVED || 
-                        Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
+        const isBooked = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.RESERVED ||
+            Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
 
         return {
             id: String(avail.id),
@@ -672,13 +675,48 @@ const ScheduleManagement = () => {
                             </Box>
                         </Card>
 
-                        {/* Right Panel - Mini Calendar */}
-                        <MiniCalendar
-                            availabilities={availabilities}
-                            onDateClick={handleMiniCalendarDateClick}
-                            currentDate={currentDate}
-                            selectedDate={selectedDate}
-                        />
+                        {/* Right Panel: Mini Calendar + Quick Legend */}
+                        <Stack spacing={3}>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <MiniCalendar
+                                    availabilities={availabilities}
+                                    onDateClick={handleMiniCalendarDateClick}
+                                    currentDate={currentDate}
+                                    selectedDate={selectedDate}
+                                />
+                            </div>
+
+                            <Card
+                                sx={{
+                                    background: "white",
+                                    boxShadow: 1,
+                                    border: '1px solid',
+                                    borderColor: 'grey.200',
+                                }}
+                            >
+                                <CardContent sx={{ p: 2.5 }}>
+                                    <Box display="flex" justifyContent="space-between" mb={2}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1 }}
+                                        >
+                                            Quick Legend
+                                        </Typography>
+                                    </Box>
+
+                                    <StatusLegend />
+                                </CardContent>
+                            </Card>
+
+                            <UpcomingSessionBlog
+                                availabilities={availabilities}
+                                loading={loading}
+                                nowUtc={nowUtc}
+                                parseUTCDate={parseUTCDate}
+                                parseUTCTime={parseUTCTime}
+                            />
+                        </Stack>
+
                     </Box>
                 </Box>
 
