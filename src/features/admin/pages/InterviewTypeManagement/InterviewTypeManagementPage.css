@@ -1,0 +1,87 @@
+/* Interview Type Management page styles */
+
+.interview-type-management {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.interview-type-management .paper-root {
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.interview-type-management .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.interview-type-management .toolbar .left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.interview-type-management .title {
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+
+.interview-type-management .search-input {
+    width: 320px;
+}
+
+.interview-type-management table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.interview-type-management th,
+.interview-type-management td {
+    padding: 12px 16px;
+    vertical-align: middle;
+}
+
+.interview-type-management tbody tr:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.interview-type-management .name-cell {
+    font-weight: 600;
+}
+
+.interview-type-management .description-cell {
+    color: rgba(0, 0, 0, 0.65);
+    max-width: 46ch;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.interview-type-management .actions-cell {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.interview-type-management .pagination-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 16px 16px;
+}
+
+@media (max-width: 900px) {
+    .interview-type-management .search-input {
+        width: 180px;
+    }
+    .interview-type-management .description-cell {
+        max-width: 28ch;
+    }
+}

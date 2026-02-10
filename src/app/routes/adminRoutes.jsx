@@ -3,6 +3,7 @@ import AdminDashboard from "../../features/admin/pages/AdminDashboard";
 import UserManagementPage from "../../features/admin/pages/UserManagementPage";
 import CompanyManagementPage from "../../features/admin/pages/CompanyManagementPage";
 import AdminEmptyPage from "../../features/admin/pages/AdminEmptyPage";
+import InterviewTypeManagementPage from "../../features/admin/pages/InterviewTypeManagement/InterviewTypeManagementPage";
 
 export const adminRoutes = [
     { path: "/admin", element: <Navigate to="/admin/dashboard" replace /> },
@@ -15,5 +16,6 @@ export const adminRoutes = [
     { path: "/admin/income/earnings", element: <AdminEmptyPage /> },
     { path: "/admin/income/refunds", element: <AdminEmptyPage /> },
     { path: "/admin/income/payouts", element: <AdminEmptyPage /> },
-    { path: "/admin/reports", element: <AdminEmptyPage /> }
+    { path: "/admin/reports", element: <AdminEmptyPage /> },
+    { path: "/admin/interview-type", element: <InterviewTypeManagementPage /> },
 ];
