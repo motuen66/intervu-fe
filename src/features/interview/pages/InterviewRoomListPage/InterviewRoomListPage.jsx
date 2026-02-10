@@ -63,7 +63,8 @@ function InterviewRoomListPage() {
     useEffect(() => {
         if (!user) return;
         
-        fetchRooms();
+        // Fetch data for initial tab (Upcoming)
+        fetchRooms([0, 1]);
         fetchRescheduleRequests();
         if (user.role === ROLES.CANDIDATE) {
             checkPendingFeedbacks();
@@ -76,46 +77,67 @@ function InterviewRoomListPage() {
         if (!user) return;
         
         if (activeTab === 0) {
-            fetchRooms();
+            // Upcoming: Fetch SCHEDULED (0) and ON_GOING (1)
+            fetchRooms([0, 1]);
+        } else if (activeTab === 1) {
+            // Past History: Fetch COMPLETED (2) and CANCELLED (3)
+            fetchRooms([2, 3]);
         } else if (activeTab === 2) {
             fetchRescheduleRequests();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]); // Refetch when tab changes
 
-    const fetchRooms = async () => {
+    const fetchRooms = async (statuses = null) => {
         setLoading(true);
         try {
+            // Build query params
+            let endpoint = interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=100";
+            if (statuses && statuses.length > 0) {
+                statuses.forEach(status => {
+                    endpoint += `&Statuses=${status}`;
+                });
+            }
+            
             const res = await callApi({
                 method: METHOD.GET,
-                endpoint: interviewEndPoints.INTERVIEW_ROOMS,
+                endpoint: endpoint,
             });
             const interviewRooms = res?.data || [];
-
-            const upcoming = interviewRooms.filter(
-                (room) =>
-                    room.status === INTERVIEW_ROOM_STATUS.SCHEDULED ||
-                    room.status === INTERVIEW_ROOM_STATUS.ON_GOING
-            );
-            const past = interviewRooms.filter(
-                (room) => 
-                    room.status === INTERVIEW_ROOM_STATUS.COMPLETED ||
-                    room.status === INTERVIEW_ROOM_STATUS.CANCELLED
-            );
-
-            setUpcomingRooms(upcoming);
-            setPastRooms(past);
             
-            // Calculate stats
-            const avgScore = past.length > 0 
-                ? (past.reduce((acc, room) => acc + (room.score || 0), 0) / past.filter(r => r.score).length).toFixed(1)
-                : null;
+            console.log('Fetched rooms with statuses:', statuses, 'Data:', interviewRooms);
+
+            // Update state based on which statuses were fetched
+            if (statuses && statuses.includes(0)) {
+                // Upcoming tab: statuses [0, 1]
+                console.log('Setting upcoming rooms:', interviewRooms);
+                setUpcomingRooms(interviewRooms);
+            } else if (statuses && statuses.includes(2)) {
+                // Past history tab: statuses [2, 3]
+                console.log('Setting past rooms:', interviewRooms);
+                setPastRooms(interviewRooms);
+            }
             
-            setStats({
-                upcoming: upcoming.length,
-                completed: past.filter(r => r.status === INTERVIEW_ROOM_STATUS.COMPLETED).length,
-                avgScore: avgScore && !isNaN(avgScore) ? parseFloat(avgScore) : null,
-            });
+            // Calculate stats on initial load (fetch all data for stats)
+            if (statuses && statuses.includes(0)) {
+                // Only calculate stats when fetching upcoming data (initial load or upcoming tab)
+                const allRooms = await callApi({
+                    method: METHOD.GET,
+                    endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
+                });
+                const allRoomsData = allRooms?.data || [];
+                const upcomingCount = allRoomsData.filter(r => r.status === 0 || r.status === 1).length;
+                const completedRooms = allRoomsData.filter(r => r.status === 2);
+                const avgScore = completedRooms.length > 0 
+                    ? (completedRooms.reduce((acc, room) => acc + (room.score || 0), 0) / completedRooms.filter(r => r.score).length).toFixed(1)
+                    : null;
+                
+                setStats({
+                    upcoming: upcomingCount,
+                    completed: completedRooms.length,
+                    avgScore: avgScore && !isNaN(avgScore) ? parseFloat(avgScore) : null,
+                });
+            }
         } catch (error) {
             console.error("Failed to fetch rooms:", error);
         }
