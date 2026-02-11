@@ -55,6 +55,8 @@ function PublicInterviewerProfilePage() {
         });
         if (data && data.status === TRANSACTION_STATUS.PAID) {
             toast.success("Interview booked successfully!");
+        } else {
+            toast.error("Failed to confirm booking. Please contact support.");
         }
     };
 
