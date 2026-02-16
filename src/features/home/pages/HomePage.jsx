@@ -7,7 +7,7 @@ import {
   setPage 
 } from '../store/homeSlice';
 import FilterBar from '../components/FilterBar';
-import InterviewerCard from '../components/InterviewerCard';
+import CoachCar from '../components/CoachCard';
 import './HomePage.css';
 
 function HomePage() {
@@ -194,7 +194,7 @@ function HomePage() {
             {/* Interviewer Grid */}
             <div className="interviewers-grid">
               {interviewersList.map(interviewer => (
-                <InterviewerCard 
+                <CoachCar 
                   key={interviewer.id}
                   interviewer={interviewer}
                 />

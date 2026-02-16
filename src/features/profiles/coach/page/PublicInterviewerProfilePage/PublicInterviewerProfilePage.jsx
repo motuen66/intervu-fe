@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo} from "react";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
-import { interviewerProfileEndPoints } from "../../service/interviewerProfileApi";
+import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
 import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import {
     Avatar,
@@ -55,6 +55,8 @@ function PublicInterviewerProfilePage() {
         });
         if (data && data.status === TRANSACTION_STATUS.PAID) {
             toast.success("Interview booked successfully!");
+        } else {
+            toast.error("Failed to confirm booking. Please contact support.");
         }
     };
 
@@ -84,8 +86,8 @@ function PublicInterviewerProfilePage() {
             method: METHOD.POST,
             endpoint: interviewerProfileEndPoints.BOOK_INTERVIEW,
             arg: {
-                interviewerId: slot.interviewerId,
-                interviewerAvailabilityId: slot.id,
+                coachId: slot.coachId,
+                coachAvailabilityId: slot.id,
                 returnUrl: returnUrl,
             },
         });

@@ -2,7 +2,7 @@ import Button from "@mui/material/Button";
 import { Link } from "react-router-dom";
 import useUser from "./common/hooks/useUser";
 import { useState } from "react";
-import BankSelection from "./features/profiles/interviewer/page/BankSelection";
+import BankSelection from "./features/profiles/coach/page/BankSelection";
 
 function App() {
     const user = useUser();

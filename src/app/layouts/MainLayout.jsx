@@ -7,6 +7,17 @@ import { ROLES } from '../../common/constants/common';
 import { callApi } from '../../common/utils/apiConnector';
 import { METHOD } from '../../common/constants/api';
 import { authEndPoints } from '../../features/auth/services/authApi';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import VideoCameraFrontOutlinedIcon from '@mui/icons-material/VideoCameraFrontOutlined';
+import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
+import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
+import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const MainLayout = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -53,7 +64,204 @@ const MainLayout = () => {
 
   const currentMenuItems = menuItems[userData?.role] || menuItems[ROLES.CANDIDATE];
 
+  const isAdmin = userData?.role === ROLES.ADMIN;
+  const [openGroups, setOpenGroups] = useState({
+    users: true,
+    income: true,
+    settings: true
+  });
+
+  const toggleGroup = (key) => {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const adminNavItems = [
+    { label: 'Dashboard', icon: DashboardOutlinedIcon, path: '/admin/dashboard' },
+    { label: 'Schedules', icon: CalendarMonthOutlinedIcon, path: '/admin/schedules' },
+    { label: 'Interviews', icon: VideoCameraFrontOutlinedIcon, path: '/admin/interviews' },
+    { label: 'Users', icon: PeopleOutlineOutlinedIcon, path: '/admin/users' },
+    { label: 'Company', icon: BusinessOutlinedIcon, path: '/admin/companies' },
+    { label: 'Question Bank', icon: QuizOutlinedIcon, path: '/admin/question-bank' },
+    {
+      label: 'Income',
+      icon: PaidOutlinedIcon,
+      key: 'income',
+      children: [
+        { label: 'Earnings', path: '/admin/income/earnings' },
+        { label: 'Refunds', path: '/admin/income/refunds' },
+        { label: 'Payouts', path: '/admin/income/payouts' }
+      ]
+    },
+    { label: 'Reports', icon: BarChartOutlinedIcon, path: '/admin/reports' }
+  ];
+
   const isMenuItemActive = (path) => location.pathname === path;
+
+  if (isAdmin) {
+    return (
+      <div className="main-layout admin-layout">
+        <aside className="admin-sidebar">
+          <div className="sidebar-brand">INTERVU</div>
+          <nav className="sidebar-nav">
+            <div className="sidebar-section">
+              <div className="sidebar-section-title">Menu</div>
+              {adminNavItems.map((item) => {
+                const Icon = item.icon;
+                if (item.children) {
+                  return (
+                    <div key={item.label} className="sidebar-group">
+                      <button
+                        className="sidebar-item"
+                        onClick={() => toggleGroup(item.key)}
+                        type="button"
+                      >
+                        <span className="sidebar-item-icon"><Icon /></span>
+                        <span className="sidebar-item-text">{item.label}</span>
+                        <span className={`sidebar-item-arrow ${openGroups[item.key] ? 'open' : ''}`}>
+                          <ExpandMoreIcon />
+                        </span>
+                      </button>
+                      {openGroups[item.key] && (
+                        <div className="sidebar-subitems">
+                          {item.children.map((child) => (
+                            <button
+                              key={child.label}
+                              className={`sidebar-subitem ${location.pathname + location.search === child.path ? 'active' : ''}`}
+                              onClick={() => navigate(child.path)}
+                              type="button"
+                            >
+                              {child.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={item.label}
+                    className={`sidebar-item ${location.pathname + location.search === item.path ? 'active' : ''}`}
+                    onClick={() => navigate(item.path)}
+                    type="button"
+                  >
+                    <span className="sidebar-item-icon"><Icon /></span>
+                    <span className="sidebar-item-text">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="sidebar-section">
+              <div className="sidebar-section-title">Settings</div>
+              <button
+                className={`sidebar-item ${location.pathname + location.search === '/settings' ? 'active' : ''}`}
+                onClick={() => navigate('/settings')}
+                type="button"
+              >
+                <span className="sidebar-item-icon"><NotificationsNoneOutlinedIcon /></span>
+                <span className="sidebar-item-text">Notification</span>
+              </button>
+              <button
+                className="sidebar-item"
+                onClick={handleLogout}
+                type="button"
+              >
+                <span className="sidebar-item-icon"><LogoutOutlinedIcon /></span>
+                <span className="sidebar-item-text">Log out</span>
+              </button>
+            </div>
+          </nav>
+        </aside>
+
+        <div className="admin-content">
+          <header className="admin-topbar">
+            <div className="admin-search">
+              <input
+                type="text"
+                placeholder="Search..."
+                className="admin-search-input"
+              />
+              <span className="admin-search-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div className="admin-actions">
+              <button className="admin-icon-btn" title="Notifications">
+                <NotificationsNoneOutlinedIcon />
+              </button>
+              <div className="admin-user-dropdown">
+                <button
+                  className="admin-avatar-btn"
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                  title="Account"
+                >
+                  {userData?.profilePicture ? (
+                    <img src={userData.profilePicture} alt="User" />
+                  ) : (
+                    <span>
+                      {userData?.fullName
+                        ?.split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .toUpperCase() || 'U'}
+                    </span>
+                  )}
+                </button>
+
+                {isUserDropdownOpen && (
+                  <div className="dropdown-menu admin-dropdown-menu">
+                    <div className="dropdown-header">
+                      <p className="dropdown-name">{userData?.fullName}</p>
+                      <p className="dropdown-email">{userData?.email}</p>
+                    </div>
+                    <hr className="dropdown-divider" />
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        navigate('/user/profile');
+                        setIsUserDropdownOpen(false);
+                      }}
+                    >
+                      View Profile
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        navigate('/settings');
+                        setIsUserDropdownOpen(false);
+                      }}
+                    >
+                      Settings
+                    </button>
+                    <button className="dropdown-item">Help & Support</button>
+                    <hr className="dropdown-divider" />
+                    <button
+                      className="dropdown-item logout-item"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+          <main className="admin-main">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="main-layout">

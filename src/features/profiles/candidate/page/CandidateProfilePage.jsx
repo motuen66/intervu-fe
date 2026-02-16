@@ -429,7 +429,9 @@ function CandidateProfilePage() {
                                             </Box>
                                         )}
                                     </Box>
-                                    <UploadCv cvUrl={profile.cvUrl} />
+                                    {user.role === ROLES.CANDIDATE && (
+                                        <UploadCv profile={profile} />
+                                    )}
                                 </CardContent>
                             </Card>
                         </Grid>
