@@ -18,10 +18,10 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-export default function DataTable({ 
-    title, 
-    columns, 
-    data = [], 
+export default function DataTable({
+    title,
+    columns,
+    data = [],
     totalItems = 0,
     page = 0,
     pageSize = 10,
@@ -46,14 +46,14 @@ export default function DataTable({
 
     const renderCellValue = (row, column) => {
         const value = row[column.field];
-        
+
         // Get display value (after render function if exists)
         const displayValue = column.render ? column.render(value, row) : value;
-        
+
         if (column.type === 'chip') {
             return (
-                <Chip 
-                    label={displayValue} 
+                <Chip
+                    label={displayValue}
                     size="small"
                     sx={{
                         background: column.chipColor?.(value) || 'rgba(123,97,255,0.2)',
@@ -64,28 +64,28 @@ export default function DataTable({
                 />
             );
         }
-        
+
         if (column.type === 'currency') {
             return `$${parseFloat(value || 0).toLocaleString()}`;
         }
-        
+
         if (column.type === 'date') {
             if (!value) return '-';
             const date = new Date(value);
             if (isNaN(date.getTime())) return '-';
             return date.toLocaleDateString('vi-VN');
         }
-        
+
         if (column.render) {
             return displayValue;
         }
-        
+
         return value || '-';
     };
 
     return (
-        <Paper 
-            sx={{ 
+        <Paper
+            sx={{
                 background: '#ffffff',
                 border: '1px solid #eef0f5',
                 borderRadius: '12px',
@@ -100,7 +100,7 @@ export default function DataTable({
                     </Typography>
                 </Box>
             )}
-            
+
             <TableContainer>
                 <Table>
                     <TableHead>
@@ -111,9 +111,9 @@ export default function DataTable({
                                 </TableCell>
                             )}
                             {columns.map((column) => (
-                                <TableCell 
+                                <TableCell
                                     key={column.field}
-                                    sx={{ 
+                                    sx={{
                                         color: '#94a3b8',
                                         fontWeight: 700,
                                         fontSize: '10px',
@@ -126,8 +126,8 @@ export default function DataTable({
                                 </TableCell>
                             ))}
                             {actions && (
-                                <TableCell 
-                                    sx={{ 
+                                <TableCell
+                                    sx={{
                                         color: '#94a3b8',
                                         fontWeight: 700,
                                         fontSize: '10px',
@@ -143,23 +143,23 @@ export default function DataTable({
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell 
-                                    colSpan={columns.length + (actions ? 1 : 0) + (showIndex ? 1 : 0)} 
-                                    sx={{ 
-                                        textAlign: 'center', 
+                                <TableCell
+                                    colSpan={columns.length + (actions ? 1 : 0) + (showIndex ? 1 : 0)}
+                                    sx={{
+                                        textAlign: 'center',
                                         py: 8,
                                         borderBottom: 'none'
                                     }}
                                 >
-                                    <CircularProgress sx={{ color: '#7B61FF' }} />
+                                    <CircularProgress sx={{ color: '#4F46E5' }} />
                                 </TableCell>
                             </TableRow>
                         ) : !Array.isArray(data) || data.length === 0 ? (
                             <TableRow>
-                                <TableCell 
-                                    colSpan={columns.length + (actions ? 1 : 0) + (showIndex ? 1 : 0)} 
-                                    sx={{ 
-                                        textAlign: 'center', 
+                                <TableCell
+                                    colSpan={columns.length + (actions ? 1 : 0) + (showIndex ? 1 : 0)}
+                                    sx={{
+                                        textAlign: 'center',
                                         py: 8,
                                         color: 'rgba(0,0,0,0.5)',
                                         borderBottom: 'none'
@@ -170,7 +170,7 @@ export default function DataTable({
                             </TableRow>
                         ) : (
                             data.map((row, index) => (
-                                <TableRow 
+                                <TableRow
                                     key={row.id || index}
                                     sx={{
                                         '&:hover': {
@@ -184,9 +184,9 @@ export default function DataTable({
                                         </TableCell>
                                     )}
                                     {columns.map((column) => (
-                                        <TableCell 
+                                        <TableCell
                                             key={column.field}
-                                            sx={{ 
+                                            sx={{
                                                 color: '#1f2937',
                                                 fontSize: '12px',
                                                 borderBottom: '1px solid #eef0f5'
@@ -199,10 +199,10 @@ export default function DataTable({
                                         <TableCell sx={{ borderBottom: '1px solid #eef0f5' }}>
                                             <Box sx={{ display: 'flex', gap: 0.5 }}>
                                                 {onView && (
-                                                    <IconButton 
+                                                    <IconButton
                                                         size="small"
                                                         onClick={() => onView(row)}
-                                                        sx={{ 
+                                                        sx={{
                                                             color: '#64748b',
                                                             '&:hover': { background: '#f1f5f9' }
                                                         }}
@@ -211,10 +211,10 @@ export default function DataTable({
                                                     </IconButton>
                                                 )}
                                                 {onEdit && (
-                                                    <IconButton 
+                                                    <IconButton
                                                         size="small"
                                                         onClick={() => onEdit(row)}
-                                                        sx={{ 
+                                                        sx={{
                                                             color: '#22c55e',
                                                             '&:hover': { background: '#ecfdf3' }
                                                         }}
@@ -223,10 +223,10 @@ export default function DataTable({
                                                     </IconButton>
                                                 )}
                                                 {onDelete && (
-                                                    <IconButton 
+                                                    <IconButton
                                                         size="small"
                                                         onClick={() => onDelete(row)}
-                                                        sx={{ 
+                                                        sx={{
                                                             color: '#ef4444',
                                                             '&:hover': { background: '#fef2f2' }
                                                         }}
@@ -243,7 +243,7 @@ export default function DataTable({
                     </TableBody>
                 </Table>
             </TableContainer>
-            
+
             <TablePagination
                 component="div"
                 count={totalItems}
