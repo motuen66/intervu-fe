@@ -14,18 +14,16 @@ export default function StatsCard({ title, value, icon: Icon, color = '#4F46E5',
                 '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: `0 4px 20px rgba(0,0,0,0.12), 0 0 30px ${color}20`,
-                } - between', mb: 2 }}>
-                    <Typography variant = "body2" sx = {{ color: 'text.secondary', fontSize: '12px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }
-            } >
-                { title }
-                    </ Typography>
-            <Box sx={{
-                width: '40px',
+                }
             }}
-            >
-                <CardContent sx={{ p: 3 }}>
+        >
+            <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {title}
+                    </Typography>
                     <Box sx={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space
+                        width: '40px',
                         height: '40px',
                         borderRadius: '8px',
                         background: `${color}20`,
@@ -35,21 +33,21 @@ export default function StatsCard({ title, value, icon: Icon, color = '#4F46E5',
                     }}>
                         {Icon && <Icon sx={{ color: color, fontSize: '20px' }} />}
                     </Box>
-            </Box>
-
-            <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 700, mb: 0.5 }}>
-                {value?.toLocaleString() || 0}
-            </Typography>
-
-            {trend && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <TrendingUpIcon sx={{ color: '#4ade80', fontSize: '16px' }} />
-                    <Typography variant="caption" sx={{ color: '#4ade80', fontSize: '12px' }}>
-                        {trend}
-                    </Typography>
                 </Box>
-            )}
-        </CardContent>
-        </Card >
+
+                <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 700, mb: 0.5 }}>
+                    {value?.toLocaleString() || 0}
+                </Typography>
+
+                {trend && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <TrendingUpIcon sx={{ color: '#4ade80', fontSize: '16px' }} />
+                        <Typography variant="caption" sx={{ color: '#4ade80', fontSize: '12px' }}>
+                            {trend}
+                        </Typography>
+                    </Box>
+                )}
+            </CardContent>
+        </Card>
     );
 }
