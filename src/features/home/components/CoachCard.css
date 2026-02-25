@@ -1,192 +1,192 @@
 /* Interviewer Card - Exponent Style */
 .interviewer-card {
-  background: #FFFFFF;
-  border-radius: var(--radius-xl);
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.15s ease;
-  position: relative;
-  max-width: 420px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+    background: #ffffff;
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.15s ease;
+    position: relative;
+    max-width: 420px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .interviewer-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 /* Top Row: Avatar + Name + Recommended Badge */
 .card-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  gap: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
 }
 
 .avatar-name-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
 }
 
 .avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
 }
 
 .recommended-badge {
-  background: #EDE9FE;
-  color: var(--color-primary);
-  padding: 4px 10px;
-  border-radius: var(--radius-lg);
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
+    background: #ede9fe;
+    color: var(--mui-palette-primary-main);
+    padding: 4px 10px;
+    border-radius: var(--radius-lg);
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
 }
 
 /* Name Section */
 .name-section {
-  flex: 1;
-  margin-left: 12px;
+    flex: 1;
+    margin-left: 12px;
 }
 
 .name {
-  font-size: 24px !important;
-  font-weight: 700 !important;
-  color: var(--color-text-primary) !important;
-  margin: 0 0 8px 0 !important;
-  line-height: 1.2 !important;
-  display: block !important;
-  visibility: visible !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: var(--mui-palette-text-primary) !important;
+    margin: 0 0 8px 0 !important;
+    line-height: 1.2 !important;
+    display: block !important;
+    visibility: visible !important;
 }
 
 .role-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
 }
 
 .role-text {
-  font-size: 15px;
-  color: var(--color-text-secondary);
-  font-weight: 400;
-  line-height: 1.3;
+    font-size: 15px;
+    color: var(--mui-palette-text-secondary);
+    font-weight: 400;
+    line-height: 1.3;
 }
 
 .companies-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .companies-text {
-  font-size: 14px;
-  color: var(--color-text-tertiary);
-  font-weight: 400;
-  line-height: 1.3;
+    font-size: 14px;
+    color: var(--mui-palette-text-disabled);
+    font-weight: 400;
+    line-height: 1.3;
 }
 
 /* Rating Row */
 .rating-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 14px;
-  font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    font-size: 14px;
 }
 
 .star {
-  font-size: 16px;
+    font-size: 16px;
 }
 
 .rating-value {
-  font-weight: 700;
-  color: var(--color-text-primary);
+    font-weight: 700;
+    color: var(--mui-palette-text-primary);
 }
 
 .sessions-count {
-  color: var(--color-text-secondary);
-  font-weight: 400;
+    color: var(--mui-palette-text-secondary);
+    font-weight: 400;
 }
 
 /* Bio */
 .bio {
-  font-size: 15px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-  margin: 0 0 16px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-grow: 0;
+    font-size: 15px;
+    color: var(--mui-palette-text-secondary);
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 0;
 }
 
 /* Skills Row */
 .skills-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
-  flex-grow: 1;
-  align-content: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-grow: 1;
+    align-content: flex-start;
 }
 
 .skill-tag {
-  background: #F3F4F6;
-  color: #374151;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 500;
+    background: #f3f4f6;
+    color: #374151;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .skill-tag.more-tag {
-  background: #E5E7EB;
-  color: #6B7280;
+    background: #e5e7eb;
+    color: #6b7280;
 }
 
 /* Book Now Button */
 .book-btn {
-  width: 100%;
-  background: var(--color-primary);
-  color: #FFFFFF;
-  border: none;
-  padding: 14px;
-  border-radius: var(--radius-md);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: auto;
+    width: 100%;
+    background: var(--mui-palette-primary-main);
+    color: #ffffff;
+    border: none;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: auto;
 }
 
 .book-btn:hover {
-  background: var(--color-primary-dark);
+    background: var(--mui-palette-primary-dark);
 }
 
 .book-btn:active {
-  transform: scale(0.98);
+    transform: scale(0.98);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .interviewer-card {
-    max-width: 100%;
-  }
+    .interviewer-card {
+        max-width: 100%;
+    }
 }

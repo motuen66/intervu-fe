@@ -6,7 +6,7 @@ export const theme = createTheme({
         mode: "light",
         primary: {
             light: "#818CF8",   // Indigo 400
-            main: "#4F46E5",    // Indigo 600 — BRAND COLOR CHÍNH
+            main: "#4F46E5",    // Indigo 600 
             dark: "#3730A3",    // Indigo 800
             contrastText: "#ffffff",
         },
