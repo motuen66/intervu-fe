@@ -81,7 +81,6 @@ const MainLayout = () => {
     { label: 'Interviews', icon: VideoCameraFrontOutlinedIcon, path: '/admin/interviews' },
     { label: 'Users', icon: PeopleOutlineOutlinedIcon, path: '/admin/users' },
     { label: 'Company', icon: BusinessOutlinedIcon, path: '/admin/companies' },
-    { label: 'Interview Types', icon: BusinessOutlinedIcon, path: '/admin/interview-type' },
     { label: 'Question Bank', icon: QuizOutlinedIcon, path: '/admin/question-bank' },
     {
       label: 'Income',

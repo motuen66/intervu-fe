@@ -4,23 +4,13 @@ import CreateInterviewTypeDialog from "./CreateInterviewTypeDialog";
 import UpdateInterviewTypeDialog from "./UpdateInterviewTypeDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import Button from "@mui/material/Button";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
-import TablePagination from "@mui/material/TablePagination";
-import InputAdornment from "@mui/material/InputAdornment";
-import SearchIcon from "@mui/icons-material/Search";
 import "./InterviewTypeManagementPage.css";
 
 export default function InterviewTypeManagementPage() {
@@ -33,7 +23,6 @@ export default function InterviewTypeManagementPage() {
     const [deletingId, setDeletingId] = useState(null);
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
-    const [totalCount, setTotalCount] = useState(0);
     const [search, setSearch] = useState("");
 
     const fetchItems = useCallback(
@@ -66,9 +55,7 @@ export default function InterviewTypeManagementPage() {
                 }
 
                 const itemsList = data.items || data.data || [];
-                const total = data.total ?? data.totalItems ?? data.totalCount ?? itemsList.length;
                 setItems(itemsList || []);
-                setTotalCount(Number(total) || 0);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -125,16 +112,6 @@ export default function InterviewTypeManagementPage() {
         }
     };
 
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
-
-    const handleChangePageSize = (event) => {
-        const newSize = parseInt(event.target.value, 10) || 10;
-        setPageSize(newSize);
-        // reset to first page when page size changes
-        setPage(0);
-    };
 
     // const handleSearchChange = (e) => {
     //     setSearch(e.target.value);
@@ -142,9 +119,29 @@ export default function InterviewTypeManagementPage() {
     //     setPage(0);
     // };
 
+    const getStatusLabel = (value) => {
+        if (value === 1 || value === "1" || value === true) return "Active";
+        return "Inactive";
+    };
+
+    const primaryCtaSx = {
+        textTransform: "none",
+        background: "#2f5cf6",
+        color: "#ffffff",
+        px: 3,
+        py: 1,
+        borderRadius: "999px",
+        fontSize: "14px",
+        fontWeight: 600,
+        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
+        "&:hover": {
+            background: "#2952e6",
+        },
+    };
+
     return (
         <Box className="interview-type-management" p={2}>
-            <Paper elevation={2} sx={{ overflow: "hidden" }}>
+            <div className="interview-type-panel">
                 <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <Typography variant="h6">Interview Types</Typography>
@@ -164,7 +161,7 @@ export default function InterviewTypeManagementPage() {
                     </Box>
 
                     <Box>
-                        <Button variant="contained" onClick={() => setOpenCreate(true)}>
+                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
                             Create New
                         </Button>
                     </Box>
@@ -174,57 +171,66 @@ export default function InterviewTypeManagementPage() {
                     <Box display="flex" justifyContent="center" mt={6} mb={6}>
                         <CircularProgress />
                     </Box>
+                ) : items.length === 0 ? (
+                    <Box className="interview-type-empty">
+                        <div className="interview-type-empty-title">No interview types yet</div>
+                        <div className="interview-type-empty-subtitle">
+                            Create your first interview type to get started.
+                        </div>
+                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
+                            Create New
+                        </Button>
+                    </Box>
                 ) : (
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Description</TableCell>
-                                <TableCell>Is Coding</TableCell>
-                                <TableCell>Duration (min)</TableCell>
-                                <TableCell>Base Price</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {items.map((it) => (
-                                <TableRow key={it.id} hover>
-                                    <TableCell sx={{ fontWeight: 600 }}>{it.name}</TableCell>
-                                    <TableCell sx={{ color: "text.secondary", maxWidth: 400 }}>
-                                        {it.description}
-                                    </TableCell>
-                                    <TableCell>{it.isCoding ? "Yes" : "No"}</TableCell>
-                                    <TableCell>{it.durationMinutes}</TableCell>
-                                    <TableCell>{it.basePrice}</TableCell>
-                                    <TableCell>{String(it.status)}</TableCell>
-                                    <TableCell align="right">
+                    <Box className="interview-type-grid">
+                        {items.map((it) => (
+                            <div key={it.id} className="interview-type-card">
+                                <div className="interview-type-card-header">
+                                    <div>
+                                        <div className="interview-type-card-title">{it.name}</div>
+                                        <div className="interview-type-card-description">
+                                            {it.description || "No description"}
+                                        </div>
+                                    </div>
+                                    <div className="interview-type-card-actions">
                                         <IconButton size="small" onClick={() => handleUpdateClick(it)}>
                                             <EditIcon />
                                         </IconButton>
                                         <IconButton size="small" onClick={() => handleDeleteClick(it.id)}>
                                             <DeleteIcon />
                                         </IconButton>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                    </div>
+                                </div>
+                                <div className="interview-type-card-meta">
+                                    <div className="meta-item">
+                                        <span className="meta-label">Duration</span>
+                                        <span className="meta-value">{it.durationMinutes} min</span>
+                                    </div>
+                                    <div className="meta-item">
+                                        <span className="meta-label">Base Price</span>
+                                        <span className="meta-value">{it.basePrice}</span>
+                                    </div>
+                                    <div className="meta-item">
+                                        <span className="meta-label">Is Coding</span>
+                                        <span className={`meta-pill ${it.isCoding ? "pill-yes" : "pill-no"}`}>
+                                            {it.isCoding ? "Yes" : "No"}
+                                        </span>
+                                    </div>
+                                    <div className="meta-item">
+                                        <span className="meta-label">Status</span>
+                                        <span
+                                            className={`meta-pill ${getStatusLabel(it.status) === "Active" ? "pill-active" : "pill-inactive"}`}
+                                        >
+                                            {getStatusLabel(it.status)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </Box>
                 )}
 
-                <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-                    <TablePagination
-                        component="div"
-                        count={totalCount}
-                        page={page}
-                        onPageChange={handleChangePage}
-                        rowsPerPage={pageSize}
-                        onRowsPerPageChange={(e) => handleChangePageSize(e)}
-                        rowsPerPageOptions={[5, 10, 25, 50]}
-                        labelRowsPerPage="Rows"
-                    />
-                </Box>
-            </Paper>
+            </div>
 
             <CreateInterviewTypeDialog
                 open={openCreate}
