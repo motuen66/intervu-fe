@@ -1,9 +1,3 @@
-/* ============================================================
-   INTERVU GLOBAL STYLES
-   Colors come from theme.jsx via MUI cssVariables: true
-   → Use var(--mui-palette-*) in CSS files
-   ============================================================ */
-
 :root {
     /* Supplementary color (no MUI equivalent) */
     --color-bg-subtle: #f9fafb;
