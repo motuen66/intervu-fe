@@ -27,7 +27,7 @@
 
 .admin-primary-btn {
   border: none;
-  background: var(--mui-palette-primary-main, #8b5cf6);
+  background: var(--mui-palette-secondary-main, #2f5cf6);
   color: #ffffff;
   font-size: 12px;
   font-weight: 600;
@@ -37,15 +37,15 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 6px 14px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 6px 14px rgba(47, 92, 246, 0.25);
 }
 
 .admin-primary-btn:hover {
-  background: var(--mui-palette-primary-dark, #7c3aed);
+  background: var(--mui-palette-secondary-dark, #2952e6);
 }
 
 .admin-primary-btn--cta {
-  background: #2f5cf6;
+  background: var(--mui-palette-secondary-main, #2f5cf6);
   padding: 10px 26px;
   border-radius: 999px;
   font-size: 14px;
@@ -53,7 +53,7 @@
 }
 
 .admin-primary-btn--cta:hover {
-  background: #2952e6;
+  background: var(--mui-palette-secondary-dark, #2952e6);
 }
 
 .admin-subtabs {
