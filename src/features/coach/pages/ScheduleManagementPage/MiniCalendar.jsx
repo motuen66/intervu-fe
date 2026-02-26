@@ -1,9 +1,20 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Box, Card, CardContent, Typography, IconButton, Stack } from "@mui/material";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import { getAvailabilitiesByMonth } from "../../services/availabilityApi";
 
-const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }) => {
+const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, availabilities = [] }) => {
     const [displayDate, setDisplayDate] = useState(new Date());
+    const [monthAvailabilities, setMonthAvailabilities] = useState([]);
+
+    useEffect(() => {
+        if (!interviewerId) return;
+        getAvailabilitiesByMonth(interviewerId, displayDate.getMonth() + 1, displayDate.getFullYear())
+            .then((data) => setMonthAvailabilities(Array.isArray(data) ? data : []))
+            .catch(() => setMonthAvailabilities([]));
+        // Re-fetch when month changes OR when Redux availabilities changes (add/delete)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [interviewerId, displayDate.getMonth(), displayDate.getFullYear(), availabilities.length]);
 
     const daysInMonth = useMemo(() => {
         const year = displayDate.getFullYear();
@@ -19,7 +30,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     // Group availabilities by date
     const availabilitiesByDate = useMemo(() => {
         const map = {};
-        availabilities.forEach((avail) => {
+        monthAvailabilities.forEach((avail) => {
             // Only count future/current slots
             const startDate = new Date(avail.startTime);
             const endDate = new Date(avail.endTime);
@@ -32,7 +43,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
             }
         });
         return map;
-    }, [availabilities]);
+    }, [monthAvailabilities]);
 
     const handlePrevMonth = () => {
         setDisplayDate(new Date(displayDate.getFullYear(), displayDate.getMonth() - 1, 1));
@@ -49,10 +60,10 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
 
     const renderDots = (count) => {
         if (count === 0) return null;
-        
+
         const maxDots = 3;
         const dotsToShow = Math.min(count, maxDots);
-        
+
         return (
             <Box sx={{ display: "flex", gap: "2px", justifyContent: "center", mt: 0.5 }}>
                 {Array.from({ length: dotsToShow }).map((_, idx) => (
@@ -87,7 +98,9 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
     // Get selected date string for comparison
-    const selectedDateStr = selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}` : null;
+    const selectedDateStr = selectedDate
+        ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`
+        : null;
 
     // Generate calendar grid
     const calendarDays = [];
@@ -96,7 +109,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     for (let i = 0; i < totalCells; i++) {
         const dayNumber = i - daysInMonth.startingDayOfWeek + 1;
         const isValidDay = dayNumber > 0 && dayNumber <= daysInMonth.daysInMonth;
-        
+
         if (isValidDay) {
             const dateStr = `${daysInMonth.year}-${String(daysInMonth.month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
             const slotsCount = availabilitiesByDate[dateStr] || 0;
@@ -115,9 +128,9 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         justifyContent: "center",
                         cursor: "pointer",
                         borderRadius: "8px",
-                        border: isToday ? "2px solid" : (isSelected ? "1px solid" : "none"),
-                        borderColor: isToday ? "primary.main" : (isSelected ? "primary.light" : "transparent"),
-                        backgroundColor: isToday ? "primary.light" : (isSelected ? "action.hover" : "transparent"),
+                        border: isToday ? "2px solid" : isSelected ? "1px solid" : "none",
+                        borderColor: isToday ? "primary.main" : isSelected ? "primary.light" : "transparent",
+                        backgroundColor: isToday ? "primary.light" : isSelected ? "action.hover" : "transparent",
                         transition: "all 0.2s",
                         "&:hover": {
                             backgroundColor: "action.hover",
@@ -128,15 +141,15 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                     <Typography
                         variant="body2"
                         sx={{
-                            fontWeight: isToday ? 700 : (isSelected ? 600 : 500),
-                            color: isToday ? "primary.main" : (isSelected ? "primary.dark" : "text.primary"),
+                            fontWeight: isToday ? 700 : isSelected ? 600 : 500,
+                            color: isToday ? "primary.main" : isSelected ? "primary.dark" : "text.primary",
                             fontSize: "0.875rem",
                         }}
                     >
                         {dayNumber}
                     </Typography>
                     {renderDots(slotsCount)}
-                </Box>
+                </Box>,
             );
         } else {
             calendarDays.push(<Box key={i} />);
@@ -144,8 +157,18 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     }
 
     const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
     ];
 
     return (

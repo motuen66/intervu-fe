@@ -22,6 +22,7 @@ import { AVAILABILITY_SLOTS_STATUS, getAvailabilityColors } from "../../../../co
 import StatusLegend from "./StatusLegend";
 import UpcomingSessionBlog from "./UpcomingSessionBlog";
 import "./ScheduleManagement.css";
+import { toLocalDateTimeWithOffset } from "../../../../common/utils/dateFormatter";
 
 const ScheduleManagement = () => {
     const dispatch = useDispatch();
@@ -420,10 +421,11 @@ const ScheduleManagement = () => {
                 return;
             }
 
+            console.log("Prepared payload for date:", { startTime, endTime });
             payloads.push({
                 coachId: userId,
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
+                startTime: toLocalDateTimeWithOffset(startTime),
+                endTime: toLocalDateTimeWithOffset(endTime),
                 focus: formData.focus,
                 typeId: formData.focus === FocusEnum.GeneralSkills ? formData.typeId : null,
             });
@@ -523,6 +525,7 @@ const ScheduleManagement = () => {
         borderColor = colors.border;
         // Use generic titles; do not display candidate data on this page
         title = colors.title;
+        const textColor = getAvailabilityColors(status, isPast).text;
 
         if (isPast) {
             classNames.push("past-event");
@@ -540,6 +543,7 @@ const ScheduleManagement = () => {
             end: avail.endTime,
             backgroundColor,
             borderColor,
+            textColor,
             classNames,
             editable: !isPast && !isBooked,
             extendedProps: {
@@ -639,6 +643,11 @@ const ScheduleManagement = () => {
                             }}
                         >
                             <Box sx={{ p: 3, position: "relative" }}>
+                                {/* Quick Legend above the calendar */}
+                                <Box sx={{ mb: 2 }}>
+                                    <StatusLegend compact />
+                                </Box>
+
                                 {loading && (
                                     <Box
                                         sx={{
@@ -742,6 +751,7 @@ const ScheduleManagement = () => {
                         <Stack spacing={3}>
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                                 <MiniCalendar
+                                    interviewerId={userId}
                                     availabilities={availabilities}
                                     onDateClick={handleMiniCalendarDateClick}
                                     currentDate={currentDate}
@@ -749,34 +759,7 @@ const ScheduleManagement = () => {
                                 />
                             </div>
 
-                            <Card
-                                sx={{
-                                    background: "white",
-                                    boxShadow: 1,
-                                    border: "1px solid",
-                                    borderColor: "grey.200",
-                                }}
-                            >
-                                <CardContent sx={{ p: 2.5 }}>
-                                    <Box display="flex" justifyContent="space-between" mb={2}>
-                                        <Typography
-                                            variant="overline"
-                                            sx={{ color: "text.secondary", fontWeight: 600, letterSpacing: 1 }}
-                                        >
-                                            Quick Legend
-                                        </Typography>
-                                    </Box>
-
-                                    <StatusLegend />
-                                </CardContent>
-                            </Card>
-
-                            <UpcomingSessionBlog
-                                availabilities={availabilities}
-                                loading={loading}
-                                parseLocalDate={parseLocalDate}
-                                parseLocalTime={parseLocalTime}
-                            />
+                            <UpcomingSessionBlog interviewerId={userId} availabilities={availabilities} />
                         </Stack>
                     </Box>
                 </Box>

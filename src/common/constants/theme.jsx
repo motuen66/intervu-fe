@@ -115,5 +115,14 @@ export const theme = createTheme({
                 },
             },
         },
+        MuiDialogTitle: {
+            styleOverrides: {
+                root: {
+                    fontSize: "1.125rem",
+                    fontWeight: 700,
+                    lineHeight: 1.4,
+                },
+            },
+        },
     },
 });

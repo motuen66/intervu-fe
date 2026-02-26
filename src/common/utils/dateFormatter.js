@@ -27,3 +27,39 @@ export const getYearDiff = (start, end) => {
     }
     return yearDiff;
 };
+
+export function toLocalDateTimeWithOffset(date) {
+    if (!date) return null;
+
+    if (!(date instanceof Date)) {
+        date = new Date(date);
+    }
+
+    function pad(n) {
+        return n < 10 ? "0" + n : n;
+    }
+
+    var offset = -date.getTimezoneOffset();
+    var sign = offset >= 0 ? "+" : "-";
+
+    var hoursOffset = pad(Math.floor(Math.abs(offset) / 60));
+    var minutesOffset = pad(Math.abs(offset) % 60);
+
+    return (
+        date.getFullYear() +
+        "-" +
+        pad(date.getMonth() + 1) +
+        "-" +
+        pad(date.getDate()) +
+        "T" +
+        pad(date.getHours()) +
+        ":" +
+        pad(date.getMinutes()) +
+        ":" +
+        pad(date.getSeconds()) +
+        sign +
+        hoursOffset +
+        ":" +
+        minutesOffset
+    );
+}

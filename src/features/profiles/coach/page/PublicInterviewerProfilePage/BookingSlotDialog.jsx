@@ -25,6 +25,7 @@ import { enUS } from "date-fns/locale";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import useLoading from "../../../../../common/hooks/useLoading";
+import StatusLegend from "../../../../coach/pages/ScheduleManagementPage/StatusLegend";
 
 const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => {
     const [availableSlots, setAvailableSlots] = useState([]);
@@ -82,10 +83,16 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
         }
     };
 
+    // Convert a UTC ISO string to a local-timezone Date at midnight (date only)
+    const toLocalDate = (isoString) => {
+        const d = new Date(isoString);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    };
+
     // Get unique dates from slots (excluding past dates)
     const getAvailableDates = () => {
         return availableSlots
-            .map((slot) => new Date(slot.startTime.split("T")[0]))
+            .map((slot) => toLocalDate(slot.startTime))
             .filter((date, idx, arr) => {
                 const isUnique = arr.findIndex((d) => isSameDay(d, date)) === idx;
                 return isUnique && !isPastDate(date);
@@ -95,8 +102,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
     // Get slots for selected date (excluding past slots)
     const getSlotsForDate = (date) => {
         return availableSlots.filter((slot) => {
-            const slotDate = new Date(slot.startTime.split("T")[0]);
-            return isSameDay(slotDate, date) && !isPastSlot(slot);
+            const slotLocalDate = toLocalDate(slot.startTime);
+            return isSameDay(slotLocalDate, date) && !isPastSlot(slot);
         });
     };
 
@@ -150,11 +157,10 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
         }
     };
 
+    // Converts a UTC ISO string to local time HH:mm
     const parseTime = (isoString) => {
-        const match = isoString.match(/T(\d{2}):(\d{2})/);
-        if (!match) return "";
-        const [, hour, minute] = match;
-        return `${hour}:${minute}`;
+        const date = new Date(isoString);
+        return format(date, "HH:mm");
     };
 
     const isPastDate = (date) => {
@@ -190,10 +196,13 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                             <CircularProgress />
                         </Box>
                     ) : (
-                        <Stack direction="row" spacing={3}>
+                        <Stack direction="row" spacing={3} alignItems="stretch">
                             {/* LEFT SIDE — CALENDAR */}
                             <Box sx={{ flex: 1 }}>
                                 <Stack spacing={2}>
+                                    {/* Status Legend */}
+                                    <StatusLegend compact />
+
                                     {/* Month Header */}
                                     <Stack direction="row" alignItems="center" justifyContent="space-between">
                                         <IconButton size="small" onClick={handlePrevMonth}>
@@ -250,7 +259,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                                             p: 0.5,
                                                                             cursor: hasSlot ? "pointer" : "default",
                                                                             border: "none",
-                                                                            opacity: hasSlot ? 1 : 0.4,
+                                                                            opacity: hasSlot ? 1 : 0.35,
                                                                         }}
                                                                         onClick={() => hasSlot && handleDateClick(day)}
                                                                     >
@@ -267,8 +276,10 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                                                         : "transparent",
                                                                                     color: isSelected
                                                                                         ? "white"
-                                                                                        : "text.primary",
-                                                                                    fontWeight: isSelected ? 600 : 500,
+                                                                                        : hasSlot
+                                                                                          ? "#111827"
+                                                                                          : "text.secondary",
+                                                                                    fontWeight: hasSlot ? 700 : 400,
                                                                                     borderRadius: "8px",
                                                                                     fontSize: "0.875rem",
                                                                                     transition: "all 0.2s",
@@ -295,8 +306,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                             </Box>
 
                             {/* RIGHT SIDE — TIME SLOTS */}
-                            <Box sx={{ width: 260 }}>
-                                <Stack spacing={1.5}>
+                            <Box sx={{ width: 260, display: "flex", flexDirection: "column" }}>
+                                <Stack spacing={1.5} sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
                                     <Box>
                                         <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
                                             Select Time
@@ -312,7 +323,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                         )}
                                     </Box>
 
-                                    <Box sx={{ maxHeight: 400, overflowY: "auto" }}>
+                                    <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
                                         {slotsForSelectedDate.length > 0 ? (
                                             <Stack spacing={1}>
                                                 {slotsForSelectedDate.map((slot) => (
@@ -331,8 +342,17 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                                     : "background.paper",
                                                             transition: "all 0.2s ease-in-out",
                                                             "&:hover": {
-                                                                borderColor: "#4F46E5",
-                                                                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                                                                borderColor: "#6366f1",
+                                                                bgcolor:
+                                                                    selectedSlot?.id === slot.id
+                                                                        ? "#6366F1"
+                                                                        : "#EEF2FF",
+                                                                boxShadow: "0 4px 6px rgba(99,102,241,0.15)",
+                                                            },
+                                                            "&:focus-visible": {
+                                                                outline: "none",
+                                                                borderColor: "#6366f1",
+                                                                bgcolor: "#EEF2FF",
                                                             },
                                                         }}
                                                     >
