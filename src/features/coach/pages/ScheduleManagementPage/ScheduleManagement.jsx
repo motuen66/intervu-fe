@@ -59,14 +59,15 @@ const ScheduleManagement = () => {
         JobDescription: 1,
     };
     const [confirmOpen, setConfirmOpen] = useState(false);
-    // const [confirmType, set                                                                                                      ] = useState(null); // "update" | "delete"
+    // const [confirmType, set] = useState(null); // "update" | "delete"
     const [selectedItem, setSelectedItem] = useState(null);
 
     // Calculate date range for current month
     const today = new Date();
     const minDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const maxDateStr = `${lastDayOfMonth.getFullYear()}-${String(lastDayOfMonth.getMonth() + 1).padStart(2, "0")}-${String(lastDayOfMonth.getDate()).padStart(2, "0")}`;
+    const maxDate30 = new Date(today);
+    maxDate30.setDate(today.getDate() + 30);
+    const maxDateStr = `${maxDate30.getFullYear()}-${String(maxDate30.getMonth() + 1).padStart(2, "0")}-${String(maxDate30.getDate()).padStart(2, "0")}`;
 
     const showError = (message) => {
         if (!message) return;
@@ -220,6 +221,12 @@ const ScheduleManagement = () => {
         const event = info.event;
         const availabilityId = event.id;
 
+        if (!event.end) {
+            info.revert();
+            toast.error("Invalid end time – cannot resize to exactly midnight");
+            return;
+        }
+
         // Prevent editing past events
         if (event.extendedProps.isPast) {
             toast.error("Cannot modify past availability");
@@ -274,14 +281,12 @@ const ScheduleManagement = () => {
             }
         }
 
-        // Check if the event stays within the current month
-        const eventMonth = startTime.getMonth();
-        const eventYear = startTime.getFullYear();
-        const currentMonth = currentDate.getMonth();
-        const currentYear = currentDate.getFullYear();
+        const maxAllowed = new Date();
+        maxAllowed.setDate(maxAllowed.getDate() + 30);
+        maxAllowed.setHours(23, 59, 59, 999);
 
-        if (eventMonth !== currentMonth || eventYear !== currentYear) {
-            toast.error("Cannot move availability to a different month");
+        if (startTime > maxAllowed) {
+            toast.error("Cannot move availability beyond the 30-day window");
             info.revert();
             return;
         }
@@ -349,12 +354,16 @@ const ScheduleManagement = () => {
         const startTotalMinutes = startHour * 60 + startMinute;
         const endTotalMinutes = endHour * 60 + endMinute;
 
-        if (startTotalMinutes >= endTotalMinutes) {
-            showError("EndTime must be greater than StartTime");
+        // End can > start
+        const isOvernight = endTotalMinutes <= startTotalMinutes;
+        const durationMinutes = isOvernight
+            ? 24 * 60 - startTotalMinutes + endTotalMinutes
+            : endTotalMinutes - startTotalMinutes;
+
+        if (durationMinutes === 0) {
+            showError("Start time and end time cannot be the same");
             return;
         }
-
-        const durationMinutes = endTotalMinutes - startTotalMinutes;
 
         if (formData.focus === FocusEnum.JobDescription && durationMinutes < 30) {
             showError("Availability must be at least 30 minutes");
@@ -375,7 +384,9 @@ const ScheduleManagement = () => {
             const [year, month, day] = dateStr.split("-").map(Number);
             
             const startTime = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
-            const endTime = new Date(year, month - 1, day, endHour, endMinute, 0, 0);
+            const endTime = isOvernight
+                ? new Date(year, month - 1, day + 1, endHour, endMinute, 0, 0)
+                : new Date(year, month - 1, day, endHour, endMinute, 0, 0);
 
             if (startTime < new Date()) {
                 showError(`Cannot create availability in the past for date: ${dateStr}`);
@@ -677,6 +688,16 @@ const ScheduleManagement = () => {
                                     }}
                                     height="auto"
                                     timeZone="local"
+                                    slotLabelFormat={{
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                    }}
+                                    eventTimeFormat={{
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                    }}
                                 />
                             </Box>
                         </Card>
