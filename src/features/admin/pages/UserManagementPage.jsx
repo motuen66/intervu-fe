@@ -29,12 +29,12 @@ export default function UserManagementPage() {
     const [searchInput, setSearchInput] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
-    
+
     // Modal states
     const [openFormModal, setOpenFormModal] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [formMode, setFormMode] = useState('create'); 
+    const [formMode, setFormMode] = useState('create');
     useEffect(() => {
         fetchUsers();
     }, [page, pageSize, roleFilter, searchTerm]);
@@ -62,7 +62,7 @@ export default function UserManagementPage() {
                 method: METHOD.GET,
                 endpoint: `${adminEndPoints.FILTER_USERS}?${params.join('&')}`,
             });
-            
+
             if (response?.success) {
                 setUsers(response.data?.items || []);
                 setTotalItems(response.data?.totalItems || 0);
@@ -122,13 +122,13 @@ export default function UserManagementPage() {
 
     const handleDeleteConfirm = async () => {
         if (!selectedUser) return;
-        
+
         try {
             const response = await callApi({
                 method: METHOD.DELETE,
                 endpoint: adminEndPoints.DELETE_USER(selectedUser.id),
             });
-            
+
             if (response?.success) {
                 toast.success('Delete user successfully!');
                 fetchUsers();
@@ -146,7 +146,7 @@ export default function UserManagementPage() {
     const handleFormSubmit = async (formData, onError) => {
         try {
             let response;
-            
+
             if (formMode === 'create') {
                 response = await callApi({
                     method: METHOD.POST,
@@ -160,7 +160,7 @@ export default function UserManagementPage() {
                     arg: formData,
                 });
             }
-            
+
             if (response?.success) {
                 toast.success(formMode === 'create' ? 'Tạo user thành công!' : 'Cập nhật user thành công!');
                 setOpenFormModal(false);
@@ -226,7 +226,7 @@ export default function UserManagementPage() {
                     onClick={handleCreateUser}
                     sx={{
                         textTransform: 'none',
-                        background: '#2f5cf6',
+                        background: '#4F46E5',
                         color: '#ffffff',
                         px: 3,
                         py: 1,
@@ -278,7 +278,7 @@ export default function UserManagementPage() {
                                         borderColor: 'rgba(102, 126, 234, 0.5)'
                                     },
                                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: '#667eea'
+                                        borderColor: '#4F46E5'
                                     }
                                 }}
                                 MenuProps={{
@@ -331,8 +331,8 @@ export default function UserManagementPage() {
             />
 
             {/* Delete Confirmation Dialog */}
-            <Dialog 
-                open={openDeleteDialog} 
+            <Dialog
+                open={openDeleteDialog}
                 onClose={() => setOpenDeleteDialog(false)}
                 PaperProps={{
                     sx: {
@@ -352,13 +352,13 @@ export default function UserManagementPage() {
                     </Typography>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                    <Button 
+                    <Button
                         onClick={() => setOpenDeleteDialog(false)}
                         sx={{ textTransform: 'none' }}
                     >
                         Cancel
                     </Button>
-                    <Button 
+                    <Button
                         onClick={handleDeleteConfirm}
                         variant="contained"
                         color="error"

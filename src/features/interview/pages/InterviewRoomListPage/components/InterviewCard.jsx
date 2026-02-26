@@ -14,14 +14,14 @@ import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { ROLES } from "../../../../../common/constants/common";
 import { useNavigate } from "react-router-dom";
 
-function InterviewCard({ 
-    room, 
-    user, 
-    onRequestReschedule, 
+function InterviewCard({
+    room,
+    user,
+    onRequestReschedule,
     onCancel,
     onClick,
     showActions = true,
-    hasPendingReschedule = false 
+    hasPendingReschedule = false
 }) {
     const navigate = useNavigate();
     // Check if reschedule is available
@@ -76,30 +76,30 @@ function InterviewCard({
         }
 
         const statusConfig = {
-            [INTERVIEW_ROOM_STATUS.SCHEDULED]: { 
-                label: "Scheduled", 
+            [INTERVIEW_ROOM_STATUS.SCHEDULED]: {
+                label: "Scheduled",
                 color: "primary",
                 sx: { bgcolor: "rgba(25, 118, 210, 0.12)", color: "#1565c0" }
             },
-            [INTERVIEW_ROOM_STATUS.ON_GOING]: { 
-                label: "Ongoing", 
+            [INTERVIEW_ROOM_STATUS.ON_GOING]: {
+                label: "Ongoing",
                 color: "success",
                 sx: { bgcolor: "rgba(46, 125, 50, 0.12)", color: "#2e7d32" }
             },
-            [INTERVIEW_ROOM_STATUS.COMPLETED]: { 
-                label: "Completed", 
+            [INTERVIEW_ROOM_STATUS.COMPLETED]: {
+                label: "Completed",
                 color: "default",
                 sx: { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#616161" }
             },
-            [INTERVIEW_ROOM_STATUS.CANCELLED]: { 
-                label: "Cancelled", 
+            [INTERVIEW_ROOM_STATUS.CANCELLED]: {
+                label: "Cancelled",
                 color: "error",
                 sx: { bgcolor: "rgba(211, 47, 47, 0.12)", color: "#c62828" }
             },
         };
 
         const config = statusConfig[room.status] || statusConfig[INTERVIEW_ROOM_STATUS.SCHEDULED];
-        
+
         return (
             <Chip
                 label={config.label}
@@ -125,39 +125,67 @@ function InterviewCard({
                     {/* Reschedule Button */}
                     {canReschedule ? (
                         <Button
-                            variant="text"
+                            variant="outlined"
                             color="primary"
                             size="small"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onRequestReschedule?.(room);
                             }}
-                            sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                            sx={{
+                                fontWeight: 600,
+                                fontSize: "0.8rem",
+                                textTransform: "none",
+                                borderRadius: 1.5,
+                                px: 2,
+                                "&:hover": {
+                                    bgcolor: "primary.main",
+                                    color: "#fff",
+                                    borderColor: "primary.main",
+                                },
+                            }}
                         >
                             Reschedule
                         </Button>
                     ) : (
                         <Button
-                            variant="text"
+                            variant="outlined"
                             color="primary"
                             size="small"
                             disabled
-                            sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                            sx={{
+                                fontWeight: 600,
+                                fontSize: "0.8rem",
+                                textTransform: "none",
+                                borderRadius: 1.5,
+                                px: 2,
+                            }}
                         >
                             Reschedule
                         </Button>
                     )}
-                    
+
                     {/* Cancel Button - Always visible */}
                     <Button
-                        variant="text"
+                        variant="outlined"
                         color="error"
                         size="small"
                         onClick={(e) => {
                             e.stopPropagation();
                             onCancel?.(room);
                         }}
-                        sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                        sx={{
+                            fontWeight: 600,
+                            fontSize: "0.8rem",
+                            textTransform: "none",
+                            borderRadius: 1.5,
+                            px: 2,
+                            "&:hover": {
+                                bgcolor: "error.main",
+                                color: "#fff",
+                                borderColor: "error.main",
+                            },
+                        }}
                     >
                         Cancel
                     </Button>
@@ -176,8 +204,8 @@ function InterviewCard({
                         e.stopPropagation();
                         navigate(`/interview/room/${room.id}`);
                     }}
-                    sx={{ 
-                        fontWeight: 600, 
+                    sx={{
+                        fontWeight: 600,
                         fontSize: "0.875rem",
                         borderRadius: 1.5,
                         boxShadow: "none",
