@@ -15,7 +15,6 @@ import {
 } from "@mui/material";
 import { IoAdd, IoTrash } from "react-icons/io5";
 import toast from "react-hot-toast";
-import { getInterviewTypeById } from "../../../admin/services/interviewTypeApi";
 
 const UpdateAvailableSlotDialog = ({
     open,
@@ -29,6 +28,7 @@ const UpdateAvailableSlotDialog = ({
     loading,
     minDate,
     maxDate,
+    onTypeSelect,
 }) => {
     const [tempDate, setTempDate] = useState("");
 
@@ -44,7 +44,7 @@ const UpdateAvailableSlotDialog = ({
         }
         setFormData({
             ...formData,
-            duplicateDates: [...formData.duplicateDates, tempDate]
+            duplicateDates: [...formData.duplicateDates, tempDate],
         });
         setTempDate("");
     };
@@ -52,14 +52,20 @@ const UpdateAvailableSlotDialog = ({
     const handleRemoveDuplicateDate = (dateToRemove) => {
         setFormData({
             ...formData,
-            duplicateDates: formData.duplicateDates.filter(d => d !== dateToRemove)
+            duplicateDates: formData.duplicateDates.filter((d) => d !== dateToRemove),
         });
     };
 
     return (
         <Modal
             open={open}
-            onClose={onClose}
+            onClose={(event, reason) => {
+                if (reason === "backdropClick" || reason === "escapeKeyDown") onClose();
+            }}
+            disableScrollLock={false}
+            closeAfterTransition
+            keepMounted
+            BackdropProps={{ style: { position: "fixed" } }}
             sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
         >
             <Card sx={{ width: "90%", maxWidth: "500px", borderRadius: "12px", maxHeight: "90vh", overflowY: "auto" }}>
@@ -78,11 +84,13 @@ const UpdateAvailableSlotDialog = ({
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 inputProps={{
-                                    min: minDate || (() => {
-                                        const now = new Date();
-                                        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                                    })(),
-                                    max: maxDate
+                                    min:
+                                        minDate ||
+                                        (() => {
+                                            const now = new Date();
+                                            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                                        })(),
+                                    max: maxDate,
                                 }}
                                 fullWidth
                                 variant="outlined"
@@ -101,11 +109,13 @@ const UpdateAvailableSlotDialog = ({
                                     value={tempDate}
                                     onChange={(e) => setTempDate(e.target.value)}
                                     inputProps={{
-                                        min: minDate || (() => {
-                                            const now = new Date();
-                                            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                                        })(),
-                                        max: maxDate
+                                        min:
+                                            minDate ||
+                                            (() => {
+                                                const now = new Date();
+                                                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                                            })(),
+                                        max: maxDate,
                                     }}
                                     fullWidth
                                     variant="outlined"
@@ -161,27 +171,10 @@ const UpdateAvailableSlotDialog = ({
                                         labelId="type-label"
                                         value={formData.typeId || ""}
                                         label="Type"
-                                        onChange={async (e) => {
+                                        onChange={(e) => {
                                             const selectedTypeId = e.target.value;
                                             setFormData({ ...formData, typeId: selectedTypeId });
-
-                                            if (selectedTypeId) {
-                                                try {
-                                                    const typeDetails = await getInterviewTypeById(selectedTypeId);
-                                                    const duration = typeDetails.durationMinutes || 0;
-
-                                                    if (duration > 0) {
-                                                        const startTotalMinutes = formData.startHour * 60 + formData.startMinute;
-                                                        const endTotalMinutes = startTotalMinutes + duration;
-                                                        const newEndHour = Math.floor(endTotalMinutes / 60);
-                                                        const newEndMinute = endTotalMinutes % 60;
-                                                        setFormData((prev) => ({ ...prev, typeId: selectedTypeId, endHour: newEndHour, endMinute: newEndMinute }));
-                                                    }
-                                                } catch (error) {
-                                                    console.error("Error fetching interview type details:", error);
-                                                    toast.error("Failed to fetch interview type duration");
-                                                }
-                                            }
+                                            if (onTypeSelect && selectedTypeId) onTypeSelect(selectedTypeId);
                                         }}
                                     >
                                         {interviewTypes.map((t) => (
@@ -200,28 +193,30 @@ const UpdateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.startHour} onChange={(e) => {
-                                        const newHour = Number(e.target.value);
+                                    <Select
+                                        value={formData.startHour}
+                                        onChange={(e) => {
+                                            const newHour = Number(e.target.value);
 
-                                        setFormData((prev) => {
-                                            if (prev.focus !== FocusEnum.GeneralSkills || !prev.typeId)
-                                                return { ...prev, startHour: newHour };
+                                            setFormData((prev) => {
+                                                if (prev.focus !== FocusEnum.GeneralSkills || !prev.typeId)
+                                                    return { ...prev, startHour: newHour };
 
-                                            const type = interviewTypes.find(t => t.id === prev.typeId);
-                                            if (!type?.durationMinutes)
-                                                return { ...prev, startHour: newHour };
+                                                const type = interviewTypes.find((t) => t.id === prev.typeId);
+                                                if (!type?.durationMinutes) return { ...prev, startHour: newHour };
 
-                                            const total = newHour * 60 + prev.startMinute + type.durationMinutes;
+                                                const total = newHour * 60 + prev.startMinute + type.durationMinutes;
 
-                                            return {
-                                                ...prev,
-                                                startHour: newHour,
-                                                endHour: Math.floor(total / 60),
-                                                endMinute: total % 60,
-                                            };
-                                        });
-                                    }}
-                                        sx={{ borderRadius: "8px" }}>
+                                                return {
+                                                    ...prev,
+                                                    startHour: newHour,
+                                                    endHour: Math.floor(total / 60),
+                                                    endMinute: total % 60,
+                                                };
+                                            });
+                                        }}
+                                        sx={{ borderRadius: "8px" }}
+                                    >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
                                                 {hour.toString().padStart(2, "0")}
@@ -231,7 +226,11 @@ const UpdateAvailableSlotDialog = ({
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.startMinute} onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })} sx={{ borderRadius: "8px" }}>
+                                    <Select
+                                        value={formData.startMinute}
+                                        onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
+                                        sx={{ borderRadius: "8px" }}
+                                    >
                                         {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
@@ -248,7 +247,12 @@ const UpdateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.endHour} disabled={formData.focus === FocusEnum.GeneralSkills} onChange={(e) => setFormData({ ...formData, endHour: e.target.value })} sx={{ borderRadius: "8px" }}>
+                                    <Select
+                                        value={formData.endHour}
+                                        disabled={formData.focus === FocusEnum.GeneralSkills}
+                                        onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
+                                        sx={{ borderRadius: "8px" }}
+                                    >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
                                                 {hour.toString().padStart(2, "0")}
@@ -258,7 +262,12 @@ const UpdateAvailableSlotDialog = ({
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.endMinute} disabled={formData.focus === FocusEnum.GeneralSkills} onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })} sx={{ borderRadius: "8px" }}>
+                                    <Select
+                                        value={formData.endMinute}
+                                        disabled={formData.focus === FocusEnum.GeneralSkills}
+                                        onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
+                                        sx={{ borderRadius: "8px" }}
+                                    >
                                         {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
@@ -270,9 +279,9 @@ const UpdateAvailableSlotDialog = ({
                         </Box>
 
                         <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ mt: 3 }}>
-                            <Button 
-                                variant="outlined" 
-                                color="error" 
+                            <Button
+                                variant="outlined"
+                                color="error"
                                 startIcon={<IoTrash size={16} />}
                                 onClick={handleDelete}
                                 disabled={loading}
@@ -281,10 +290,20 @@ const UpdateAvailableSlotDialog = ({
                                 Delete
                             </Button>
                             <Stack direction="row" spacing={2}>
-                                <Button variant="outlined" onClick={onClose} sx={{ textTransform: "none", borderColor: "divider", color: "text.secondary" }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={onClose}
+                                    sx={{ textTransform: "none", borderColor: "divider", color: "text.secondary" }}
+                                >
                                     Cancel
                                 </Button>
-                                <Button variant="contained" color="primary" onClick={handleSubmit} disabled={loading} sx={{ textTransform: "none" }}>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleSubmit}
+                                    disabled={loading}
+                                    sx={{ textTransform: "none" }}
+                                >
                                     Update
                                 </Button>
                             </Stack>

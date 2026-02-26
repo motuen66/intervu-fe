@@ -1,0 +1,258 @@
+import React, { useEffect, useState, useCallback } from "react";
+import { interviewTypeEndPoints } from "../../services/interviewTypeApi";
+import CreateInterviewTypeDialog from "./CreateInterviewTypeDialog";
+import UpdateInterviewTypeDialog from "./UpdateInterviewTypeDialog";
+import ConfirmModal from "../../../../common/components/ConfirmModal";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import "./InterviewTypeManagementPage.css";
+
+export default function InterviewTypeManagementPage() {
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [openCreate, setOpenCreate] = useState(false);
+    const [openUpdate, setOpenUpdate] = useState(false);
+    const [activeItem, setActiveItem] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
+    const [page, setPage] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
+    const [search, setSearch] = useState("");
+
+    const fetchItems = useCallback(
+        async (p = page, ps = pageSize, q = search) => {
+            setLoading(true);
+            try {
+                const apiPage = p + 1;
+                const params = new URLSearchParams();
+                params.set("page", String(apiPage));
+                params.set("pageSize", String(ps));
+                if (q) params.set("q", q);
+
+                const url = `${interviewTypeEndPoints.GET_ALL_TYPES}?${params.toString()}`;
+                const response = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                });
+                if (!response.ok) {
+                    const text = await response.text().catch(() => "");
+                    throw new Error(`Request failed: ${response.status} ${response.statusText} ${text}`);
+                }
+                const data = await response.json().catch(() => {
+                    throw new Error("Invalid JSON response from interview types endpoint");
+                });
+                if (!data || data.success === false) {
+                    throw new Error(data?.message || "Interview types API returned an error");
+                }
+
+                const itemsList = data.items || data.data || [];
+                setItems(itemsList || []);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [page, pageSize, search],
+    );
+
+    useEffect(() => {
+        fetchItems(page, pageSize, search);
+    }, [fetchItems, page, pageSize, search]);
+
+    const handleCreateSuccess = () => {
+        setOpenCreate(false);
+        // reload current page
+        fetchItems(page, pageSize, search);
+    };
+
+    const handleUpdateClick = (item) => {
+        setActiveItem(item);
+        setOpenUpdate(true);
+    };
+
+    const handleUpdateSuccess = () => {
+        setOpenUpdate(false);
+        setActiveItem(null);
+        fetchItems(page, pageSize, search);
+    };
+
+    const handleDeleteClick = (id) => {
+        setDeletingId(id);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        setConfirmOpen(false);
+        if (!deletingId) return;
+        try {
+            const res = await fetch(interviewTypeEndPoints.DELETE_TYPE(deletingId), {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+            if (!res.ok) throw new Error("Delete failed");
+            // reload page after delete
+            fetchItems(page, pageSize, search);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+
+    // const handleSearchChange = (e) => {
+    //     setSearch(e.target.value);
+    //     // reset to first page when searching
+    //     setPage(0);
+    // };
+
+    const getStatusLabel = (value) => {
+        if (value === 1 || value === "1" || value === true) return "Active";
+        return "Inactive";
+    };
+
+    const primaryCtaSx = {
+        textTransform: "none",
+        background: "#2f5cf6",
+        color: "#ffffff",
+        px: 3,
+        py: 1,
+        borderRadius: "999px",
+        fontSize: "14px",
+        fontWeight: 600,
+        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
+        "&:hover": {
+            background: "#2952e6",
+        },
+    };
+
+    return (
+        <Box className="interview-type-management" p={2}>
+            <div className="interview-type-panel">
+                <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography variant="h6">Interview Types</Typography>
+                        {/* <TextField
+                            size="small"
+                            placeholder="Search by name..."
+                            value={search}
+                            onChange={handleSearchChange}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon fontSize="small" />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        /> */}
+                    </Box>
+
+                    <Box>
+                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
+                            Create New
+                        </Button>
+                    </Box>
+                </Toolbar>
+
+                {loading ? (
+                    <Box display="flex" justifyContent="center" mt={6} mb={6}>
+                        <CircularProgress />
+                    </Box>
+                ) : items.length === 0 ? (
+                    <Box className="interview-type-empty">
+                        <div className="interview-type-empty-title">No interview types yet</div>
+                        <div className="interview-type-empty-subtitle">
+                            Create your first interview type to get started.
+                        </div>
+                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
+                            Create New
+                        </Button>
+                    </Box>
+                ) : (
+                    <Box className="interview-type-grid">
+                        {items.map((it) => (
+                            <div key={it.id} className="interview-type-card">
+                                <div className="interview-type-card-header">
+                                    <div>
+                                        <div className="interview-type-card-title">{it.name}</div>
+                                        <div className="interview-type-card-description">
+                                            {it.description || "No description"}
+                                        </div>
+                                    </div>
+                                    <div className="interview-type-card-actions">
+                                        <IconButton size="small" onClick={() => handleUpdateClick(it)}>
+                                            <EditIcon />
+                                        </IconButton>
+                                        <IconButton size="small" onClick={() => handleDeleteClick(it.id)}>
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </div>
+                                </div>
+                                <div className="interview-type-card-meta">
+                                    <div className="meta-item">
+                                        <span className="meta-label">Duration</span>
+                                        <span className="meta-value">{it.durationMinutes} min</span>
+                                    </div>
+                                    <div className="meta-item">
+                                        <span className="meta-label">Base Price</span>
+                                        <span className="meta-value">{it.basePrice}</span>
+                                    </div>
+                                    <div className="meta-item">
+                                        <span className="meta-label">Is Coding</span>
+                                        <span className={`meta-pill ${it.isCoding ? "pill-yes" : "pill-no"}`}>
+                                            {it.isCoding ? "Yes" : "No"}
+                                        </span>
+                                    </div>
+                                    <div className="meta-item">
+                                        <span className="meta-label">Status</span>
+                                        <span
+                                            className={`meta-pill ${getStatusLabel(it.status) === "Active" ? "pill-active" : "pill-inactive"}`}
+                                        >
+                                            {getStatusLabel(it.status)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </Box>
+                )}
+
+            </div>
+
+            <CreateInterviewTypeDialog
+                open={openCreate}
+                onClose={() => setOpenCreate(false)}
+                onCreated={handleCreateSuccess}
+            />
+            <UpdateInterviewTypeDialog
+                open={openUpdate}
+                onClose={() => setOpenUpdate(false)}
+                item={activeItem}
+                onUpdated={handleUpdateSuccess}
+            />
+
+            <ConfirmModal
+                show={confirmOpen}
+                title="Delete interview type"
+                message="Are you sure you want to delete this interview type? This action cannot be undone."
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setConfirmOpen(false)}
+                confirmText="Delete"
+                cancelText="Cancel"
+            />
+        </Box>
+    );
+}
