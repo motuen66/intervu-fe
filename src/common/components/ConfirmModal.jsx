@@ -8,38 +8,34 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 
-function ConfirmModal({
-    show,
-    title,
-    message,
-    onConfirm,
-    onCancel,
-    confirmText = "Confirm",
-    cancelText = "Cancel"
-}) {
+function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText = "Confirm", cancelText = "Cancel" }) {
     return (
         <Dialog open={show} onClose={onCancel}>
-            <DialogTitle>
-                {title}
+            <DialogTitle
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderColor: "divider",
+                }}
+            >
+                <span>{title}</span>
                 <IconButton
                     aria-label="close"
                     onClick={onCancel}
                     edge="end"
                     sx={{
-                        position: "absolute",
-                        right: 8,
-                        top: 8,
                         color: (theme) => theme.palette.grey[500],
                     }}
                 >
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            <DialogContent>
-                <DialogContentText>{message}</DialogContentText>
+            <DialogContent dividers>
+                <DialogContentText sx={{ whiteSpace: "pre-line" }}>{message}</DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onCancel} color="secondary">
+                <Button onClick={onCancel} color="secondary" variant="outlined">
                     {cancelText}
                 </Button>
                 <Button onClick={onConfirm} color="primary" variant="contained">
