@@ -156,8 +156,8 @@ function InterviewerProfilePage() {
                     const skills = Array.isArray(skillsRes.data)
                         ? skillsRes.data
                         : Array.isArray(skillsRes.data?.items)
-                          ? skillsRes.data.items
-                          : [];
+                            ? skillsRes.data.items
+                            : [];
                     setAllSkills(skills);
                 }
 
@@ -165,8 +165,8 @@ function InterviewerProfilePage() {
                     const companies = Array.isArray(companiesRes.data)
                         ? companiesRes.data
                         : Array.isArray(companiesRes.data?.items)
-                          ? companiesRes.data.items
-                          : [];
+                            ? companiesRes.data.items
+                            : [];
                     setAllCompanies(companies);
                 }
             } catch (err) {
@@ -218,7 +218,7 @@ function InterviewerProfilePage() {
                 setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl }, profilePicture: data.profilePictureUrl }));
                 setAvatarKey(Date.now());
             }
-            
+
         } catch (err) {
             console.error(err);
             setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
@@ -344,7 +344,7 @@ function InterviewerProfilePage() {
                 <Box
                     sx={{
                         height: 160,
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        background: "linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)",
                         position: "relative",
                     }}
                 >

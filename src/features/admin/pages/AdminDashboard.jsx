@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { 
-    Box, 
-    Container, 
-    Grid, 
+import {
+    Box,
+    Container,
+    Grid,
     CircularProgress,
     Button,
     Dialog,
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
     const [userFormMode, setUserFormMode] = useState('create');
     const [roleFilter, setRoleFilter] = useState('all');
     const [emailSearch, setEmailSearch] = useState('');
-    
+
     // Pagination states for each tab
     const [usersData, setUsersData] = useState({ data: [], total: 0, page: 0, pageSize: 10 });
     const [companiesData, setCompaniesData] = useState({ data: [], total: 0, page: 0, pageSize: 10 });
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
                 totalFeedbacks: 0,
                 averageRating: 0
             };
-            
+
             setStats(calculatedStats);
         } catch (error) {
             console.error('Error fetching stats:', error);
@@ -91,11 +91,11 @@ export default function AdminDashboard() {
         });
         console.log('👥 Users Response:', response);
         if (response?.success) {
-            setUsersData({ 
-                data: response.data?.items || [], 
-                total: response.data?.totalItems || 0, 
-                page, 
-                pageSize 
+            setUsersData({
+                data: response.data?.items || [],
+                total: response.data?.totalItems || 0,
+                page,
+                pageSize
             });
         }
         setLoading(false);
@@ -109,11 +109,11 @@ export default function AdminDashboard() {
         });
         console.log('🏢 Companies Response:', response);
         if (response?.success) {
-            setCompaniesData({ 
-                data: response.data?.items || [], 
-                total: response.data?.totalItems || 0, 
-                page, 
-                pageSize 
+            setCompaniesData({
+                data: response.data?.items || [],
+                total: response.data?.totalItems || 0,
+                page,
+                pageSize
             });
         }
         setLoading(false);
@@ -127,11 +127,11 @@ export default function AdminDashboard() {
         });
         console.log('💳 Payments Response:', response);
         if (response?.success) {
-            setPaymentsData({ 
-                data: response.data?.items || [], 
-                total: response.data?.totalItems || 0, 
-                page, 
-                pageSize 
+            setPaymentsData({
+                data: response.data?.items || [],
+                total: response.data?.totalItems || 0,
+                page,
+                pageSize
             });
         }
         setLoading(false);
@@ -145,11 +145,11 @@ export default function AdminDashboard() {
         });
         console.log('📝 Feedbacks Response:', response);
         if (response?.success) {
-            setFeedbacksData({ 
-                data: response.data?.items || [], 
-                total: response.data?.totalItems || 0, 
-                page, 
-                pageSize 
+            setFeedbacksData({
+                data: response.data?.items || [],
+                total: response.data?.totalItems || 0,
+                page,
+                pageSize
             });
         }
         setLoading(false);
@@ -163,11 +163,11 @@ export default function AdminDashboard() {
         });
         console.log('🎤 Interviewers Response:', response);
         if (response?.success) {
-            setInterviewersData({ 
-                data: response.data?.items || [], 
-                total: response.data?.totalItems || 0, 
-                page, 
-                pageSize 
+            setInterviewersData({
+                data: response.data?.items || [],
+                total: response.data?.totalItems || 0,
+                page,
+                pageSize
             });
         }
         setLoading(false);
@@ -213,10 +213,10 @@ export default function AdminDashboard() {
     };
 
     const handleSubmitUserForm = async (formData, onError) => {
-        const endpoint = userFormMode === 'create' 
+        const endpoint = userFormMode === 'create'
             ? adminEndPoints.CREATE_USER
             : adminEndPoints.UPDATE_USER(selectedUser.id);
-        
+
         const method = userFormMode === 'create' ? METHOD.POST : METHOD.PUT;
 
         const { success, message, data } = await callApi({
@@ -275,10 +275,10 @@ export default function AdminDashboard() {
         { field: 'id', headerName: 'ID', width: 70 },
         { field: 'fullName', headerName: 'Full Name', width: 200 },
         { field: 'email', headerName: 'Email', width: 250 },
-        { 
-            field: 'role', 
-            headerName: 'Role', 
-            type: 'chip', 
+        {
+            field: 'role',
+            headerName: 'Role',
+            type: 'chip',
             render: (val) => getRoleLabel(val),
             chipColor: (val) => {
                 const roleLabel = getRoleLabel(val);
@@ -302,11 +302,13 @@ export default function AdminDashboard() {
         { field: 'id', headerName: 'ID', width: 70 },
         { field: 'userId', headerName: 'User ID', width: 100 },
         { field: 'amount', headerName: 'Amount', type: 'currency' },
-        { field: 'status', headerName: 'Status', type: 'chip', chipColor: (val) => {
-            if (val === 'SUCCESS') return 'rgba(74,222,128,0.3)';
-            if (val === 'PENDING') return 'rgba(251,191,36,0.3)';
-            return 'rgba(248,113,113,0.3)';
-        }},
+        {
+            field: 'status', headerName: 'Status', type: 'chip', chipColor: (val) => {
+                if (val === 'SUCCESS') return 'rgba(74,222,128,0.3)';
+                if (val === 'PENDING') return 'rgba(251,191,36,0.3)';
+                return 'rgba(248,113,113,0.3)';
+            }
+        },
         { field: 'createdAt', headerName: 'Created At', type: 'date' },
     ];
 
@@ -349,54 +351,54 @@ export default function AdminDashboard() {
 
             {loading && !stats ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                    <CircularProgress sx={{ color: '#7B61FF' }} />
+                    <CircularProgress sx={{ color: '#4F46E5' }} />
                 </Box>
             ) : (
                 <Grid container spacing={3} sx={{ mb: 2 }}>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
-                        <StatsCard 
-                            title="Total Users" 
-                            value={stats?.totalUsers} 
+                        <StatsCard
+                            title="Total Users"
+                            value={stats?.totalUsers}
                             icon={PeopleIcon}
                             color="#7B61FF"
                         />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
-                        <StatsCard 
-                            title="Total Companies" 
-                            value={stats?.totalCompanies} 
+                        <StatsCard
+                            title="Total Companies"
+                            value={stats?.totalCompanies}
                             icon={BusinessIcon}
                             color="#4ade80"
                         />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
-                        <StatsCard 
-                            title="Total Interviewers" 
-                            value={stats?.totalInterviewers} 
+                        <StatsCard
+                            title="Total Interviewers"
+                            value={stats?.totalInterviewers}
                             icon={PersonIcon}
                             color="#60a5fa"
                         />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
-                        <StatsCard 
-                            title="Total Payments" 
-                            value={stats?.totalPayments} 
+                        <StatsCard
+                            title="Total Payments"
+                            value={stats?.totalPayments}
                             icon={PaymentIcon}
                             color="#f59e0b"
                         />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
-                        <StatsCard 
-                            title="Total Feedbacks" 
-                            value={stats?.totalFeedbacks} 
+                        <StatsCard
+                            title="Total Feedbacks"
+                            value={stats?.totalFeedbacks}
                             icon={FeedbackIcon}
-                            color="#8b5cf6"
+                            color="#4F46E5"
                         />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
-                        <StatsCard 
-                            title="Avg Rating" 
-                            value={parseFloat(stats?.averageRating ?? stats?.avgRating ?? stats?.ratingAverage ?? 0).toFixed(2)} 
+                        <StatsCard
+                            title="Avg Rating"
+                            value={parseFloat(stats?.averageRating ?? stats?.avgRating ?? stats?.ratingAverage ?? 0).toFixed(2)}
                             icon={StarIcon}
                             color="#fbbf24"
                         />

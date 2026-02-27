@@ -1,18 +1,47 @@
-/* Global font reset - preserve original fonts */
-body, html {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif !important;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+:root {
+    /* Supplementary color (no MUI equivalent) */
+    --color-bg-subtle: #f9fafb;
+
+    /* Border Radius Scale */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+
+    /* Spacing Scale */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+}
+
+/* Global resets */
+body,
+html {
+    font-family: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: var(--mui-palette-text-primary);
+    background: var(--mui-palette-background-default);
 }
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
-/* Reset default margins */
-body, html, div, p, h1, h2, h3, h4, h5, h6 {
-  margin: 0;
-  padding: 0;
+body,
+html,
+div,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0;
+    padding: 0;
 }

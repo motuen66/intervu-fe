@@ -11,17 +11,9 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
-import {
-    Box,
-    Button,
-    Typography,
-    Card,
-    Stack,
-    CircularProgress,
-    CardContent,
-} from "@mui/material";
+import { Box, Button, Typography, Card, Stack, CircularProgress, CardContent } from "@mui/material";
 import { IoAdd } from "react-icons/io5";
-import { getAllInterviewTypes } from "../../../admin/services/interviewTypeApi";
+import { interviewTypeEndPoints } from "../../../admin/services/interviewTypeApi";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
 import UpdateAvailableSlotDialog from "./UpdateAvailableSlotDialog";
@@ -59,33 +51,31 @@ const ScheduleManagement = () => {
         JobDescription: 1,
     };
     const [confirmOpen, setConfirmOpen] = useState(false);
-    // const [confirmType, set                                                                                                      ] = useState(null); // "update" | "delete"
+    // const [confirmType, set] = useState(null); // "update" | "delete"
     const [selectedItem, setSelectedItem] = useState(null);
 
     // Calculate date range for current month
     const today = new Date();
     const minDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const maxDateStr = `${lastDayOfMonth.getFullYear()}-${String(lastDayOfMonth.getMonth() + 1).padStart(2, "0")}-${String(lastDayOfMonth.getDate()).padStart(2, "0")}`;
+    const maxDate30 = new Date(today);
+    maxDate30.setDate(today.getDate() + 30);
+    const maxDateStr = `${maxDate30.getFullYear()}-${String(maxDate30.getMonth() + 1).padStart(2, "0")}-${String(maxDate30.getDate()).padStart(2, "0")}`;
 
     const showError = (message) => {
         if (!message) return;
         toast.error(message, { id: "availability-error" });
     };
 
-
     const parseLocalDate = (isoString) => {
         const date = new Date(isoString);
-        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")
-            }/${date.getFullYear()}`;
+        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}/${date.getFullYear()}`;
     };
 
     const parseLocalTime = (isoString) => {
         const date = new Date(isoString);
-        return `${date.getHours().toString().padStart(2, "0")}:${date
-            .getMinutes()
-            .toString()
-            .padStart(2, "0")}`;
+        return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     };
 
     useEffect(() => {
@@ -95,7 +85,7 @@ const ScheduleManagement = () => {
             console.log("Fetching availabilities with:", { interviewerId: userId, month, year });
             const fetchAction = dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
             // Log the thunk result for debugging
-            if (fetchAction && typeof fetchAction.then === 'function') {
+            if (fetchAction && typeof fetchAction.then === "function") {
                 fetchAction
                     .then((res) => console.log("fetchAvailabilitiesByMonth result:", res))
                     .catch((err) => console.error("fetchAvailabilitiesByMonth error:", err));
@@ -103,21 +93,74 @@ const ScheduleManagement = () => {
         }
     }, [userId, currentDate.getMonth(), currentDate.getFullYear()]);
 
-    // Fetch interview types for GeneralSkills option
-    useEffect(() => {
-        const loadTypes = async () => {
-            try {
-                const types = await getAllInterviewTypes();
-                console.log("Fetched interview types:", types);
-                const list = Array.isArray(types) ? types : types?.items || [];
-                setInterviewTypes(list || []);
-            } catch (err) {
-                console.error("Failed to load interview types", err);
+    const fetchInterviewTypes = async () => {
+        try {
+            const response = await fetch(interviewTypeEndPoints.GET_ALL_TYPES, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+            if (!response.ok) {
+                const text = await response.text().catch(() => "");
+                throw new Error(`Request failed: ${response.status} ${response.statusText} ${text}`);
             }
-        };
-        loadTypes();
+            const data = await response.json().catch(() => {
+                throw new Error("Invalid JSON response from interview types endpoint");
+            });
+            if (!data || data.success === false) {
+                throw new Error(data?.message || "Interview types API returned an error");
+            }
+            const list = Array.isArray(data.items) ? data.items : [];
+            setInterviewTypes(list || []);
+        } catch (err) {
+            console.error("Failed to load interview types", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchInterviewTypes();
     }, []);
 
+    const handleTypeSelect = async (selectedTypeId) => {
+        if (!selectedTypeId) return;
+        try {
+            const response = await fetch(interviewTypeEndPoints.GET_TYPE_BY_ID(selectedTypeId), {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+            if (!response.ok) {
+                const text = await response.text().catch(() => "");
+                throw new Error(`Request failed: ${response.status} ${response.statusText} ${text}`);
+            }
+            const typeDetails = await response.json().catch(() => {
+                throw new Error("Invalid JSON response from interview types endpoint");
+            });
+            const duration = typeDetails.durationMinutes || 0;
+
+            if (duration > 0) {
+                const startTotalMinutes = Number(formData.startHour) * 60 + Number(formData.startMinute);
+                const endTotalMinutes = startTotalMinutes + duration;
+                const newEndHour = Math.floor(endTotalMinutes / 60);
+                const newEndMinute = endTotalMinutes % 60;
+                setFormData((prev) => ({
+                    ...prev,
+                    typeId: selectedTypeId,
+                    endHour: newEndHour,
+                    endMinute: newEndMinute,
+                }));
+            } else {
+                setFormData((prev) => ({ ...prev, typeId: selectedTypeId }));
+            }
+        } catch (err) {
+            console.error("Error fetching interview type details:", err);
+            toast.error("Failed to fetch interview type duration");
+        }
+    };
 
     useEffect(() => {
         if (error && error !== "Network Error") {
@@ -128,7 +171,7 @@ const ScheduleManagement = () => {
 
     const handleAddClick = () => {
         setEditingId(null);
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split("T")[0];
         setFormData({
             date: today,
             startHour: 9,
@@ -137,7 +180,7 @@ const ScheduleManagement = () => {
             endMinute: 0,
             focus: FocusEnum.JobDescription,
             typeId: "",
-            duplicateDates: []
+            duplicateDates: [],
         });
         setOpenModal(true);
     };
@@ -161,15 +204,11 @@ const ScheduleManagement = () => {
             startMinute: startDate.getMinutes(),
             endHour: endDate.getHours(),
             endMinute: endDate.getMinutes(),
-            typeId:
-                availability.focus === FocusEnum.GeneralSkills
-                    ? availability.typeId || ""
-                    : "",
-            duplicateDates: []
+            typeId: availability.focus === FocusEnum.GeneralSkills ? availability.typeId || "" : "",
+            duplicateDates: [],
         });
         setOpenModal(true);
     };
-
 
     const handleDeleteClick = (id) => {
         setSelectedItem(id);
@@ -210,7 +249,7 @@ const ScheduleManagement = () => {
             endMinute: end.getMinutes(),
             focus: FocusEnum.JobDescription,
             typeId: "",
-            duplicateDates: []
+            duplicateDates: [],
         });
         setOpenModal(true);
         selectInfo.view.calendar.unselect();
@@ -219,6 +258,12 @@ const ScheduleManagement = () => {
     const handleEventChange = async (info) => {
         const event = info.event;
         const availabilityId = event.id;
+
+        if (!event.end) {
+            info.revert();
+            toast.error("Invalid end time – cannot resize to exactly midnight");
+            return;
+        }
 
         // Prevent editing past events
         if (event.extendedProps.isPast) {
@@ -248,10 +293,10 @@ const ScheduleManagement = () => {
         const durationMinutes = (endTime - startTime) / (1000 * 60);
 
         // Get availability data from extended props or find in array
-        const avail = availabilities.find(a => String(a.id) === String(availabilityId)) || {
+        const avail = availabilities.find((a) => String(a.id) === String(availabilityId)) || {
             focus: event.extendedProps.focus,
             typeId: event.extendedProps.typeId,
-            coachId: event.extendedProps.coachId || userId
+            coachId: event.extendedProps.coachId || userId,
         };
 
         if (avail.focus === FocusEnum.JobDescription && durationMinutes < 30) {
@@ -262,26 +307,22 @@ const ScheduleManagement = () => {
 
         // Handle fixed duration for General Skills with type
         if (avail.focus === FocusEnum.GeneralSkills && avail.typeId) {
-            const type = interviewTypes.find(t => t.id === avail.typeId);
+            const type = interviewTypes.find((t) => t.id === avail.typeId);
 
             if (type?.durationMinutes) {
                 const fixedEnd = new Date(startTime);
-                fixedEnd.setMinutes(
-                    fixedEnd.getMinutes() + type.durationMinutes
-                );
+                fixedEnd.setMinutes(fixedEnd.getMinutes() + type.durationMinutes);
                 endTime = fixedEnd;
                 event.setEnd(fixedEnd);
             }
         }
 
-        // Check if the event stays within the current month
-        const eventMonth = startTime.getMonth();
-        const eventYear = startTime.getFullYear();
-        const currentMonth = currentDate.getMonth();
-        const currentYear = currentDate.getFullYear();
+        const maxAllowed = new Date();
+        maxAllowed.setDate(maxAllowed.getDate() + 30);
+        maxAllowed.setHours(23, 59, 59, 999);
 
-        if (eventMonth !== currentMonth || eventYear !== currentYear) {
-            toast.error("Cannot move availability to a different month");
+        if (startTime > maxAllowed) {
+            toast.error("Cannot move availability beyond the 30-day window");
             info.revert();
             return;
         }
@@ -309,9 +350,7 @@ const ScheduleManagement = () => {
                 // Revert the change on error
                 info.revert();
 
-                const payloadMessage = typeof result.payload === "string"
-                    ? result.payload
-                    : result.payload?.message;
+                const payloadMessage = typeof result.payload === "string" ? result.payload : result.payload?.message;
                 const errMsg = payloadMessage || result.error?.message || "Failed to update availability";
                 toast.error(errMsg);
             }
@@ -322,8 +361,6 @@ const ScheduleManagement = () => {
             console.error("Error updating availability:", error);
         }
     };
-
-
 
     const handleSubmit = async () => {
         if (!formData.date) {
@@ -336,12 +373,7 @@ const ScheduleManagement = () => {
         const endHour = Number(formData.endHour);
         const endMinute = Number(formData.endMinute);
 
-        if (
-            Number.isNaN(startHour) ||
-            Number.isNaN(startMinute) ||
-            Number.isNaN(endHour) ||
-            Number.isNaN(endMinute)
-        ) {
+        if (Number.isNaN(startHour) || Number.isNaN(startMinute) || Number.isNaN(endHour) || Number.isNaN(endMinute)) {
             showError("Invalid time value");
             return;
         }
@@ -349,12 +381,16 @@ const ScheduleManagement = () => {
         const startTotalMinutes = startHour * 60 + startMinute;
         const endTotalMinutes = endHour * 60 + endMinute;
 
-        if (startTotalMinutes >= endTotalMinutes) {
-            showError("EndTime must be greater than StartTime");
+        // End can > start
+        const isOvernight = endTotalMinutes <= startTotalMinutes;
+        const durationMinutes = isOvernight
+            ? 24 * 60 - startTotalMinutes + endTotalMinutes
+            : endTotalMinutes - startTotalMinutes;
+
+        if (durationMinutes === 0) {
+            showError("Start time and end time cannot be the same");
             return;
         }
-
-        const durationMinutes = endTotalMinutes - startTotalMinutes;
 
         if (formData.focus === FocusEnum.JobDescription && durationMinutes < 30) {
             showError("Availability must be at least 30 minutes");
@@ -373,9 +409,11 @@ const ScheduleManagement = () => {
         for (const dateStr of allDates) {
             // dateStr is "YYYY-MM-DD"
             const [year, month, day] = dateStr.split("-").map(Number);
-            
+
             const startTime = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
-            const endTime = new Date(year, month - 1, day, endHour, endMinute, 0, 0);
+            const endTime = isOvernight
+                ? new Date(year, month - 1, day + 1, endHour, endMinute, 0, 0)
+                : new Date(year, month - 1, day, endHour, endMinute, 0, 0);
 
             if (startTime < new Date()) {
                 showError(`Cannot create availability in the past for date: ${dateStr}`);
@@ -391,7 +429,9 @@ const ScheduleManagement = () => {
             });
         }
 
-        const loadingToast = toast.loading(editingId ? "Updating and duplicating slots..." : "Creating availability slots...");
+        const loadingToast = toast.loading(
+            editingId ? "Updating and duplicating slots..." : "Creating availability slots...",
+        );
 
         try {
             if (editingId) {
@@ -417,12 +457,13 @@ const ScheduleManagement = () => {
                 const month = currentDate.getMonth() + 1;
                 const year = currentDate.getFullYear();
 
-                await dispatch(fetchAvailabilitiesByMonth({
-                    interviewerId: userId,
-                    month,
-                    year
-                }));
-
+                await dispatch(
+                    fetchAvailabilitiesByMonth({
+                        interviewerId: userId,
+                        month,
+                        year,
+                    }),
+                );
             } else {
                 // Create all slots
                 for (const p of payloads) {
@@ -436,17 +477,17 @@ const ScheduleManagement = () => {
                 const month = currentDate.getMonth() + 1;
                 const year = currentDate.getFullYear();
 
-                await dispatch(fetchAvailabilitiesByMonth({
-                    interviewerId: userId,
-                    month,
-                    year
-                }));
-
+                await dispatch(
+                    fetchAvailabilitiesByMonth({
+                        interviewerId: userId,
+                        month,
+                        year,
+                    }),
+                );
             }
 
             setOpenModal(false);
             setEditingId(null);
-
         } catch (err) {
             toast.dismiss(loadingToast);
             console.error(err);
@@ -454,13 +495,12 @@ const ScheduleManagement = () => {
         }
     };
 
-
     const handleMiniCalendarDateClick = (date) => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
             const dateUtc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
             calendarApi.gotoDate(dateUtc);
-            calendarApi.changeView('timeGridDay');
+            calendarApi.changeView("timeGridDay");
             setSelectedDate(dateUtc);
         }
     };
@@ -471,7 +511,10 @@ const ScheduleManagement = () => {
         const eventEnd = avail.endTime;
         const isPast = eventEnd < now; // String comparison works for ISO 8601 format
 
-        let backgroundColor, borderColor, classNames = [], title = "";
+        let backgroundColor,
+            borderColor,
+            classNames = [],
+            title = "";
 
         // Use helper to map numeric API status to colors/titles
         const status = avail.status ?? AVAILABILITY_SLOTS_STATUS.AVAILABLE;
@@ -486,7 +529,8 @@ const ScheduleManagement = () => {
         }
 
         // Derive isBooked from status for backward compatibility
-        const isBooked = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.RESERVED ||
+        const isBooked =
+            Number(avail.status) === AVAILABILITY_SLOTS_STATUS.RESERVED ||
             Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
 
         return {
@@ -505,9 +549,8 @@ const ScheduleManagement = () => {
                 focus: avail.focus,
                 typeId: avail.typeId,
                 coachId: avail.coachId,
-                candidateId: avail.candidateId
-            }
-
+                candidateId: avail.candidateId,
+            },
         };
     });
 
@@ -520,7 +563,9 @@ const ScheduleManagement = () => {
                 if (removeAvailability.fulfilled.match(resultAction)) {
                     toast.success("Availability slot deleted");
                 } else {
-                    showError(resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability");
+                    showError(
+                        resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability",
+                    );
                 }
             } catch (err) {
                 console.error("Error deleting availability:", err);
@@ -532,7 +577,6 @@ const ScheduleManagement = () => {
         // setConfirmType(null);
         setSelectedItem(null);
     };
-
 
     return (
         <>
@@ -578,7 +622,6 @@ const ScheduleManagement = () => {
                                 py: 1.25,
                                 px: 3,
                             }}
-
                         >
                             Add Slot
                         </Button>
@@ -600,8 +643,13 @@ const ScheduleManagement = () => {
                                     <Box
                                         sx={{
                                             position: "absolute",
-                                            top: 0, left: 0, right: 0, bottom: 0,
-                                            display: "flex", justifyContent: "center", alignItems: "center",
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            alignItems: "center",
                                             bgcolor: "rgba(255,255,255,0.4)",
                                             zIndex: 2,
                                             borderRadius: "12px",
@@ -632,9 +680,8 @@ const ScheduleManagement = () => {
                                             return;
                                         }
 
-
                                         const avail = availabilities.find(
-                                            (a) => String(a.id) === String(info.event.id)
+                                            (a) => String(a.id) === String(info.event.id),
                                         );
                                         if (avail) {
                                             handleEditClick(avail);
@@ -670,13 +717,23 @@ const ScheduleManagement = () => {
                                         const calendarApi = calendarRef.current?.getApi();
                                         if (calendarApi) {
                                             const view = calendarApi.view;
-                                            if (view.type === 'timeGridDay') {
+                                            if (view.type === "timeGridDay") {
                                                 setSelectedDate(view.currentStart);
                                             }
                                         }
                                     }}
                                     height="auto"
                                     timeZone="local"
+                                    slotLabelFormat={{
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                    }}
+                                    eventTimeFormat={{
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                    }}
                                 />
                             </Box>
                         </Card>
@@ -696,15 +753,15 @@ const ScheduleManagement = () => {
                                 sx={{
                                     background: "white",
                                     boxShadow: 1,
-                                    border: '1px solid',
-                                    borderColor: 'grey.200',
+                                    border: "1px solid",
+                                    borderColor: "grey.200",
                                 }}
                             >
                                 <CardContent sx={{ p: 2.5 }}>
                                     <Box display="flex" justifyContent="space-between" mb={2}>
                                         <Typography
                                             variant="overline"
-                                            sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1 }}
+                                            sx={{ color: "text.secondary", fontWeight: 600, letterSpacing: 1 }}
                                         >
                                             Quick Legend
                                         </Typography>
@@ -721,13 +778,12 @@ const ScheduleManagement = () => {
                                 parseLocalTime={parseLocalTime}
                             />
                         </Stack>
-
                     </Box>
                 </Box>
 
                 {/* Modal Add/Edit */}
-                {openModal && (
-                    editingId ? (
+                {openModal &&
+                    (editingId ? (
                         <UpdateAvailableSlotDialog
                             open={openModal}
                             onClose={() => {
@@ -741,7 +797,7 @@ const ScheduleManagement = () => {
                                     startMinute: 0,
                                     endHour: 10,
                                     endMinute: 0,
-                                    duplicateDates: []
+                                    duplicateDates: [],
                                 });
                             }}
                             formData={formData}
@@ -750,6 +806,7 @@ const ScheduleManagement = () => {
                             FocusEnum={FocusEnum}
                             handleSubmit={handleSubmit}
                             handleDelete={handleDeleteFromDialog}
+                            onTypeSelect={handleTypeSelect}
                             loading={loading}
                             minDate={minDateStr}
                             maxDate={maxDateStr}
@@ -768,7 +825,7 @@ const ScheduleManagement = () => {
                                     startMinute: 0,
                                     endHour: 10,
                                     endMinute: 0,
-                                    duplicateDates: []
+                                    duplicateDates: [],
                                 });
                             }}
                             formData={formData}
@@ -776,13 +833,13 @@ const ScheduleManagement = () => {
                             interviewTypes={interviewTypes}
                             FocusEnum={FocusEnum}
                             handleSubmit={handleSubmit}
+                            onTypeSelect={handleTypeSelect}
                             loading={loading}
                             minDate={minDateStr}
                             maxDate={maxDateStr}
                         />
-                    )
-                )}
-            </Box >
+                    ))}
+            </Box>
             <ConfirmModal
                 show={confirmOpen}
                 title={"Confirm Delete"}

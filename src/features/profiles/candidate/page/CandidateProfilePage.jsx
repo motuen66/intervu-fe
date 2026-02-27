@@ -122,8 +122,8 @@ function CandidateProfilePage() {
                     const skills = Array.isArray(skillsRes.data)
                         ? skillsRes.data
                         : Array.isArray(skillsRes.data?.items)
-                        ? skillsRes.data.items
-                        : [];
+                            ? skillsRes.data.items
+                            : [];
                     setAllSkills(skills);
                     setAllSkillNames(skills.map((sk) => (sk && (sk.name || String(sk))) || "").filter(Boolean));
                 }
@@ -257,7 +257,7 @@ function CandidateProfilePage() {
                 <Box
                     sx={{
                         height: 160,
-                        background: "linear-gradient(135deg, #36D1DC 0%, #5B86E5 100%)",
+                        background: "linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)",
                         position: "relative",
                     }}
                 >
@@ -276,16 +276,16 @@ function CandidateProfilePage() {
                         </IconButton>
                     )}
 
-            <ConfirmModal
-                show={showConfirmAvatar}
-                title="Confirm avatar change"
-                message="Are you sure you want to change your avatar?"
-                onConfirm={handleConfirmAvatar}
-                onCancel={handleCancelAvatar}
-                confirmText="Change"
-                cancelText="Cancel"
-            />
-		</Box>
+                    <ConfirmModal
+                        show={showConfirmAvatar}
+                        title="Confirm avatar change"
+                        message="Are you sure you want to change your avatar?"
+                        onConfirm={handleConfirmAvatar}
+                        onCancel={handleCancelAvatar}
+                        confirmText="Change"
+                        cancelText="Cancel"
+                    />
+                </Box>
 
                 <CardContent sx={{ pt: 0 }}>
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 3 }}>
@@ -331,7 +331,7 @@ function CandidateProfilePage() {
                                                 user: { ...(prev?.user || {}), profilePicture: localUrl },
                                                 profilePicture: localUrl,
                                             }));
-                                            
+
                                             setShowConfirmAvatar(true);
                                         }} />
                                     </IconButton>

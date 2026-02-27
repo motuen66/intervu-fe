@@ -84,7 +84,7 @@ function ForgotPassword() {
                             disabled={loading}
                             style={{
                                 padding: '12px',
-                                background: loading ? '#ccc' : 'linear-gradient(135deg, #7B61FF 0%, #5B5FC7 100%)',
+                                background: loading ? '#ccc' : 'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)',
                                 color: '#fff',
                                 fontSize: '15px',
                                 fontWeight: 600,
@@ -110,7 +110,7 @@ function ForgotPassword() {
                                 onClick={handleBackToLogin}
                                 style={{
                                     fontSize: '14px',
-                                    color: '#7B61FF',
+                                    color: '#4F46E5',
                                     cursor: 'pointer',
                                     fontWeight: 500
                                 }}
@@ -138,7 +138,7 @@ function ForgotPassword() {
                             onClick={handleBackToLogin}
                             style={{
                                 padding: '12px',
-                                background: 'linear-gradient(135deg, #7B61FF 0%, #5B5FC7 100%)',
+                                background: 'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)',
                                 color: '#fff',
                                 fontSize: '15px',
                                 fontWeight: 600,

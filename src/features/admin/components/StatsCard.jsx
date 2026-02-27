@@ -1,10 +1,10 @@
 import { Card, CardContent, Typography, Box } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
-export default function StatsCard({ title, value, icon: Icon, color = '#7B61FF', trend }) {
+export default function StatsCard({ title, value, icon: Icon, color = '#4F46E5', trend }) {
     return (
-        <Card 
-            sx={{ 
+        <Card
+            sx={{
                 background: 'rgba(255,255,255,0.95)',
                 backdropFilter: 'blur(10px)',
                 border: `1px solid ${color}40`,
@@ -19,13 +19,13 @@ export default function StatsCard({ title, value, icon: Icon, color = '#7B61FF',
         >
             <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.6)', fontSize: '13px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         {title}
                     </Typography>
-                    <Box sx={{ 
-                        width: '40px', 
-                        height: '40px', 
-                        borderRadius: '10px', 
+                    <Box sx={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
                         background: `${color}20`,
                         display: 'flex',
                         alignItems: 'center',
@@ -34,11 +34,11 @@ export default function StatsCard({ title, value, icon: Icon, color = '#7B61FF',
                         {Icon && <Icon sx={{ color: color, fontSize: '20px' }} />}
                     </Box>
                 </Box>
-                
-                <Typography variant="h4" sx={{ color: '#1a1a2e', fontWeight: 700, mb: 0.5 }}>
+
+                <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 700, mb: 0.5 }}>
                     {value?.toLocaleString() || 0}
                 </Typography>
-                
+
                 {trend && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <TrendingUpIcon sx={{ color: '#4ade80', fontSize: '16px' }} />
