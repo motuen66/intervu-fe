@@ -94,6 +94,8 @@ function PublicInterviewerProfilePage() {
 
         if (data && data.checkOutUrl) {
             window.location.href = data.checkOutUrl;
+        } else if (data && data.isPaid == true && !data.checkOutUrl) {
+            toast.success("Interview booked successfully!");
         }
         console.log("checkOutUrl:", data.checkOutUrl);
     };
