@@ -16,6 +16,9 @@ import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomL
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
 import App from "../../App";
+import InterviewQuestionsPage from "../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx";
+import QuestionDetailPage from "../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx";
+import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx";
 
 export const routes = [
     { path: "/", element: <Navigate to="/home" replace /> },
@@ -25,6 +28,16 @@ export const routes = [
 
     // Home page (public)
     { element: <MainLayout />, children: [{ path: "/home", element: <HomePage /> }] },
+
+    // Questions pages (public)
+    {
+        element: <MainLayout />,
+        children: [
+            { path: "/questions", element: <InterviewQuestionsPage /> },
+            { path: "/questions/share", element: <ShareExperiencePage /> },
+            { path: "/questions/:id", element: <QuestionDetailPage /> },
+        ],
+    },
 
     // Profile route - accessible by all authenticated users
     {
@@ -49,7 +62,11 @@ export const routes = [
             { path: "/", element: <App /> },
             { path: "/admin", element: <AdminDashboard /> },
             { path: "/interview", element: <InterviewRoomListPage /> },
-            { path: "/interview", element: <MainLayout />, children: [{ index: true, element: <InterviewRoomListPage /> }] },
+            {
+                path: "/interview",
+                element: <MainLayout />,
+                children: [{ index: true, element: <InterviewRoomListPage /> }],
+            },
             { path: "/interview/room/:roomId", element: <InterviewRoomPage /> },
         ],
     },
