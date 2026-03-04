@@ -1,29 +1,20 @@
 import { useState } from "react";
-import { Avatar, Box, Button, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { Avatar, Box, Button, Chip, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import VerifiedIcon from "@mui/icons-material/Verified";
 import { formattedDateTime } from "../../../../common/utils/dateFormatter";
 
-export default function CommentCard({ comment, avatarUrl, currentUserId, onEdit, onDelete }) {
-    const [voted, setVoted] = useState(false);
-    const [voteCount, setVoteCount] = useState(comment.voteCount ?? comment.votes ?? 0);
+export default function AnswerCard({ answer: comment, currentUserId, onEdit, onDelete }) {
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState(comment.content ?? "");
     const [saving, setSaving] = useState(false);
 
-    const commentId = comment?.id ?? comment?.commentId ?? comment?._id;
-
-    const commentUserId = comment?.createdBy?.id || comment?.createdBy?._id || comment?.createdBy || comment?.userId;
-
-    const isAuthor = !!currentUserId && String(currentUserId) === String(commentUserId);
-
-    const handleVote = () => {
-        setVoted((v) => !v);
-        setVoteCount((c) => (voted ? c - 1 : c + 1));
-    };
+    const commentId = comment?.id;
+    const isAuthor = !!currentUserId && String(currentUserId) === String(comment.createdBy);
 
     const handleSave = async () => {
         const trimmed = editContent.trim();
@@ -40,13 +31,13 @@ export default function CommentCard({ comment, avatarUrl, currentUserId, onEdit,
         }
     };
 
+    const avatarSrc = comment.authorProfilePicture ?? comment.profilePicture ?? comment.avatar ?? "";
+
     return (
         <Paper variant="outlined" sx={{ p: 2.5, mb: 1.75, borderRadius: 2 }}>
+            {/* Author header */}
             <Stack direction="row" alignItems="center" gap={1.5} mb={1.5}>
-                <Avatar
-                    src={avatarUrl || comment.authorAvatar || comment.avatarUrl || comment.profilePicture || ""}
-                    sx={{ width: 40, height: 40, bgcolor: "primary.main" }}
-                >
+                <Avatar src={avatarSrc} sx={{ width: 40, height: 40, bgcolor: "primary.main" }}>
                     {comment.authorName?.[0]?.toUpperCase() ?? "?"}
                 </Avatar>
                 <Box flex={1}>
@@ -54,10 +45,15 @@ export default function CommentCard({ comment, avatarUrl, currentUserId, onEdit,
                         <Typography variant="body2" fontWeight={600}>
                             {comment.authorName ?? "User"}
                         </Typography>
-                        {comment.karma != null && (
-                            <Typography variant="caption" sx={{ color: "warning.main", fontWeight: 600 }}>
-                                &#9733; {comment.karma}
-                            </Typography>
+                        {comment.isAnswer && (
+                            <Chip
+                                icon={<VerifiedIcon sx={{ fontSize: 13 }} />}
+                                label="Verified Answer"
+                                size="small"
+                                color="success"
+                                variant="outlined"
+                                sx={{ height: 20, fontSize: 11 }}
+                            />
                         )}
                     </Stack>
                     <Typography variant="caption" color="text.disabled">
@@ -98,6 +94,7 @@ export default function CommentCard({ comment, avatarUrl, currentUserId, onEdit,
                 </Stack>
             </Stack>
 
+            {/* Body */}
             {editing ? (
                 <Box mb={1.75}>
                     <TextField
@@ -140,13 +137,13 @@ export default function CommentCard({ comment, avatarUrl, currentUserId, onEdit,
                 </Typography>
             )}
 
+            {/* Actions */}
             <Stack direction="row" gap={2}>
                 <Button
                     size="small"
                     startIcon={<ThumbUpOutlinedIcon sx={{ fontSize: 15 }} />}
-                    onClick={handleVote}
                     sx={{
-                        color: voted ? "primary.main" : "text.secondary",
+                        color: "text.secondary",
                         textTransform: "none",
                         fontWeight: 400,
                         fontSize: 13,
@@ -155,7 +152,7 @@ export default function CommentCard({ comment, avatarUrl, currentUserId, onEdit,
                         "&:hover": { color: "primary.main", background: "none" },
                     }}
                 >
-                    {voteCount} {voteCount === 1 ? "vote" : "votes"}
+                    {comment.vote ?? 0} {(comment.vote ?? 0) === 1 ? "vote" : "votes"}
                 </Button>
                 <Button
                     size="small"

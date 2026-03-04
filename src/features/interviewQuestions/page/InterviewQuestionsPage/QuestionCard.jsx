@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import WhatshotIcon from "@mui/icons-material/Whatshot";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { timeAgo } from "../../../../common/utils/dateFormatter";
 
@@ -11,21 +13,33 @@ export default function QuestionCard({ item }) {
     const [expanded, setExpanded] = useState(false);
     const navigate = useNavigate();
 
-    const companies = item.companies || (item.company ? [item.company] : []);
-    const companyLabel = companies.length
-        ? `Asked at ${companies.join(", ")}`
-        : item.companyName
-          ? `Asked at ${item.companyName}`
-          : "Community question";
+    /* ── Normalized fields from QuestionListItemDto ── */
+    const companyNames = item.companyNames ?? [];
+    const companyLabel = companyNames.length ? `Asked at ${companyNames.join(", ")}` : "Community question";
 
-    const tags = [item.role, item.questionType || item.category, item.level].filter(Boolean);
-    const firstAnswer = item.answers?.[0]?.content || item.topAnswer || null;
+    const roles = item.roles ?? [];
+    const tags = item.tags ?? [];
+    const topAnswer = item.topAnswer ?? null;
+    const answerCount = (item.answerCount ?? 0) + (topAnswer ? 1 : 0);
+    const viewCount = item.viewCount ?? 0;
+    const saveCount = item.saveCount ?? 0;
+    const isHot = item.isHot ?? false;
 
+    const answerText = topAnswer?.content || "";
+
+    // console.log("topAnswer:", topAnswer, typeof topAnswer);
     const actionBtns = [
-        { icon: <BookmarkBorderIcon sx={{ fontSize: 16 }} />, label: "Save" },
+        {
+            icon: <BookmarkBorderIcon sx={{ fontSize: 16 }} />,
+            label: saveCount > 0 ? `Save (${saveCount})` : "Save",
+        },
         {
             icon: <ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />,
-            label: `${item.answerCount ?? item.answers?.length ?? 0} answers`,
+            label: `${answerCount} answer${answerCount !== 1 ? "s" : ""}`,
+        },
+        {
+            icon: <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />,
+            label: `${viewCount}`,
         },
         { icon: <AddCircleOutlineIcon sx={{ fontSize: 16 }} />, label: "I was asked this" },
     ];
@@ -44,17 +58,28 @@ export default function QuestionCard({ item }) {
                 <Box flex={1} minWidth={0}>
                     {/* Meta */}
                     <Stack direction="row" alignItems="center" spacing={0.75} mb={1}>
-                        {item.companyLogoUrl && (
-                            <Box
-                                component="img"
-                                src={item.companyLogoUrl}
-                                alt=""
-                                sx={{ width: 18, height: 18, borderRadius: "3px", objectFit: "cover" }}
-                            />
-                        )}
+                        {isHot && <WhatshotIcon sx={{ fontSize: 16, color: "error.main" }} />}
                         <Typography variant="caption" color="text.secondary">
                             {companyLabel}
                         </Typography>
+                        {item.authorName && (
+                            <>
+                                <Typography variant="caption" color="text.disabled">
+                                    &bull;
+                                </Typography>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                        cursor: item.authorSlug ? "pointer" : "default",
+                                        "&:hover": item.authorSlug ? { color: "primary.main" } : {},
+                                    }}
+                                    onClick={() => item.authorSlug && navigate(`/profile/${item.authorSlug}`)}
+                                >
+                                    {item.authorName}
+                                </Typography>
+                            </>
+                        )}
                         {item.createdAt && (
                             <>
                                 <Typography variant="caption" color="text.disabled">
@@ -78,20 +103,51 @@ export default function QuestionCard({ item }) {
                         }}
                         onClick={() => item.id && navigate(`/questions/${item.id}`)}
                     >
-                        {item.content || item.question || item.title}
+                        {item.content}
                     </Typography>
 
-                    {/* Tags */}
-                    {tags.length > 0 && (
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 1.5 }}>
-                            {tags.map((t) => (
+                    {/* Company chips */}
+                    {companyNames.length > 0 && (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1 }}>
+                            {companyNames.map((c) => (
                                 <Chip
-                                    key={t}
-                                    label={t}
+                                    key={c}
+                                    label={c}
                                     size="small"
-                                    sx={{ bgcolor: "grey.100", fontSize: 12, height: 24 }}
+                                    color="primary"
+                                    variant="outlined"
+                                    sx={{ fontSize: 11, height: 22 }}
                                 />
                             ))}
+                        </Box>
+                    )}
+
+                    {/* Role & tag chips */}
+                    {(roles.length > 0 || tags.length > 0) && (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 1.5 }}>
+                            {roles.map((role, i) => {
+                                const isObj = typeof role === "object";
+                                return (
+                                    <Chip
+                                        key={isObj ? `role-${role.id}` : `role-${i}`}
+                                        label={isObj ? role.name : role}
+                                        size="small"
+                                        color="secondary"
+                                        variant="outlined"
+                                    />
+                                );
+                            })}
+
+                            {tags.map((tag, i) => {
+                                const isObj = typeof tag === "object";
+                                return (
+                                    <Chip
+                                        key={isObj ? `tag-${tag.id}` : `tag-${i}`}
+                                        label={isObj ? tag.name : tag}
+                                        size="small"
+                                    />
+                                );
+                            })}
                         </Box>
                     )}
 
@@ -117,17 +173,10 @@ export default function QuestionCard({ item }) {
                         ))}
                     </Stack>
                 </Box>
-
-                {/* Thumbnail */}
-                {/* {item.thumbnailUrl ? (
-                    <Box component="img" src={item.thumbnailUrl} alt="" sx={{ width: 100, height: 70, borderRadius: 2, objectFit: "cover", flexShrink: 0 }} />
-                ) : (
-                    <Box sx={{ width: 100, height: 70, borderRadius: 2, background: "linear-gradient(135deg, #e0e7ff, #c7d2fe)", flexShrink: 0 }} />
-                )} */}
             </Box>
 
             {/* Answer preview */}
-            {firstAnswer && (
+            {topAnswer && (
                 <Box
                     onClick={() => setExpanded((v) => !v)}
                     sx={{
@@ -142,24 +191,11 @@ export default function QuestionCard({ item }) {
                         cursor: "pointer",
                     }}
                 >
-                    <Box sx={{ display: "flex", flexShrink: 0 }}>
-                        {(item.answers || []).slice(0, 3).map((a, i) => (
-                            <Avatar
-                                key={i}
-                                src={a.avatarUrl}
-                                sx={{
-                                    width: 22,
-                                    height: 22,
-                                    fontSize: 10,
-                                    border: "2px solid #fff",
-                                    ml: i === 0 ? 0 : "-6px",
-                                }}
-                            >
-                                {a.authorName?.[0] ?? "U"}
-                            </Avatar>
-                        ))}
-                        {!item.answers && <Avatar sx={{ width: 22, height: 22, fontSize: 10 }}>U</Avatar>}
-                    </Box>
+                    {item.authorAvatar && (
+                        <Avatar src={item.authorAvatar} sx={{ width: 22, height: 22, fontSize: 10, flexShrink: 0 }}>
+                            {item.authorName?.[0] ?? "U"}
+                        </Avatar>
+                    )}
                     <Typography
                         variant="caption"
                         color="text.secondary"
@@ -167,13 +203,13 @@ export default function QuestionCard({ item }) {
                             flex: 1,
                             fontStyle: "italic",
                             overflow: "hidden",
-                            whiteSpace: "nowrap",
-                            textOverflow: "ellipsis",
+                            whiteSpace: expanded ? "pre-wrap" : "nowrap",
+                            textOverflow: expanded ? "unset" : "ellipsis",
                         }}
                     >
                         {expanded
-                            ? firstAnswer
-                            : `"${firstAnswer.slice(0, 120)}${firstAnswer.length > 120 ? " ..." : '"'}`}
+                            ? answerText
+                            : `"${answerText.slice(0, 120)}${answerText.length > 120 ? " ..." : ""}"`}
                     </Typography>
                     <KeyboardArrowDownIcon
                         sx={{

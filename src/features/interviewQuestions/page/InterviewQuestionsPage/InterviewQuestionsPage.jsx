@@ -5,6 +5,7 @@ import ShareIcon from "@mui/icons-material/Share";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
+import { homeEndPoints } from "../../../home/services/homeApi";
 import QuestionCard from "./QuestionCard";
 import QuestionFilters from "./QuestionFilters";
 import FeaturedTopics from "./FeaturedTopics";
@@ -21,19 +22,55 @@ export default function InterviewQuestionsPage() {
     const [page, setPage] = useState(1);
     const [sidebarSearch, setSidebarSearch] = useState("");
 
-    const [filters, setFilters] = useState({ role: "", category: "", level: "", sort: "hot" });
+    const [companies, setCompanies] = useState([]);
+
+    const [filters, setFilters] = useState({ role: "", category: "", companyId: "", level: "", round: "", sortBy: 1 }); // sortBy: 1=Hot
+
+    useEffect(() => {
+        callApi({
+            method: METHOD.GET,
+            endpoint: homeEndPoints.GET_ALL_COMPANIES,
+            arg: { page: 1, pageSize: 200 },
+        })
+            .then(({ data }) => {
+                const payload = data ?? {};
+                const items = payload.items ?? payload.data ?? (Array.isArray(payload) ? payload : []);
+                const normalized = (items ?? [])
+                    .map((c) => ({
+                        id: c.id ?? c.companyId ?? c._id,
+                        name: c.name ?? c.companyName ?? c.title,
+                    }))
+                    .filter((c) => c.id != null && c.name);
+                normalized.sort((a, b) =>
+                    String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }),
+                );
+                setCompanies(normalized);
+            })
+            .catch(() => setCompanies([]));
+    }, []);
+
+    useEffect(() => {
+        setPage(1);
+    }, [sidebarSearch]);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
+            const keyword = sidebarSearch.trim();
             const params = {
                 page,
                 pageSize: PAGE_SIZE,
-                ...(filters.role && { role: filters.role }),
-                ...(filters.category && { questionType: filters.category }),
+                ...(filters.role !== "" && { role: filters.role }),
+                ...(filters.category !== "" && { category: filters.category }),
+                ...(filters.companyId && { companyId: filters.companyId }),
                 ...(filters.level !== "" &&
                     filters.level !== null &&
                     filters.level !== undefined && { level: filters.level }),
+                ...(filters.round !== "" &&
+                    filters.round !== null &&
+                    filters.round !== undefined && { round: filters.round }),
+                ...(filters.sortBy && { sortBy: filters.sortBy }),
+                ...(keyword && { searchTerm: keyword }),
             };
             const { data } = await callApi({
                 method: METHOD.GET,
@@ -51,7 +88,7 @@ export default function InterviewQuestionsPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, filters]);
+    }, [page, filters, sidebarSearch]);
 
     useEffect(() => {
         fetchData();
@@ -59,7 +96,10 @@ export default function InterviewQuestionsPage() {
 
     const handleFilterChange = (key, value) => {
         setPage(1);
-        setFilters((p) => ({ ...p, [key]: value }));
+        // MUI Select may return string even for integer-valued MenuItems; parse back to Number
+        const integerKeys = ["role", "category", "sortBy", "level", "round"];
+        const parsed = integerKeys.includes(key) && value !== "" ? Number(value) : value;
+        setFilters((p) => ({ ...p, [key]: parsed }));
     };
     const handleRoleChipClick = (role) => {
         setPage(1);
@@ -94,7 +134,7 @@ export default function InterviewQuestionsPage() {
                 </Button>
             </Box>
 
-            <QuestionFilters filters={filters} onChange={handleFilterChange} />
+            <QuestionFilters filters={filters} onChange={handleFilterChange} companies={companies} />
             {/* <FeaturedTopics onTopicClick={handleTopicClick} /> */}
 
             {/* Body */}
@@ -115,7 +155,7 @@ export default function InterviewQuestionsPage() {
                                 <QuestionCard key={q.id ?? idx} item={q} />
                             ))}
                             {totalPages > 1 && (
-                                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                                <Box display="flex" justifyContent="center" mt={2}>
                                     <Pagination
                                         count={totalPages}
                                         page={page}

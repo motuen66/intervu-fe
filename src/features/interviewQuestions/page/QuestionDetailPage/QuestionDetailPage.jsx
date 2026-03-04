@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -7,8 +7,11 @@ import {
     Button,
     Chip,
     CircularProgress,
+    FormControl,
     IconButton,
+    MenuItem,
     Paper,
+    Select,
     Stack,
     TextField,
     Tooltip,
@@ -26,17 +29,16 @@ import SendIcon from "@mui/icons-material/Send";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
-import { useUserAvatarCache } from "../../../../common/hooks/useUserAvatarCache";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
 import { commentEndPoints } from "../../service/commentApi";
-import CommentCard from "./CommentCard";
+import AnswerCard from "./AnswerCard";
 import { timeAgo } from "../../../../common/utils/dateFormatter";
-import { QUESTION_TYPES } from "../../../../common/constants/types";
+import { SORT_OPTIONS } from "../../../../common/constants/types";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
 /* ─── Main Page ───────────────────────────────────────────────── */
 export default function QuestionDetailPage() {
@@ -48,14 +50,22 @@ export default function QuestionDetailPage() {
     const [saved, setSaved] = useState(false);
     const [copied, setCopied] = useState(false);
 
-    const [comments, setComments] = useState([]);
-    const [loadingComments, setLoadingComments] = useState(false);
-    const [commentInput, setCommentInput] = useState("");
-    const [submittingComment, setSubmittingComment] = useState(false);
+    /* ── Answers (replaces old comments) ── */
+    const [answers, setAnswers] = useState([]);
+    const [loadingAnswers, setLoadingAnswers] = useState(false);
+    const [answerInput, setAnswerInput] = useState("");
+    const [submittingAnswer, setSubmittingAnswer] = useState(false);
+    const [answerSort, setAnswerSort] = useState(2); // 2 = New
+    const [commentPage, setCommentPage] = useState(1);
+    const [totalCommentPages, setTotalCommentPages] = useState(1);
+    const [totalComments, setTotalComments] = useState(0);
+
+    /* ── Question editing ── */
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState("");
     const [savingEdit, setSavingEdit] = useState(false);
 
+    /* ── Confirm dialog ── */
     const [confirm, setConfirm] = useState({
         open: false,
         title: "",
@@ -77,84 +87,79 @@ export default function QuestionDetailPage() {
             onConfirm,
         });
 
-    const getUserId = (obj) =>
-        obj?.authorId ??
-        obj?.userId ??
-        obj?.createdById ??
-        obj?.createdBy ??
-        obj?.user?.id ??
-        obj?.user?.userId ??
-        obj?.author?.id ??
-        obj?.createdBy?.id ??
-        obj?.user;
-
-    const getCommentId = (c) => c?.id ?? c?.commentId ?? c?._id;
-
-    const fetchComments = async () => {
+    /* ── Fetch comments ── */
+    const fetchComments = async (page = commentPage) => {
         if (!id) return;
-        setLoadingComments(true);
+        setLoadingAnswers(true);
         try {
             const { data } = await callApi({
                 method: METHOD.GET,
                 endpoint: commentEndPoints.GET_LIST(id),
-                arg: { page: 1, pageSize: 10 },
+                arg: { page, pageSize: 10, sortBy: answerSort },
             });
             const raw = data?.items ?? data?.data ?? (Array.isArray(data) ? data : []);
-            setComments([...raw].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+            setAnswers(raw);
+            setTotalCommentPages(data?.totalPages ?? 1);
+            setTotalComments(data?.totalCount ?? raw.length);
         } catch (err) {
             console.error(err);
         } finally {
-            setLoadingComments(false);
+            setLoadingAnswers(false);
         }
     };
 
-    const allUserIds = useMemo(() => {
-        const ids = [getUserId(data), ...comments.map((c) => getUserId(c))];
-        return [...new Set(ids.filter(Boolean))];
-    }, [data, comments]);
-
-    const avatars = useUserAvatarCache(allUserIds);
-
+    /* ── Fetch question detail ── */
     useEffect(() => {
         if (!id) return;
         setLoading(true);
         callApi({ method: METHOD.GET, endpoint: interviewQuestionEndPoints.GET_DETAIL(id) })
-            .then(({ data }) => setData(data ?? null))
+            .then(({ data }) => {
+                setData(data ?? null);
+                // If the detail response already includes comments, use them
+                if (data?.comments) {
+                    setAnswers(data.comments);
+                }
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
     }, [id]);
 
     useEffect(() => {
-        fetchComments();
-    }, [id]);
+        fetchComments(commentPage);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, answerSort, commentPage]);
 
+    /* ── Add comment ── */
     const handleAddComment = async () => {
-        if (!commentInput.trim()) return;
-        setSubmittingComment(true);
+        if (!answerInput.trim()) return;
+        setSubmittingAnswer(true);
         try {
             const { data: newComment } = await callApi({
                 method: METHOD.POST,
                 endpoint: commentEndPoints.ADD_COMMENT(id),
-                arg: { content: commentInput.trim() },
+                arg: { content: answerInput.trim() },
             });
             const optimistic = newComment ?? {
-                content: commentInput.trim(),
+                content: answerInput.trim(),
                 createdAt: new Date().toISOString(),
-                authorId: currentUser?.id,
+                createdBy: currentUser?.id,
                 authorName: currentUser?.fullName ?? currentUser?.name ?? "You",
-                authorAvatar: currentUser?.profilePicture ?? "",
+                authorProfilePicture: currentUser?.profilePicture ?? "",
+                vote: 0,
+                isAnswer: false,
             };
-            setComments((prev) => [optimistic, ...prev]);
-            setCommentInput("");
-
-            await fetchComments();
+            setAnswers((prev) => [optimistic, ...prev]);
+            setAnswerInput("");
+            setCommentPage(1);
+            await fetchComments(1);
         } catch (err) {
             toast.error(err?.response?.data?.message ?? "Failed to add comment");
         } finally {
-            setSubmittingComment(false);
+            setSubmittingAnswer(false);
         }
     };
 
+    /* ── Update comment ── */
     const handleUpdateComment = async (commentId, newContent) => {
         try {
             await callApi({
@@ -162,22 +167,24 @@ export default function QuestionDetailPage() {
                 endpoint: commentEndPoints.UPDATE_COMMENT(id, commentId),
                 arg: { content: newContent },
             });
-            setComments((prev) => prev.map((c) => (getCommentId(c) === commentId ? { ...c, content: newContent } : c)));
+            setAnswers((prev) => prev.map((a) => (a.id === commentId ? { ...a, content: newContent } : a)));
         } catch (err) {
             toast.error(err?.response?.data?.message ?? "Failed to update comment");
             throw err;
         }
     };
 
+    /* ── Delete comment ── */
     const handleDeleteComment = async (commentId) => {
         try {
             await callApi({ method: METHOD.DELETE, endpoint: commentEndPoints.DELETE_COMMENT(id, commentId) });
-            setComments((prev) => prev.filter((c) => getCommentId(c) !== commentId));
+            setAnswers((prev) => prev.filter((a) => a.id !== commentId));
         } catch (err) {
             toast.error(err?.response?.data?.message ?? "Failed to delete comment");
         }
     };
 
+    /* ── Delete question ── */
     const handleDeleteQuestion = async () => {
         try {
             await callApi({
@@ -191,6 +198,7 @@ export default function QuestionDetailPage() {
         }
     };
 
+    /* ── Edit question ── */
     const requestSaveEdit = () => {
         if (!editContent.trim() || editContent.trim() === data.content) {
             setEditing(false);
@@ -218,7 +226,7 @@ export default function QuestionDetailPage() {
             await callApi({
                 method: METHOD.PUT,
                 endpoint: interviewQuestionEndPoints.UPDATE_QUESTION(id),
-                arg: { questionType: data.questionType, content: editContent.trim() },
+                arg: { content: editContent.trim() },
                 displaySuccessMessage: true,
             });
             setData((prev) => ({ ...prev, content: editContent.trim() }));
@@ -237,6 +245,7 @@ export default function QuestionDetailPage() {
         });
     };
 
+    /* ── Loading / not-found guards ── */
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" py={10}>
@@ -253,12 +262,12 @@ export default function QuestionDetailPage() {
         );
     }
 
-    const companies = data.companies ?? (data.companyName ? [data.companyName] : []);
-    const companyLabel = companies.length ? `Asked at ${companies.join(", ")}` : "Community question";
-    const roles = data.roles ?? (data.role ? [data.role] : []);
-    const categories = data.categories ?? (data.questionType ? [data.questionType] : []);
-    const questionAuthorId = getUserId(data);
-    const isOwner = !!currentUser?.id && currentUser.id === questionAuthorId;
+    /* ── Normalized fields from QuestionDetailDto ── */
+    const companyNames = data.companyNames ?? [];
+    const companyLabel = companyNames.length ? `Asked at ${companyNames.join(", ")}` : "Community question";
+    const roles = data.roles ?? [];
+    const tags = data.tags ?? [];
+    const isOwner = !!currentUser?.id && String(currentUser.id) === String(data.createdBy ?? data.authorId);
 
     const actionBtns = [
         {
@@ -279,9 +288,9 @@ export default function QuestionDetailPage() {
     ];
 
     const detailRows = [
+        { label: "Companies", items: companyNames },
         { label: "Roles", items: roles },
-        { label: "Companies", items: companies },
-        { label: "Categories", items: categories },
+        { label: "Tags", items: tags },
     ].filter(({ items }) => items.length > 0);
 
     return (
@@ -350,7 +359,7 @@ export default function QuestionDetailPage() {
                         </Box>
                     ) : (
                         <Typography variant="h4" flex={1}>
-                            {data.content || data.question || data.title}
+                            {data.content}
                         </Typography>
                     )}
                     {isOwner && !editing && (
@@ -359,7 +368,7 @@ export default function QuestionDetailPage() {
                                 <IconButton
                                     size="small"
                                     onClick={() => {
-                                        setEditContent(data.content || data.question || data.title || "");
+                                        setEditContent(data.content ?? "");
                                         setEditing(true);
                                     }}
                                     sx={{ color: "text.disabled", "&:hover": { color: "primary.main" } }}
@@ -390,10 +399,36 @@ export default function QuestionDetailPage() {
                         </Stack>
                     )}
                 </Stack>
-                <Typography variant="body2" color="text.secondary" mb={2}>
-                    {companyLabel}
-                    {data.createdAt && ` \u2022 ${timeAgo(data.createdAt)}`}
-                </Typography>
+
+                {/* Author + meta */}
+                <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+                    {data.authorAvatar && (
+                        <Avatar
+                            src={data.authorAvatar}
+                            sx={{ width: 24, height: 24, cursor: data.authorSlug ? "pointer" : "default" }}
+                            onClick={() => data.authorSlug && navigate(`/profile/${data.authorSlug}`)}
+                        >
+                            {data.authorName?.[0] ?? "?"}
+                        </Avatar>
+                    )}
+                    {data.authorName && (
+                        <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{
+                                cursor: data.authorSlug ? "pointer" : "default",
+                                "&:hover": data.authorSlug ? { color: "primary.main" } : {},
+                            }}
+                            onClick={() => data.authorSlug && navigate(`/profile/${data.authorSlug}`)}
+                        >
+                            {data.authorName}
+                        </Typography>
+                    )}
+                    <Typography variant="body2" color="text.secondary">
+                        {companyLabel}
+                        {data.createdAt && ` \u2022 ${timeAgo(data.createdAt)}`}
+                    </Typography>
+                </Stack>
 
                 {/* Actions */}
                 <Stack direction="row" flexWrap="wrap" gap={0.75} mb={2.75}>
@@ -444,13 +479,16 @@ export default function QuestionDetailPage() {
                     </Box>
                 </Paper>
 
-                {/* Add comment */}
+                {/* Add answer */}
                 <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
                     <Stack direction="row" alignItems="flex-start" gap={1.5}>
                         <Avatar
                             src={currentUser?.profilePicture ?? ""}
                             sx={{ width: 36, height: 36, bgcolor: "primary.main", mt: 0.5 }}
-                        />
+                        >
+                            {!currentUser?.profilePicture &&
+                                (currentUser?.fullName?.[0] ?? currentUser?.name?.[0] ?? "?")}
+                        </Avatar>
                         <Box flex={1}>
                             <TextField
                                 fullWidth
@@ -458,8 +496,8 @@ export default function QuestionDetailPage() {
                                 multiline
                                 minRows={2}
                                 placeholder="Add your own answer to this question..."
-                                value={commentInput}
-                                onChange={(e) => setCommentInput(e.target.value)}
+                                value={answerInput}
+                                onChange={(e) => setAnswerInput(e.target.value)}
                                 sx={{ mb: 1 }}
                             />
                             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
@@ -467,45 +505,63 @@ export default function QuestionDetailPage() {
                                     size="small"
                                     variant="contained"
                                     endIcon={<SendIcon sx={{ fontSize: 14 }} />}
-                                    disabled={!commentInput.trim() || submittingComment}
+                                    disabled={!answerInput.trim() || submittingAnswer}
                                     onClick={handleAddComment}
                                     sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
-                                    {submittingComment ? "Posting..." : "Post"}
+                                    {submittingAnswer ? "Posting..." : "Post Answer"}
                                 </Button>
                             </Box>
                         </Box>
                     </Stack>
                 </Paper>
 
-                {/* Comments */}
-                {loadingComments ? (
+                {/* Answers list */}
+                {loadingAnswers ? (
                     <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
                         <CircularProgress size={24} />
                     </Box>
                 ) : (
-                    comments.length > 0 && (
+                    answers.length > 0 && (
                         <>
                             <Stack direction="row" alignItems="center" gap={0.75} mb={1.75}>
                                 <ForumOutlinedIcon sx={{ fontSize: 18, color: "text.secondary" }} />
                                 <Typography variant="body1" fontWeight={600}>
-                                    {comments.length}
+                                    {totalComments} {totalComments === 1 ? "Answer" : "Answers"}
                                 </Typography>
+                                <Box flex={1} />
+                                <FormControl size="small">
+                                    <Select
+                                        value={answerSort}
+                                        onChange={(e) => {
+                                            setAnswerSort(e.target.value);
+                                            setCommentPage(1);
+                                        }}
+                                        sx={{
+                                            fontSize: 13,
+                                            borderRadius: 999,
+                                            ".MuiSelect-select": { py: 0.5, px: 1.5 },
+                                        }}
+                                    >
+                                        {SORT_OPTIONS.map((s) => (
+                                            <MenuItem key={s.value} value={s.value}>
+                                                {s.label}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
                             </Stack>
-                            {comments.map((c, idx) => {
-                                const commentId = getCommentId(c);
-                                const commentUserId = getUserId(c);
+                            {answers.map((a, idx) => {
                                 const isCommentAuthor =
-                                    !!currentUser?.id && String(currentUser.id) === String(commentUserId);
+                                    !!currentUser?.id && String(currentUser.id) === String(a.createdBy);
                                 return (
-                                    <CommentCard
-                                        key={commentId ?? idx}
-                                        comment={c}
-                                        avatarUrl={avatars[String(commentUserId)] ?? c.authorAvatar}
+                                    <AnswerCard
+                                        key={a.id ?? idx}
+                                        answer={a}
                                         currentUserId={currentUser?.id}
-                                        onEdit={commentId ? handleUpdateComment : undefined}
+                                        onEdit={a.id ? handleUpdateComment : undefined}
                                         onDelete={
-                                            commentId && isCommentAuthor
+                                            a.id && isCommentAuthor
                                                 ? () =>
                                                       openConfirm({
                                                           title: "Delete comment?",
@@ -513,7 +569,7 @@ export default function QuestionDetailPage() {
                                                           confirmText: "Delete",
                                                           cancelText: "Cancel",
                                                           onConfirm: async () => {
-                                                              await handleDeleteComment(commentId);
+                                                              await handleDeleteComment(a.id);
                                                               closeConfirm();
                                                           },
                                                       })
@@ -522,6 +578,7 @@ export default function QuestionDetailPage() {
                                     />
                                 );
                             })}
+
                         </>
                     )
                 )}
@@ -543,22 +600,28 @@ export default function QuestionDetailPage() {
                     <Typography variant="h6" mb={1.75}>
                         Interview Details
                     </Typography>
+
                     {detailRows.map(({ label, items }) => (
-                        <Stack key={label} direction="row" alignItems="flex-start" gap={2} mb={1.5}>
-                            <Typography variant="body2" fontWeight={600} sx={{ width: 90, flexShrink: 0, pt: "3px" }}>
+                        <Box key={label} mb={1.5}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
                                 {label}
                             </Typography>
-                            <Box display="flex" flexWrap="wrap" gap={0.75}>
-                                {items.map((item) => (
-                                    <Chip
-                                        key={item}
-                                        label={item}
-                                        size="small"
-                                        sx={{ bgcolor: "grey.100", fontSize: 13 }}
-                                    />
-                                ))}
+
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                                {items.map((item) => {
+                                    const isObject = typeof item === "object";
+
+                                    return (
+                                        <Chip
+                                            key={isObject ? item.id : item}
+                                            label={isObject ? item.name : item}
+                                            size="small"
+                                            sx={{ bgcolor: "grey.100", fontSize: 13 }}
+                                        />
+                                    );
+                                })}
                             </Box>
-                        </Stack>
+                        </Box>
                     ))}
                 </Paper>
 
@@ -584,10 +647,11 @@ export default function QuestionDetailPage() {
                             >
                                 <Typography variant="caption" color="text.disabled" display="block" mb={0.5}>
                                     {q.companyName && `Asked at ${q.companyName}`}
+                                    {q.answerCount != null && ` \u2022 ${q.answerCount} answers`}
                                     {q.createdAt && ` \u2022 ${timeAgo(q.createdAt)}`}
                                 </Typography>
                                 <Typography variant="body2" fontWeight={600}>
-                                    {q.content || q.question || q.title}
+                                    {q.title ?? q.content}
                                 </Typography>
                             </Paper>
                         ))}

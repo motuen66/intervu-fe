@@ -1,17 +1,6 @@
-﻿import { useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-    Box,
-    Button,
-    Checkbox,
-    FormControlLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Stack,
-    TextField,
-    Typography,
-} from "@mui/material";
+import { Box, Button, Checkbox, FormControlLabel, MenuItem, Select, Stack, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -19,11 +8,14 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { htmlToPlainText, isQuillEmpty } from "../../../../common/utils/richTextHelper";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewExperienceEndPoints } from "../../service/interviewExperienceApi";
+import { commentEndPoints } from "../../service/commentApi";
+import { homeEndPoints } from "../../../home/services/homeApi";
 import toast from "react-hot-toast";
 import "./ShareExperiencePage.css";
-import { LEVELS, QUESTION_TYPES, ROLES, ROUNDS } from "../../../../common/constants/types";
+import { LEVELS, ROLES, ROUNDS } from "../../../../common/constants/types";
+import QuestionRow from "./QuestionRow";
 
-const emptyQuestion = () => ({ type: "", question: "", answer: "" });
+const emptyQuestion = () => ({ type: "", question: "", answer: "", linkedQuestion: null });
 
 const labelSx = {
     fontSize: 11,
@@ -38,7 +30,9 @@ const labelSx = {
 export default function ShareExperiencePage() {
     const navigate = useNavigate();
 
-    const [company, setCompany] = useState("");
+    const [companyId, setCompanyId] = useState("");
+    const [companies, setCompanies] = useState([]);
+    const [loadingCompanies, setLoadingCompanies] = useState(false);
     const [role, setRole] = useState("");
     const [level, setLevel] = useState("");
     const [lastRound, setLastRound] = useState("");
@@ -47,7 +41,38 @@ export default function ShareExperiencePage() {
     const [questions, setQuestions] = useState([emptyQuestion()]);
     const [submitting, setSubmitting] = useState(false);
 
-    const updateQuestion = (idx, field, value) =>
+    useEffect(() => {
+        setLoadingCompanies(true);
+        callApi({
+            method: METHOD.GET,
+            endpoint: homeEndPoints.GET_ALL_COMPANIES,
+            arg: { page: 1, pageSize: 200 },
+        })
+            .then(({ data }) => {
+                const payload = data ?? {};
+                const items = payload.items ?? payload.data ?? (Array.isArray(payload) ? payload : []);
+                const normalized = (items ?? [])
+                    .map((c) => ({
+                        id: c.id ?? c.companyId ?? c._id,
+                        name: c.name ?? c.companyName ?? c.title,
+                    }))
+                    .filter((c) => c.id != null && c.name);
+                normalized.sort((a, b) =>
+                    String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }),
+                );
+                setCompanies(normalized);
+            })
+            .catch(() => setCompanies([]))
+            .finally(() => setLoadingCompanies(false));
+    }, []);
+
+    const companyLabelById = useMemo(() => {
+        const map = new Map();
+        companies.forEach((c) => map.set(String(c.id), c.name));
+        return map;
+    }, [companies]);
+
+    const updateQuestionField = (idx, field, value) =>
         setQuestions((prev) => prev.map((q, i) => (i === idx ? { ...q, [field]: value } : q)));
 
     const addQuestion = () => setQuestions((prev) => [...prev, emptyQuestion()]);
@@ -55,7 +80,7 @@ export default function ShareExperiencePage() {
     const removeQuestion = (idx) => setQuestions((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev));
 
     const handleSubmit = async () => {
-        if (!company.trim()) {
+        if (!companyId) {
             toast.error("Company is required");
             return;
         }
@@ -74,27 +99,76 @@ export default function ShareExperiencePage() {
 
         setSubmitting(true);
         try {
-            const payload = {
-                companyName: company.trim(),
-                role,
-                level: level !== "" ? level : null,
-                lastRoundCompleted: lastRound,
-                interviewProcess: htmlToPlainText(process),
-                isInterestedInContact: allowContact,
-                questions: questions
-                    .filter((q) => q.question.trim())
-                    .map((q) => ({
-                        questionType: q.type,
-                        content: q.question,
-                        answer: isQuillEmpty(q.answer) ? "" : htmlToPlainText(q.answer),
-                    })),
-            };
-            await callApi({
+            // Separate questions into new (create inline) vs linked (post answer as comment)
+            const filledQuestions = questions.filter((q) => q.question.trim() || q.linkedQuestion);
+            const newQuestions = filledQuestions.filter((q) => !q.linkedQuestion);
+            const linkedQuestions = filledQuestions.filter((q) => q.linkedQuestion);
+
+            // Build inline questions array for CreateInterviewExperience body
+            const inlineQuestions = newQuestions.map((q) => ({
+                title: q.question.trim(),
+                content: q.question.trim(),
+                category: q.type !== "" ? q.type : undefined,
+                answer: isQuillEmpty(q.answer) ? "" : htmlToPlainText(q.answer),
+                companyIds: companyId ? [companyId] : [],
+                roles: role !== "" ? [role] : [],
+                tagIds: [],
+            }));
+
+            // Step 1: create the experience with new questions in the body
+            const { data: expData } = await callApi({
                 method: METHOD.POST,
                 endpoint: interviewExperienceEndPoints.CREATE,
-                arg: payload,
-                displaySuccessMessage: true,
+                arg: {
+                    companyId,
+                    role, // integer
+                    level: level !== "" ? level : null,
+                    lastRoundCompleted: lastRound, // integer
+                    interviewProcess: htmlToPlainText(process),
+                    isInterestedInContact: allowContact,
+                    questions: inlineQuestions,
+                },
             });
+
+            const experienceId = expData?.id ?? expData?.experienceId ?? expData?._id;
+
+            // Step 2: for linked questions, post the answer as a comment on the existing question
+            if (experienceId && linkedQuestions.length > 0) {
+                for (const q of linkedQuestions) {
+                    const hasAnswer = !isQuillEmpty(q.answer);
+                    const answerText = hasAnswer ? htmlToPlainText(q.answer) : "";
+                    const questionId = q.linkedQuestion.id;
+
+                    if (hasAnswer && answerText) {
+                        try {
+                            await callApi({
+                                method: METHOD.POST,
+                                endpoint: commentEndPoints.ADD_COMMENT(questionId),
+                                arg: { content: answerText },
+                            });
+                            toast(
+                                (t) => (
+                                    <span>
+                                        Your answer was posted as a comment on an existing question.{" "}
+                                        <a
+                                            href={`/questions/${questionId}`}
+                                            style={{ color: "inherit", fontWeight: 600 }}
+                                            onClick={() => toast.dismiss(t.id)}
+                                        >
+                                            View question
+                                        </a>
+                                    </span>
+                                ),
+                                { duration: 6000 },
+                            );
+                        } catch {
+                            toast.error("Failed to post your answer as a comment on the linked question");
+                        }
+                    }
+                }
+            }
+
+            toast.success("Experience shared successfully!");
             navigate("/questions");
         } catch (err) {
             toast.error(err?.response?.data?.message ?? err?.message ?? "Something went wrong");
@@ -125,13 +199,29 @@ export default function ShareExperiencePage() {
             {/* Company */}
             <Box mb={2.75}>
                 <Typography sx={labelSx}>Company *</Typography>
-                <TextField
-                    fullWidth
+                <Select
+                    displayEmpty
+                    value={companyId}
+                    onChange={(e) => setCompanyId(e.target.value)}
                     size="small"
-                    placeholder="e.g. Google, Meta, Mistral AI"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                />
+                    fullWidth
+                    disabled={loadingCompanies}
+                    renderValue={(v) =>
+                        v ? (
+                            (companyLabelById.get(String(v)) ?? "Selected company")
+                        ) : (
+                            <Box component="span" sx={{ color: "text.disabled" }}>
+                                {loadingCompanies ? "Loading companies..." : "Select Company"}
+                            </Box>
+                        )
+                    }
+                >
+                    {companies.map((c) => (
+                        <MenuItem key={String(c.id)} value={String(c.id)}>
+                            {c.name}
+                        </MenuItem>
+                    ))}
+                </Select>
             </Box>
 
             {/* Role / Level / Last Round */}
@@ -145,7 +235,9 @@ export default function ShareExperiencePage() {
                         size="small"
                         fullWidth
                         renderValue={(v) =>
-                            v || (
+                            v !== "" ? (
+                                ROLES.find((r) => r.value === v)?.label
+                            ) : (
                                 <Box component="span" sx={{ color: "text.disabled" }}>
                                     Select Role
                                 </Box>
@@ -201,7 +293,9 @@ export default function ShareExperiencePage() {
                         size="small"
                         fullWidth
                         renderValue={(v) =>
-                            v || (
+                            v !== "" ? (
+                                ROUNDS.find((r) => r.value === v)?.label
+                            ) : (
                                 <Box component="span" sx={{ color: "text.disabled" }}>
                                     Select Round
                                 </Box>
@@ -209,8 +303,8 @@ export default function ShareExperiencePage() {
                         }
                     >
                         {ROUNDS.map((r) => (
-                            <MenuItem key={r} value={r}>
-                                {r}
+                            <MenuItem key={r.value} value={r.value}>
+                                {r.label}
                             </MenuItem>
                         ))}
                     </Select>
@@ -265,73 +359,14 @@ export default function ShareExperiencePage() {
                 </Typography>
 
                 {questions.map((q, idx) => (
-                    <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 1.75, bgcolor: "grey.50", borderRadius: 2 }}>
-                        {questions.length > 1 && (
-                            <Box textAlign="right" mb={0.5}>
-                                <Button
-                                    size="small"
-                                    onClick={() => removeQuestion(idx)}
-                                    sx={{
-                                        color: "text.disabled",
-                                        textTransform: "none",
-                                        fontSize: 12,
-                                        p: 0,
-                                        minWidth: 0,
-                                        "&:hover": { color: "error.main" },
-                                    }}
-                                >
-                                    Remove
-                                </Button>
-                            </Box>
-                        )}
-
-                        <Box mb={1.75}>
-                            <Typography sx={labelSx}>Question Type</Typography>
-                            <Select
-                                displayEmpty
-                                value={q.type}
-                                onChange={(e) => updateQuestion(idx, "type", e.target.value)}
-                                size="small"
-                                fullWidth
-                                renderValue={(v) =>
-                                    v || (
-                                        <Box component="span" sx={{ color: "text.disabled" }}>
-                                            Select Type
-                                        </Box>
-                                    )
-                                }
-                            >
-                                {QUESTION_TYPES.map((t) => (
-                                    <MenuItem key={t} value={t}>
-                                        {t}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </Box>
-
-                        <Box mb={1.75}>
-                            <Typography sx={labelSx}>Interview Question</Typography>
-                            <TextField
-                                fullWidth
-                                size="small"
-                                placeholder="What were you asked in your interview?"
-                                value={q.question}
-                                onChange={(e) => updateQuestion(idx, "question", e.target.value)}
-                            />
-                        </Box>
-
-                        <Box>
-                            <Typography sx={labelSx}>Answer</Typography>
-                            <div className="se-editor-wrap">
-                                <ReactQuill
-                                    theme="snow"
-                                    value={q.answer}
-                                    onChange={(val) => updateQuestion(idx, "answer", val)}
-                                    placeholder="How did you respond? The more detailed, the better."
-                                />
-                            </div>
-                        </Box>
-                    </Paper>
+                    <QuestionRow
+                        key={idx}
+                        idx={idx}
+                        q={q}
+                        onUpdateField={updateQuestionField}
+                        onRemove={removeQuestion}
+                        showRemove={questions.length > 1}
+                    />
                 ))}
 
                 <Button

@@ -43,13 +43,13 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {POPULAR_ROLES.map((role) => (
                         <Chip
-                            key={role}
-                            label={role}
+                            key={role.value}
+                            label={role.label}
                             size="small"
                             clickable
-                            onClick={() => onRoleClick?.(role)}
-                            variant={activeRole === role ? "filled" : "outlined"}
-                            color={activeRole === role ? "primary" : "default"}
+                            onClick={() => onRoleClick?.(role.value)}
+                            variant={activeRole === role.value ? "filled" : "outlined"}
+                            color={activeRole === role.value ? "primary" : "default"}
                             sx={{ fontSize: 12 }}
                         />
                     ))}
