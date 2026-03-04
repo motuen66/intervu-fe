@@ -1,12 +1,11 @@
-import React from 'react';
-import { Box, Typography, Stack } from '@mui/material';
+import React from "react";
+import { Box, Typography, Stack } from "@mui/material";
 
 const StatusLegend = () => {
     const items = [
-        { label: 'Available', color: '#6366f1', desc: 'Open for booking' },
-        { label: 'Booked', color: '#10b981', desc: 'Candidate confirmed' },
-        { label: 'Reserved', color: '#f59e0b', desc: 'Hold for interview' },
-        { label: 'Past Slot', color: '#94a3b8', desc: 'Historical slot', opacity: 0.6 },
+        { label: "Available", color: "#6366f1", desc: "Open for booking" },
+        { label: "Unavailable", color: "#ef4444", desc: "Not available" },
+        { label: "Past Slot", color: "#94a3b8", desc: "Historical slot", opacity: 0.6 },
     ];
 
     return (
@@ -17,9 +16,9 @@ const StatusLegend = () => {
                         sx={{
                             width: 12,
                             height: 12,
-                            borderRadius: '50%',
+                            borderRadius: "50%",
                             bgcolor: item.color,
-                            mt: '4px',
+                            mt: "4px",
                             opacity: item.opacity || 1,
                             flexShrink: 0,
                         }}
