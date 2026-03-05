@@ -29,7 +29,7 @@ const labelSx = {
 
 export default function ShareExperiencePage() {
     const navigate = useNavigate();
-
+    const [loading, setLoading] = useState(false);
     const [companyId, setCompanyId] = useState("");
     const [companies, setCompanies] = useState([]);
     const [loadingCompanies, setLoadingCompanies] = useState(false);
@@ -81,97 +81,64 @@ export default function ShareExperiencePage() {
 
     const handleSubmit = async () => {
         if (!companyId) {
-            toast.error("Company is required");
+            toast.error("Please select a company");
             return;
         }
+
         if (!role) {
-            toast.error("Role is required");
+            toast.error("Please select a role");
             return;
         }
+
         if (!lastRound) {
-            toast.error("Last round is required");
-            return;
-        }
-        if (!process.trim() || process === "<p><br></p>") {
-            toast.error("Interview process is required");
+            toast.error("Please select last round completed");
             return;
         }
 
-        setSubmitting(true);
+        const filledQuestions = questions.filter(
+            (q) => q.question?.trim() || q.linkedQuestion || !isQuillEmpty(q.answer),
+        );
+
+        if (filledQuestions.length === 0) {
+            toast.error("Please add at least one question");
+            return;
+        }
+
+        const payloadQuestions = filledQuestions.map((q) => ({
+            linkedQuestionId: q.linkedQuestion?.id ?? null,
+            title: (q.linkedQuestion?.content ?? q.question?.trim()) || undefined,
+            content: isQuillEmpty(q.answer) ? "" : htmlToPlainText(q.answer),
+            level: level || undefined,
+            round: lastRound || undefined,
+            category: q.type || undefined,
+            answer: isQuillEmpty(q.answer) ? "" : htmlToPlainText(q.answer),
+            companyIds: q.linkedQuestion ? [] : companyId ? [companyId] : [],
+            roles: q.linkedQuestion ? [] : role ? [role] : [],
+            tagIds: [],
+        }));
+
         try {
-            // Separate questions into new (create inline) vs linked (post answer as comment)
-            const filledQuestions = questions.filter((q) => q.question.trim() || q.linkedQuestion);
-            const newQuestions = filledQuestions.filter((q) => !q.linkedQuestion);
-            const linkedQuestions = filledQuestions.filter((q) => q.linkedQuestion);
+            setSubmitting(true);
 
-            // Build inline questions array for CreateInterviewExperience body
-            const inlineQuestions = newQuestions.map((q) => ({
-                title: q.question.trim(),
-                content: q.question.trim(),
-                category: q.type !== "" ? q.type : undefined,
-                answer: isQuillEmpty(q.answer) ? "" : htmlToPlainText(q.answer),
-                companyIds: companyId ? [companyId] : [],
-                roles: role !== "" ? [role] : [],
-                tagIds: [],
-            }));
-
-            // Step 1: create the experience with new questions in the body
-            const { data: expData } = await callApi({
+            await callApi({
                 method: METHOD.POST,
                 endpoint: interviewExperienceEndPoints.CREATE,
                 arg: {
                     companyId,
-                    role, // integer
-                    level: level !== "" ? level : null,
-                    lastRoundCompleted: lastRound, // integer
+                    role,
+                    level: level || null,
+                    lastRoundCompleted: lastRound,
                     interviewProcess: htmlToPlainText(process),
                     isInterestedInContact: allowContact,
-                    questions: inlineQuestions,
+                    questions: payloadQuestions,
                 },
             });
 
-            const experienceId = expData?.id ?? expData?.experienceId ?? expData?._id;
-
-            // Step 2: for linked questions, post the answer as a comment on the existing question
-            if (experienceId && linkedQuestions.length > 0) {
-                for (const q of linkedQuestions) {
-                    const hasAnswer = !isQuillEmpty(q.answer);
-                    const answerText = hasAnswer ? htmlToPlainText(q.answer) : "";
-                    const questionId = q.linkedQuestion.id;
-
-                    if (hasAnswer && answerText) {
-                        try {
-                            await callApi({
-                                method: METHOD.POST,
-                                endpoint: commentEndPoints.ADD_COMMENT(questionId),
-                                arg: { content: answerText },
-                            });
-                            toast(
-                                (t) => (
-                                    <span>
-                                        Your answer was posted as a comment on an existing question.{" "}
-                                        <a
-                                            href={`/questions/${questionId}`}
-                                            style={{ color: "inherit", fontWeight: 600 }}
-                                            onClick={() => toast.dismiss(t.id)}
-                                        >
-                                            View question
-                                        </a>
-                                    </span>
-                                ),
-                                { duration: 6000 },
-                            );
-                        } catch {
-                            toast.error("Failed to post your answer as a comment on the linked question");
-                        }
-                    }
-                }
-            }
-
             toast.success("Experience shared successfully!");
-            navigate("/questions");
-        } catch (err) {
-            toast.error(err?.response?.data?.message ?? err?.message ?? "Something went wrong");
+            navigate("/");
+        } catch (error) {
+            console.error(error);
+            toast.error("Something went wrong!");
         } finally {
             setSubmitting(false);
         }

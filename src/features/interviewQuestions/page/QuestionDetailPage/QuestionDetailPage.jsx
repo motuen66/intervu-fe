@@ -402,9 +402,9 @@ export default function QuestionDetailPage() {
 
                 {/* Author + meta */}
                 <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                    {data.authorAvatar && (
+                    {(data.authorAvatar ?? data.authorProfilePicture) && (
                         <Avatar
-                            src={data.authorAvatar}
+                            src={data.authorAvatar ?? data.authorProfilePicture}
                             sx={{ width: 24, height: 24, cursor: data.authorSlug ? "pointer" : "default" }}
                             onClick={() => data.authorSlug && navigate(`/profile/${data.authorSlug}`)}
                         >
@@ -578,7 +578,6 @@ export default function QuestionDetailPage() {
                                     />
                                 );
                             })}
-
                         </>
                     )
                 )}

@@ -191,8 +191,11 @@ export default function QuestionCard({ item }) {
                         cursor: "pointer",
                     }}
                 >
-                    {item.authorAvatar && (
-                        <Avatar src={item.authorAvatar} sx={{ width: 22, height: 22, fontSize: 10, flexShrink: 0 }}>
+                    {(item.authorAvatar ?? item.authorProfilePicture) && (
+                        <Avatar
+                            src={item.authorAvatar ?? item.authorProfilePicture}
+                            sx={{ width: 22, height: 22, fontSize: 10, flexShrink: 0 }}
+                        >
                             {item.authorName?.[0] ?? "U"}
                         </Avatar>
                     )}
