@@ -7,6 +7,8 @@ import { ROLES } from '../../common/constants/common';
 import { callApi } from '../../common/utils/apiConnector';
 import { METHOD } from '../../common/constants/api';
 import { authEndPoints } from '../../features/auth/services/authApi';
+import NotificationDropdown from '../../features/notification/components/NotificationDropdown';
+import useNotificationHub from '../../features/notification/hooks/useNotificationHub';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import VideoCameraFrontOutlinedIcon from '@mui/icons-material/VideoCameraFrontOutlined';
@@ -23,7 +25,10 @@ const MainLayout = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { userData } = useSelector((state) => state.auth || {});
+  const { userData, token } = useSelector((state) => state.auth || {});
+
+  // Connect to notification SignalR hub
+  useNotificationHub(userData?.id, token);
 
   const handleLogout = async () => {
     try {
@@ -195,9 +200,7 @@ const MainLayout = () => {
               </span>
             </div>
             <div className="admin-actions">
-              <button className="admin-icon-btn" title="Notifications">
-                <NotificationsNoneOutlinedIcon />
-              </button>
+              <NotificationDropdown />
               <div className="admin-user-dropdown">
                 <button
                   className="admin-avatar-btn"
@@ -316,20 +319,7 @@ const MainLayout = () => {
             )}
 
             {/* Notification Icon */}
-            <button className="navbar-icon-btn" title="Notifications">
-              <svg
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-            </button>
+            <NotificationDropdown />
 
             {/* User Avatar Dropdown */}
             <div className="user-dropdown">

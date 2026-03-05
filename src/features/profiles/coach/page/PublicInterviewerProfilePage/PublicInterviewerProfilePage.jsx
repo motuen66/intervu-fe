@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo} from "react";
+import { useEffect, useState, useMemo } from "react";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
@@ -99,18 +99,18 @@ function PublicInterviewerProfilePage() {
     };
 
     const avatarLetter = useMemo(() => profile?.user?.fullName?.trim()?.charAt(0)?.toUpperCase() || "?", [profile]);
-    
+
     // Avatar logic matching home page
     const avatarUrl = useMemo(() => {
         if (!profile) return "";
-        
+
         // Extract profile data like in InterviewerCard
         const interviewerProfile = profile.interviewerProfile || profile;
         const user = profile.user || {};
-        
+
         // Get avatar with same logic as home page
         const profilePicture = user?.profilePicture || interviewerProfile?.profilePicture;
-        
+
         // Use fallback image if no profile picture (same as home page)
         return profilePicture || 'https://fr.web.img6.acsta.net/r_1920_1080/pictures/22/12/06/08/39/0036027.jpg';
     }, [profile]);
@@ -130,15 +130,15 @@ function PublicInterviewerProfilePage() {
             )}
 
             {!loading && profile && (
-                <Box sx={{ 
-                    display: "flex", 
-                    gap: 4, 
+                <Box sx={{
+                    display: "flex",
+                    gap: 4,
                     alignItems: "flex-start",
                     flexDirection: { xs: "column", md: "row" }
                 }}>
                     {/* Left column - Profile Content */}
-                    <Box sx={{ 
-                        flex: 1, 
+                    <Box sx={{
+                        flex: 1,
                         maxWidth: { md: "calc(100% - 410px)" }
                     }}>
                         <Stack spacing={3}>
@@ -161,12 +161,12 @@ function PublicInterviewerProfilePage() {
                                         </Typography>
                                         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
                                             {[...Array(5)].map((_, i) => (
-                                                <StarIcon 
-                                                    key={i} 
-                                                    sx={{ 
-                                                        color: i < Math.floor(profile.rating || 0) ? "#FFD700" : "#E0E0E0", 
-                                                        fontSize: 20 
-                                                    }} 
+                                                <StarIcon
+                                                    key={i}
+                                                    sx={{
+                                                        color: i < Math.floor(profile.rating || 0) ? "#FFD700" : "#E0E0E0",
+                                                        fontSize: 20
+                                                    }}
                                                 />
                                             ))}
                                             <Typography variant="body2" sx={{ ml: 1 }}>
@@ -235,12 +235,12 @@ function PublicInterviewerProfilePage() {
                                         </Typography>
                                         <Stack direction="row" spacing={1} alignItems="center">
                                             {[...Array(5)].map((_, i) => (
-                                                <StarIcon 
-                                                    key={i} 
-                                                    sx={{ 
-                                                        color: i < Math.floor(profile.rating) ? "#FFD700" : "#E0E0E0", 
-                                                        fontSize: 20 
-                                                    }} 
+                                                <StarIcon
+                                                    key={i}
+                                                    sx={{
+                                                        color: i < Math.floor(profile.rating) ? "#FFD700" : "#E0E0E0",
+                                                        fontSize: 20
+                                                    }}
                                                 />
                                             ))}
                                         </Stack>
@@ -252,12 +252,12 @@ function PublicInterviewerProfilePage() {
                                                 <Box key={index}>
                                                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                                                         {[...Array(5)].map((_, i) => (
-                                                            <StarIcon 
-                                                                key={i} 
-                                                                sx={{ 
-                                                                    color: i < Math.floor(review.rating || 0) ? "#FFD700" : "#E0E0E0", 
-                                                                    fontSize: 16 
-                                                                }} 
+                                                            <StarIcon
+                                                                key={i}
+                                                                sx={{
+                                                                    color: i < Math.floor(review.rating || 0) ? "#FFD700" : "#E0E0E0",
+                                                                    fontSize: 16
+                                                                }}
                                                             />
                                                         ))}
                                                     </Stack>
@@ -266,7 +266,7 @@ function PublicInterviewerProfilePage() {
                                                     </Typography>
                                                 </Box>
                                             ))}
-                                            
+
                                             {profile.reviews.length > 2 && (
                                                 <Button variant="text" color="primary" sx={{ alignSelf: "flex-start", textTransform: "none" }}>
                                                     See all {profile.reviews.length} reviews
@@ -280,23 +280,23 @@ function PublicInterviewerProfilePage() {
                                     )}
                                 </Card>
                             )}
-                            
+
                             {/* Select coaching plan section */}
                         </Stack>
                     </Box>
 
                     {/* Right column - Booking Panel */}
-                    <Box sx={{ 
+                    <Box sx={{
                         width: { xs: "100%", md: "400px" },
                         flexShrink: 0
                     }}>
-                        <Box sx={{ 
-                            position: "sticky", 
+                        <Box sx={{
+                            position: "sticky",
                             top: 24
                         }}>
-                            <Card 
-                                elevation={3} 
-                                sx={{ 
+                            <Card
+                                elevation={3}
+                                sx={{
                                     borderRadius: "12px",
                                     border: "1px solid #E5E7EB",
                                     width: "100%"
@@ -306,13 +306,13 @@ function PublicInterviewerProfilePage() {
                                     <Typography variant="h5" fontWeight={700} sx={{ mb: 3, color: "#4F46E5" }}>
                                         Book time with {profile.user.fullName} now
                                     </Typography>
-                                    
+
                                     <Stack spacing={2} sx={{ mb: 3 }}>
                                         <Stack direction="row" spacing={1} alignItems="center">
-                                            <Box sx={{ 
-                                                width: 20, 
-                                                height: 20, 
-                                                backgroundColor: "#4F46E5", 
+                                            <Box sx={{
+                                                width: 20,
+                                                height: 20,
+                                                backgroundColor: "#4F46E5",
                                                 borderRadius: "4px",
                                                 display: "flex",
                                                 alignItems: "center",
@@ -323,10 +323,10 @@ function PublicInterviewerProfilePage() {
                                             <Typography variant="body2">1-hour phone or video chat</Typography>
                                         </Stack>
                                         <Stack direction="row" spacing={1} alignItems="center">
-                                            <Box sx={{ 
-                                                width: 20, 
-                                                height: 20, 
-                                                backgroundColor: "#4F46E5", 
+                                            <Box sx={{
+                                                width: 20,
+                                                height: 20,
+                                                backgroundColor: "#4F46E5",
                                                 borderRadius: "4px",
                                                 display: "flex",
                                                 alignItems: "center",
@@ -337,10 +337,10 @@ function PublicInterviewerProfilePage() {
                                             <Typography variant="body2">Detailed written feedback</Typography>
                                         </Stack>
                                         <Stack direction="row" spacing={1} alignItems="center">
-                                            <Box sx={{ 
-                                                width: 20, 
-                                                height: 20, 
-                                                backgroundColor: "#4F46E5", 
+                                            <Box sx={{
+                                                width: 20,
+                                                height: 20,
+                                                backgroundColor: "#4F46E5",
                                                 borderRadius: "4px",
                                                 display: "flex",
                                                 alignItems: "center",
@@ -351,10 +351,10 @@ function PublicInterviewerProfilePage() {
                                             <Typography variant="body2">Convenient scheduling</Typography>
                                         </Stack>
                                         <Stack direction="row" spacing={1} alignItems="center">
-                                            <Box sx={{ 
-                                                width: 20, 
-                                                height: 20, 
-                                                backgroundColor: "#4F46E5", 
+                                            <Box sx={{
+                                                width: 20,
+                                                height: 20,
+                                                backgroundColor: "#4F46E5",
                                                 borderRadius: "4px",
                                                 display: "flex",
                                                 alignItems: "center",
