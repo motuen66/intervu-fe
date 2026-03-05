@@ -86,10 +86,10 @@ function PublicInterviewerProfilePage() {
         }
     };
 
-    const handleSlotSelected = async (slot) => {
+    const handleSlotSelected = async ({ slot, service, startTime }) => {
         setSelectedSlot(slot);
 
-        console.log("Selected slot:", slot);
+        console.log("Selected booking:", { slot, service, startTime });
         const returnUrl = window.location.origin + window.location.pathname;
         const { data } = await callApi({
             method: METHOD.POST,
@@ -97,6 +97,8 @@ function PublicInterviewerProfilePage() {
             arg: {
                 coachId: slot.coachId,
                 coachAvailabilityId: slot.id,
+                coachInterviewServiceId: service.id,
+                startTime: startTime.toISOString(),
                 returnUrl: returnUrl,
             },
         });
@@ -104,7 +106,7 @@ function PublicInterviewerProfilePage() {
         if (data && data.checkOutUrl) {
             window.location.href = data.checkOutUrl;
         }
-        console.log("checkOutUrl:", data.checkOutUrl);
+        console.log("checkOutUrl:", data?.checkOutUrl);
     };
 
     const avatarLetter = useMemo(() => profile?.user?.fullName?.trim()?.charAt(0)?.toUpperCase() || "?", [profile]);
