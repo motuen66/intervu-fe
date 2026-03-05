@@ -62,7 +62,7 @@ export default function CoachInterviewServicePage() {
     const handleCreateSuccess = () => {
         setOpenCreate(false);
         fetchItems();
-        toast.success("Service added successfully!");
+        // toast.success("Service added successfully!");
     };
 
     const handleUpdateClick = (item) => {

@@ -333,7 +333,7 @@ const ScheduleManagement = () => {
                 const result = await dispatch(editAvailability({ id: editingId, payload: payloads[0] }));
 
                 if (!editAvailability.fulfilled.match(result)) {
-                    toast.dismiss(loadingToast);
+                    // toast.dismiss(loadingToast);
                     const errorMsg = typeof result.payload === "string" ? result.payload : result.payload?.message;
                     showError(errorMsg || "Failed to update main slot");
                     return;
@@ -345,8 +345,8 @@ const ScheduleManagement = () => {
                     console.log("addAvailability (duplicate) result:", res);
                 }
 
-                toast.dismiss(loadingToast);
-                toast.success("Availability updated and duplicated successfully");
+                // toast.dismiss(loadingToast);
+                // toast.success("Availability updated and duplicated successfully");
 
                 const month = currentDate.getMonth() + 1;
                 const year = currentDate.getFullYear();
@@ -365,8 +365,8 @@ const ScheduleManagement = () => {
                     console.log("addAvailability result:", res);
                 }
 
-                toast.dismiss(loadingToast);
-                toast.success("Availability slots created successfully");
+                // toast.dismiss(loadingToast);
+                // toast.success("Availability slots created successfully");
 
                 const month = currentDate.getMonth() + 1;
                 const year = currentDate.getFullYear();
@@ -383,7 +383,7 @@ const ScheduleManagement = () => {
             setOpenModal(false);
             setEditingId(null);
         } catch (err) {
-            toast.dismiss(loadingToast);
+            // toast.dismiss(loadingToast);
             console.error(err);
             showError("An unexpected error occurred");
         }
