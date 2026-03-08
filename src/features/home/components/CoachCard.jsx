@@ -56,9 +56,15 @@ function CoachCard({ interviewer, isRecommended = false }) {
                     <Avatar
                         src={profilePicture || ""}
                         alt={displayName}
-                        sx={{ width: 72, height: 72, flexShrink: 0 }}
+                        sx={{
+                            width: 72,
+                            height: 72,
+                            flexShrink: 0,
+                            bgcolor: profilePicture ? "transparent" : "var(--mui-palette-secondary-main)",
+                            color: profilePicture ? "inherit" : "var(--mui-palette-primary-main)",
+                        }}
                     >
-                        {displayName.charAt(0).toUpperCase()}
+                        {!profilePicture ? displayName.charAt(0).toUpperCase() : null}
                     </Avatar>
                     {/* Name Section */}
                     <div className="name-section">

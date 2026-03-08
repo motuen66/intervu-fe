@@ -42,7 +42,9 @@ const DefaultLayout = () => {
                         {userData?.profilePicture ? (
                             <img src={userData.profilePicture} alt="User Avatar" className="avatar-img" />
                         ) : (
-                            <Avatar sx={{ width: 40, height: 40 }} />
+                            <Avatar sx={{ width: 40, height: 40, bgcolor: "var(--mui-palette-secondary-main)", color: "var(--mui-palette-primary-main)", fontWeight: 700, fontSize: "14px" }}>
+                                {userData?.fullName?.charAt(0).toUpperCase() || "U"}
+                            </Avatar>
                         )}
                         <Button variant="outlined" sx={{ ml: 2 }} onClick={logout}>
                             Sign In

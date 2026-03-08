@@ -89,7 +89,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
     // Get interview room info
     const interviewRoom = request.interviewRoom;
     const duration = interviewRoom?.durationMinutes || 60;
-    const interviewType = interviewRoom?.interviewTypeName || "Interview Session";
+    const interviewType = interviewRoom?.problemShortName || interviewRoom?.title || interviewRoom?.interviewTypeName || "Interview Session";
 
     // Get times from availability objects
     const originalTime = request.currentAvailability?.startTime;
@@ -295,7 +295,16 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
             {/* Content Blocks - Reasons */}
             <Stack spacing={1.5}>
                 {request.reason && (
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                    <Box sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                        p: 1.5,
+                        bgcolor: "grey.50",
+                        borderRadius: 2,
+                        border: "1px solid",
+                        borderColor: "divider"
+                    }}>
                         <Box sx={{
                             mt: 0.25,
                             p: 0.5,
@@ -317,7 +326,17 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                 )}
 
                 {request.status === 2 && request.rejectionReason && (
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, mt: 1, p: 2, bgcolor: "error.lighter", borderRadius: 2 }}>
+                    <Box sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                        mt: 1,
+                        p: 1.5,
+                        bgcolor: "#fef2f2",
+                        borderRadius: 2,
+                        border: "1px solid",
+                        borderColor: "#fecaca"
+                    }}>
                         <Box sx={{
                             mt: 0.25,
                             p: 0.5,

@@ -37,6 +37,16 @@ function InterviewCard({
         return "Participant";
     };
 
+    const getParticipantAvatar = () => {
+        if (user?.role === ROLES.CANDIDATE) {
+            return room.coachAvatar;
+        }
+        if (user?.role === ROLES.INTERVIEWER) {
+            return room.candidateAvatar;
+        }
+        return undefined;
+    };
+
     const getStatusChip = () => {
         const config = getInterviewRoomStatusConfig(room.status, {
             isRescheduled,
@@ -190,14 +200,17 @@ function InterviewCard({
             {/* Top Row: Avatar, Title, Status */}
             <Stack direction="row" spacing={2} alignItems="flex-start">
                 <Avatar
+                    src={getParticipantAvatar() || ""}
                     sx={{
                         width: 44,
                         height: 44,
                         fontSize: "1rem",
                         fontWeight: 600,
+                        bgcolor: getParticipantAvatar() ? "transparent" : "var(--mui-palette-secondary-main)",
+                        color: getParticipantAvatar() ? "inherit" : "var(--mui-palette-primary-main)",
                     }}
                 >
-                    {getInitials(getParticipantName())}
+                    {!getParticipantAvatar() ? getInitials(getParticipantName()) : null}
                 </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography
