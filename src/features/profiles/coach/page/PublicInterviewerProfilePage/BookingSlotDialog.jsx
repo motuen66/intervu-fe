@@ -136,6 +136,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                 end: slot.endTime,
                 display: "background",
                 backgroundColor: "#6366f1",
+                groupId: "availability",
+                editable: false,
                 extendedProps: { slotId: slot.id, type: "availability" },
             }));
 
@@ -152,7 +154,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                 borderColor: "#4f46e5",
                 textColor: "#fff",
                 classNames: ["booking-preview"],
-                editable: false,
+                editable: true,
             });
         }
 
@@ -197,6 +199,59 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                 toast.error(
                     `This time  doesn't have enough availability for ${selectedService.durationMinutes} minutes. Please pick a time within the highlighted areas.`,
                 );
+                return;
+            }
+
+            setSelectedStartTime(snappedTime);
+            setContainingSlot(matchingSlot);
+        },
+        [selectedService, availableSlots],
+    );
+
+    const handleEventDrop = useCallback(
+        (info) => {
+            if (info.event.id !== "booking-preview") {
+                info.revert();
+                return;
+            }
+
+            if (!selectedService) {
+                toast.error("Please select a service first");
+                info.revert();
+                return;
+            }
+
+            const newStart = info.event.start;
+            if (!newStart) {
+                info.revert();
+                return;
+            }
+
+            const now = new Date();
+            if (newStart.getTime() - now.getTime() < 15 * 60 * 1000) {
+                toast.error("Please select a time at least 15 minutes from now");
+                info.revert();
+                return;
+            }
+
+            // FullCalendar already snaps to 15-minute increments via snapDuration
+            const snappedTime = new Date(newStart);
+            snappedTime.setSeconds(0, 0);
+
+            const endTime = addMinutes(snappedTime, selectedService.durationMinutes);
+            const endTimeWithBuffer = addMinutes(snappedTime, selectedService.durationMinutes);
+
+            const matchingSlot = availableSlots.find((slot) => {
+                const slotStart = new Date(slot.startTime);
+                const slotEnd = new Date(slot.endTime);
+                return snappedTime >= slotStart && endTimeWithBuffer <= slotEnd;
+            });
+
+            if (!matchingSlot) {
+                toast.error(
+                    `This time  doesn't have enough availability for ${selectedService.durationMinutes} minutes. Please pick a time within the highlighted areas.`,
+                );
+                info.revert();
                 return;
             }
 
@@ -389,10 +444,12 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                     }}
                                     events={calendarEvents}
                                     dateClick={handleCalendarDateClick}
+                                    eventDrop={handleEventDrop}
                                     selectable={false}
                                     editable={false}
-                                    eventStartEditable={false}
+                                    eventStartEditable={true}
                                     eventDurationEditable={false}
+                                    eventConstraint="availability"
                                     now={new Date()}
                                     nowIndicator={true}
                                     snapDuration="00:15:00"

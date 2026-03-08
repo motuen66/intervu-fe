@@ -332,6 +332,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 end: slot.endTime,
                 display: "background",
                 backgroundColor: "#6366f1",
+                groupId: "availability",
+                editable: false,
             }));
 
         // Round preview events
@@ -350,7 +352,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     borderColor: getRoundColor(index),
                     textColor: "#fff",
                     classNames: ["jd-round-event"],
-                    editable: false,
+                    editable: true,
                 };
             })
             .filter(Boolean);
@@ -396,24 +398,33 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 return;
             }
 
-            // Check no overlap with other rounds (including 15-min gap)
-            for (let i = 0; i < rounds.length; i++) {
-                if (i === activeRoundIndex) continue;
-                const other = rounds[i];
-                if (!other.startTime || !other.coachInterviewServiceId) continue;
-                const otherSvc = getServiceForRound(other);
-                if (!otherSvc) continue;
-                const otherEnd = addMinutes(other.startTime, otherSvc.durationMinutes);
-                const gapMs = 15 * 60 * 1000;
-                // Check overlap including gap
-                if (
-                    !(
-                        endTime.getTime() + gapMs <= other.startTime.getTime() ||
-                        snappedTime.getTime() >= otherEnd.getTime() + gapMs
-                    )
-                ) {
-                    toast.error(`Conflicts with Round ${i + 1} (including 15-min gap). Pick a different time.`);
-                    return;
+            // Enforce strict sequence order relative to previous and next rounds only
+            const gapMs = 15 * 60 * 1000;
+
+            // Previous round must end + gap <= this start
+            if (activeRoundIndex > 0) {
+                const prev = rounds[activeRoundIndex - 1];
+                if (prev.startTime && prev.coachInterviewServiceId) {
+                    const prevSvc = getServiceForRound(prev);
+                    if (prevSvc) {
+                        const prevEnd = addMinutes(prev.startTime, prevSvc.durationMinutes);
+                        if (snappedTime.getTime() < prevEnd.getTime() + gapMs) {
+                            toast.error(`Round ${activeRoundIndex + 1} must start at least 15 minutes after Round ${activeRoundIndex} ends.`);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Next round (if set) must start at least gap after this round's end
+            if (activeRoundIndex < rounds.length - 1) {
+                const next = rounds[activeRoundIndex + 1];
+                if (next.startTime && next.coachInterviewServiceId) {
+                    const nextStart = next.startTime;
+                    if (endTime.getTime() + gapMs > nextStart.getTime()) {
+                        toast.error(`Round ${activeRoundIndex + 1} must end at least 15 minutes before Round ${activeRoundIndex + 2} starts.`);
+                        return;
+                    }
                 }
             }
 
@@ -421,6 +432,96 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             toast.success(`Round ${activeRoundIndex + 1} set to ${format(snappedTime, "dd/MM HH:mm")}`);
         },
         [activeRoundIndex, rounds, services, freeSlots],
+    );
+
+    const handleEventDrop = useCallback(
+        (info) => {
+            const { event } = info;
+
+            if (!event.id || !event.id.startsWith("round-")) {
+                info.revert();
+                return;
+            }
+
+            const indexStr = event.id.replace("round-", "");
+            const roundIndex = Number.parseInt(indexStr, 10);
+            if (Number.isNaN(roundIndex) || roundIndex < 0 || roundIndex >= rounds.length) {
+                info.revert();
+                return;
+            }
+
+            const targetRound = rounds[roundIndex];
+            const svc = getServiceForRound(targetRound);
+            if (!svc) {
+                info.revert();
+                return;
+            }
+
+            const newStart = event.start;
+            if (!newStart) {
+                info.revert();
+                return;
+            }
+
+            const now = new Date();
+            if (newStart.getTime() - now.getTime() < 3 * 60 * 60 * 1000) {
+                toast.error("Please select a time at least 3 hours from now");
+                info.revert();
+                return;
+            }
+
+            const snappedTime = new Date(newStart);
+            snappedTime.setMinutes(Math.floor(snappedTime.getMinutes() / 15) * 15, 0, 0);
+
+            const endTime = addMinutes(snappedTime, svc.durationMinutes);
+
+            const matchingSlot = freeSlots.find((slot) => {
+                const slotStart = new Date(slot.startTime);
+                const slotEnd = new Date(slot.endTime);
+                return snappedTime >= slotStart && endTime <= slotEnd;
+            });
+
+            if (!matchingSlot) {
+                toast.error(`This time doesn't have enough availability for ${svc.durationMinutes} minutes.`);
+                info.revert();
+                return;
+            }
+
+            const gapMs = 15 * 60 * 1000;
+
+            // Check previous round (roundIndex - 1)
+            if (roundIndex > 0) {
+                const prev = rounds[roundIndex - 1];
+                if (prev.startTime && prev.coachInterviewServiceId) {
+                    const prevSvc = getServiceForRound(prev);
+                    if (prevSvc) {
+                        const prevEnd = addMinutes(prev.startTime, prevSvc.durationMinutes);
+                        if (snappedTime.getTime() < prevEnd.getTime() + gapMs) {
+                            toast.error(`Round ${roundIndex + 1} must start at least 15 minutes after Round ${roundIndex} ends.`);
+                            info.revert();
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Check next round (roundIndex + 1)
+            if (roundIndex < rounds.length - 1) {
+                const next = rounds[roundIndex + 1];
+                if (next.startTime && next.coachInterviewServiceId) {
+                    const nextStart = next.startTime;
+                    if (endTime.getTime() + gapMs > nextStart.getTime()) {
+                        toast.error(`Round ${roundIndex + 1} must end at least 15 minutes before Round ${roundIndex + 2} starts.`);
+                        info.revert();
+                        return;
+                    }
+                }
+            }
+
+            setRounds((prev) => prev.map((r, i) => (i === roundIndex ? { ...r, startTime: snappedTime } : r)));
+            toast.success(`Round ${roundIndex + 1} moved to ${format(snappedTime, "dd/MM HH:mm")}`);
+        },
+        [rounds, services, freeSlots],
     );
 
     // ─── Submission ────────────────────────────────────
@@ -653,8 +754,10 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                 dateClick={handleCalendarDateClick}
                                 selectable={false}
                                 editable={false}
-                                eventStartEditable={false}
+                                eventStartEditable={true}
                                 eventDurationEditable={false}
+                                eventDrop={handleEventDrop}
+                                eventConstraint="availability"
                                 now={new Date()}
                                 nowIndicator={true}
                                 snapDuration="00:15:00"

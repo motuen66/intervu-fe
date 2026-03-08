@@ -13,19 +13,17 @@ export const validateJDBookingRounds = (selectedRounds, freeSlots) => {
         return { isValid: false, errorMsg: "At least 2 rounds are required." };
     }
 
-    // Rule 2: Sort chronologically
-    const sorted = [...selectedRounds].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-
-    // Validate all start times are in the future
+    // Validate all start times are in the future (preserve provided order)
     const now = Date.now();
-    for (let i = 0; i < sorted.length; i++) {
-        if (sorted[i].startTime.getTime() <= now) {
+    for (let i = 0; i < selectedRounds.length; i++) {
+        const r = selectedRounds[i];
+        if (r.startTime.getTime() <= now) {
             return { isValid: false, errorMsg: `Round ${i + 1} start time must be in the future.` };
         }
     }
 
-    // Compute end times
-    const roundRanges = sorted.map((r, i) => ({
+    // Compute end times in original order
+    const roundRanges = selectedRounds.map((r, i) => ({
         index: i,
         start: r.startTime.getTime(),
         end: r.startTime.getTime() + r.durationMinutes * 60 * 1000,
@@ -47,7 +45,7 @@ export const validateJDBookingRounds = (selectedRounds, freeSlots) => {
         }
     }
 
-    // Rule 4: 15-minute gap between consecutive rounds
+    // Rule 4: Strict sequence — Round N must happen before Round N+1 with at least MIN_GAP_MS gap
     for (let i = 1; i < roundRanges.length; i++) {
         const prev = roundRanges[i - 1];
         const curr = roundRanges[i];
@@ -55,7 +53,7 @@ export const validateJDBookingRounds = (selectedRounds, freeSlots) => {
         if (curr.start < prev.end + MIN_GAP_MS) {
             return {
                 isValid: false,
-                errorMsg: `Round ${i + 1} must start at least 15 minutes after round ${i} ends.`,
+                errorMsg: `Round ${i + 1} must start at least 15 minutes after Round ${i} ends.`,
             };
         }
     }
