@@ -14,6 +14,8 @@ import CandidateProfilePage from "../../features/profiles/candidate/page/Candida
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
+import BookingRequestListPage from "../../features/interview/pages/BookingRequestPage/BookingRequestListPage";
+import BookingRequestDetailPage from "../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
 import App from "../../App";
 
@@ -49,8 +51,25 @@ export const routes = [
             { path: "/", element: <App /> },
             { path: "/admin", element: <AdminDashboard /> },
             { path: "/interview", element: <InterviewRoomListPage /> },
-            { path: "/interview", element: <MainLayout />, children: [{ index: true, element: <InterviewRoomListPage /> }] },
+            {
+                path: "/interview",
+                element: <MainLayout />,
+                children: [{ index: true, element: <InterviewRoomListPage /> }],
+            },
             { path: "/interview/room/:roomId", element: <InterviewRoomPage /> },
+        ],
+    },
+
+    // Booking requests (accessible by both candidate and coach)
+    {
+        element: (
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER]}>
+                <MainLayout />
+            </ProtectedRoute>
+        ),
+        children: [
+            { path: "/booking-requests", element: <BookingRequestListPage /> },
+            { path: "/booking-requests/:id", element: <BookingRequestDetailPage /> },
         ],
     },
 

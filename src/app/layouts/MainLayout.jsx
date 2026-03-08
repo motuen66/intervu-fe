@@ -30,155 +30,164 @@ const MainLayout = () => {
   // Connect to notification SignalR hub
   useNotificationHub(userData?.id, token);
 
-  const handleLogout = async () => {
-    try {
-      await callApi({
-        method: METHOD.POST,
-        endpoint: authEndPoints.LOGOUT_API
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.clear();
-      navigate('/login');
-    }
-  };
+    const handleLogout = async () => {
+        try {
+            await callApi({
+                method: METHOD.POST,
+                endpoint: authEndPoints.LOGOUT_API,
+            });
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
+            localStorage.clear();
+            navigate("/login");
+        }
+    };
 
-  const menuItems = [
-    // CANDIDATE
-    [
-      { label: 'Home', path: '/home' },
-      { label: 'Interview', path: '/interview' },
-      { label: 'Messages', path: '#' },
-      { label: 'Settings', path: '/settings' },
-    ],
-    // INTERVIEWER
-    [
-      { label: 'Dashboard', path: '/#' },
-      { label: 'Schedule', path: '/schedule' },
-      { label: 'Interview', path: '/interview' },
-      { label: 'Messages', path: '#' },
-    ],
-    // ADMIN
-    [
-      { label: 'Dashboard', path: '#' },
-      { label: 'Users', path: '#' },
-      { label: 'Reports', path: '#' },
-    ],
-  ];
+    const menuItems = [
+        // CANDIDATE
+        [
+            { label: "Home", path: "/home" },
+            { label: "Interview", path: "/interview" },
+            { label: "Booking Requests", path: "/booking-requests" },
+            { label: "Messages", path: "#" },
+            { label: "Settings", path: "/settings" },
+        ],
+        // INTERVIEWER
+        [
+            { label: "Dashboard", path: "/#" },
+            { label: "Schedule", path: "/schedule" },
+            { label: "Interview", path: "/interview" },
+            { label: "Booking Requests", path: "/booking-requests" },
+            { label: "My Services", path: "/my-services" },
+            { label: "Messages", path: "#" },
+        ],
+        // ADMIN
+        [
+            { label: "Dashboard", path: "#" },
+            { label: "Users", path: "#" },
+            { label: "Reports", path: "#" },
+        ],
+    ];
 
-  const currentMenuItems = menuItems[userData?.role] || menuItems[ROLES.CANDIDATE];
+    const currentMenuItems = menuItems[userData?.role] || menuItems[ROLES.CANDIDATE];
 
-  const isAdmin = userData?.role === ROLES.ADMIN;
-  const [openGroups, setOpenGroups] = useState({
-    users: true,
-    income: true,
-    settings: true
-  });
+    const isAdmin = userData?.role === ROLES.ADMIN;
+    const [openGroups, setOpenGroups] = useState({
+        users: true,
+        income: true,
+        settings: true,
+    });
 
-  const toggleGroup = (key) => {
-    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+    const toggleGroup = (key) => {
+        setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+    };
 
-  const adminNavItems = [
-    { label: 'Dashboard', icon: DashboardOutlinedIcon, path: '/admin/dashboard' },
-    { label: 'Schedules', icon: CalendarMonthOutlinedIcon, path: '/admin/schedules' },
-    { label: 'Interviews', icon: VideoCameraFrontOutlinedIcon, path: '/admin/interviews' },
-    { label: 'Users', icon: PeopleOutlineOutlinedIcon, path: '/admin/users' },
-    { label: 'Company', icon: BusinessOutlinedIcon, path: '/admin/companies' },
-    { label: 'Question Bank', icon: QuizOutlinedIcon, path: '/admin/question-bank' },
-    {
-      label: 'Income',
-      icon: PaidOutlinedIcon,
-      key: 'income',
-      children: [
-        { label: 'Earnings', path: '/admin/income/earnings' },
-        { label: 'Refunds', path: '/admin/income/refunds' },
-        { label: 'Payouts', path: '/admin/income/payouts' }
-      ]
-    },
-    { label: 'Reports', icon: BarChartOutlinedIcon, path: '/admin/reports' }
-  ];
+    const adminNavItems = [
+        { label: "Dashboard", icon: DashboardOutlinedIcon, path: "/admin/dashboard" },
+        { label: "Schedules", icon: CalendarMonthOutlinedIcon, path: "/admin/schedules" },
+        { label: "Interviews", icon: VideoCameraFrontOutlinedIcon, path: "/admin/interviews" },
+        { label: "Users", icon: PeopleOutlineOutlinedIcon, path: "/admin/users" },
+        { label: "Company", icon: BusinessOutlinedIcon, path: "/admin/companies" },
+        { label: "Question Bank", icon: QuizOutlinedIcon, path: "/admin/question-bank" },
+        {
+            label: "Income",
+            icon: PaidOutlinedIcon,
+            key: "income",
+            children: [
+                { label: "Earnings", path: "/admin/income/earnings" },
+                { label: "Refunds", path: "/admin/income/refunds" },
+                { label: "Payouts", path: "/admin/income/payouts" },
+            ],
+        },
+        { label: "Reports", icon: BarChartOutlinedIcon, path: "/admin/reports" },
+    ];
 
-  const isMenuItemActive = (path) => location.pathname === path;
+    const isMenuItemActive = (path) => location.pathname === path;
 
-  if (isAdmin) {
-    return (
-      <div className="main-layout admin-layout">
-        <aside className="admin-sidebar">
-          <div className="sidebar-brand">INTERVU</div>
-          <nav className="sidebar-nav">
-            <div className="sidebar-section">
-              <div className="sidebar-section-title">Menu</div>
-              {adminNavItems.map((item) => {
-                const Icon = item.icon;
-                if (item.children) {
-                  return (
-                    <div key={item.label} className="sidebar-group">
-                      <button
-                        className="sidebar-item"
-                        onClick={() => toggleGroup(item.key)}
-                        type="button"
-                      >
-                        <span className="sidebar-item-icon"><Icon /></span>
-                        <span className="sidebar-item-text">{item.label}</span>
-                        <span className={`sidebar-item-arrow ${openGroups[item.key] ? 'open' : ''}`}>
-                          <ExpandMoreIcon />
-                        </span>
-                      </button>
-                      {openGroups[item.key] && (
-                        <div className="sidebar-subitems">
-                          {item.children.map((child) => (
-                            <button
-                              key={child.label}
-                              className={`sidebar-subitem ${location.pathname + location.search === child.path ? 'active' : ''}`}
-                              onClick={() => navigate(child.path)}
-                              type="button"
-                            >
-                              {child.label}
-                            </button>
-                          ))}
+    if (isAdmin) {
+        return (
+            <div className="main-layout admin-layout">
+                <aside className="admin-sidebar">
+                    <div className="sidebar-brand">INTERVU</div>
+                    <nav className="sidebar-nav">
+                        <div className="sidebar-section">
+                            <div className="sidebar-section-title">Menu</div>
+                            {adminNavItems.map((item) => {
+                                const Icon = item.icon;
+                                if (item.children) {
+                                    return (
+                                        <div key={item.label} className="sidebar-group">
+                                            <button
+                                                className="sidebar-item"
+                                                onClick={() => toggleGroup(item.key)}
+                                                type="button"
+                                            >
+                                                <span className="sidebar-item-icon">
+                                                    <Icon />
+                                                </span>
+                                                <span className="sidebar-item-text">{item.label}</span>
+                                                <span
+                                                    className={`sidebar-item-arrow ${openGroups[item.key] ? "open" : ""}`}
+                                                >
+                                                    <ExpandMoreIcon />
+                                                </span>
+                                            </button>
+                                            {openGroups[item.key] && (
+                                                <div className="sidebar-subitems">
+                                                    {item.children.map((child) => (
+                                                        <button
+                                                            key={child.label}
+                                                            className={`sidebar-subitem ${location.pathname + location.search === child.path ? "active" : ""}`}
+                                                            onClick={() => navigate(child.path)}
+                                                            type="button"
+                                                        >
+                                                            {child.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <button
+                                        key={item.label}
+                                        className={`sidebar-item ${location.pathname + location.search === item.path ? "active" : ""}`}
+                                        onClick={() => navigate(item.path)}
+                                        type="button"
+                                    >
+                                        <span className="sidebar-item-icon">
+                                            <Icon />
+                                        </span>
+                                        <span className="sidebar-item-text">{item.label}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
-                      )}
-                    </div>
-                  );
-                }
 
-                return (
-                  <button
-                    key={item.label}
-                    className={`sidebar-item ${location.pathname + location.search === item.path ? 'active' : ''}`}
-                    onClick={() => navigate(item.path)}
-                    type="button"
-                  >
-                    <span className="sidebar-item-icon"><Icon /></span>
-                    <span className="sidebar-item-text">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="sidebar-section">
-              <div className="sidebar-section-title">Settings</div>
-              <button
-                className={`sidebar-item ${location.pathname + location.search === '/settings' ? 'active' : ''}`}
-                onClick={() => navigate('/settings')}
-                type="button"
-              >
-                <span className="sidebar-item-icon"><NotificationsNoneOutlinedIcon /></span>
-                <span className="sidebar-item-text">Notification</span>
-              </button>
-              <button
-                className="sidebar-item"
-                onClick={handleLogout}
-                type="button"
-              >
-                <span className="sidebar-item-icon"><LogoutOutlinedIcon /></span>
-                <span className="sidebar-item-text">Log out</span>
-              </button>
-            </div>
-          </nav>
-        </aside>
+                        <div className="sidebar-section">
+                            <div className="sidebar-section-title">Settings</div>
+                            <button
+                                className={`sidebar-item ${location.pathname + location.search === "/settings" ? "active" : ""}`}
+                                onClick={() => navigate("/settings")}
+                                type="button"
+                            >
+                                <span className="sidebar-item-icon">
+                                    <NotificationsNoneOutlinedIcon />
+                                </span>
+                                <span className="sidebar-item-text">Notification</span>
+                            </button>
+                            <button className="sidebar-item" onClick={handleLogout} type="button">
+                                <span className="sidebar-item-icon">
+                                    <LogoutOutlinedIcon />
+                                </span>
+                                <span className="sidebar-item-text">Log out</span>
+                            </button>
+                        </div>
+                    </nav>
+                </aside>
 
         <div className="admin-content">
           <header className="admin-topbar">
@@ -220,192 +229,172 @@ const MainLayout = () => {
                   )}
                 </button>
 
-                {isUserDropdownOpen && (
-                  <div className="dropdown-menu admin-dropdown-menu">
-                    <div className="dropdown-header">
-                      <p className="dropdown-name">{userData?.fullName}</p>
-                      <p className="dropdown-email">{userData?.email}</p>
+                                {isUserDropdownOpen && (
+                                    <div className="dropdown-menu admin-dropdown-menu">
+                                        <div className="dropdown-header">
+                                            <p className="dropdown-name">{userData?.fullName}</p>
+                                            <p className="dropdown-email">{userData?.email}</p>
+                                        </div>
+                                        <hr className="dropdown-divider" />
+                                        <button
+                                            className="dropdown-item"
+                                            onClick={() => {
+                                                navigate("/user/profile");
+                                                setIsUserDropdownOpen(false);
+                                            }}
+                                        >
+                                            View Profile
+                                        </button>
+                                        <button
+                                            className="dropdown-item"
+                                            onClick={() => {
+                                                navigate("/settings");
+                                                setIsUserDropdownOpen(false);
+                                            }}
+                                        >
+                                            Settings
+                                        </button>
+                                        <button className="dropdown-item">Help & Support</button>
+                                        <hr className="dropdown-divider" />
+                                        <button className="dropdown-item logout-item" onClick={handleLogout}>
+                                            Logout
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+                    <main className="admin-main">
+                        <Outlet />
+                    </main>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="main-layout">
+            {/* Navbar */}
+            <nav className="navbar">
+                <div className="navbar-container">
+                    {/* Logo */}
+                    <div className="navbar-logo">
+                        <h1>INTERVU</h1>
                     </div>
-                    <hr className="dropdown-divider" />
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        navigate('/user/profile');
-                        setIsUserDropdownOpen(false);
-                      }}
-                    >
-                      View Profile
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        navigate('/settings');
-                        setIsUserDropdownOpen(false);
-                      }}
-                    >
-                      Settings
-                    </button>
-                    <button className="dropdown-item">Help & Support</button>
-                    <hr className="dropdown-divider" />
-                    <button
-                      className="dropdown-item logout-item"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header>
-          <main className="admin-main">
-            <Outlet />
-          </main>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="main-layout">
-      {/* Navbar */}
-      <nav className="navbar">
-        <div className="navbar-container">
-          {/* Logo */}
-          <div className="navbar-logo">
-            <h1>INTERVU</h1>
-          </div>
+                    {/* Navigation Menu */}
+                    <div className="navbar-menu">
+                        {currentMenuItems.map((item) => (
+                            <button
+                                key={item.label}
+                                className={`nav-item ${isMenuItemActive(item.path) ? "active" : ""}`}
+                                onClick={() => navigate(item.path)}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
 
-          {/* Navigation Menu */}
-          <div className="navbar-menu">
-            {currentMenuItems.map((item) => (
-              <button
-                key={item.label}
-                className={`nav-item ${isMenuItemActive(item.path) ? 'active' : ''}`}
-                onClick={() => navigate(item.path)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+                    {/* Right Section */}
+                    <div className="navbar-right">
+                        {/* Search Bar */}
+                        <div className="search-container">
+                            <svg className="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                />
+                            </svg>
+                            <input type="text" className="search-input" placeholder="Search..." />
+                        </div>
 
-          {/* Right Section */}
-          <div className="navbar-right">
-            {/* Search Bar */}
-            <div className="search-container">
-              <svg
-                className="search-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search..."
-              />
-            </div>
-
-            {/* Upgrade Button */}
-            {userData?.role === ROLES.CANDIDATE && (
-              <button className="upgrade-btn">Upgrade Pro</button>
-            )}
+                        {/* Upgrade Button */}
+                        {userData?.role === ROLES.CANDIDATE && <button className="upgrade-btn">Upgrade Pro</button>}
 
             {/* Notification Icon */}
             <NotificationDropdown />
 
-            {/* User Avatar Dropdown */}
-            <div className="user-dropdown">
-              <button
-                className="navbar-avatar-btn"
-                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                title="Account"
-              >
-                {userData?.profilePicture ? (
-                  <img
-                    src={userData.profilePicture}
-                    alt="User Avatar"
-                    className="avatar-img"
-                  />
-                ) : (
-                  <div className="avatar-placeholder">
-                    {userData?.fullName
-                      ?.split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .toUpperCase() || 'U'}
-                  </div>
-                )}
-              </button>
+                        {/* User Avatar Dropdown */}
+                        <div className="user-dropdown">
+                            <button
+                                className="navbar-avatar-btn"
+                                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                                title="Account"
+                            >
+                                {userData?.profilePicture ? (
+                                    <img src={userData.profilePicture} alt="User Avatar" className="avatar-img" />
+                                ) : (
+                                    <div className="avatar-placeholder">
+                                        {userData?.fullName
+                                            ?.split(" ")
+                                            .map((n) => n[0])
+                                            .join("")
+                                            .toUpperCase() || "U"}
+                                    </div>
+                                )}
+                            </button>
 
-              {isUserDropdownOpen && (
-                <div className="dropdown-menu">
-                  <div className="dropdown-header">
-                    <p className="dropdown-name">{userData?.fullName}</p>
-                    <p className="dropdown-email">{userData?.email}</p>
-                  </div>
-                  <hr className="dropdown-divider" />
-                  <button
-                    className="dropdown-item"
-                    onClick={() => {
-                      const role = userData?.role;
-                      const path = role === ROLES.INTERVIEWER
-                        ? '/interviewer/profile'
-                        : role === ROLES.CANDIDATE
-                          ? '/candidate/profile'
-                          : '/user/profile';
-                      navigate(path);
-                      setIsUserDropdownOpen(false);
-                    }}
-                  >
-                    View Profile
-                  </button>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => {
-                      navigate('/settings');
-                      setIsUserDropdownOpen(false);
-                    }}
-                  >
-                    Settings
-                  </button>
-                  <button className="dropdown-item">Help & Support</button>
-                  <hr className="dropdown-divider" />
-                  <button
-                    className="dropdown-item logout-item"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </button>
+                            {isUserDropdownOpen && (
+                                <div className="dropdown-menu">
+                                    <div className="dropdown-header">
+                                        <p className="dropdown-name">{userData?.fullName}</p>
+                                        <p className="dropdown-email">{userData?.email}</p>
+                                    </div>
+                                    <hr className="dropdown-divider" />
+                                    <button
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                            const role = userData?.role;
+                                            const path =
+                                                role === ROLES.INTERVIEWER
+                                                    ? "/interviewer/profile"
+                                                    : role === ROLES.CANDIDATE
+                                                      ? "/candidate/profile"
+                                                      : "/user/profile";
+                                            navigate(path);
+                                            setIsUserDropdownOpen(false);
+                                        }}
+                                    >
+                                        View Profile
+                                    </button>
+                                    <button
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                            navigate("/settings");
+                                            setIsUserDropdownOpen(false);
+                                        }}
+                                    >
+                                        Settings
+                                    </button>
+                                    <button className="dropdown-item">Help & Support</button>
+                                    <hr className="dropdown-divider" />
+                                    <button className="dropdown-item logout-item" onClick={handleLogout}>
+                                        Logout
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+            </nav>
 
-      {/* Main Content */}
-      <main className="main-content">
-        <Container>
-          <Outlet />
-        </Container>
-      </main>
+            {/* Main Content */}
+            <main className="main-content">
+                <Container>
+                    <Outlet />
+                </Container>
+            </main>
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-container">
-          <p>&copy; 2024 Intervu. All rights reserved.</p>
+            {/* Footer */}
+            <footer className="footer">
+                <div className="footer-container">
+                    <p>&copy; 2024 Intervu. All rights reserved.</p>
+                </div>
+            </footer>
         </div>
-      </footer>
-    </div>
-  );
+    );
 };
 
 export default MainLayout;

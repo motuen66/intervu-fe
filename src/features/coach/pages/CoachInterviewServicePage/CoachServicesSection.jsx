@@ -1,0 +1,109 @@
+import React, { useEffect, useState } from "react";
+import { Box, Card, CardContent, Chip, CircularProgress, Stack, Typography } from "@mui/material";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CodeIcon from "@mui/icons-material/Code";
+import { getCoachInterviewServices } from "../../services/coachInterviewServiceApi";
+
+/**
+ * Displays the list of interview services a coach offers.
+ * Meant to be embedded in the Public Coach Profile page.
+ *
+ * @param {{ coachId: string }} props
+ */
+export default function CoachServicesSection({ coachId }) {
+    const [services, setServices] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!coachId) return;
+        let cancelled = false;
+        const load = async () => {
+            setLoading(true);
+            try {
+                const data = await getCoachInterviewServices(coachId);
+                if (!cancelled) setServices(data || []);
+            } catch (err) {
+                console.error("Error loading coach services:", err);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        load();
+        return () => {
+            cancelled = true;
+        };
+    }, [coachId]);
+
+    if (loading) {
+        return (
+            <Card variant="outlined" sx={{ p: 3 }}>
+                <Box display="flex" justifyContent="center" py={3}>
+                    <CircularProgress size={28} />
+                </Box>
+            </Card>
+        );
+    }
+
+    if (!services.length) return null;
+
+    return (
+        <Card variant="outlined" sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+                Interview Services
+            </Typography>
+            <Stack spacing={1.5}>
+                {services.map((svc) => (
+                    <Card
+                        key={svc.id}
+                        variant="outlined"
+                        sx={{
+                            borderRadius: 2,
+                            "&:hover": {
+                                borderColor: "#4F46E5",
+                                boxShadow: "0 2px 8px rgba(79,70,229,0.10)",
+                            },
+                            transition: "border-color 0.2s, box-shadow 0.2s",
+                        }}
+                    >
+                        <CardContent sx={{ py: 1.5, px: 2, "&:last-child": { pb: 1.5 } }}>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Box>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <Typography fontWeight={600} fontSize="0.95rem">
+                                            {svc.interviewTypeName}
+                                        </Typography>
+                                        {svc.isCoding && (
+                                            <Chip
+                                                icon={<CodeIcon sx={{ fontSize: 14 }} />}
+                                                label="Coding"
+                                                size="small"
+                                                sx={{
+                                                    height: 22,
+                                                    fontSize: "0.7rem",
+                                                    backgroundColor: "rgba(34,197,94,0.12)",
+                                                    color: "#15803d",
+                                                    fontWeight: 600,
+                                                }}
+                                            />
+                                        )}
+                                    </Stack>
+                                    <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 0.5 }}>
+                                        <Stack direction="row" spacing={0.5} alignItems="center">
+                                            <AccessTimeIcon sx={{ fontSize: 14, color: "#94a3b8" }} />
+                                            <Typography variant="body2" color="text.secondary">
+                                                {svc.durationMinutes} min
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                </Box>
+                                <Typography fontWeight={700} fontSize="1rem" sx={{ color: "#4F46E5" }}>
+                                    {svc.price?.toLocaleString()} ₫
+                                </Typography>
+                            </Stack>
+                        </CardContent>
+                    </Card>
+                ))}
+            </Stack>
+        </Card>
+    );
+}

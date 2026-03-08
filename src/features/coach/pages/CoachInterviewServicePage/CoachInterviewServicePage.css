@@ -1,0 +1,133 @@
+/* Coach Interview Service Management page styles */
+
+.coach-service-management {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.coach-service-panel {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.coach-service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+.coach-service-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.coach-service-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.coach-service-card-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: #0f172a;
+}
+
+.coach-service-card-subtitle {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.coach-service-card-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.coach-service-card-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.coach-service-card-meta .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.coach-service-card-meta .meta-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #94a3b8;
+}
+
+.coach-service-card-meta .meta-value {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1f2937;
+}
+
+.coach-service-card-meta .meta-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.meta-pill.pill-coding {
+    background: rgba(34, 197, 94, 0.16);
+    color: #15803d;
+}
+
+.meta-pill.pill-non-coding {
+    background: rgba(59, 130, 246, 0.16);
+    color: #1d4ed8;
+}
+
+.coach-service-empty {
+    padding: 36px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.coach-service-empty-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.coach-service-empty-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    max-width: 380px;
+}
+
+@media (max-width: 900px) {
+    .coach-service-card-meta {
+        grid-template-columns: 1fr;
+    }
+}
