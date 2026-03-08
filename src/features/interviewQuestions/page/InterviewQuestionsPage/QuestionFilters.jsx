@@ -2,7 +2,7 @@
 import WhatshotIcon from "@mui/icons-material/Whatshot";
 import { CATEGORIES, LEVELS, ROLES, ROUNDS, SORT_OPTIONS } from "../../../../common/constants/types";
 
-const pillSx = { borderRadius: 999 };
+// const pillSx = { borderRadius: 999 };
 
 export default function QuestionFilters({ filters, onChange, companies = [] }) {
     return (
@@ -14,7 +14,7 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                     onChange={(e) => onChange("role", e.target.value)}
                     input={<OutlinedInput />}
                     renderValue={(v) => (v !== "" ? (ROLES.find((r) => r.value === v)?.label ?? String(v)) : "Role")}
-                    sx={{ ...pillSx, minWidth: 110 }}
+                    sx={{ minWidth: 110 }}
                 >
                     {ROLES.map((r) => (
                         <MenuItem key={String(r.value)} value={r.value}>
@@ -33,7 +33,7 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                     renderValue={(v) =>
                         v !== "" ? (CATEGORIES.find((c) => c.value === v)?.label ?? String(v)) : "Category"
                     }
-                    sx={{ ...pillSx, minWidth: 130 }}
+                    sx={{ minWidth: 130 }}
                 >
                     {CATEGORIES.map((c) => (
                         <MenuItem key={String(c.value)} value={c.value}>
@@ -52,7 +52,7 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                     renderValue={(v) =>
                         v ? (companies.find((c) => String(c.id) === String(v))?.name ?? "Company") : "Company"
                     }
-                    sx={{ ...pillSx, minWidth: 140 }}
+                    sx={{ minWidth: 140 }}
                 >
                     <MenuItem value="">Company</MenuItem>
                     {companies.map((c) => (
@@ -70,7 +70,7 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                     onChange={(e) => onChange("level", e.target.value)}
                     input={<OutlinedInput />}
                     renderValue={(v) => (v !== "" ? (LEVELS.find((l) => l.value === v)?.label ?? String(v)) : "Level")}
-                    sx={{ ...pillSx, minWidth: 110 }}
+                    sx={{ minWidth: 110 }}
                 >
                     {LEVELS.map((l) => (
                         <MenuItem key={String(l.value)} value={l.value}>
@@ -87,11 +87,9 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                     onChange={(e) => onChange("round", e.target.value)}
                     input={<OutlinedInput />}
                     renderValue={(v) =>
-                        v !== "" && v != null
-                            ? (ROUNDS.find((r) => r.value === v)?.label ?? String(v))
-                            : "Round"
+                        v !== "" && v != null ? (ROUNDS.find((r) => r.value === v)?.label ?? String(v)) : "Round"
                     }
-                    sx={{ ...pillSx, minWidth: 120 }}
+                    sx={{ minWidth: 120 }}
                 >
                     <MenuItem value="">Any Round</MenuItem>
                     {ROUNDS.map((r) => (
@@ -113,7 +111,7 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                         </InputAdornment>
                     }
                     renderValue={(v) => SORT_OPTIONS.find((s) => s.value === v)?.label ?? "Sort"}
-                    sx={{ ...pillSx, minWidth: 100 }}
+                    sx={{ minWidth: 100 }}
                 >
                     {SORT_OPTIONS.map((s) => (
                         <MenuItem key={s.value} value={s.value}>

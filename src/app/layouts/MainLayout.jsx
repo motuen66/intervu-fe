@@ -449,6 +449,15 @@ const MainLayout = () => {
                                     <button
                                         className="dropdown-item"
                                         onClick={() => {
+                                            navigate("/questions/saved");
+                                            setIsUserDropdownOpen(false);
+                                        }}
+                                    >
+                                        Saved Questions
+                                    </button>
+                                    <button
+                                        className="dropdown-item"
+                                        onClick={() => {
                                             navigate("/settings");
                                             setIsUserDropdownOpen(false);
                                         }}

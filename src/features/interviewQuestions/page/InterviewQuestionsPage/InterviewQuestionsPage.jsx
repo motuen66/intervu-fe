@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Button, CircularProgress, Pagination, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, MenuItem, Pagination, Select, Stack, Typography } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -8,10 +8,7 @@ import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
 import { homeEndPoints } from "../../../home/services/homeApi";
 import QuestionCard from "./QuestionCard";
 import QuestionFilters from "./QuestionFilters";
-import FeaturedTopics from "./FeaturedTopics";
 import QuestionSidebar from "./QuestionSidebar";
-
-const PAGE_SIZE = 10;
 
 export default function InterviewQuestionsPage() {
     const navigate = useNavigate();
@@ -20,6 +17,7 @@ export default function InterviewQuestionsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(null);
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
     const [sidebarSearch, setSidebarSearch] = useState("");
 
     const [companies, setCompanies] = useState([]);
@@ -53,13 +51,17 @@ export default function InterviewQuestionsPage() {
         setPage(1);
     }, [sidebarSearch]);
 
+    useEffect(() => {
+        setPage(1);
+    }, [pageSize]);
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const keyword = sidebarSearch.trim();
             const params = {
                 page,
-                pageSize: PAGE_SIZE,
+                pageSize,
                 ...(filters.role !== "" && { role: filters.role }),
                 ...(filters.category !== "" && { category: filters.category }),
                 ...(filters.companyId && { companyId: filters.companyId }),
@@ -80,7 +82,7 @@ export default function InterviewQuestionsPage() {
             const payload = data ?? {};
             const items = payload.items ?? payload.data ?? (Array.isArray(payload) ? payload : []);
             setQuestions(items);
-            setTotalPages(payload.totalPages ?? Math.ceil((payload.totalCount ?? items.length) / PAGE_SIZE));
+            setTotalPages(payload.totalPages ?? Math.ceil((payload.totalCount ?? items.length) / pageSize));
             setTotalCount(payload.totalCount ?? null);
         } catch (err) {
             console.error(err);
@@ -88,7 +90,7 @@ export default function InterviewQuestionsPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, filters, sidebarSearch]);
+    }, [page, pageSize, filters, sidebarSearch]);
 
     useEffect(() => {
         fetchData();
@@ -128,14 +130,13 @@ export default function InterviewQuestionsPage() {
                     variant="contained"
                     startIcon={<ShareIcon />}
                     onClick={() => navigate("/questions/share")}
-                    sx={{ whiteSpace: "nowrap", borderRadius: 999, px: 2.5 }}
+                    sx={{ whiteSpace: "nowrap", px: 2.5 }}
                 >
                     Share interview
                 </Button>
             </Box>
 
             <QuestionFilters filters={filters} onChange={handleFilterChange} companies={companies} />
-            {/* <FeaturedTopics onTopicClick={handleTopicClick} /> */}
 
             {/* Body */}
             <Box sx={{ display: "flex", gap: 3.5, alignItems: "flex-start", flexWrap: { xs: "wrap", md: "nowrap" } }}>
@@ -151,20 +152,48 @@ export default function InterviewQuestionsPage() {
                         </Typography>
                     ) : (
                         <>
-                            {questions.map((q, idx) => (
-                                <QuestionCard key={q.id ?? idx} item={q} />
-                            ))}
-                            {totalPages > 1 && (
-                                <Box display="flex" justifyContent="center" mt={2}>
-                                    <Pagination
-                                        count={totalPages}
-                                        page={page}
-                                        onChange={(_, v) => setPage(v)}
-                                        color="primary"
-                                        shape="rounded"
-                                    />
-                                </Box>
-                            )}
+                            {(() => {
+                                const isHotSort = filters.sortBy === 1;
+                                const displayList = isHotSort
+                                    ? [...questions].sort((a, b) => (b.vote ?? 0) - (a.vote ?? 0))
+                                    : questions;
+                                const hotIds = new Set(
+                                    [...questions]
+                                        .sort((a, b) => (b.vote ?? 0) - (a.vote ?? 0))
+                                        .slice(0, 2)
+                                        .filter((q) => (q.vote ?? 0) > 0)
+                                        .map((q) => q.id),
+                                );
+                                return displayList.map((q, idx) => (
+                                    <QuestionCard key={q.id ?? idx} item={q} isHot={hotIds.has(q.id)} />
+                                ));
+                            })()}
+                            <Stack direction="row" alignItems="center" justifyContent="center" spacing={2} mt={2}>
+                                <Pagination
+                                    count={totalPages}
+                                    page={page}
+                                    onChange={(_, v) => setPage(v)}
+                                    color="primary"
+                                    shape="rounded"
+                                />
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <Typography variant="body2" color="text.secondary" noWrap>
+                                        Per page:
+                                    </Typography>
+                                    <Select
+                                        size="small"
+                                        value={pageSize}
+                                        onChange={(e) => setPageSize(Number(e.target.value))}
+                                        sx={{ minWidth: 72 }}
+                                    >
+                                        {[10, 20, 50].map((n) => (
+                                            <MenuItem key={n} value={n}>
+                                                {n}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </Stack>
+                            </Stack>
                         </>
                     )}
                 </Box>

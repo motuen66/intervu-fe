@@ -7,4 +7,5 @@ export const commentEndPoints = {
     ADD_COMMENT: (questionId) => BASE(questionId),
     UPDATE_COMMENT: (questionId, commentId) => `${BASE(questionId)}/${commentId}`,
     DELETE_COMMENT: (questionId, commentId) => `${BASE(questionId)}/${commentId}`,
+    // VOTE_COMMENT: (questionId, commentId, isUpvote) => `${BASE(questionId)}/${commentId}/vote?isUpvote=${isUpvote}`,
 };

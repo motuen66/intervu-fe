@@ -94,3 +94,17 @@ export const QUESTION_STATUS = [
     { value: 1, label: "Published" },
     { value: 2, label: "Archived" },
 ];
+
+export const COMPANY_DOMAINS = {
+    Google: "google.com",
+    Meta: "facebook.com",
+    Amazon: "amazon.com",
+    Microsoft: "microsoft.com",
+    Netflix: "netflix.com",
+    TikTok: "tiktok.com",
+    Apple: "apple.com",
+    Uber: "uber.com",
+    Spotify: "spotify.com",
+    Stripe: "stripe.com",
+    Shopee: "shopee.com",
+};

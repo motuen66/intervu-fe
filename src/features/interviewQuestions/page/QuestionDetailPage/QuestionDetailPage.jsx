@@ -30,15 +30,21 @@ import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
+import ListAltIcon from "@mui/icons-material/ListAlt";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
 import { commentEndPoints } from "../../service/commentApi";
+import { interactionEndPoints } from "../../service/interactionApi";
 import AnswerCard from "./AnswerCard";
+import ReportDialog from "./ReportDialog";
 import { timeAgo } from "../../../../common/utils/dateFormatter";
 import { SORT_OPTIONS } from "../../../../common/constants/types";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
+import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
 
 /* ─── Main Page ───────────────────────────────────────────────── */
 export default function QuestionDetailPage() {
@@ -48,14 +54,14 @@ export default function QuestionDetailPage() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saved, setSaved] = useState(false);
+    const [questionLiked, setQuestionLiked] = useState(false);
     const [copied, setCopied] = useState(false);
-
     /* ── Answers (replaces old comments) ── */
     const [answers, setAnswers] = useState([]);
     const [loadingAnswers, setLoadingAnswers] = useState(false);
     const [answerInput, setAnswerInput] = useState("");
     const [submittingAnswer, setSubmittingAnswer] = useState(false);
-    const [answerSort, setAnswerSort] = useState(2); // 2 = New
+    const [answerSort, setAnswerSort] = useState(1); // 1 = Hot (most voted first)
     const [commentPage, setCommentPage] = useState(1);
     const [totalCommentPages, setTotalCommentPages] = useState(1);
     const [totalComments, setTotalComments] = useState(0);
@@ -74,6 +80,9 @@ export default function QuestionDetailPage() {
         cancelText: "Cancel",
         onConfirm: null,
     });
+
+    /* ── Report dialog ── */
+    const [reportTarget, setReportTarget] = useState(null);
 
     const closeConfirm = () => setConfirm((p) => ({ ...p, open: false, onConfirm: null }));
 
@@ -115,6 +124,8 @@ export default function QuestionDetailPage() {
         callApi({ method: METHOD.GET, endpoint: interviewQuestionEndPoints.GET_DETAIL(id) })
             .then(({ data }) => {
                 setData(data ?? null);
+                setSaved(data?.isSavedByUser ?? false);
+                setQuestionLiked(data?.isLikedByUser ?? false);
                 // If the detail response already includes comments, use them
                 if (data?.comments) {
                     setAnswers(data.comments);
@@ -126,29 +137,67 @@ export default function QuestionDetailPage() {
 
     useEffect(() => {
         fetchComments(commentPage);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, answerSort, commentPage]);
+
+    /* ── Like question ── */
+    const handleLikeQuestion = async () => {
+        if (!currentUser) {
+            navigate("/login");
+            return;
+        }
+        const prev = questionLiked;
+        setQuestionLiked(!prev);
+        try {
+            const { data: res } = await callApi({
+                method: METHOD.POST,
+                endpoint: interactionEndPoints.LIKE_QUESTION(id),
+            });
+            const serverLiked = typeof res === "boolean" ? res : (res?.isLiked ?? !prev);
+            setQuestionLiked(serverLiked);
+        } catch {
+            setQuestionLiked(prev);
+        }
+    };
+
+    /* ── Save question ── */
+    const handleSaveQuestion = async () => {
+        if (!currentUser) {
+            navigate("/login");
+            return;
+        }
+        const prev = saved;
+        setSaved(!prev);
+        try {
+            const { data: res } = await callApi({
+                method: METHOD.POST,
+                endpoint: interactionEndPoints.SAVE_QUESTION(id),
+            });
+            const serverSaved = typeof res === "boolean" ? res : (res?.isSaved ?? !prev);
+            setSaved(serverSaved);
+        } catch {
+            setSaved(prev);
+        }
+    };
+
+    /* ── Like comment ── */
+    const handleVoteComment = async (commentId) => {
+        const { data: res } = await callApi({
+            method: METHOD.POST,
+            endpoint: interactionEndPoints.LIKE_COMMENT(id, commentId),
+        });
+        return typeof res === "boolean" ? res : (res?.isLiked ?? undefined);
+    };
 
     /* ── Add comment ── */
     const handleAddComment = async () => {
         if (!answerInput.trim()) return;
         setSubmittingAnswer(true);
         try {
-            const { data: newComment } = await callApi({
+            await callApi({
                 method: METHOD.POST,
                 endpoint: commentEndPoints.ADD_COMMENT(id),
                 arg: { content: answerInput.trim() },
             });
-            const optimistic = newComment ?? {
-                content: answerInput.trim(),
-                createdAt: new Date().toISOString(),
-                createdBy: currentUser?.id,
-                authorName: currentUser?.fullName ?? currentUser?.name ?? "You",
-                authorProfilePicture: currentUser?.profilePicture ?? "",
-                vote: 0,
-                isAnswer: false,
-            };
-            setAnswers((prev) => [optimistic, ...prev]);
             setAnswerInput("");
             setCommentPage(1);
             await fetchComments(1);
@@ -221,15 +270,27 @@ export default function QuestionDetailPage() {
             setEditing(false);
             return;
         }
+
         setSavingEdit(true);
+
         try {
             await callApi({
                 method: METHOD.PUT,
                 endpoint: interviewQuestionEndPoints.UPDATE_QUESTION(id),
-                arg: { content: editContent.trim() },
-                displaySuccessMessage: true,
+                arg: {
+                    title: editContent.trim(),
+                    content: editContent.trim(),
+                },
             });
-            setData((prev) => ({ ...prev, content: editContent.trim() }));
+
+            const { data: updated } = await callApi({
+                method: METHOD.GET,
+                endpoint: interviewQuestionEndPoints.GET_DETAIL(id),
+            });
+
+            setData(updated);
+
+            toast.success("Question updated");
             setEditing(false);
         } catch (err) {
             toast.error(err?.response?.data?.message ?? "Failed to update question");
@@ -273,18 +334,41 @@ export default function QuestionDetailPage() {
         {
             icon: saved ? <BookmarkIcon sx={{ fontSize: 15 }} /> : <BookmarkBorderIcon sx={{ fontSize: 15 }} />,
             label: `Save${data.saveCount != null ? ` ${data.saveCount}` : ""}`,
-            onClick: () => setSaved((v) => !v),
+            onClick: handleSaveQuestion,
             active: saved,
             tooltip: "",
         },
-        { icon: <AddCircleOutlineIcon sx={{ fontSize: 15 }} />, label: "I was asked this", tooltip: "" },
+        {
+            icon: <AddCircleOutlineIcon sx={{ fontSize: 15 }} />,
+            label: "I was asked this",
+            tooltip: "",
+            onClick: () =>
+                navigate("/questions/share", {
+                    state: {
+                        linkedQuestion: {
+                            id: data.id,
+                            content: data.content,
+                            companyNames: data.companyNames ?? [],
+                            roles: data.roles ?? [],
+                            tags: data.tags ?? [],
+                            category: data.category ?? data.questionType,
+                            answerCount: data.answerCount,
+                        },
+                    },
+                }),
+        },
         {
             icon: <ShareIcon sx={{ fontSize: 15 }} />,
             label: "Share",
             onClick: handleShare,
             tooltip: copied ? "Link copied!" : "Copy link",
         },
-        { icon: <FlagOutlinedIcon sx={{ fontSize: 15 }} />, label: "Flag", tooltip: "" },
+        {
+            icon: <FlagOutlinedIcon sx={{ fontSize: 15 }} />,
+            label: "Flag",
+            tooltip: "",
+            onClick: () => setReportTarget({ questionTitle: data.title, questionAuthor: data.authorName }),
+        },
     ];
 
     const detailRows = [
@@ -292,6 +376,32 @@ export default function QuestionDetailPage() {
         { label: "Roles", items: roles },
         { label: "Tags", items: tags },
     ].filter(({ items }) => items.length > 0);
+
+    const hottestAnswer = [...answers].sort((a, b) => {
+        const aVotes = a?.voteCount ?? a?.vote ?? 0;
+        const bVotes = b?.voteCount ?? b?.vote ?? 0;
+        return bVotes - aVotes;
+    })[0];
+
+    const hottestAnswerId = hottestAnswer?.id;
+
+    const sortedAnswers = (() => {
+        if (answerSort === 3) {
+            return [...answers].sort((a, b) => {
+                const aVotes = a?.voteCount ?? a?.vote ?? 0;
+                const bVotes = b?.voteCount ?? b?.vote ?? 0;
+                return bVotes - aVotes;
+            });
+        }
+        if (answerSort === 2) {
+            return [...answers].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+        return [...answers].sort((a, b) => {
+            const aVotes = a?.voteCount ?? a?.vote ?? 0;
+            const bVotes = b?.voteCount ?? b?.vote ?? 0;
+            return bVotes - aVotes;
+        });
+    })();
 
     return (
         <Box
@@ -432,6 +542,31 @@ export default function QuestionDetailPage() {
 
                 {/* Actions */}
                 <Stack direction="row" flexWrap="wrap" gap={0.75} mb={2.75}>
+                    <Tooltip title={questionLiked ? "Unlike" : "Like"} placement="top">
+                        <Button
+                            size="small"
+                            startIcon={
+                                questionLiked ? (
+                                    <ThumbUpIcon sx={{ fontSize: 15, color: "primary.main" }} />
+                                ) : (
+                                    <ThumbUpOutlinedIcon sx={{ fontSize: 15 }} />
+                                )
+                            }
+                            onClick={handleLikeQuestion}
+                            variant="outlined"
+                            sx={{
+                                borderRadius: 999,
+                                textTransform: "none",
+                                fontSize: 13,
+                                color: questionLiked ? "primary.main" : "text.primary",
+                                borderColor: questionLiked ? "primary.main" : "divider",
+                                bgcolor: questionLiked ? "primary.50" : "transparent",
+                                "&:hover": { bgcolor: "action.hover" },
+                            }}
+                        >
+                            Like {data.vote != null ? ` ${data.vote}` : ""}
+                        </Button>
+                    </Tooltip>
                     {actionBtns.map(({ icon, label, onClick, active, tooltip }) => (
                         <Tooltip key={label} title={tooltip} placement="top">
                             <Button
@@ -454,6 +589,25 @@ export default function QuestionDetailPage() {
                         </Tooltip>
                     ))}
                 </Stack>
+
+                {/* Interview Process */}
+                {data.interviewProcess && (
+                    <Paper variant="outlined" sx={{ p: 2, mb: 2.25, borderRadius: 2 }}>
+                        <Stack direction="row" alignItems="center" gap={0.75} mb={1}>
+                            <ListAltIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                            <Typography variant="body2" fontWeight={600}>
+                                Interview Process
+                            </Typography>
+                        </Stack>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}
+                        >
+                            {data.interviewProcess}
+                        </Typography>
+                    </Paper>
+                )}
 
                 {/* Community guidelines */}
                 <Paper variant="outlined" sx={{ p: 2, mb: 2.25, bgcolor: "grey.50", borderRadius: 2 }}>
@@ -551,15 +705,29 @@ export default function QuestionDetailPage() {
                                     </Select>
                                 </FormControl>
                             </Stack>
-                            {answers.map((a, idx) => {
+                            {sortedAnswers.map((a, idx) => {
                                 const isCommentAuthor =
                                     !!currentUser?.id && String(currentUser.id) === String(a.createdBy);
+
+                                const isQuestionAuthor =
+                                    !!(a.createdBy ?? a.authorId) &&
+                                    String(a.createdBy ?? a.authorId) === String(data.createdBy ?? data.authorId);
+
                                 return (
                                     <AnswerCard
                                         key={a.id ?? idx}
                                         answer={a}
                                         currentUserId={currentUser?.id}
+                                        isQuestionAuthor={isQuestionAuthor}
+                                        isHottest={!!a.id && a.id === hottestAnswerId}
                                         onEdit={a.id ? handleUpdateComment : undefined}
+                                        onVote={a.id ? handleVoteComment : undefined}
+                                        onReport={() =>
+                                            setReportTarget({
+                                                questionTitle: data.content,
+                                                questionAuthor: a.authorName,
+                                            })
+                                        }
                                         onDelete={
                                             a.id && isCommentAuthor
                                                 ? () =>
@@ -644,11 +812,14 @@ export default function QuestionDetailPage() {
                                     "&:last-child": { mb: 0 },
                                 }}
                             >
-                                <Typography variant="caption" color="text.disabled" display="block" mb={0.5}>
-                                    {q.companyName && `Asked at ${q.companyName}`}
-                                    {q.answerCount != null && ` \u2022 ${q.answerCount} answers`}
-                                    {q.createdAt && ` \u2022 ${timeAgo(q.createdAt)}`}
-                                </Typography>
+                                <Stack direction="row" alignItems="center" gap={0.75} mb={0.5}>
+                                    {q.companyName && <CompanyLogo name={q.companyName} size={14} />}
+                                    <Typography variant="caption" color="text.disabled">
+                                        {q.companyName && `Asked at ${q.companyName}`}
+                                        {q.answerCount != null && ` \u2022 ${q.answerCount} answers`}
+                                        {q.createdAt && ` \u2022 ${timeAgo(q.createdAt)}`}
+                                    </Typography>
+                                </Stack>
                                 <Typography variant="body2" fontWeight={600}>
                                     {q.title ?? q.content}
                                 </Typography>
@@ -666,6 +837,14 @@ export default function QuestionDetailPage() {
                 cancelText={confirm.cancelText}
                 onCancel={closeConfirm}
                 onConfirm={confirm.onConfirm ?? closeConfirm}
+            />
+
+            <ReportDialog
+                open={!!reportTarget}
+                onClose={() => setReportTarget(null)}
+                questionTitle={reportTarget?.questionTitle}
+                questionAuthor={reportTarget?.questionAuthor}
+                currentUserName={currentUser?.fullName ?? currentUser?.name ?? ""}
             />
         </Box>
     );

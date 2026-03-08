@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Box, Button, Checkbox, FormControlLabel, MenuItem, Select, Stack, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ReactQuill from "react-quill-new";
@@ -29,6 +29,7 @@ const labelSx = {
 
 export default function ShareExperiencePage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [companyId, setCompanyId] = useState("");
     const [companies, setCompanies] = useState([]);
@@ -37,8 +38,22 @@ export default function ShareExperiencePage() {
     const [level, setLevel] = useState("");
     const [lastRound, setLastRound] = useState("");
     const [process, setProcess] = useState("");
-    const [allowContact, setAllowContact] = useState(false);
-    const [questions, setQuestions] = useState([emptyQuestion()]);
+    const [allowContact, setAllowContact] = useState(true);
+    const [questions, setQuestions] = useState(() => {
+        const linked = location.state?.linkedQuestion ?? null;
+        if (linked) {
+            return [
+                {
+                    type: linked.category ?? "",
+                    question: linked.content ?? linked.title ?? "",
+                    answer: "",
+                    linkedQuestion: linked,
+                    preLinked: true,
+                },
+            ];
+        }
+        return [emptyQuestion()];
+    });
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -107,7 +122,7 @@ export default function ShareExperiencePage() {
         const payloadQuestions = filledQuestions.map((q) => ({
             linkedQuestionId: q.linkedQuestion?.id ?? null,
             title: (q.linkedQuestion?.content ?? q.question?.trim()) || undefined,
-            content: isQuillEmpty(q.answer) ? "" : htmlToPlainText(q.answer),
+            content: (q.linkedQuestion?.content ?? q.question?.trim()) || undefined,
             level: level || undefined,
             round: lastRound || undefined,
             category: q.type || undefined,
@@ -135,7 +150,7 @@ export default function ShareExperiencePage() {
             });
 
             toast.success("Experience shared successfully!");
-            navigate("/");
+            navigate("/questions");
         } catch (error) {
             console.error(error);
             toast.error("Something went wrong!");
@@ -318,7 +333,7 @@ export default function ShareExperiencePage() {
                 <Typography sx={labelSx}>
                     Interview Questions{" "}
                     <Box component="span" sx={{ fontWeight: 400, textTransform: "none", color: "text.disabled" }}>
-                        (optional)
+                        {/* (optional) */}
                     </Box>
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={1.75}>
@@ -333,6 +348,7 @@ export default function ShareExperiencePage() {
                         onUpdateField={updateQuestionField}
                         onRemove={removeQuestion}
                         showRemove={questions.length > 1}
+                        isPreLinked={q.preLinked ?? false}
                     />
                 ))}
 
@@ -359,7 +375,7 @@ export default function ShareExperiencePage() {
                     fullWidth
                     onClick={handleSubmit}
                     disabled={submitting}
-                    sx={{ maxWidth: 340, borderRadius: 999, py: 1.5, fontSize: 15 }}
+                    sx={{ maxWidth: 340, py: 1.5, fontSize: 15 }}
                 >
                     {submitting ? "Submitting..." : "Submit Experience"}
                 </Button>

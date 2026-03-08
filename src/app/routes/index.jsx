@@ -19,6 +19,7 @@ import App from "../../App";
 import InterviewQuestionsPage from "../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx";
 import QuestionDetailPage from "../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx";
 import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx";
+import SavedQuestionsPage from "../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx";
 
 export const routes = [
     { path: "/", element: <Navigate to="/home" replace /> },
@@ -35,6 +36,7 @@ export const routes = [
         children: [
             { path: "/questions", element: <InterviewQuestionsPage /> },
             { path: "/questions/share", element: <ShareExperiencePage /> },
+            { path: "/questions/saved", element: <SavedQuestionsPage /> },
             { path: "/questions/:id", element: <QuestionDetailPage /> },
         ],
     },

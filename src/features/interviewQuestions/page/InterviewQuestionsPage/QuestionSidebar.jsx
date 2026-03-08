@@ -31,7 +31,7 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
                             <SearchIcon sx={{ fontSize: 18, color: "text.disabled" }} />
                         </InputAdornment>
                     }
-                    sx={{ borderRadius: 999, fontSize: 14 }}
+                    sx={{ fontSize: 14 }}
                 />
             </Paper>
 
@@ -68,7 +68,7 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
                     variant="outlined"
                     fullWidth
                     onClick={() => navigate("/questions/share")}
-                    sx={{ borderRadius: 999, textTransform: "none", fontWeight: 500, fontSize: 13 }}
+                    sx={{ textTransform: "none", fontWeight: 500, fontSize: 13 }}
                 >
                     + Share interview experience
                 </Button>

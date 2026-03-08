@@ -8,4 +8,5 @@ export const interviewQuestionEndPoints = {
     GET_DETAIL: (questionId) => `${BASE}/${questionId}`,
     UPDATE_QUESTION: (questionId) => `${BASE}/${questionId}`,
     DELETE_QUESTION: (questionId) => `${BASE}/${questionId}`,
+    // VOTE_QUESTION: (questionId, isUpvote) => `${BASE}/${questionId}/vote?isUpvote=${isUpvote}`,
 };

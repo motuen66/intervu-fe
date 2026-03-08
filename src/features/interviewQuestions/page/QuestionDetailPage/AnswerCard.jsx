@@ -1,20 +1,65 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar, Box, Button, Chip, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { keyframes } from "@mui/system";
 import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
-import VerifiedIcon from "@mui/icons-material/Verified";
+import StarIcon from "@mui/icons-material/Star";
+import WhatshotIcon from "@mui/icons-material/Whatshot";
 import { formattedDateTime } from "../../../../common/utils/dateFormatter";
 
-export default function AnswerCard({ answer: comment, currentUserId, onEdit, onDelete }) {
+const glowPulse = keyframes`
+    0%, 100% { box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.25); }
+    50%       { box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.45); }
+`;
+
+export default function AnswerCard({
+    answer: comment,
+    currentUserId,
+    isQuestionAuthor,
+    isHottest,
+    onEdit,
+    onDelete,
+    onVote,
+    onReport,
+}) {
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState(comment.content ?? "");
     const [saving, setSaving] = useState(false);
+    const [voteCount, setVoteCount] = useState(comment.vote);
+    const [voted, setVoted] = useState(comment.isLikedByUser ?? false);
 
+    const navigate = useNavigate();
     const commentId = comment?.id;
     const isAuthor = !!currentUserId && String(currentUserId) === String(comment.createdBy);
+
+    const handleVote = async () => {
+        if (!currentUserId) {
+            navigate("/login");
+            return;
+        }
+        const prevVoted = voted;
+        const prevCount = voteCount;
+        const newVoted = !voted;
+        setVoted(newVoted);
+        setVoteCount(prevCount + (newVoted ? 1 : -1));
+        try {
+            if (onVote) {
+                const serverLiked = await onVote(commentId);
+                if (serverLiked !== undefined) {
+                    setVoted(serverLiked);
+                    setVoteCount(prevCount + (serverLiked ? 1 : 0) - (prevVoted ? 1 : 0));
+                }
+            }
+        } catch {
+            setVoted(prevVoted);
+            setVoteCount(prevCount);
+        }
+    };
 
     const handleSave = async () => {
         const trimmed = editContent.trim();
@@ -34,7 +79,31 @@ export default function AnswerCard({ answer: comment, currentUserId, onEdit, onD
     const avatarSrc = comment.authorProfilePicture ?? comment.profilePicture ?? comment.avatar ?? "";
 
     return (
-        <Paper variant="outlined" sx={{ p: 2.5, mb: 1.75, borderRadius: 2 }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 2.5,
+                mb: 1.75,
+                borderRadius: 2,
+                ...(isHottest && {
+                    borderColor: "warning.main",
+                    animation: `${glowPulse} 2.4s ease-in-out infinite`,
+                }),
+            }}
+        >
+            {/* Top Answer badge */}
+            {isHottest && (
+                <Stack direction="row" alignItems="center" gap={0.5} mb={1.25}>
+                    <WhatshotIcon sx={{ fontSize: 15, color: "warning.main" }} />
+                    <Typography
+                        variant="caption"
+                        fontWeight={700}
+                        sx={{ color: "warning.dark", letterSpacing: "0.04em" }}
+                    >
+                        TOP ANSWER
+                    </Typography>
+                </Stack>
+            )}
             {/* Author header */}
             <Stack direction="row" alignItems="center" gap={1.5} mb={1.5}>
                 <Avatar src={avatarSrc} sx={{ width: 40, height: 40, bgcolor: "primary.main" }}>
@@ -45,14 +114,19 @@ export default function AnswerCard({ answer: comment, currentUserId, onEdit, onD
                         <Typography variant="body2" fontWeight={600}>
                             {comment.authorName ?? "User"}
                         </Typography>
-                        {comment.isAnswer && (
+                        {isQuestionAuthor && (
                             <Chip
-                                icon={<VerifiedIcon sx={{ fontSize: 13 }} />}
-                                label="Verified Answer"
+                                icon={<StarIcon sx={{ fontSize: 13, color: "#7c3aed !important" }} />}
+                                label="Author"
                                 size="small"
-                                color="success"
                                 variant="outlined"
-                                sx={{ height: 20, fontSize: 11 }}
+                                sx={{
+                                    height: 20,
+                                    fontSize: 11,
+                                    color: "#7c3aed",
+                                    borderColor: "#7c3aed",
+                                    bgcolor: "#ede9fe",
+                                }}
                             />
                         )}
                     </Stack>
@@ -93,7 +167,6 @@ export default function AnswerCard({ answer: comment, currentUserId, onEdit, onD
                     )}
                 </Stack>
             </Stack>
-
             {/* Body */}
             {editing ? (
                 <Box mb={1.75}>
@@ -136,27 +209,36 @@ export default function AnswerCard({ answer: comment, currentUserId, onEdit, onD
                     {comment.content}
                 </Typography>
             )}
-
             {/* Actions */}
             <Stack direction="row" gap={2}>
-                <Button
-                    size="small"
-                    startIcon={<ThumbUpOutlinedIcon sx={{ fontSize: 15 }} />}
-                    sx={{
-                        color: "text.secondary",
-                        textTransform: "none",
-                        fontWeight: 400,
-                        fontSize: 13,
-                        p: 0,
-                        minWidth: 0,
-                        "&:hover": { color: "primary.main", background: "none" },
-                    }}
-                >
-                    {comment.vote ?? 0} {(comment.vote ?? 0) === 1 ? "vote" : "votes"}
-                </Button>
+                <Tooltip title={voted ? "Unlike" : "Like"} placement="top">
+                    <Button
+                        size="small"
+                        startIcon={
+                            voted ? (
+                                <ThumbUpIcon sx={{ fontSize: 15, color: "primary.main" }} />
+                            ) : (
+                                <ThumbUpOutlinedIcon sx={{ fontSize: 15 }} />
+                            )
+                        }
+                        onClick={handleVote}
+                        sx={{
+                            textTransform: "none",
+                            fontSize: 13,
+                            color: voted ? "primary.main" : "text.secondary",
+                            bgcolor: voted ? "primary.50" : "transparent",
+                            p: 0,
+                            minWidth: 0,
+                            "&:hover": { bgcolor: "action.hover" },
+                        }}
+                    >
+                        Like {voteCount != null ? ` ${voteCount}` : ""}
+                    </Button>
+                </Tooltip>
                 <Button
                     size="small"
                     startIcon={<FlagOutlinedIcon sx={{ fontSize: 15 }} />}
+                    onClick={onReport}
                     sx={{
                         color: "text.secondary",
                         textTransform: "none",
@@ -164,7 +246,7 @@ export default function AnswerCard({ answer: comment, currentUserId, onEdit, onD
                         fontSize: 13,
                         p: 0,
                         minWidth: 0,
-                        "&:hover": { color: "primary.main", background: "none" },
+                        "&:hover": { color: "error.main", background: "none" },
                     }}
                 >
                     Report

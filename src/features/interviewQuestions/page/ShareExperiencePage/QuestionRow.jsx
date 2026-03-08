@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import LinkIcon from "@mui/icons-material/Link";
+import EditIcon from "@mui/icons-material/Edit";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -32,7 +33,7 @@ const labelSx = {
     mb: 0.75,
 };
 
-export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemove }) {
+export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemove, isPreLinked }) {
     const [suggestions, setSuggestions] = useState([]);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
@@ -84,7 +85,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
     /* ── select / clear ─────────────────────────────────────── */
     const selectSuggestion = (s) => {
         onUpdateField(idx, "linkedQuestion", s);
-        onUpdateField(idx, "question", s.content);
+        onUpdateField(idx, "question", s.title);
         onUpdateField(idx, "type", s.category ?? s.questionType ?? "");
         setSuggestions([]);
         setSuggestionsOpen(false);
@@ -95,6 +96,17 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
         onUpdateField(idx, "linkedQuestion", null);
         onUpdateField(idx, "question", "");
         onUpdateField(idx, "type", "");
+        setSuggestions([]);
+        setSuggestionsOpen(false);
+    };
+
+    const editLinked = () => {
+        onUpdateField(idx, "linkedQuestion", null);
+        if (isPreLinked) {
+            onUpdateField(idx, "question", "");
+            onUpdateField(idx, "type", "");
+            onUpdateField(idx, "preLinked", false);
+        }
         setSuggestions([]);
         setSuggestionsOpen(false);
     };
@@ -117,7 +129,9 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
     };
 
     const roleLabel = q.linkedQuestion?.roles?.[0] ?? ROLES.find((r) => r.value === q.linkedQuestion?.role)?.label;
-    const qtLabel = QUESTION_TYPES.find((t) => t.value === (q.linkedQuestion?.category ?? q.linkedQuestion?.questionType))?.label;
+    const qtLabel = QUESTION_TYPES.find(
+        (t) => t.value === (q.linkedQuestion?.category ?? q.linkedQuestion?.questionType),
+    )?.label;
 
     return (
         <Paper variant="outlined" sx={{ p: 2, mb: 1.75, bgcolor: "grey.50", borderRadius: 2 }}>
@@ -174,104 +188,110 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
             <Box mb={1.75}>
                 <Typography sx={labelSx}>Interview Question</Typography>
 
-                {/* Search input — always visible */}
-                <Box sx={{ position: "relative" }}>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="What were you asked? (type to search existing questions)"
-                        value={q.question}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        onBlur={() => setTimeout(() => setSuggestionsOpen(false), 150)}
-                        onFocus={() => {
-                            if (suggestions.length > 0) setSuggestionsOpen(true);
-                        }}
-                        aria-autocomplete="list"
-                        aria-haspopup="listbox"
-                        aria-expanded={suggestionsOpen}
-                        inputProps={{ "aria-label": "Interview question" }}
-                        InputProps={{
-                            endAdornment: searchLoading ? <CircularProgress size={14} sx={{ mr: 0.5 }} /> : undefined,
-                        }}
-                    />
-
-                    {suggestionsOpen && suggestions.length > 0 && (
-                        <Paper
-                            elevation={4}
-                            role="listbox"
-                            aria-label="Question suggestions"
-                            sx={{
-                                position: "absolute",
-                                left: 0,
-                                right: 0,
-                                top: "100%",
-                                mt: 0.5,
-                                zIndex: 1300,
-                                maxHeight: 280,
-                                overflowY: "auto",
-                                borderRadius: 1.5,
+                {/* Search input — hidden when question is pre-linked from navigation */}
+                {!isPreLinked && (
+                    <Box sx={{ position: "relative" }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            placeholder="What were you asked? (type to search existing questions)"
+                            value={q.question}
+                            onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
+                            onBlur={() => setTimeout(() => setSuggestionsOpen(false), 150)}
+                            onFocus={() => {
+                                if (suggestions.length > 0) setSuggestionsOpen(true);
                             }}
-                        >
-                            {suggestions.map((s, i) => {
-                                const sRoleLabel = s.roles?.[0] ?? ROLES.find((r) => r.value === s.role)?.label;
-                                const sQtLabel = QUESTION_TYPES.find((t) => t.value === (s.category ?? s.questionType))?.label;
-                                const sCompany = s.companyNames?.[0] ?? s.companyName;
-                                return (
-                                    <Box
-                                        key={s.id}
-                                        role="option"
-                                        aria-selected={i === activeIdx}
-                                        onClick={() => selectSuggestion(s)}
-                                        onMouseEnter={() => setActiveIdx(i)}
-                                        sx={{
-                                            px: 2,
-                                            py: 1.25,
-                                            cursor: "pointer",
-                                            bgcolor: i === activeIdx ? "action.hover" : "transparent",
-                                            borderBottom: i < suggestions.length - 1 ? "1px solid" : "none",
-                                            borderColor: "divider",
-                                            "&:hover": { bgcolor: "action.hover" },
-                                        }}
-                                    >
-                                        <Typography variant="body2" fontWeight={500} mb={0.25}>
-                                            {s.content}
-                                        </Typography>
-                                        <Stack direction="row" gap={0.5} flexWrap="wrap">
-                                            {sCompany && (
-                                                <Typography variant="caption" color="text.disabled">
-                                                    {sCompany}
-                                                </Typography>
-                                            )}
-                                            {sQtLabel && (
-                                                <Typography variant="caption" color="text.disabled">
-                                                    &middot; {sQtLabel}
-                                                </Typography>
-                                            )}
-                                            {sRoleLabel && (
-                                                <Typography variant="caption" color="text.disabled">
-                                                    &middot; {sRoleLabel}
-                                                </Typography>
-                                            )}
-                                            {(s.answerCount ?? s.commentCount) != null && (
-                                                <Typography variant="caption" color="text.disabled">
-                                                    &middot; {s.answerCount ?? s.commentCount} answer
-                                                    {(s.answerCount ?? s.commentCount) !== 1 ? "s" : ""}
-                                                </Typography>
-                                            )}
-                                        </Stack>
-                                    </Box>
-                                );
-                            })}
-                        </Paper>
-                    )}
-                </Box>
+                            aria-autocomplete="list"
+                            aria-haspopup="listbox"
+                            aria-expanded={suggestionsOpen}
+                            inputProps={{ "aria-label": "Interview question" }}
+                            InputProps={{
+                                endAdornment: searchLoading ? (
+                                    <CircularProgress size={14} sx={{ mr: 0.5 }} />
+                                ) : undefined,
+                            }}
+                        />
 
-                {/* Linked question indicator — shown below the input after a match is selected */}
+                        {suggestionsOpen && suggestions.length > 0 && (
+                            <Paper
+                                elevation={4}
+                                role="listbox"
+                                aria-label="Question suggestions"
+                                sx={{
+                                    position: "absolute",
+                                    left: 0,
+                                    right: 0,
+                                    top: "100%",
+                                    mt: 0.5,
+                                    zIndex: 1300,
+                                    maxHeight: 280,
+                                    overflowY: "auto",
+                                    borderRadius: 1.5,
+                                }}
+                            >
+                                {suggestions.map((s, i) => {
+                                    const sRoleLabel = s.roles?.[0] ?? ROLES.find((r) => r.value === s.role)?.label;
+                                    const sQtLabel = QUESTION_TYPES.find(
+                                        (t) => t.value === (s.category ?? s.questionType),
+                                    )?.label;
+                                    const sCompany = s.companyNames?.[0] ?? s.companyName;
+                                    return (
+                                        <Box
+                                            key={s.id}
+                                            role="option"
+                                            aria-selected={i === activeIdx}
+                                            onClick={() => selectSuggestion(s)}
+                                            onMouseEnter={() => setActiveIdx(i)}
+                                            sx={{
+                                                px: 2,
+                                                py: 1.25,
+                                                cursor: "pointer",
+                                                bgcolor: i === activeIdx ? "action.hover" : "transparent",
+                                                borderBottom: i < suggestions.length - 1 ? "1px solid" : "none",
+                                                borderColor: "divider",
+                                                "&:hover": { bgcolor: "action.hover" },
+                                            }}
+                                        >
+                                            <Typography variant="body2" fontWeight={500} mb={0.25}>
+                                                {s.content}
+                                            </Typography>
+                                            <Stack direction="row" gap={0.5} flexWrap="wrap">
+                                                {sCompany && (
+                                                    <Typography variant="caption" color="text.disabled">
+                                                        {sCompany}
+                                                    </Typography>
+                                                )}
+                                                {sQtLabel && (
+                                                    <Typography variant="caption" color="text.disabled">
+                                                        &middot; {sQtLabel}
+                                                    </Typography>
+                                                )}
+                                                {sRoleLabel && (
+                                                    <Typography variant="caption" color="text.disabled">
+                                                        &middot; {sRoleLabel}
+                                                    </Typography>
+                                                )}
+                                                {(s.answerCount ?? s.commentCount) != null && (
+                                                    <Typography variant="caption" color="text.disabled">
+                                                        &middot; {s.answerCount ?? s.commentCount} answer
+                                                        {(s.answerCount ?? s.commentCount) !== 1 ? "s" : ""}
+                                                    </Typography>
+                                                )}
+                                            </Stack>
+                                        </Box>
+                                    );
+                                })}
+                            </Paper>
+                        )}
+                    </Box>
+                )}
+
+                {/* Linked question indicator — shown when a question is linked */}
                 {q.linkedQuestion && (
                     <Box
                         sx={{
-                            mt: 1,
+                            mt: isPreLinked ? 0 : 1,
                             border: "1px solid",
                             borderColor: "primary.main",
                             borderRadius: 1.5,
@@ -296,14 +316,15 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                         label={q.linkedQuestion.companyNames?.[0] ?? q.linkedQuestion.companyName}
                                         size="small"
                                         sx={{ fontSize: 11, bgcolor: "grey.100" }}
-                                    />)}
+                                    />
+                                )}
                                 {qtLabel && (
                                     <Chip label={qtLabel} size="small" sx={{ fontSize: 11, bgcolor: "grey.100" }} />
                                 )}
                                 {roleLabel && (
                                     <Chip label={roleLabel} size="small" sx={{ fontSize: 11, bgcolor: "grey.100" }} />
                                 )}
-                                {(q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount) != null && (
+                                {q.linkedQuestion.commentCount != null && (
                                     <Chip
                                         label={`${q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount} answer${(q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount) !== 1 ? "s" : ""}`}
                                         size="small"
@@ -312,6 +333,20 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                 )}
                             </Stack>
                         </Box>
+                        <Tooltip title="Edit / choose another question">
+                            <IconButton
+                                size="small"
+                                onClick={editLinked}
+                                aria-label="Edit linked question"
+                                sx={{
+                                    flexShrink: 0,
+                                    color: "text.disabled",
+                                    "&:hover": { color: "primary.main" },
+                                }}
+                            >
+                                <EditIcon sx={{ fontSize: 15 }} />
+                            </IconButton>
+                        </Tooltip>
                         <Tooltip title="Clear selection">
                             <IconButton
                                 size="small"
