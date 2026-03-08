@@ -20,10 +20,8 @@ import {
     Skeleton,
 } from "@mui/material";
 import BookingSlotDialog from "./BookingSlotDialog";
-import ExternalBookingDialog from "./ExternalBookingDialog";
 import JDBookingDialog from "./JDBookingDialog";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import SendIcon from "@mui/icons-material/Send";
 import DescriptionIcon from "@mui/icons-material/Description";
 import LaunchIcon from "@mui/icons-material/Launch";
 import StarIcon from "@mui/icons-material/Star";
@@ -38,7 +36,6 @@ function PublicInterviewerProfilePage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-    const [externalBookingOpen, setExternalBookingOpen] = useState(false);
     const [jdBookingOpen, setJdBookingOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const { slugProfileUrl } = useParams();
@@ -441,30 +438,6 @@ function PublicInterviewerProfilePage() {
                                         fullWidth
                                         variant="outlined"
                                         size="large"
-                                        startIcon={<SendIcon />}
-                                        onClick={() => setExternalBookingOpen(true)}
-                                        sx={{
-                                            borderColor: "#4F46E5",
-                                            color: "#4F46E5",
-                                            "&:hover": {
-                                                borderColor: "#3730A3",
-                                                backgroundColor: "rgba(79,70,229,0.04)",
-                                            },
-                                            borderRadius: "8px",
-                                            py: 1.5,
-                                            fontSize: "0.9rem",
-                                            fontWeight: 600,
-                                            textTransform: "none",
-                                            mb: 1,
-                                        }}
-                                    >
-                                        Request External Booking
-                                    </Button>
-
-                                    <Button
-                                        fullWidth
-                                        variant="outlined"
-                                        size="large"
                                         startIcon={<DescriptionIcon />}
                                         onClick={() => setJdBookingOpen(true)}
                                         sx={{
@@ -506,13 +479,6 @@ function PublicInterviewerProfilePage() {
                 onClose={() => setBookingDialogOpen(false)}
                 interviewerId={profile?.user?.id}
                 onSlotSelected={handleSlotSelected}
-            />
-
-            {/* External Booking Dialog (Flow B) */}
-            <ExternalBookingDialog
-                open={externalBookingOpen}
-                onClose={() => setExternalBookingOpen(false)}
-                coachId={profile?.user?.id}
             />
 
             {/* JD Multi-Round Booking Dialog (Flow C) */}

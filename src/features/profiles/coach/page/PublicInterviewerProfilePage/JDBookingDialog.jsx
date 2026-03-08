@@ -44,7 +44,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { addMonths, addMinutes, format } from "date-fns";
 import { AIM_LEVEL, AIM_LEVEL_LABELS } from "../../../../../common/constants/status";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
-import { createJDBookingRequest } from "../../../../interview/services/bookingRequestApi";
+import { createJDBookingRequest, payBookingRequest } from "../../../../interview/services/bookingRequestApi";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { validateJDBookingRounds } from "./jdBookingValidation";
@@ -373,8 +373,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             const clickedTime = info.date;
             const now = new Date();
 
-            if (clickedTime.getTime() - now.getTime() < 15 * 60 * 1000) {
-                toast.error("Please select a time at least 15 minutes from now");
+            if (clickedTime.getTime() - now.getTime() < 3 * 60 * 60 * 1000) {
+                toast.error("Please select a time at least 3 hours from now");
                 return;
             }
 
@@ -464,12 +464,20 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 payload.aimLevel = Number(form.aimLevel);
             }
 
-            await createJDBookingRequest(payload);
-            toast.success("JD booking request submitted! The coach will review it.");
-            onClose();
-            navigate("/booking-requests");
+            const booking = await createJDBookingRequest(payload);
+            const returnUrl = window.location.origin + window.location.pathname;
+            const payResult = await payBookingRequest(booking.id, { returnUrl });
+
+            if (payResult?.checkOutUrl) {
+                onClose();
+                window.location.href = payResult.checkOutUrl;
+            } else {
+                toast.success("Booking confirmed — already paid!");
+                onClose();
+                navigate("/booking-requests");
+            }
         } catch (err) {
-            setError(err.message || "Failed to submit booking request.");
+            setError(err.message || "Failed to confirm booking.");
         } finally {
             setSaving(false);
         }
@@ -824,7 +832,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                 "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
                             }}
                         >
-                            {saving ? "Submitting..." : "Submit Booking Request"}
+                            {saving ? "Confirming..." : "Confirm & Pay"}
                         </Button>
                     )}
                 </Stack>

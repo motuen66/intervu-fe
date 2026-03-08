@@ -186,7 +186,7 @@ export default function BookingRequestListPage() {
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Status</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Created</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }} align="center">
-                                        Action
+                                        {/* Action */}
                                     </TableCell>
                                 </TableRow>
                             </TableHead>
