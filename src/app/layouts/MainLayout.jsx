@@ -268,6 +268,7 @@ const MainLayout = () => {
                 <div className="navbar-container">
                     {/* Logo */}
                     <div className="navbar-logo">
+                        <div className="navbar-logo-icon">V</div>
                         <h1>INTERVU</h1>
                     </div>
 
@@ -286,19 +287,17 @@ const MainLayout = () => {
 
                     {/* Right Section */}
                     <div className="navbar-right">
-                        {/* Search Bar */}
-                        <div className="search-container">
-                            <Search size={20} strokeWidth={1.5} className="search-icon" color="#64748B" />
-                            <input type="text" className="search-input" placeholder="Search..." />
-                        </div>
 
                         {/* Upgrade Button */}
-                        {userData?.role === ROLES.CANDIDATE && <button className="upgrade-btn">Upgrade Pro</button>}
+                        {userData?.role === ROLES.CANDIDATE && <button className="app-btn">Upgrade Pro</button>}
 
                         {/* Notification Icon */}
-                        <button className="navbar-icon-btn" title="Notifications">
-                            <Bell size={24} strokeWidth={1.5} color="#475569" />
-                        </button>
+                        <div style={{ position: "relative" }}>
+                            <button className="navbar-icon-btn" title="Notifications">
+                                <Bell size={20} strokeWidth={2} color="#1F2937" />
+                            </button>
+                            <span className="notification-dot"></span>
+                        </div>
 
                         {/* User Avatar Dropdown */}
                         <div className="user-dropdown">
@@ -315,7 +314,8 @@ const MainLayout = () => {
                                             ?.split(" ")
                                             .map((n) => n[0])
                                             .join("")
-                                            .toUpperCase() || "U"}
+                                            .toUpperCase()
+                                            .slice(0, 2) || "U"}
                                     </div>
                                 )}
                             </button>
