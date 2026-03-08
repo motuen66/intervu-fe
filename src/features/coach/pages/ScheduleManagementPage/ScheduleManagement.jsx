@@ -13,7 +13,6 @@ import interactionPlugin from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
 import { Box, Button, Typography, Card, Stack, CircularProgress, CardContent } from "@mui/material";
 import { IoAdd } from "react-icons/io5";
-import { interviewTypeEndPoints } from "../../../admin/services/interviewTypeApi";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
 import UpdateAvailableSlotDialog from "./UpdateAvailableSlotDialog";
@@ -37,19 +36,12 @@ const ScheduleManagement = () => {
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({
         date: "",
-        focus: 1, // JobDescription integer
-        typeId: "",
         startHour: 9,
         startMinute: 0,
         endHour: 10,
         endMinute: 0,
         duplicateDates: [], // Added for duplication
     });
-    const [interviewTypes, setInterviewTypes] = useState([]);
-    const FocusEnum = {
-        GeneralSkills: 0,
-        JobDescription: 1,
-    };
     const [confirmOpen, setConfirmOpen] = useState(false);
     // const [confirmType, set] = useState(null); // "update" | "delete"
     const [selectedItem, setSelectedItem] = useState(null);
@@ -93,75 +85,6 @@ const ScheduleManagement = () => {
         }
     }, [userId, currentDate.getMonth(), currentDate.getFullYear()]);
 
-    const fetchInterviewTypes = async () => {
-        try {
-            const response = await fetch(interviewTypeEndPoints.GET_ALL_TYPES, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-            if (!response.ok) {
-                const text = await response.text().catch(() => "");
-                throw new Error(`Request failed: ${response.status} ${response.statusText} ${text}`);
-            }
-            const data = await response.json().catch(() => {
-                throw new Error("Invalid JSON response from interview types endpoint");
-            });
-            if (!data || data.success === false) {
-                throw new Error(data?.message || "Interview types API returned an error");
-            }
-            const list = Array.isArray(data.items) ? data.items : [];
-            setInterviewTypes(list || []);
-        } catch (err) {
-            console.error("Failed to load interview types", err);
-        }
-    };
-
-    useEffect(() => {
-        fetchInterviewTypes();
-    }, []);
-
-    const handleTypeSelect = async (selectedTypeId) => {
-        if (!selectedTypeId) return;
-        try {
-            const response = await fetch(interviewTypeEndPoints.GET_TYPE_BY_ID(selectedTypeId), {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-            if (!response.ok) {
-                const text = await response.text().catch(() => "");
-                throw new Error(`Request failed: ${response.status} ${response.statusText} ${text}`);
-            }
-            const typeDetails = await response.json().catch(() => {
-                throw new Error("Invalid JSON response from interview types endpoint");
-            });
-            const duration = typeDetails.durationMinutes || 0;
-
-            if (duration > 0) {
-                const startTotalMinutes = Number(formData.startHour) * 60 + Number(formData.startMinute);
-                const endTotalMinutes = startTotalMinutes + duration;
-                const newEndHour = Math.floor(endTotalMinutes / 60);
-                const newEndMinute = endTotalMinutes % 60;
-                setFormData((prev) => ({
-                    ...prev,
-                    typeId: selectedTypeId,
-                    endHour: newEndHour,
-                    endMinute: newEndMinute,
-                }));
-            } else {
-                setFormData((prev) => ({ ...prev, typeId: selectedTypeId }));
-            }
-        } catch (err) {
-            console.error("Error fetching interview type details:", err);
-            toast.error("Failed to fetch interview type duration");
-        }
-    };
-
     useEffect(() => {
         if (error && error !== "Network Error") {
             console.log("Error from state:", error);
@@ -178,8 +101,6 @@ const ScheduleManagement = () => {
             startMinute: 0,
             endHour: 10,
             endMinute: 0,
-            focus: FocusEnum.JobDescription,
-            typeId: "",
             duplicateDates: [],
         });
         setOpenModal(true);
@@ -199,12 +120,10 @@ const ScheduleManagement = () => {
         setFormData({
             coachId: availability.coachId,
             date: localDateStr,
-            focus: availability.focus,
             startHour: startDate.getHours(),
             startMinute: startDate.getMinutes(),
             endHour: endDate.getHours(),
             endMinute: endDate.getMinutes(),
-            typeId: availability.focus === FocusEnum.GeneralSkills ? availability.typeId || "" : "",
             duplicateDates: [],
         });
         setOpenModal(true);
@@ -247,8 +166,6 @@ const ScheduleManagement = () => {
             startMinute: start.getMinutes(),
             endHour: end.getHours(),
             endMinute: end.getMinutes(),
-            focus: FocusEnum.JobDescription,
-            typeId: "",
             duplicateDates: [],
         });
         setOpenModal(true);
@@ -272,9 +189,9 @@ const ScheduleManagement = () => {
             return;
         }
 
-        // Prevent editing booked slots
-        if (event.extendedProps.isBooked) {
-            toast.error("Cannot modify booked slots");
+        // Prevent editing unavailable slots
+        if (event.extendedProps.isUnavailable) {
+            toast.error("Cannot modify unavailable slots");
             info.revert();
             return;
         }
@@ -294,27 +211,13 @@ const ScheduleManagement = () => {
 
         // Get availability data from extended props or find in array
         const avail = availabilities.find((a) => String(a.id) === String(availabilityId)) || {
-            focus: event.extendedProps.focus,
-            typeId: event.extendedProps.typeId,
             coachId: event.extendedProps.coachId || userId,
         };
 
-        if (avail.focus === FocusEnum.JobDescription && durationMinutes < 30) {
+        if (durationMinutes < 30) {
             toast.error("Availability must be at least 30 minutes");
             info.revert();
             return;
-        }
-
-        // Handle fixed duration for General Skills with type
-        if (avail.focus === FocusEnum.GeneralSkills && avail.typeId) {
-            const type = interviewTypes.find((t) => t.id === avail.typeId);
-
-            if (type?.durationMinutes) {
-                const fixedEnd = new Date(startTime);
-                fixedEnd.setMinutes(fixedEnd.getMinutes() + type.durationMinutes);
-                endTime = fixedEnd;
-                event.setEnd(fixedEnd);
-            }
         }
 
         const maxAllowed = new Date();
@@ -331,12 +234,10 @@ const ScheduleManagement = () => {
             coachId: avail.coachId || userId,
             startTime: startTime.toISOString(),
             endTime: endTime.toISOString(),
-            focus: avail.focus,
-            typeId: avail.typeId ?? null,
         };
 
         // Show loading toast
-        const loadingToast = toast.loading("Updating availability...");
+        // const loadingToast = toast.loading("Updating availability...");
 
         try {
             const result = await dispatch(editAvailability({ id: availabilityId, payload }));
@@ -392,13 +293,8 @@ const ScheduleManagement = () => {
             return;
         }
 
-        if (formData.focus === FocusEnum.JobDescription && durationMinutes < 30) {
+        if (durationMinutes < 30) {
             showError("Availability must be at least 30 minutes");
-            return;
-        }
-
-        if (formData.focus === FocusEnum.GeneralSkills && !formData.typeId) {
-            showError("Type is required for General Skills");
             return;
         }
 
@@ -424,14 +320,12 @@ const ScheduleManagement = () => {
                 coachId: userId,
                 startTime: startTime.toISOString(),
                 endTime: endTime.toISOString(),
-                focus: formData.focus,
-                typeId: formData.focus === FocusEnum.GeneralSkills ? formData.typeId : null,
             });
         }
 
-        const loadingToast = toast.loading(
-            editingId ? "Updating and duplicating slots..." : "Creating availability slots...",
-        );
+        // const loadingToast = toast.loading(
+        //     editingId ? "Updating and duplicating slots..." : "Creating availability slots...",
+        // );
 
         try {
             if (editingId) {
@@ -439,7 +333,7 @@ const ScheduleManagement = () => {
                 const result = await dispatch(editAvailability({ id: editingId, payload: payloads[0] }));
 
                 if (!editAvailability.fulfilled.match(result)) {
-                    toast.dismiss(loadingToast);
+                    // toast.dismiss(loadingToast);
                     const errorMsg = typeof result.payload === "string" ? result.payload : result.payload?.message;
                     showError(errorMsg || "Failed to update main slot");
                     return;
@@ -451,8 +345,8 @@ const ScheduleManagement = () => {
                     console.log("addAvailability (duplicate) result:", res);
                 }
 
-                toast.dismiss(loadingToast);
-                toast.success("Availability updated and duplicated successfully");
+                // toast.dismiss(loadingToast);
+                // toast.success("Availability updated and duplicated successfully");
 
                 const month = currentDate.getMonth() + 1;
                 const year = currentDate.getFullYear();
@@ -471,8 +365,8 @@ const ScheduleManagement = () => {
                     console.log("addAvailability result:", res);
                 }
 
-                toast.dismiss(loadingToast);
-                toast.success("Availability slots created successfully");
+                // toast.dismiss(loadingToast);
+                // toast.success("Availability slots created successfully");
 
                 const month = currentDate.getMonth() + 1;
                 const year = currentDate.getFullYear();
@@ -489,7 +383,7 @@ const ScheduleManagement = () => {
             setOpenModal(false);
             setEditingId(null);
         } catch (err) {
-            toast.dismiss(loadingToast);
+            // toast.dismiss(loadingToast);
             console.error(err);
             showError("An unexpected error occurred");
         }
@@ -528,10 +422,8 @@ const ScheduleManagement = () => {
             classNames.push("past-event");
         }
 
-        // Derive isBooked from status for backward compatibility
-        const isBooked =
-            Number(avail.status) === AVAILABILITY_SLOTS_STATUS.RESERVED ||
-            Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
+        // Derive isUnavailable from status
+        const isUnavailable = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.UNAVAILABLE;
 
         return {
             id: String(avail.id),
@@ -541,15 +433,12 @@ const ScheduleManagement = () => {
             backgroundColor,
             borderColor,
             classNames,
-            editable: !isPast && !isBooked,
+            editable: !isPast && !isUnavailable,
             extendedProps: {
                 isPast,
-                isBooked: isBooked,
+                isUnavailable: isUnavailable,
                 status: avail.status,
-                focus: avail.focus,
-                typeId: avail.typeId,
                 coachId: avail.coachId,
-                candidateId: avail.candidateId,
             },
         };
     });
@@ -706,8 +595,8 @@ const ScheduleManagement = () => {
                                         if (draggedEvent.extendedProps.isPast) {
                                             return false;
                                         }
-                                        // Prevent dragging booked slots
-                                        if (draggedEvent.extendedProps.isBooked) {
+                                        // Prevent dragging unavailable slots
+                                        if (draggedEvent.extendedProps.isUnavailable) {
                                             return false;
                                         }
                                         return true;
@@ -791,8 +680,6 @@ const ScheduleManagement = () => {
                                 setEditingId(null);
                                 setFormData({
                                     date: "",
-                                    focus: FocusEnum.JobDescription,
-                                    typeId: "",
                                     startHour: 9,
                                     startMinute: 0,
                                     endHour: 10,
@@ -802,11 +689,8 @@ const ScheduleManagement = () => {
                             }}
                             formData={formData}
                             setFormData={setFormData}
-                            interviewTypes={interviewTypes}
-                            FocusEnum={FocusEnum}
                             handleSubmit={handleSubmit}
                             handleDelete={handleDeleteFromDialog}
-                            onTypeSelect={handleTypeSelect}
                             loading={loading}
                             minDate={minDateStr}
                             maxDate={maxDateStr}
@@ -819,8 +703,6 @@ const ScheduleManagement = () => {
                                 setEditingId(null);
                                 setFormData({
                                     date: "",
-                                    focus: FocusEnum.JobDescription,
-                                    typeId: "",
                                     startHour: 9,
                                     startMinute: 0,
                                     endHour: 10,
@@ -830,10 +712,7 @@ const ScheduleManagement = () => {
                             }}
                             formData={formData}
                             setFormData={setFormData}
-                            interviewTypes={interviewTypes}
-                            FocusEnum={FocusEnum}
                             handleSubmit={handleSubmit}
-                            onTypeSelect={handleTypeSelect}
                             loading={loading}
                             minDate={minDateStr}
                             maxDate={maxDateStr}

@@ -1,0 +1,171 @@
+/* Booking Request pages styles */
+
+.booking-list-page {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.booking-list-page .page-header {
+    margin-bottom: 24px;
+}
+
+.booking-list-filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.booking-list-table {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.booking-detail-page {
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.booking-detail-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+    margin-bottom: 20px;
+}
+
+.booking-detail-card .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.booking-detail-card .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.booking-detail-card .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.booking-detail-card .detail-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.booking-detail-card .detail-value {
+    font-size: 14px;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.booking-rounds-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.booking-round-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.booking-round-card .round-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.booking-round-card .round-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.booking-round-card .round-meta {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.booking-round-card .round-price {
+    font-weight: 700;
+    font-size: 15px;
+    color: #4f46e5;
+}
+
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.status-chip.status-pending {
+    background: rgba(251, 191, 36, 0.16);
+    color: #92400e;
+}
+
+.status-chip.status-accepted {
+    background: rgba(34, 197, 94, 0.16);
+    color: #15803d;
+}
+
+.status-chip.status-rejected {
+    background: rgba(239, 68, 68, 0.16);
+    color: #b91c1c;
+}
+
+.status-chip.status-paid {
+    background: rgba(59, 130, 246, 0.16);
+    color: #1d4ed8;
+}
+
+.status-chip.status-expired {
+    background: rgba(148, 163, 184, 0.2);
+    color: #475569;
+}
+
+.status-chip.status-cancelled {
+    background: rgba(148, 163, 184, 0.2);
+    color: #475569;
+}
+
+@media (max-width: 768px) {
+    .booking-list-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .booking-detail-card .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-round-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}

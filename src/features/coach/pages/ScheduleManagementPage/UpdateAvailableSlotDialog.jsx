@@ -8,7 +8,6 @@ import {
     Card,
     Stack,
     FormControl,
-    InputLabel,
     Select,
     MenuItem,
     Chip,
@@ -21,14 +20,11 @@ const UpdateAvailableSlotDialog = ({
     onClose,
     formData,
     setFormData,
-    interviewTypes,
-    FocusEnum,
     handleSubmit,
     handleDelete,
     loading,
     minDate,
     maxDate,
-    onTypeSelect,
 }) => {
     const [tempDate, setTempDate] = useState("");
 
@@ -144,50 +140,6 @@ const UpdateAvailableSlotDialog = ({
                         </Box>
 
                         <Box>
-                            <FormControl fullWidth margin="normal">
-                                <InputLabel id="focus-label">Focus</InputLabel>
-                                <Select
-                                    labelId="focus-label"
-                                    value={formData.focus}
-                                    label="Focus"
-                                    onChange={(e) => {
-                                        const newFocus = Number(e.target.value);
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            focus: newFocus,
-                                            typeId: newFocus === FocusEnum.GeneralSkills ? prev.typeId : "",
-                                        }));
-                                    }}
-                                >
-                                    <MenuItem value={FocusEnum.JobDescription}>Job Description</MenuItem>
-                                    <MenuItem value={FocusEnum.GeneralSkills}>General Skills</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            {formData.focus === FocusEnum.GeneralSkills && (
-                                <FormControl fullWidth margin="normal">
-                                    <InputLabel id="type-label">Type</InputLabel>
-                                    <Select
-                                        labelId="type-label"
-                                        value={formData.typeId || ""}
-                                        label="Type"
-                                        onChange={(e) => {
-                                            const selectedTypeId = e.target.value;
-                                            setFormData({ ...formData, typeId: selectedTypeId });
-                                            if (onTypeSelect && selectedTypeId) onTypeSelect(selectedTypeId);
-                                        }}
-                                    >
-                                        {interviewTypes.map((t) => (
-                                            <MenuItem key={t.id} value={t.id}>
-                                                {t.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            )}
-                        </Box>
-
-                        <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
                                 Start Time
                             </Typography>
@@ -195,26 +147,9 @@ const UpdateAvailableSlotDialog = ({
                                 <FormControl fullWidth size="small">
                                     <Select
                                         value={formData.startHour}
-                                        onChange={(e) => {
-                                            const newHour = Number(e.target.value);
-
-                                            setFormData((prev) => {
-                                                if (prev.focus !== FocusEnum.GeneralSkills || !prev.typeId)
-                                                    return { ...prev, startHour: newHour };
-
-                                                const type = interviewTypes.find((t) => t.id === prev.typeId);
-                                                if (!type?.durationMinutes) return { ...prev, startHour: newHour };
-
-                                                const total = newHour * 60 + prev.startMinute + type.durationMinutes;
-
-                                                return {
-                                                    ...prev,
-                                                    startHour: newHour,
-                                                    endHour: Math.floor(total / 60),
-                                                    endMinute: total % 60,
-                                                };
-                                            });
-                                        }}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, startHour: Number(e.target.value) })
+                                        }
                                         sx={{ borderRadius: "8px" }}
                                     >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
@@ -249,7 +184,6 @@ const UpdateAvailableSlotDialog = ({
                                 <FormControl fullWidth size="small">
                                     <Select
                                         value={formData.endHour}
-                                        disabled={formData.focus === FocusEnum.GeneralSkills}
                                         onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
                                         sx={{ borderRadius: "8px" }}
                                     >
@@ -264,7 +198,6 @@ const UpdateAvailableSlotDialog = ({
                                 <FormControl fullWidth size="small">
                                     <Select
                                         value={formData.endMinute}
-                                        disabled={formData.focus === FocusEnum.GeneralSkills}
                                         onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
                                         sx={{ borderRadius: "8px" }}
                                     >

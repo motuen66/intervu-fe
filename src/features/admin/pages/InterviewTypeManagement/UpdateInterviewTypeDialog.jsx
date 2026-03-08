@@ -10,6 +10,8 @@ import Checkbox from "@mui/material/Checkbox";
 import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
 import { interviewTypeEndPoints } from "../../services/interviewTypeApi";
+import { callApi } from "../../../../common/utils/apiConnector";
+import { METHOD } from "../../../../common/constants/api";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -20,8 +22,9 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
         name: "",
         description: "",
         isCoding: false,
-        durationMinutes: 30,
-        basePrice: 0,
+        suggestedDurationMinutes: 30,
+        minPrice: 0,
+        maxPrice: 0,
         status: 1,
     });
     const [saving, setSaving] = useState(false);
@@ -32,8 +35,9 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                 name: item.name || "",
                 description: item.description || "",
                 isCoding: !!item.isCoding,
-                durationMinutes: item.durationMinutes || 30,
-                basePrice: item.basePrice || 0,
+                suggestedDurationMinutes: item.suggestedDurationMinutes || 30,
+                minPrice: item.minPrice || 0,
+                maxPrice: item.maxPrice || 0,
                 status: item.status ?? 1,
             });
         }
@@ -43,25 +47,14 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
         if (!item) return;
         setSaving(true);
         try {
-            const response = await fetch(interviewTypeEndPoints.UPDATE_TYPE(item.id), {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
+            await callApi({
+                method: METHOD.PUT,
+                endpoint: interviewTypeEndPoints.UPDATE_TYPE(item.id),
                 // include id to ensure backend receives the identifying key
-                body: JSON.stringify({ id: item.id, ...form }),
+                arg: { id: item.id, ...form },
+                displaySuccessMessage: true,
+                alertErrorMessage: true,
             });
-            if (!response.ok) {
-                const text = await response.text().catch(() => "");
-                throw new Error(`Request failed: ${response.status} ${response.statusText} ${text}`);
-            }
-            const data = await response.json().catch(() => {
-                throw new Error("Invalid JSON response from interview types endpoint");
-            });
-            if (!data || data.success === false) {
-                throw new Error(data?.message || "Interview types API returned an error");
-            }
             onUpdated && onUpdated();
         } catch (err) {
             console.error(err);
@@ -138,126 +131,135 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
             >
                 <DialogContent sx={{ pt: 3 }}>
                     <Grid container spacing={2.5} direction="column">
-                    <Grid item xs={12} sx={{ width: "100%" }}>
-                        <TextField
-                            fullWidth
-                            label="Name"
-                            value={form.name}
-                            onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            required
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    "&:hover fieldset": { borderColor: "#667eea" },
-                                    "&.Mui-focused fieldset": { borderColor: "#667eea" },
-                                },
-                                "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-                            }}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sx={{ width: "100%" }}>
-                        <TextField
-                            fullWidth
-                            label="Description"
-                            value={form.description}
-                            onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            multiline
-                            rows={4}
-                            required
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    "&:hover fieldset": { borderColor: "#667eea" },
-                                    "&.Mui-focused fieldset": { borderColor: "#667eea" },
-                                },
-                                "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-                            }}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sx={{ width: "100%" }}>
-                        <TextField
-                            fullWidth
-                            select
-                            label="Status"
-                            value={form.status}
-                            onChange={(e) => setForm({ ...form, status: e.target.value })}
-                            required
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    "&:hover fieldset": { borderColor: "#667eea" },
-                                    "&.Mui-focused fieldset": { borderColor: "#667eea" },
-                                },
-                                "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-                            }}
-                        >
-                            <MenuItem value={1}>Active</MenuItem>
-                            <MenuItem value={0}>Inactive</MenuItem>
-                        </TextField>
-                    </Grid>
-                    <Grid item xs={12} sx={{ width: "100%" }}>
-                        <TextField
-                            fullWidth
-                            label="Duration (minutes)"
-                            type="number"
-                            value={form.durationMinutes}
-                            onChange={(e) => setForm({ ...form, durationMinutes: Number(e.target.value) })}
-                            inputProps={{ min: 0 }}
-                            required
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    "&:hover fieldset": { borderColor: "#667eea" },
-                                    "&.Mui-focused fieldset": { borderColor: "#667eea" },
-                                },
-                                "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-                            }}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sx={{ width: "100%" }}>
-                        <TextField
-                            fullWidth
-                            label="Base price"
-                            type="number"
-                            value={form.basePrice}
-                            onChange={(e) => setForm({ ...form, basePrice: Number(e.target.value) })}
-                            inputProps={{ min: 0 }}
-                            required
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    "&:hover fieldset": { borderColor: "#667eea" },
-                                    "&.Mui-focused fieldset": { borderColor: "#667eea" },
-                                },
-                                "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-                            }}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sx={{ width: "100%" }}>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={form.isCoding}
-                                    onChange={(e) => setForm({ ...form, isCoding: e.target.checked })}
-                                />
-                            }
-                            label="Coding interview"
-                            sx={{
-                                "& .MuiFormControlLabel-label": { color: "#111827" },
-                            }}
-                        />
-                    </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <TextField
+                                fullWidth
+                                label="Name"
+                                value={form.name}
+                                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                required
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": { borderColor: "#667eea" },
+                                        "&.Mui-focused fieldset": { borderColor: "#667eea" },
+                                    },
+                                    "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <TextField
+                                fullWidth
+                                label="Description"
+                                value={form.description}
+                                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                multiline
+                                rows={4}
+                                required
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": { borderColor: "#667eea" },
+                                        "&.Mui-focused fieldset": { borderColor: "#667eea" },
+                                    },
+                                    "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <TextField
+                                fullWidth
+                                select
+                                label="Status"
+                                value={form.status}
+                                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                                required
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": { borderColor: "#667eea" },
+                                        "&.Mui-focused fieldset": { borderColor: "#667eea" },
+                                    },
+                                    "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
+                                }}
+                            >
+                                <MenuItem value={1}>Active</MenuItem>
+                                <MenuItem value={0}>Inactive</MenuItem>
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <TextField
+                                fullWidth
+                                label="Suggested Duration (minutes)"
+                                type="number"
+                                value={form.suggestedDurationMinutes}
+                                onChange={(e) => setForm({ ...form, suggestedDurationMinutes: Number(e.target.value) })}
+                                inputProps={{ min: 0 }}
+                                required
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": { borderColor: "#667eea" },
+                                        "&.Mui-focused fieldset": { borderColor: "#667eea" },
+                                    },
+                                    "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <TextField
+                                fullWidth
+                                label="Min Price"
+                                type="number"
+                                value={form.minPrice}
+                                onChange={(e) => setForm({ ...form, minPrice: Number(e.target.value) })}
+                                inputProps={{ min: 0 }}
+                                required
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": { borderColor: "#667eea" },
+                                        "&.Mui-focused fieldset": { borderColor: "#667eea" },
+                                    },
+                                    "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <TextField
+                                fullWidth
+                                label="Max Price"
+                                type="number"
+                                value={form.maxPrice}
+                                onChange={(e) => setForm({ ...form, maxPrice: Number(e.target.value) })}
+                                inputProps={{ min: 0 }}
+                                required
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": { borderColor: "#667eea" },
+                                        "&.Mui-focused fieldset": { borderColor: "#667eea" },
+                                    },
+                                    "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={form.isCoding}
+                                        onChange={(e) => setForm({ ...form, isCoding: e.target.checked })}
+                                    />
+                                }
+                                label="Coding interview"
+                                sx={{
+                                    "& .MuiFormControlLabel-label": { color: "#111827" },
+                                }}
+                            />
+                        </Grid>
                     </Grid>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                    <Button
-                        onClick={handleClose}
-                        disabled={saving}
-                        sx={primaryCtaSx}
-                    >
+                    <Button onClick={handleClose} disabled={saving} sx={primaryCtaSx}>
                         Cancel
                     </Button>
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={saving}
-                        sx={primaryCtaSx}
-                    >
+                    <Button type="submit" variant="contained" disabled={saving} sx={primaryCtaSx}>
                         {saving ? "Saving..." : "Save changes"}
                     </Button>
                 </DialogActions>
