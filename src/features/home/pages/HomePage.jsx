@@ -1,26 +1,27 @@
 import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  fetchInterviewers, 
-  fetchCompanies, 
+import {
+  fetchInterviewers,
+  fetchCompanies,
   fetchSkills,
-  setPage 
+  setPage
 } from '../store/homeSlice';
 import FilterBar from '../components/FilterBar';
 import CoachCar from '../components/CoachCard';
+import { Star, ArrowRight, Search } from 'lucide-react';
 import './HomePage.css';
 
 function HomePage() {
   const dispatch = useDispatch();
   const browseSectionRef = useRef(null);
-  const { 
-    interviewers, 
-    loading, 
-    error, 
+  const {
+    interviewers,
+    loading,
+    error,
     filters,
-    pagination 
+    pagination
   } = useSelector((state) => state.home);
-  
+
   // Get user info from auth state
   const { userData } = useSelector((state) => state.auth || {});
 
@@ -33,7 +34,7 @@ function HomePage() {
 
   // Re-fetch khi filters thay đổi
   useEffect(() => {
-    dispatch(fetchInterviewers({ 
+    dispatch(fetchInterviewers({
       searchTerm: filters.searchTerm,
       companyId: filters.company,
       skillId: filters.skill
@@ -50,7 +51,7 @@ function HomePage() {
 
   // Scroll to browse section
   const scrollToBrowse = () => {
-    browseSectionRef.current?.scrollIntoView({ 
+    browseSectionRef.current?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
@@ -59,7 +60,7 @@ function HomePage() {
   // Pagination handlers
   const handlePageChange = (newPage) => {
     dispatch(setPage(newPage));
-    browseSectionRef.current?.scrollIntoView({ 
+    browseSectionRef.current?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
@@ -84,14 +85,14 @@ function HomePage() {
 
     return (
       <div className="pagination">
-        <button 
+        <button
           className="pagination-btn"
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
           ← Previous
         </button>
-        
+
         {startPage > 1 && (
           <>
             <button className="pagination-number" onClick={() => handlePageChange(1)}>1</button>
@@ -116,7 +117,7 @@ function HomePage() {
           </>
         )}
 
-        <button 
+        <button
           className="pagination-btn"
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
@@ -138,14 +139,19 @@ function HomePage() {
             </h1>
             <p className="hero-subtitle">Expert coaching, mock interviews, and more</p>
             <p className="hero-description">
-              Connect with an expert in your field to practice mock interviews, 
+              Connect with an expert in your field to practice mock interviews,
               review your resume, or create a study plan.
             </p>
             <button className="hero-cta" onClick={scrollToBrowse}>
-              Find your coach →
+              <span>Find your coach</span>
+              <ArrowRight size={18} strokeWidth={2} />
             </button>
             <div className="hero-rating">
-              <span className="stars">⭐⭐⭐⭐⭐</span>
+              <span className="stars" style={{ display: 'flex', gap: '4px' }}>
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={20} fill="var(--mui-palette-secondary-main)" stroke="var(--mui-palette-secondary-main)" strokeWidth={2} />
+                ))}
+              </span>
               <span className="rating-text">4.8 rating from over 2,400 reviews</span>
             </div>
           </div>
@@ -172,7 +178,7 @@ function HomePage() {
       {/* Browse Section */}
       <section className="browse-section" ref={browseSectionRef}>
         <h2>Browse all coaches</h2>
-        
+
         {/* Filters */}
         <FilterBar />
 
@@ -194,7 +200,7 @@ function HomePage() {
             {/* Interviewer Grid */}
             <div className="interviewers-grid">
               {interviewersList.map(interviewer => (
-                <CoachCar 
+                <CoachCar
                   key={interviewer.id}
                   interviewer={interviewer}
                 />
@@ -204,7 +210,8 @@ function HomePage() {
             {/* Empty State */}
             {!loading && interviewersList.length === 0 && (
               <div className="empty-state">
-                <p>😔 No interviewers found.</p>
+                <Search size={48} color="#64748B" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                <p>No interviewers found matching your criteria.</p>
               </div>
             )}
 

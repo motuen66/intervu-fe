@@ -5,9 +5,7 @@ import {
     Stack,
     Button,
 } from "@mui/material";
-import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import CodeIcon from "@mui/icons-material/Code";
+import { Calendar, Clock, Code } from "lucide-react";
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { ROLES } from "../../../../../common/constants/common";
@@ -193,7 +191,6 @@ function InterviewCard({
             <Stack direction="row" spacing={2} alignItems="flex-start">
                 <Avatar
                     sx={{
-                        bgcolor: "primary.main",
                         width: 44,
                         height: 44,
                         fontSize: "1rem",
@@ -230,19 +227,19 @@ function InterviewCard({
             >
                 <Stack direction="row" spacing={2.5} alignItems="center">
                     <Stack direction="row" spacing={0.75} alignItems="center">
-                        <CalendarTodayOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Calendar size={16} strokeWidth={1.5} color="var(--mui-palette-text-secondary)" />
                         <Typography variant="body2" color="text.secondary">
                             {formattedDateTime(room.scheduledTime)}
                         </Typography>
                     </Stack>
                     <Stack direction="row" spacing={0.75} alignItems="center">
-                        <AccessTimeOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Clock size={16} strokeWidth={1.5} color="var(--mui-palette-text-secondary)" />
                         <Typography variant="body2" color="text.secondary">
                             {room.durationMinutes || 60} min
                         </Typography>
                     </Stack>
                     <Stack direction="row" spacing={0.75} alignItems="center">
-                        <CodeIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Code size={16} strokeWidth={1.5} color="var(--mui-palette-text-secondary)" />
                         <Typography
                             variant="body2"
                             color="text.secondary"

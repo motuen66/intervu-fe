@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import Avatar from "@mui/material/Avatar";
+import { Star } from "lucide-react";
 import "./CoachCard.css";
 
 function CoachCard({ interviewer, isRecommended = false }) {
@@ -51,14 +53,13 @@ function CoachCard({ interviewer, isRecommended = false }) {
             {/* Top Row: Avatar + Name + Recommended Badge */}
             <div className="card-top-row">
                 <div className="avatar-name-section">
-                    <img
-                        src={
-                            profilePicture ||
-                            "https://fr.web.img6.acsta.net/r_1920_1080/pictures/22/12/06/08/39/0036027.jpg"
-                        }
+                    <Avatar
+                        src={profilePicture || ""}
                         alt={displayName}
-                        className="avatar"
-                    />
+                        sx={{ width: 72, height: 72, flexShrink: 0 }}
+                    >
+                        {displayName.charAt(0).toUpperCase()}
+                    </Avatar>
                     {/* Name Section */}
                     <div className="name-section">
                         <h3 className="name">{displayName}</h3>
@@ -89,7 +90,7 @@ function CoachCard({ interviewer, isRecommended = false }) {
 
             {/* Rating Row */}
             <div className="rating-row">
-                <span className="star">⭐</span>
+                <Star size={18} fill="var(--mui-palette-secondary-main)" stroke="var(--mui-palette-secondary-main)" strokeWidth={2} />
                 <span className="rating-value">{rating.toFixed(1)} rating</span>
                 <span className="sessions-count">({sessionsCount} sessions)</span>
             </div>

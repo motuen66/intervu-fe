@@ -243,7 +243,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                     onClick={addRound}
                                     sx={{
                                         textTransform: "none",
-                                        color: "#4F46E5",
+                                        color: "var(--mui-palette-primary-main)",
                                         fontWeight: 600,
                                     }}
                                 >

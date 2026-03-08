@@ -28,16 +28,16 @@ import {
 } from "@mui/material";
 
 import {
-    Edit as EditIcon,
-    Work as WorkIcon,
-    Person as PersonIcon,
-    Email as EmailIcon,
+    Edit3 as EditIcon,
+    Briefcase as WorkIcon,
+    User as PersonIcon,
+    Mail as EmailIcon,
     Link as LinkIcon,
     Code as CodeIcon,
-    Close as CloseIcon,
+    X as CloseIcon,
     Save as SaveIcon,
-} from "@mui/icons-material";
-import { CameraAlt as CameraIcon } from "@mui/icons-material";
+    Camera as CameraIcon,
+} from "lucide-react";
 import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
@@ -325,7 +325,7 @@ function InterviewerProfilePage() {
     const canEdit = isInterviewer && isSelf;
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1100, mx: "auto" }}>
+        <Box sx={{ minHeight: "100vh" }}>
             <Fade in={saveSuccess}>
                 <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSaveSuccess(false)}>
                     Profile updated successfully!
@@ -363,7 +363,7 @@ function InterviewerProfilePage() {
                                         "&:hover": { bgcolor: "white" },
                                     }}
                                 >
-                                    {editMode ? <CloseIcon /> : <EditIcon />}
+                                    {editMode ? <CloseIcon size={20} strokeWidth={2} /> : <EditIcon size={20} strokeWidth={2} />}
                                 </IconButton>
                             )
                         );
@@ -412,7 +412,7 @@ function InterviewerProfilePage() {
                                             },
                                         }}
                                     >
-                                        <CameraIcon fontSize="small" />
+                                        <CameraIcon size={18} strokeWidth={2} />
                                         <input hidden type="file" accept="image/*" onChange={onPick} />
                                     </IconButton>
                                 )}
@@ -441,7 +441,7 @@ function InterviewerProfilePage() {
 
                             {years != null && (
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                                    <WorkIcon color="action" fontSize="small" />
+                                    <WorkIcon size={18} strokeWidth={2} color="var(--mui-palette-action-active)" />
                                     {editMode ? (
                                         <TextField
                                             label="Years of experience"
@@ -475,7 +475,7 @@ function InterviewerProfilePage() {
                                 gutterBottom
                                 sx={{ display: "flex", alignItems: "center", gap: 1 }}
                             >
-                                <PersonIcon color="primary" />
+                                <PersonIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
                                 About
                             </Typography>
                             {editMode ? (
@@ -521,15 +521,15 @@ function InterviewerProfilePage() {
                                     gutterBottom
                                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                                 >
-                                    <EmailIcon color="primary" />
+                                    <EmailIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
                                     Contact Information
                                 </Typography>
                                 <Divider sx={{ mb: 2 }} />
 
-                                <InfoRow icon={<EmailIcon fontSize="small" />} label="Email" content={email} />
+                                <InfoRow icon={<EmailIcon size={18} strokeWidth={2} />} label="Email" content={email} />
 
                                 <InfoRow
-                                    icon={<LinkIcon fontSize="small" />}
+                                    icon={<LinkIcon size={18} strokeWidth={2} />}
                                     label="Portfolio"
                                     content={
                                         editMode ? (
@@ -562,7 +562,7 @@ function InterviewerProfilePage() {
 
                                 {/* Bank BIN */}
                                 <InfoRow
-                                    icon={<LinkIcon fontSize="small" />}
+                                    icon={<LinkIcon size={18} strokeWidth={2} />}
                                     label="Bank"
                                     content={
                                         editMode ? (
@@ -582,7 +582,7 @@ function InterviewerProfilePage() {
 
                                 {/* Bank Account Number */}
                                 <InfoRow
-                                    icon={<LinkIcon fontSize="small" />}
+                                    icon={<LinkIcon size={18} strokeWidth={2} />}
                                     label="Bank Account Number"
                                     content={
                                         editMode ? (
@@ -619,7 +619,7 @@ function InterviewerProfilePage() {
                                     gutterBottom
                                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                                 >
-                                    <CodeIcon color="primary" />
+                                    <CodeIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
                                     Expertise
                                 </Typography>
                                 <Divider sx={{ mb: 2 }} />
@@ -735,7 +735,7 @@ function InterviewerProfilePage() {
                         <Button
                             variant="contained"
                             size="large"
-                            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon size={18} strokeWidth={2} />}
                             onClick={() => setShowConfirmSave(true)}
                             disabled={saving}
                         >

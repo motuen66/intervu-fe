@@ -18,22 +18,17 @@ import {
     Link,
     Paper,
     Skeleton,
+    useTheme,
 } from "@mui/material";
 import BookingSlotDialog from "./BookingSlotDialog";
 import ExternalBookingDialog from "./ExternalBookingDialog";
 import JDBookingDialog from "./JDBookingDialog";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import SendIcon from "@mui/icons-material/Send";
-import DescriptionIcon from "@mui/icons-material/Description";
-import LaunchIcon from "@mui/icons-material/Launch";
-import StarIcon from "@mui/icons-material/Star";
-import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
-import BusinessIcon from "@mui/icons-material/Business";
-import CodeIcon from "@mui/icons-material/Code";
+import { Calendar, Send, FileText, ExternalLink, Star, Briefcase, Building2, Code } from "lucide-react";
 import toast from "react-hot-toast";
 import { PAYOS_TRANSACTION_STATUS, TRANSACTION_STATUS } from "../../../../../common/constants/status";
 
 function PublicInterviewerProfilePage() {
+    const theme = useTheme();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -122,8 +117,7 @@ function PublicInterviewerProfilePage() {
         // Get avatar with same logic as home page
         const profilePicture = user?.profilePicture || interviewerProfile?.profilePicture;
 
-        // Use fallback image if no profile picture (same as home page)
-        return profilePicture || "https://fr.web.img6.acsta.net/r_1920_1080/pictures/22/12/06/08/39/0036027.jpg";
+        return profilePicture || "";
     }, [profile]);
 
     return (
@@ -163,9 +157,17 @@ function PublicInterviewerProfilePage() {
                                     <Avatar
                                         src={avatarUrl}
                                         alt={profile.user.fullName}
-                                        sx={{ width: 120, height: 120, fontSize: 48, mr: 4 }}
+                                        sx={{
+                                            width: 120,
+                                            height: 120,
+                                            fontSize: 48,
+                                            mr: 4,
+                                            bgcolor: avatarUrl ? "transparent" : "secondary.main",
+                                            color: avatarUrl ? "inherit" : "primary.main",
+                                            fontWeight: 600
+                                        }}
                                     >
-                                        {!avatarUrl.includes("http") ? avatarLetter : null}
+                                        {!avatarUrl ? avatarLetter : null}
                                     </Avatar>
                                     <Box flex={1}>
                                         <Typography variant="h3" fontWeight={700} sx={{ mb: 0.5 }}>
@@ -176,13 +178,12 @@ function PublicInterviewerProfilePage() {
                                         </Typography>
                                         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
                                             {[...Array(5)].map((_, i) => (
-                                                <StarIcon
+                                                <Star
                                                     key={i}
-                                                    sx={{
-                                                        color:
-                                                            i < Math.floor(profile.rating || 0) ? "#FFD700" : "#E0E0E0",
-                                                        fontSize: 20,
-                                                    }}
+                                                    size={20}
+                                                    strokeWidth={1.5}
+                                                    fill={i < Math.floor(profile.rating || 0) ? theme.palette.secondary.main : "transparent"}
+                                                    stroke={i < Math.floor(profile.rating || 0) ? theme.palette.secondary.main : "#E0E0E0"}
                                                 />
                                             ))}
                                             <Typography variant="body2" sx={{ ml: 1 }}>
@@ -209,7 +210,7 @@ function PublicInterviewerProfilePage() {
                                                     alignItems="center"
                                                     gap={0.5}
                                                 >
-                                                    Portfolio <LaunchIcon fontSize="small" />
+                                                    Portfolio <ExternalLink size={16} strokeWidth={1.5} />
                                                 </Link>
                                             </Box>
                                         )}
@@ -238,7 +239,7 @@ function PublicInterviewerProfilePage() {
                                     {profile.companies?.map((c) => (
                                         <Chip
                                             key={c.id}
-                                            icon={<BusinessIcon />}
+                                            icon={<Building2 size={16} strokeWidth={1.5} />}
                                             label={c.name}
                                             variant="outlined"
                                             onClick={() => window.open(c.website, "_blank")}
@@ -262,12 +263,12 @@ function PublicInterviewerProfilePage() {
                                         </Typography>
                                         <Stack direction="row" spacing={1} alignItems="center">
                                             {[...Array(5)].map((_, i) => (
-                                                <StarIcon
+                                                <Star
                                                     key={i}
-                                                    sx={{
-                                                        color: i < Math.floor(profile.rating) ? "#FFD700" : "#E0E0E0",
-                                                        fontSize: 20,
-                                                    }}
+                                                    size={20}
+                                                    strokeWidth={1.5}
+                                                    fill={i < Math.floor(profile.rating || 0) ? theme.palette.secondary.main : "transparent"}
+                                                    stroke={i < Math.floor(profile.rating || 0) ? theme.palette.secondary.main : "#E0E0E0"}
                                                 />
                                             ))}
                                         </Stack>
@@ -284,15 +285,12 @@ function PublicInterviewerProfilePage() {
                                                         sx={{ mb: 1 }}
                                                     >
                                                         {[...Array(5)].map((_, i) => (
-                                                            <StarIcon
+                                                            <Star
                                                                 key={i}
-                                                                sx={{
-                                                                    color:
-                                                                        i < Math.floor(review.rating || 0)
-                                                                            ? "#FFD700"
-                                                                            : "#E0E0E0",
-                                                                    fontSize: 16,
-                                                                }}
+                                                                size={16}
+                                                                strokeWidth={1.5}
+                                                                fill={i < Math.floor(review.rating || 0) ? theme.palette.secondary.main : "transparent"}
+                                                                stroke={i < Math.floor(review.rating || 0) ? theme.palette.secondary.main : "#E0E0E0"}
                                                             />
                                                         ))}
                                                     </Stack>
@@ -347,7 +345,7 @@ function PublicInterviewerProfilePage() {
                                 }}
                             >
                                 <CardContent sx={{ p: 3 }}>
-                                    <Typography variant="h5" fontWeight={700} sx={{ mb: 3, color: "#4F46E5" }}>
+                                    <Typography variant="h5" fontWeight={700} sx={{ mb: 3, color: "primary.main" }}>
                                         Book time with {profile.user.fullName} now
                                     </Typography>
 
@@ -355,64 +353,64 @@ function PublicInterviewerProfilePage() {
                                         <Stack direction="row" spacing={1} alignItems="center">
                                             <Box
                                                 sx={{
-                                                    width: 20,
-                                                    height: 20,
-                                                    backgroundColor: "#4F46E5",
+                                                    width: 24,
+                                                    height: 24,
+                                                    backgroundColor: "primary.main",
                                                     borderRadius: "4px",
                                                     display: "flex",
                                                     alignItems: "center",
                                                     justifyContent: "center",
                                                 }}
                                             >
-                                                <CalendarMonthIcon sx={{ fontSize: 14, color: "white" }} />
+                                                <Calendar size={14} strokeWidth={2} color="white" />
                                             </Box>
                                             <Typography variant="body2">1-hour phone or video chat</Typography>
                                         </Stack>
                                         <Stack direction="row" spacing={1} alignItems="center">
                                             <Box
                                                 sx={{
-                                                    width: 20,
-                                                    height: 20,
-                                                    backgroundColor: "#4F46E5",
+                                                    width: 24,
+                                                    height: 24,
+                                                    backgroundColor: "primary.main",
                                                     borderRadius: "4px",
                                                     display: "flex",
                                                     alignItems: "center",
                                                     justifyContent: "center",
                                                 }}
                                             >
-                                                <StarIcon sx={{ fontSize: 14, color: "white" }} />
+                                                <Star size={14} strokeWidth={2} color="white" />
                                             </Box>
                                             <Typography variant="body2">Detailed written feedback</Typography>
                                         </Stack>
                                         <Stack direction="row" spacing={1} alignItems="center">
                                             <Box
                                                 sx={{
-                                                    width: 20,
-                                                    height: 20,
-                                                    backgroundColor: "#4F46E5",
+                                                    width: 24,
+                                                    height: 24,
+                                                    backgroundColor: "primary.main",
                                                     borderRadius: "4px",
                                                     display: "flex",
                                                     alignItems: "center",
                                                     justifyContent: "center",
                                                 }}
                                             >
-                                                <WorkOutlineIcon sx={{ fontSize: 14, color: "white" }} />
+                                                <Briefcase size={14} strokeWidth={2} color="white" />
                                             </Box>
                                             <Typography variant="body2">Convenient scheduling</Typography>
                                         </Stack>
                                         <Stack direction="row" spacing={1} alignItems="center">
                                             <Box
                                                 sx={{
-                                                    width: 20,
-                                                    height: 20,
-                                                    backgroundColor: "#4F46E5",
+                                                    width: 24,
+                                                    height: 24,
+                                                    backgroundColor: "primary.main",
                                                     borderRadius: "4px",
                                                     display: "flex",
                                                     alignItems: "center",
                                                     justifyContent: "center",
                                                 }}
                                             >
-                                                <CodeIcon sx={{ fontSize: 14, color: "white" }} />
+                                                <Code size={14} strokeWidth={2} color="white" />
                                             </Box>
                                             <Typography variant="body2">Switch coaches at any time</Typography>
                                         </Stack>
@@ -424,8 +422,8 @@ function PublicInterviewerProfilePage() {
                                         size="large"
                                         onClick={() => setBookingDialogOpen(true)}
                                         sx={{
-                                            backgroundColor: "#4F46E5",
-                                            "&:hover": { backgroundColor: "#3730A3" },
+                                            backgroundColor: "primary.main",
+                                            "&:hover": { backgroundColor: "primary.dark" },
                                             borderRadius: "8px",
                                             py: 1.5,
                                             fontSize: "1rem",
@@ -441,14 +439,14 @@ function PublicInterviewerProfilePage() {
                                         fullWidth
                                         variant="outlined"
                                         size="large"
-                                        startIcon={<SendIcon />}
+                                        startIcon={<Send size={18} strokeWidth={2} />}
                                         onClick={() => setExternalBookingOpen(true)}
                                         sx={{
-                                            borderColor: "#4F46E5",
-                                            color: "#4F46E5",
+                                            borderColor: "primary.main",
+                                            color: "primary.main",
                                             "&:hover": {
-                                                borderColor: "#3730A3",
-                                                backgroundColor: "rgba(79,70,229,0.04)",
+                                                borderColor: "primary.dark",
+                                                backgroundColor: "rgba(15,23,42,0.04)",
                                             },
                                             borderRadius: "8px",
                                             py: 1.5,
@@ -465,14 +463,14 @@ function PublicInterviewerProfilePage() {
                                         fullWidth
                                         variant="outlined"
                                         size="large"
-                                        startIcon={<DescriptionIcon />}
+                                        startIcon={<FileText size={18} strokeWidth={2} />}
                                         onClick={() => setJdBookingOpen(true)}
                                         sx={{
-                                            borderColor: "#4F46E5",
-                                            color: "#4F46E5",
+                                            borderColor: "primary.main",
+                                            color: "primary.main",
                                             "&:hover": {
-                                                borderColor: "#3730A3",
-                                                backgroundColor: "rgba(79,70,229,0.04)",
+                                                borderColor: "primary.dark",
+                                                backgroundColor: "rgba(15,23,42,0.04)",
                                             },
                                             borderRadius: "8px",
                                             py: 1.5,

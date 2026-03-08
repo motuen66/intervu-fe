@@ -148,8 +148,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                 title: `${selectedService.interviewType?.name || selectedService.name || "Interview"} (${selectedService.durationMinutes}m)`,
                 start: selectedStartTime.toISOString(),
                 end: endTime.toISOString(),
-                backgroundColor: "#4f46e5",
-                borderColor: "#4f46e5",
+                backgroundColor: "var(--mui-palette-primary-main)",
+                borderColor: "var(--mui-palette-primary-main)",
                 textColor: "#fff",
                 classNames: ["booking-preview"],
                 editable: false,
@@ -339,7 +339,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                     </Stack>
 
                                                     {isSelected && (
-                                                        <CheckCircleIcon sx={{ color: "#4f46e5", fontSize: 28 }} />
+                                                        <CheckCircleIcon sx={{ color: "var(--mui-palette-primary-main)", fontSize: 28 }} />
                                                     )}
                                                 </Stack>
                                             </Box>
@@ -434,7 +434,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                 width: 14,
                                                 height: 14,
                                                 borderRadius: "3px",
-                                                bgcolor: "#4f46e5",
+                                                bgcolor: "var(--mui-palette-primary-main)",
                                             }}
                                         />
                                         <Typography variant="caption" color="text.secondary">
@@ -487,7 +487,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                             <Typography
                                                 variant="subtitle2"
                                                 fontWeight={700}
-                                                sx={{ mb: 1.5, color: "#4f46e5" }}
+                                                sx={{ mb: 1.5, color: "var(--mui-palette-primary-main)" }}
                                             >
                                                 Booking Summary
                                             </Typography>
@@ -534,7 +534,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                 <Typography variant="body2" fontWeight={600}>
                                                     Total
                                                 </Typography>
-                                                <Typography variant="subtitle1" fontWeight={700} color="#4f46e5">
+                                                <Typography variant="subtitle1" fontWeight={700} color="var(--mui-palette-primary-main)">
                                                     {selectedService?.price?.toLocaleString()} VND
                                                 </Typography>
                                             </Box>
@@ -554,7 +554,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                             onClick={handleBackStep}
                             variant="text"
                             startIcon={<ArrowBackIcon />}
-                            sx={{ color: "#4f46e5" }}
+                            sx={{ color: "var(--mui-palette-primary-main)" }}
                         >
                             Back
                         </Button>
@@ -570,7 +570,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                             variant="contained"
                             disabled={!selectedService}
                             sx={{
-                                backgroundColor: "#4F46E5",
+                                backgroundColor: "var(--mui-palette-primary-main)",
                                 fontWeight: 600,
                                 "&:hover": { backgroundColor: "#4338CA" },
                                 "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
@@ -585,7 +585,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                             disabled={!canConfirm || submitting}
                             loading={submitting}
                             sx={{
-                                backgroundColor: "#4F46E5",
+                                backgroundColor: "var(--mui-palette-primary-main)",
                                 fontWeight: 600,
                                 "&:hover": { backgroundColor: "#4338CA" },
                                 "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },

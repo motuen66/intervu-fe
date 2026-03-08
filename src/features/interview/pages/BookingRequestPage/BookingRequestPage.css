@@ -99,7 +99,7 @@
 .booking-round-card .round-title {
     font-weight: 600;
     font-size: 14px;
-    color: #0f172a;
+    color: var(--mui-palette-primary-main);
 }
 
 .booking-round-card .round-meta {
