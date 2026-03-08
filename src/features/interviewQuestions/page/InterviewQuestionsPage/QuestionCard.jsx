@@ -46,7 +46,8 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         }
         return item.hottestAnswer ?? item.topAnswer ?? null;
     })();
-    const answerCount = commentCount ?? item.answerCount ?? 0;
+    // console.log("Items:", item);
+    const answerCount = item.commentCount ?? 0;
     const viewCount = item.viewCount ?? 0;
     const isHot = isHotProp ?? item.isHot ?? false;
 
@@ -125,7 +126,6 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
 
         const prevSaved = saved;
         const prevCount = saveCount;
-
         const nextSaved = !prevSaved;
 
         setSaved(nextSaved);
@@ -136,9 +136,10 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                 method: METHOD.POST,
                 endpoint: interactionEndPoints.SAVE_QUESTION(item.id),
                 arg: nextSaved,
+                headers: { "Content-Type": "application/json" },
             });
 
-            const serverSaved = res?.data?.isSaveQuestion ?? nextSaved;
+            const serverSaved = res?.isSaved ?? (typeof res === "boolean" ? res : nextSaved);
 
             setSaved(serverSaved);
             setSaveCount(prevCount + (serverSaved ? 1 : 0) - (prevSaved ? 1 : 0));
@@ -177,7 +178,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                             id: item.id,
                             content: item.title,
                             title: item.title,
-                            companyNames: item.companyNames,
+                            companyId: item.companyIds?.[0] ?? item.companyId ?? null,
                             roles: item.roles,
                             tags: item.tags,
                             category: item.category ?? item.questionType,

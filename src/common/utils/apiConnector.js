@@ -7,14 +7,14 @@ import { store } from "../../main";
 
 export const axiosInstance = axios.create({
     baseURL: BE_BASE_URL,
-    withCredentials: true
+    withCredentials: true,
 });
 
 let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
-    failedQueue.forEach(prom => {
+    failedQueue.forEach((prom) => {
         if (error) {
             prom.reject(error);
         } else {
@@ -22,7 +22,7 @@ const processQueue = (error, token = null) => {
         }
     });
     failedQueue = [];
-}
+};
 
 axiosInstance.interceptors.request.use(
     (config) => {
@@ -44,10 +44,12 @@ axiosInstance.interceptors.response.use(
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
-                }).then(token => {
-                    originalRequest.headers.Authorization = `Bearer ${token}`;
-                    return axiosInstance(originalRequest);
-                }).catch(err => Promise.reject(err));
+                })
+                    .then((token) => {
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                        return axiosInstance(originalRequest);
+                    })
+                    .catch((err) => Promise.reject(err));
             }
 
             originalRequest._retry = true;
@@ -58,19 +60,19 @@ axiosInstance.interceptors.response.use(
                     `${BE_BASE_URL}/account/refresh-token`,
                     {},
                     {
-                        withCredentials: true
-                    }
+                        withCredentials: true,
+                    },
                 );
 
                 if (response.data.success) {
                     const { accessToken } = response.data.data;
-                    
+
                     localStorage.setItem("token", JSON.stringify(accessToken));
-                    
+
                     originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-                    
+
                     processQueue(null, accessToken);
-                    
+
                     return axiosInstance(originalRequest);
                 }
             } catch (refreshError) {
@@ -83,7 +85,7 @@ axiosInstance.interceptors.response.use(
         }
 
         return Promise.reject(error);
-    }
+    },
 );
 
 const handleLogout = () => {
@@ -93,7 +95,14 @@ const handleLogout = () => {
     toast.error("Session expired. Please log in again.");
 };
 
-export const callApi = async ({ method, endpoint, arg, displaySuccessMessage = false, alertErrorMessage = false }) => {
+export const callApi = async ({
+    method,
+    endpoint,
+    arg,
+    headers,
+    displaySuccessMessage = false,
+    alertErrorMessage = false,
+}) => {
     try {
         store.dispatch(setLoading(true));
         const isGetOrDelete = method === METHOD.GET || method === METHOD.DELETE;
@@ -102,6 +111,7 @@ export const callApi = async ({ method, endpoint, arg, displaySuccessMessage = f
             url: endpoint,
             data: !isGetOrDelete ? arg : null,
             params: isGetOrDelete ? arg : null,
+            headers: headers ?? {},
         });
 
         if (!response.data.success) {

@@ -39,6 +39,7 @@ import { METHOD } from "../../../../common/constants/api";
 import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
 import { commentEndPoints } from "../../service/commentApi";
 import { interactionEndPoints } from "../../service/interactionApi";
+import { homeEndPoints } from "../../../home/services/homeApi";
 import AnswerCard from "./AnswerCard";
 import ReportDialog from "./ReportDialog";
 import { timeAgo } from "../../../../common/utils/dateFormatter";
@@ -54,6 +55,7 @@ export default function QuestionDetailPage() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saved, setSaved] = useState(false);
+    const [saveCount, setSaveCount] = useState(0);
     const [questionLiked, setQuestionLiked] = useState(false);
     const [copied, setCopied] = useState(false);
     /* ── Answers (replaces old comments) ── */
@@ -70,6 +72,18 @@ export default function QuestionDetailPage() {
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState("");
     const [savingEdit, setSavingEdit] = useState(false);
+    const [companies, setCompanies] = useState([]);
+
+    useEffect(() => {
+        callApi({ method: METHOD.GET, endpoint: homeEndPoints.GET_ALL_COMPANIES, arg: { page: 1, pageSize: 200 } })
+            .then(({ data: d }) => {
+                const items = d?.items ?? d?.data ?? (Array.isArray(d) ? d : []);
+                setCompanies(
+                    items.map((c) => ({ id: c.id ?? c.companyId, name: c.name ?? c.companyName })).filter((c) => c.id),
+                );
+            })
+            .catch(() => {});
+    }, []);
 
     /* ── Confirm dialog ── */
     const [confirm, setConfirm] = useState({
@@ -125,6 +139,7 @@ export default function QuestionDetailPage() {
             .then(({ data }) => {
                 setData(data ?? null);
                 setSaved(data?.isSavedByUser ?? false);
+                setSaveCount(data?.saveCount ?? 0);
                 setQuestionLiked(data?.isLikedByUser ?? false);
                 // If the detail response already includes comments, use them
                 if (data?.comments) {
@@ -165,17 +180,24 @@ export default function QuestionDetailPage() {
             navigate("/login");
             return;
         }
-        const prev = saved;
-        setSaved(!prev);
+        const prevSaved = saved;
+        const prevCount = saveCount;
+        const nextSaved = !prevSaved;
+        setSaved(nextSaved);
+        setSaveCount(prevCount + (nextSaved ? 1 : -1));
         try {
             const { data: res } = await callApi({
                 method: METHOD.POST,
                 endpoint: interactionEndPoints.SAVE_QUESTION(id),
+                arg: nextSaved,
+                headers: { "Content-Type": "application/json" },
             });
-            const serverSaved = typeof res === "boolean" ? res : (res?.isSaved ?? !prev);
+            const serverSaved = res?.isSaved ?? (typeof res === "boolean" ? res : nextSaved);
             setSaved(serverSaved);
+            setSaveCount(prevCount + (serverSaved ? 1 : 0) - (prevSaved ? 1 : 0));
         } catch {
-            setSaved(prev);
+            setSaved(prevSaved);
+            setSaveCount(prevCount);
         }
     };
 
@@ -266,11 +288,6 @@ export default function QuestionDetailPage() {
     };
 
     const handleSaveEdit = async () => {
-        if (!editContent.trim() || editContent.trim() === data.content) {
-            setEditing(false);
-            return;
-        }
-
         setSavingEdit(true);
 
         try {
@@ -280,15 +297,22 @@ export default function QuestionDetailPage() {
                 arg: {
                     title: editContent.trim(),
                     content: editContent.trim(),
+                    level: data.level,
+                    round: data.round,
+                    category: data.category ?? data.questionType,
+                    companyIds: (data.companyNames ?? [])
+                        .map((name) => companies.find((c) => c.name === name)?.id)
+                        .filter(Boolean),
+                    roles: data.roles ?? [],
+                    tagIds: data.tagIds ?? [],
                 },
             });
 
-            const { data: updated } = await callApi({
-                method: METHOD.GET,
-                endpoint: interviewQuestionEndPoints.GET_DETAIL(id),
-            });
-
-            setData(updated);
+            setData((prev) => ({
+                ...prev,
+                title: editContent.trim(),
+                content: editContent.trim(),
+            }));
 
             toast.success("Question updated");
             setEditing(false);
@@ -325,6 +349,7 @@ export default function QuestionDetailPage() {
 
     /* ── Normalized fields from QuestionDetailDto ── */
     const companyNames = data.companyNames ?? [];
+    console.log("Data:", data);
     const companyLabel = companyNames.length ? `Asked at ${companyNames.join(", ")}` : "Community question";
     const roles = data.roles ?? [];
     const tags = data.tags ?? [];
@@ -333,7 +358,8 @@ export default function QuestionDetailPage() {
     const actionBtns = [
         {
             icon: saved ? <BookmarkIcon sx={{ fontSize: 15 }} /> : <BookmarkBorderIcon sx={{ fontSize: 15 }} />,
-            label: `Save${data.saveCount != null ? ` ${data.saveCount}` : ""}`,
+            label: `Save${saveCount > 0 ? ` ${saveCount}` : ""}`,
+
             onClick: handleSaveQuestion,
             active: saved,
             tooltip: "",
@@ -348,7 +374,7 @@ export default function QuestionDetailPage() {
                         linkedQuestion: {
                             id: data.id,
                             content: data.content,
-                            companyNames: data.companyNames ?? [],
+                            companyIds: data.companyIds?.[0] ?? data.companyId ?? null,
                             roles: data.roles ?? [],
                             tags: data.tags ?? [],
                             category: data.category ?? data.questionType,

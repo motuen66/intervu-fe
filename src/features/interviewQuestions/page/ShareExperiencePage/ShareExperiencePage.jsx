@@ -127,7 +127,7 @@ export default function ShareExperiencePage() {
             round: lastRound || undefined,
             category: q.type || undefined,
             answer: isQuillEmpty(q.answer) ? "" : htmlToPlainText(q.answer),
-            companyIds: q.linkedQuestion ? [] : companyId ? [companyId] : [],
+            companyIds: q.linkedQuestion?.companyId ? [q.linkedQuestion.companyId] : companyId ? [companyId] : [],
             roles: q.linkedQuestion ? [] : role ? [role] : [],
             tagIds: [],
         }));
