@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from "react-redux";
 import './MainLayout.css';
-import { Container } from '@mui/material';
+import { Container, Avatar } from "@mui/material";
 import { ROLES } from '../../common/constants/common';
 import { callApi } from '../../common/utils/apiConnector';
 import { METHOD } from '../../common/constants/api';
 import { authEndPoints } from '../../features/auth/services/authApi';
+import { setUserData } from "../../common/store/authSlice";
+import { userEndPoints } from "../../common/services/userApi";
 import NotificationDropdown from '../../features/notification/components/NotificationDropdown';
 import useNotificationHub from '../../features/notification/hooks/useNotificationHub';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
@@ -22,13 +24,37 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const MainLayout = () => {
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { userData, token } = useSelector((state) => state.auth || {});
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { userData, token } = useSelector((state) => state.auth || {});
+    const dispatch = useDispatch();
+    const [remoteAvatar, setRemoteAvatar] = useState(null);
 
-  // Connect to notification SignalR hub
-  useNotificationHub(userData?.id, token);
+    // Connect to notification SignalR hub
+    useNotificationHub(userData?.id, token);
+
+    useEffect(() => {
+        if (userData?.profilePicture) {
+            setRemoteAvatar(userData.profilePicture);
+        }
+    }, [userData?.profilePicture]);
+
+    useEffect(() => {
+        const onStorage = (e) => {
+            if (e.key !== "user") return;
+            try {
+                const newUser = e.newValue ? JSON.parse(e.newValue) : null;
+                if (newUser) {
+                    if (newUser.profilePicture) setRemoteAvatar(newUser.profilePicture);
+                    setTimeout(() => dispatch(setUserData(newUser)), 0);
+                }
+            } catch (err) {}
+        };
+
+        window.addEventListener("storage", onStorage);
+        return () => window.removeEventListener("storage", onStorage);
+    }, []);
 
     const handleLogout = async () => {
         try {
@@ -48,6 +74,7 @@ const MainLayout = () => {
         // CANDIDATE
         [
             { label: "Home", path: "/home" },
+            { label: "Questions", path: "/questions" },
             { label: "Interview", path: "/interview" },
             { label: "Booking Requests", path: "/booking-requests" },
             { label: "Messages", path: "#" },
@@ -56,6 +83,7 @@ const MainLayout = () => {
         // INTERVIEWER
         [
             { label: "Dashboard", path: "/#" },
+            { label: "Questions", path: "/questions" },
             { label: "Schedule", path: "/schedule" },
             { label: "Interview", path: "/interview" },
             { label: "Booking Requests", path: "/booking-requests" },
@@ -82,6 +110,51 @@ const MainLayout = () => {
     const toggleGroup = (key) => {
         setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
     };
+
+    useEffect(() => {
+        const fetchLatestUser = async () => {
+            let userId = userData?.id;
+            if (!userId) {
+                try {
+                    const raw = localStorage.getItem("token");
+                    if (raw) {
+                        const token = JSON.parse(raw);
+                        if (token && typeof token === "string") {
+                            const parts = token.split(".");
+                            if (parts.length >= 2) {
+                                const json = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+                                const payload = JSON.parse(json);
+                                userId = payload?.sub ?? payload?.id ?? payload?.userId ?? payload?.uid ?? userId;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            if (!userId) return;
+
+            try {
+                const res = await callApi({ method: METHOD.GET, endpoint: userEndPoints.GET_USER_PROFILE(userId) });
+                const url = res?.data?.profilePicture ?? res?.data?.user?.profilePicture ?? null;
+                if (url) {
+                    setRemoteAvatar(url);
+                    const updated = { ...(userData || {}), profilePicture: url, id: userId };
+                    try {
+                        localStorage.setItem("user", JSON.stringify(updated));
+                    } catch (e) {
+                        console.warn("Failed to persist user to localStorage", e);
+                    }
+                    dispatch(setUserData(updated));
+                }
+            } catch (err) {
+                console.error("Failed to fetch user profile", err);
+            }
+        };
+
+        fetchLatestUser();
+    }, [userData?.id]);
 
     const adminNavItems = [
         { label: "Dashboard", icon: DashboardOutlinedIcon, path: "/admin/dashboard" },
@@ -212,21 +285,28 @@ const MainLayout = () => {
               <NotificationDropdown />
               <div className="admin-user-dropdown">
                 <button
-                  className="admin-avatar-btn"
-                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  title="Account"
+                    className="admin-avatar-btn"
+                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                    title="Account"
                 >
-                  {userData?.profilePicture ? (
-                    <img src={userData.profilePicture} alt="User" />
-                  ) : (
-                    <span>
-                      {userData?.fullName
-                        ?.split(' ')
-                        .map((n) => n[0])
-                        .join('')
-                        .toUpperCase() || 'U'}
-                    </span>
-                  )}
+                    <Avatar
+                        src={remoteAvatar ?? userData?.profilePicture}
+                        alt={userData?.fullName || "User"}
+                        sx={{ width: 36, height: 36 }}
+                        imgProps={{
+                            onError: (e) => {
+                                e.currentTarget.style.display = "none";
+                            },
+                        }}
+                    >
+                        {!(remoteAvatar ?? userData?.profilePicture) &&
+                            (userData?.fullName
+                                ?.split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase() ||
+                                "U")}
+                    </Avatar>
                 </button>
 
                                 {isUserDropdownOpen && (
@@ -323,17 +403,24 @@ const MainLayout = () => {
                                 onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                                 title="Account"
                             >
-                                {userData?.profilePicture ? (
-                                    <img src={userData.profilePicture} alt="User Avatar" className="avatar-img" />
-                                ) : (
-                                    <div className="avatar-placeholder">
-                                        {userData?.fullName
+                                <Avatar
+                                    src={remoteAvatar ?? userData?.profilePicture}
+                                    alt={userData?.fullName || "User"}
+                                    sx={{ width: 40, height: 40 }}
+                                    imgProps={{
+                                        onError: (e) => {
+                                            e.currentTarget.style.display = "none";
+                                        },
+                                    }}
+                                >
+                                    {!(remoteAvatar ?? userData?.profilePicture) &&
+                                        (userData?.fullName
                                             ?.split(" ")
                                             .map((n) => n[0])
                                             .join("")
-                                            .toUpperCase() || "U"}
-                                    </div>
-                                )}
+                                            .toUpperCase() ||
+                                            "U")}
+                                </Avatar>
                             </button>
 
                             {isUserDropdownOpen && (
@@ -358,6 +445,15 @@ const MainLayout = () => {
                                         }}
                                     >
                                         View Profile
+                                    </button>
+                                    <button
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                            navigate("/questions/saved");
+                                            setIsUserDropdownOpen(false);
+                                        }}
+                                    >
+                                        Saved Questions
                                     </button>
                                     <button
                                         className="dropdown-item"

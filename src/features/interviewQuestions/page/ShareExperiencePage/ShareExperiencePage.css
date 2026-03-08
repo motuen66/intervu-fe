@@ -1,0 +1,15 @@
+.se-editor-wrap {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.se-editor-wrap .ql-toolbar {
+    border: none;
+    border-bottom: 1px solid #e0e0e0;
+}
+.se-editor-wrap .ql-container {
+    border: none;
+    font-size: 14px;
+    min-height: 140px;
+    font-family: "Inter", sans-serif;
+}

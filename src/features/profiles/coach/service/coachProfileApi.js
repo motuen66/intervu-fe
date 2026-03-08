@@ -11,4 +11,5 @@ export const interviewerProfileEndPoints = {
 
     BOOK_INTERVIEW: BE_BASE_URL + `/interview-booking`,
     GET_BOOKING_TRANSACTION: BE_BASE_URL + `/interview-booking/{orderCode}`,
+    SAVE_QUESTION: BE_BASE_URL + `/interview-question`,
 };
