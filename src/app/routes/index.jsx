@@ -16,6 +16,7 @@ import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomL
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
 import App from "../../App";
+import PaymentHistoryPage from "../../features/payments/pages/PaymentHistoryPage.jsx";
 
 export const routes = [
     { path: "/", element: <Navigate to="/home" replace /> },
@@ -37,6 +38,16 @@ export const routes = [
             { path: "/user/profile", element: <UserProfilePage /> },
             { path: "/settings", element: <UserProfilePage /> },
         ],
+    },
+
+    // Payment history page (candidate & coach)
+    {
+        element: (
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER]}>
+                <MainLayout />
+            </ProtectedRoute>
+        ),
+        children: [{ path: "/payment-history", element: <PaymentHistoryPage /> }],
     },
 
     {

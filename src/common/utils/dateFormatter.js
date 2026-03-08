@@ -27,3 +27,12 @@ export const getYearDiff = (start, end) => {
     }
     return yearDiff;
 };
+
+export const formatCurrency = (amount) => {
+    return new Intl.NumberFormat(navigator.language, {
+        style: "currency",
+        currency: "VND",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(amount || 0);
+};

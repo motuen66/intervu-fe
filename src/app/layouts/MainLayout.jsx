@@ -233,6 +233,17 @@ const MainLayout = () => {
                     >
                       View Profile
                     </button>
+                    {(userData?.role === ROLES.CANDIDATE || userData?.role === ROLES.INTERVIEWER) && (
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          navigate('/payment-history');
+                          setIsUserDropdownOpen(false);
+                        }}
+                      >
+                        View Payment History
+                      </button>
+                    )}
                     <button
                       className="dropdown-item"
                       onClick={() => {
@@ -376,6 +387,15 @@ const MainLayout = () => {
                     }}
                   >
                     View Profile
+                  </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      navigate('/payment-history');
+                      setIsUserDropdownOpen(false);
+                    }}
+                  >
+                    View Payment History
                   </button>
                   <button
                     className="dropdown-item"
