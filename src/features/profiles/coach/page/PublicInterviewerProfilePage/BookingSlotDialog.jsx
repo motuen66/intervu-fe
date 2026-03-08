@@ -131,7 +131,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
         const bgEvents = availableSlots
             .filter((slot) => new Date(slot.endTime) > now)
             .map((slot) => ({
-                id: `bg-${slot.id}`,
+                id: `bg-${slot.id}-${slot.startTime}`,
                 start: slot.startTime,
                 end: slot.endTime,
                 display: "background",
@@ -183,17 +183,19 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
             snappedTime.setMinutes(snappedMinutes, 0, 0);
 
             const endTime = addMinutes(snappedTime, selectedService.durationMinutes);
+            // Add 15-minute buffer after the interview (matches backend rule)
+            const endTimeWithBuffer = addMinutes(snappedTime, selectedService.durationMinutes + 15);
 
-            // Find the containing availability slot
+            // Find the containing availability slot — must fit session + buffer
             const matchingSlot = availableSlots.find((slot) => {
                 const slotStart = new Date(slot.startTime);
                 const slotEnd = new Date(slot.endTime);
-                return snappedTime >= slotStart && endTime <= slotEnd;
+                return snappedTime >= slotStart && endTimeWithBuffer <= slotEnd;
             });
 
             if (!matchingSlot) {
                 toast.error(
-                    `This time slot doesn't have enough availability for ${selectedService.durationMinutes} minutes. Please pick a time within the highlighted areas.`,
+                    `This time slot doesn't have enough availability for ${selectedService.durationMinutes} minutes (+ 15min buffer). Please pick a time within the highlighted areas.`,
                 );
                 return;
             }
