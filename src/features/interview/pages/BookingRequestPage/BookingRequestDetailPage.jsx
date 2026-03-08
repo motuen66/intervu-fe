@@ -18,16 +18,17 @@ import { ROLES } from "../../../../common/constants/common";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
-import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
-import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import IconButton from "@mui/material/IconButton";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { dialogStyles } from "../../../../common/constants/uiStyles";
+import { DangerButton, PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import FormTextField from "../../../../common/components/form/FormTextField";
 import LinkIcon from "@mui/icons-material/Link";
 import CloseIcon from "@mui/icons-material/Close";
 import PaymentIcon from "@mui/icons-material/Payment";
@@ -154,26 +155,6 @@ export default function BookingRequestDetailPage() {
         });
     };
 
-    const primaryCtaSx = {
-        textTransform: "none",
-        background: "#2f5cf6",
-        color: "#ffffff",
-        px: 3,
-        py: 1,
-        borderRadius: "999px",
-        fontSize: "14px",
-        fontWeight: 600,
-        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
-        "&:hover": { background: "#2952e6" },
-    };
-
-    const dangerCtaSx = {
-        ...primaryCtaSx,
-        background: "#ef4444",
-        boxShadow: "0 10px 24px rgba(239, 68, 68, 0.32)",
-        "&:hover": { background: "#dc2626" },
-    };
-
     if (loading) {
         return (
             <Box className="booking-detail-page" display="flex" justifyContent="center" py={8}>
@@ -188,9 +169,9 @@ export default function BookingRequestDetailPage() {
                 <Typography variant="h6" color="text.secondary">
                     Booking request not found.
                 </Typography>
-                <Button sx={{ mt: 2, ...primaryCtaSx }} onClick={() => navigate("/booking-requests")}>
+                <SecondaryButton sx={{ mt: 2 }} onClick={() => navigate("/booking-requests")}>
                     Back to list
-                </Button>
+                </SecondaryButton>
             </Box>
         );
     }
@@ -384,17 +365,12 @@ export default function BookingRequestDetailPage() {
             {/* Coach actions */}
             {isCoach && isPending && (
                 <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    <Button variant="contained" disabled={responding} onClick={handleAccept} sx={primaryCtaSx}>
-                        {responding ? "Processing..." : "Accept Request"}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        disabled={responding}
-                        onClick={() => setRejectOpen(true)}
-                        sx={dangerCtaSx}
-                    >
+                    <PrimaryButton onClick={handleAccept} loading={responding}>
+                        Accept Request
+                    </PrimaryButton>
+                    <DangerButton disabled={responding} onClick={() => setRejectOpen(true)}>
                         Reject
-                    </Button>
+                    </DangerButton>
                 </Stack>
             )}
 
@@ -403,29 +379,17 @@ export default function BookingRequestDetailPage() {
                 <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                     {/* Pay button — only when status is Accepted */}
                     {detail.status === BOOKING_REQUEST_STATUS.ACCEPTED && (
-                        <Button
-                            variant="contained"
-                            disabled={paying}
-                            onClick={handlePay}
-                            startIcon={<PaymentIcon />}
-                            sx={primaryCtaSx}
-                        >
-                            {paying ? "Redirecting..." : `Pay ${detail.totalAmount?.toLocaleString()} ₫`}
-                        </Button>
+                        <PrimaryButton loading={paying} onClick={handlePay} startIcon={<PaymentIcon />}>
+                            {`Pay ${detail.totalAmount?.toLocaleString()} ₫`}
+                        </PrimaryButton>
                     )}
 
                     {/* Cancel button — when Pending or Accepted */}
                     {(detail.status === BOOKING_REQUEST_STATUS.PENDING ||
                         detail.status === BOOKING_REQUEST_STATUS.ACCEPTED) && (
-                        <Button
-                            variant="contained"
-                            disabled={cancelling}
-                            onClick={handleCancel}
-                            startIcon={<CancelIcon />}
-                            sx={dangerCtaSx}
-                        >
-                            {cancelling ? "Cancelling..." : "Cancel Request"}
-                        </Button>
+                        <DangerButton loading={cancelling} onClick={handleCancel} startIcon={<CancelIcon />}>
+                            Cancel Request
+                        </DangerButton>
                     )}
                 </Stack>
             )}
@@ -436,7 +400,7 @@ export default function BookingRequestDetailPage() {
                 onClose={() => setRejectOpen(false)}
                 maxWidth="sm"
                 fullWidth
-                PaperProps={{ sx: { borderRadius: 3 } }}
+                PaperProps={{ sx: dialogStyles.paper }}
             >
                 <DialogTitle
                     sx={{
@@ -455,7 +419,7 @@ export default function BookingRequestDetailPage() {
                     <Typography variant="body2" sx={{ mb: 2, color: "#64748b" }}>
                         Please provide a reason for rejecting this booking request.
                     </Typography>
-                    <TextField
+                    <FormTextField
                         fullWidth
                         multiline
                         rows={3}
@@ -464,22 +428,15 @@ export default function BookingRequestDetailPage() {
                         onChange={(e) => setRejectionReason(e.target.value)}
                         placeholder="e.g., Schedule conflict, not available at that time..."
                         inputProps={{ maxLength: 500 }}
-                        sx={{
-                            "& .MuiOutlinedInput-root": {
-                                "&:hover fieldset": { borderColor: "#667eea" },
-                                "&.Mui-focused fieldset": { borderColor: "#667eea" },
-                            },
-                            "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-                        }}
                     />
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 3 }}>
-                    <Button onClick={() => setRejectOpen(false)} disabled={responding} sx={primaryCtaSx}>
+                    <SecondaryButton onClick={() => setRejectOpen(false)} disabled={responding}>
                         Cancel
-                    </Button>
-                    <Button onClick={handleReject} disabled={responding} variant="contained" sx={dangerCtaSx}>
-                        {responding ? "Rejecting..." : "Confirm Reject"}
-                    </Button>
+                    </SecondaryButton>
+                    <DangerButton onClick={handleReject} loading={responding}>
+                        Confirm Reject
+                    </DangerButton>
                 </DialogActions>
             </Dialog>
         </Box>

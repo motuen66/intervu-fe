@@ -5,7 +5,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
@@ -17,6 +16,9 @@ import { AIM_LEVEL, AIM_LEVEL_LABELS } from "../../../../../common/constants/sta
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import { createExternalBookingRequest } from "../../../../interview/services/bookingRequestApi";
 import toast from "react-hot-toast";
+import FormTextField from "../../../../../common/components/form/FormTextField";
+import { dialogStyles } from "../../../../../common/constants/uiStyles";
+import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 
 /**
  * Flow B: Candidate requests an external session (outside coach's available slots)
@@ -92,34 +94,13 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
         onClose();
     };
 
-    const primaryCtaSx = {
-        textTransform: "none",
-        background: "#2f5cf6",
-        color: "#ffffff",
-        px: 3,
-        py: 1,
-        borderRadius: "999px",
-        fontSize: "14px",
-        fontWeight: 600,
-        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
-        "&:hover": { background: "#2952e6" },
-    };
-
-    const fieldSx = {
-        "& .MuiOutlinedInput-root": {
-            "&:hover fieldset": { borderColor: "#667eea" },
-            "&.Mui-focused fieldset": { borderColor: "#667eea" },
-        },
-        "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-    };
-
     return (
         <Dialog
             open={open}
             onClose={handleClose}
             maxWidth="sm"
             fullWidth
-            PaperProps={{ sx: { borderRadius: 3, background: "rgba(255,255,255,0.98)" } }}
+            PaperProps={{ sx: dialogStyles.paper }}
         >
             <DialogTitle
                 sx={{
@@ -160,14 +141,13 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                     ) : (
                         <Grid container spacing={2.5} direction="column">
                             <Grid item xs={12} sx={{ width: "100%" }}>
-                                <TextField
+                                <FormTextField
                                     fullWidth
                                     select
                                     label="Interview Service"
                                     value={form.coachInterviewServiceId}
                                     onChange={(e) => setForm({ ...form, coachInterviewServiceId: e.target.value })}
                                     required
-                                    sx={fieldSx}
                                 >
                                     {services.map((svc) => (
                                         <MenuItem key={svc.id} value={svc.id}>
@@ -176,7 +156,7 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                                             {svc.durationMinutes} min
                                         </MenuItem>
                                     ))}
-                                </TextField>
+                                </FormTextField>
                             </Grid>
 
                             {selectedService && (
@@ -197,7 +177,7 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                             )}
 
                             <Grid item xs={12} sx={{ width: "100%" }}>
-                                <TextField
+                                <FormTextField
                                     fullWidth
                                     label="Requested Start Time"
                                     type="datetime-local"
@@ -208,18 +188,16 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                                     inputProps={{
                                         min: new Date().toISOString().slice(0, 16),
                                     }}
-                                    sx={fieldSx}
                                 />
                             </Grid>
 
                             <Grid item xs={12} sx={{ width: "100%" }}>
-                                <TextField
+                                <FormTextField
                                     fullWidth
                                     select
                                     label="Target Level (optional)"
                                     value={form.aimLevel}
                                     onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
-                                    sx={fieldSx}
                                 >
                                     <MenuItem value="">None</MenuItem>
                                     {Object.entries(AIM_LEVEL_LABELS).map(([val, label]) => (
@@ -227,7 +205,7 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                                             {label}
                                         </MenuItem>
                                     ))}
-                                </TextField>
+                                </FormTextField>
                             </Grid>
                         </Grid>
                     )}
@@ -235,12 +213,12 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                     {error && <Typography sx={{ color: "error.main", mt: 2, fontSize: "0.85rem" }}>{error}</Typography>}
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                    <Button onClick={handleClose} disabled={saving} sx={primaryCtaSx}>
+                    <SecondaryButton onClick={handleClose} disabled={saving}>
                         Cancel
-                    </Button>
-                    <Button type="submit" variant="contained" disabled={saving} sx={primaryCtaSx}>
-                        {saving ? "Submitting..." : "Submit Request"}
-                    </Button>
+                    </SecondaryButton>
+                    <PrimaryButton type="submit" loading={saving}>
+                        Submit Request
+                    </PrimaryButton>
                 </DialogActions>
             </form>
         </Dialog>

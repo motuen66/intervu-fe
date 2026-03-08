@@ -5,7 +5,6 @@ import {
     Stack,
     Avatar,
     Button,
-    Chip,
     Pagination,
     CircularProgress,
     Divider,
@@ -21,51 +20,15 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CodeIcon from "@mui/icons-material/Code";
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import ConfirmModal from "../../../../../common/components/ConfirmModal";
+import StatusChip from "../../../../../common/components/StatusChip";
+import { getRescheduleRequestStatusConfig } from "../../../../../common/constants/statusConfig";
 
 const ITEMS_PER_PAGE = 5;
 
 // Helper function to get status color and label
 // Aligned with RescheduleRequestStatus.cs: Pending=0, Approved=1, Rejected=2, Expired=3
 // Color scheme matches INTERVIEW_ROOM_STATUS for consistency
-const getStatusInfo = (status) => {
-    switch (status) {
-        case 0: // Pending - matches SCHEDULED (both are "waiting" states)
-            return { 
-                label: "Pending", 
-                color: "warning",
-                bgcolor: "rgba(237, 108, 2, 0.12)", // warning lighter
-                textColor: "#e65100" // warning dark
-            };
-        case 1: // Approved - success state
-            return { 
-                label: "Approved", 
-                color: "success",
-                bgcolor: "rgba(46, 125, 50, 0.12)", // success lighter
-                textColor: "#2e7d32" // success dark
-            };
-        case 2: // Rejected - error state
-            return { 
-                label: "Rejected", 
-                color: "error",
-                bgcolor: "rgba(211, 47, 47, 0.12)", // error lighter
-                textColor: "#c62828" // error dark
-            };
-        case 3: // Expired - neutral/disabled state
-            return { 
-                label: "Expired", 
-                color: "default",
-                bgcolor: "rgba(0, 0, 0, 0.08)", // grey lighter
-                textColor: "#616161" // grey dark
-            };
-        default:
-            return { 
-                label: "Unknown", 
-                color: "default",
-                bgcolor: "rgba(0, 0, 0, 0.08)",
-                textColor: "#616161"
-            };
-    }
-};
+const getStatusInfo = (status) => getRescheduleRequestStatusConfig(status);
 
 // Reschedule Request Card Component
 function RescheduleRequestCard({ request, user, onApprove, onReject }) {
@@ -146,32 +109,8 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                 </Box>
                 
                 <Stack direction="row" spacing={0.5} alignItems="center">
-                    {/* Request type indicator */}
-                    <Chip
-                        label={isSentByMe ? "Sent" : "Received"}
-                        size="small"
-                        sx={{
-                            bgcolor: isSentByMe ? "info.lighter" : "warning.lighter",
-                            color: isSentByMe ? "info.dark" : "warning.dark",
-                            fontWeight: 600,
-                            fontSize: "0.7rem",
-                            height: 24,
-                            borderRadius: 1.5,
-                        }}
-                    />
-                    {/* Status chip */}
-                    <Chip
-                        label={statusInfo.label}
-                        size="small"
-                        sx={{
-                            bgcolor: statusInfo.bgcolor,
-                            color: statusInfo.textColor,
-                            fontWeight: 600,
-                            fontSize: "0.7rem",
-                            height: 24,
-                            borderRadius: 1.5,
-                        }}
-                    />
+                    <StatusChip label={isSentByMe ? "Sent" : "Received"} color={isSentByMe ? "info" : "warning"} />
+                    <StatusChip label={statusInfo.label} color={statusInfo.color} />
                 </Stack>
             </Stack>
 

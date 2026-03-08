@@ -2,7 +2,6 @@ import {
     Box,
     Typography,
     Avatar,
-    Chip,
     Stack,
     Button,
 } from "@mui/material";
@@ -13,6 +12,8 @@ import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { ROLES } from "../../../../../common/constants/common";
 import { useNavigate } from "react-router-dom";
+import StatusChip from "../../../../../common/components/StatusChip";
+import { getInterviewRoomStatusConfig } from "../../../../../common/constants/statusConfig";
 
 function InterviewCard({
     room,
@@ -39,80 +40,12 @@ function InterviewCard({
     };
 
     const getStatusChip = () => {
-        // If scheduled but has been rescheduled, show "RESCHEDULED" status
-        if (room.status === INTERVIEW_ROOM_STATUS.SCHEDULED && isRescheduled) {
-            return (
-                <Chip
-                    label="Rescheduled"
-                    size="small"
-                    sx={{
-                        bgcolor: "rgba(3, 169, 244, 0.12)",
-                        color: "#0288d1",
-                        fontWeight: 600,
-                        fontSize: "0.7rem",
-                        height: 24,
-                        borderRadius: 1.5,
-                    }}
-                />
-            );
-        }
+        const config = getInterviewRoomStatusConfig(room.status, {
+            isRescheduled,
+            hasPendingReschedule,
+        });
 
-        // If has pending reschedule request, show "PENDING RESCHEDULE"
-        if (room.status === INTERVIEW_ROOM_STATUS.SCHEDULED && hasPendingReschedule) {
-            return (
-                <Chip
-                    label="Pending Reschedule"
-                    size="small"
-                    sx={{
-                        bgcolor: "rgba(255, 152, 0, 0.12)",
-                        color: "#e65100",
-                        fontWeight: 600,
-                        fontSize: "0.7rem",
-                        height: 24,
-                        borderRadius: 1.5,
-                    }}
-                />
-            );
-        }
-
-        const statusConfig = {
-            [INTERVIEW_ROOM_STATUS.SCHEDULED]: {
-                label: "Scheduled",
-                color: "primary",
-                sx: { bgcolor: "rgba(25, 118, 210, 0.12)", color: "#1565c0" }
-            },
-            [INTERVIEW_ROOM_STATUS.ON_GOING]: {
-                label: "Ongoing",
-                color: "success",
-                sx: { bgcolor: "rgba(46, 125, 50, 0.12)", color: "#2e7d32" }
-            },
-            [INTERVIEW_ROOM_STATUS.COMPLETED]: {
-                label: "Completed",
-                color: "default",
-                sx: { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#616161" }
-            },
-            [INTERVIEW_ROOM_STATUS.CANCELLED]: {
-                label: "Cancelled",
-                color: "error",
-                sx: { bgcolor: "rgba(211, 47, 47, 0.12)", color: "#c62828" }
-            },
-        };
-
-        const config = statusConfig[room.status] || statusConfig[INTERVIEW_ROOM_STATUS.SCHEDULED];
-
-        return (
-            <Chip
-                label={config.label}
-                size="small"
-                sx={{
-                    ...config.sx,
-                    fontWeight: 600,
-                    fontSize: "0.7rem",
-                    height: 24,
-                    borderRadius: 1.5,
-                }}
-            />
-        );
+        return <StatusChip label={config.label} color={config.color} />;
     };
 
     const getActionButton = () => {

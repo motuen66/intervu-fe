@@ -19,7 +19,6 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import MenuItem from "@mui/material/MenuItem";
-import TextField from "@mui/material/TextField";
 import Pagination from "@mui/material/Pagination";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
@@ -28,6 +27,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import Toolbar from "@mui/material/Toolbar";
 import toast from "react-hot-toast";
 import "./BookingRequestPage.css";
+import FormTextField from "../../../../common/components/form/FormTextField";
 
 const STATUS_COLOR_MAP = {
     [BOOKING_REQUEST_STATUS.PENDING]: "status-pending",
@@ -90,14 +90,7 @@ export default function BookingRequestListPage() {
         });
     };
 
-    const fieldSx = {
-        minWidth: 160,
-        "& .MuiOutlinedInput-root": {
-            "&:hover fieldset": { borderColor: "#667eea" },
-            "&.Mui-focused fieldset": { borderColor: "#667eea" },
-        },
-        "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-    };
+    const fieldSx = { minWidth: 160 };
 
     return (
         <Box className="booking-list-page">
@@ -114,7 +107,7 @@ export default function BookingRequestListPage() {
 
             {/* Filters */}
             <Box className="booking-list-filters">
-                <TextField
+                <FormTextField
                     select
                     size="small"
                     label="Type"
@@ -131,9 +124,9 @@ export default function BookingRequestListPage() {
                             {label}
                         </MenuItem>
                     ))}
-                </TextField>
+                </FormTextField>
 
-                <TextField
+                <FormTextField
                     select
                     size="small"
                     label="Status"
@@ -150,7 +143,7 @@ export default function BookingRequestListPage() {
                             {label}
                         </MenuItem>
                     ))}
-                </TextField>
+                </FormTextField>
             </Box>
 
             {/* Table */}

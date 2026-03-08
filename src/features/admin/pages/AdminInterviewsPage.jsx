@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-    Button,
     Container,
     Dialog,
     DialogActions,
@@ -12,23 +11,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import InterviewTypeManagementPage from "./InterviewTypeManagement/InterviewTypeManagementPage";
 import "./AdminDashboard.css";
 import "./AdminInterviewsPage.css";
+import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 
 export default function AdminInterviewsPage() {
     const [openTypesModal, setOpenTypesModal] = useState(false);
-    const primaryCtaSx = {
-        textTransform: "none",
-        background: "#2f5cf6",
-        color: "#ffffff",
-        px: 3,
-        py: 1,
-        borderRadius: "999px",
-        fontSize: "14px",
-        fontWeight: 600,
-        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
-        "&:hover": {
-            background: "#2952e6",
-        },
-    };
 
     return (
         <Container maxWidth="xl" className="admin-page admin-interviews-page">
@@ -37,13 +23,9 @@ export default function AdminInterviewsPage() {
                     <h2 className="admin-page-title">Interviews</h2>
                     <p className="admin-page-subtitle">Monitor interview activity and settings.</p>
                 </div>
-                <Button
-                    variant="contained"
-                    onClick={() => setOpenTypesModal(true)}
-                    sx={primaryCtaSx}
-                >
+                <PrimaryButton onClick={() => setOpenTypesModal(true)}>
                     Manage Interview Types
-                </Button>
+                </PrimaryButton>
             </div>
 
             <div className="admin-card admin-interviews-card">
@@ -82,9 +64,7 @@ export default function AdminInterviewsPage() {
                     <InterviewTypeManagementPage />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenTypesModal(false)} sx={primaryCtaSx}>
-                        Close
-                    </Button>
+                    <SecondaryButton onClick={() => setOpenTypesModal(false)}>Close</SecondaryButton>
                 </DialogActions>
             </Dialog>
         </Container>

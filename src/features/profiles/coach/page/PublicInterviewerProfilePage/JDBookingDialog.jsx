@@ -5,7 +5,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
@@ -21,6 +20,9 @@ import { AIM_LEVEL, AIM_LEVEL_LABELS } from "../../../../../common/constants/sta
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import { createJDBookingRequest } from "../../../../interview/services/bookingRequestApi";
 import toast from "react-hot-toast";
+import FormTextField from "../../../../../common/components/form/FormTextField";
+import { dialogStyles } from "../../../../../common/constants/uiStyles";
+import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 
 /**
  * Flow C: Candidate submits JD + CV for a multi-round interview plan
@@ -141,34 +143,13 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
         onClose();
     };
 
-    const primaryCtaSx = {
-        textTransform: "none",
-        background: "#2f5cf6",
-        color: "#ffffff",
-        px: 3,
-        py: 1,
-        borderRadius: "999px",
-        fontSize: "14px",
-        fontWeight: 600,
-        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
-        "&:hover": { background: "#2952e6" },
-    };
-
-    const fieldSx = {
-        "& .MuiOutlinedInput-root": {
-            "&:hover fieldset": { borderColor: "#667eea" },
-            "&.Mui-focused fieldset": { borderColor: "#667eea" },
-        },
-        "& .MuiInputLabel-root.Mui-focused": { color: "#667eea" },
-    };
-
     return (
         <Dialog
             open={open}
             onClose={handleClose}
             maxWidth="md"
             fullWidth
-            PaperProps={{ sx: { borderRadius: 3, background: "rgba(255,255,255,0.98)" } }}
+            PaperProps={{ sx: dialogStyles.paper }}
         >
             <DialogTitle
                 sx={{
@@ -210,37 +191,34 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                         <>
                             <Grid container spacing={2.5} direction="column">
                                 <Grid item xs={12} sx={{ width: "100%" }}>
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         label="Job Description URL"
                                         value={form.jobDescriptionUrl}
                                         onChange={(e) => setForm({ ...form, jobDescriptionUrl: e.target.value })}
                                         required
                                         placeholder="https://..."
-                                        sx={fieldSx}
                                     />
                                 </Grid>
 
                                 <Grid item xs={12} sx={{ width: "100%" }}>
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         label="CV URL"
                                         value={form.cvUrl}
                                         onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
                                         required
                                         placeholder="https://..."
-                                        sx={fieldSx}
                                     />
                                 </Grid>
 
                                 <Grid item xs={12} sx={{ width: "100%" }}>
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         select
                                         label="Target Level (optional)"
                                         value={form.aimLevel}
                                         onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
-                                        sx={fieldSx}
                                     >
                                         <MenuItem value="">None</MenuItem>
                                         {Object.entries(AIM_LEVEL_LABELS).map(([val, label]) => (
@@ -248,7 +226,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                 {label}
                                             </MenuItem>
                                         ))}
-                                    </TextField>
+                                    </FormTextField>
                                 </Grid>
                             </Grid>
 
@@ -305,7 +283,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                         </Stack>
                                         <Grid container spacing={2}>
                                             <Grid item xs={12} sm={6}>
-                                                <TextField
+                                                <FormTextField
                                                     fullWidth
                                                     select
                                                     size="small"
@@ -315,7 +293,6 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                         updateRound(index, "coachInterviewServiceId", e.target.value)
                                                     }
                                                     required
-                                                    sx={fieldSx}
                                                 >
                                                     {services.map((svc) => (
                                                         <MenuItem key={svc.id} value={svc.id}>
@@ -324,10 +301,10 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                             {svc.price?.toLocaleString()} ₫
                                                         </MenuItem>
                                                     ))}
-                                                </TextField>
+                                                </FormTextField>
                                             </Grid>
                                             <Grid item xs={12} sm={6}>
-                                                <TextField
+                                                <FormTextField
                                                     fullWidth
                                                     size="small"
                                                     label="Start Time"
@@ -339,7 +316,6 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     inputProps={{
                                                         min: new Date().toISOString().slice(0, 16),
                                                     }}
-                                                    sx={fieldSx}
                                                 />
                                             </Grid>
                                         </Grid>
@@ -374,12 +350,12 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     {error && <Typography sx={{ color: "error.main", mt: 2, fontSize: "0.85rem" }}>{error}</Typography>}
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                    <Button onClick={handleClose} disabled={saving} sx={primaryCtaSx}>
+                    <SecondaryButton onClick={handleClose} disabled={saving}>
                         Cancel
-                    </Button>
-                    <Button type="submit" variant="contained" disabled={saving} sx={primaryCtaSx}>
-                        {saving ? "Submitting..." : "Submit Booking Request"}
-                    </Button>
+                    </SecondaryButton>
+                    <PrimaryButton type="submit" loading={saving}>
+                        Submit Booking Request
+                    </PrimaryButton>
                 </DialogActions>
             </form>
         </Dialog>
