@@ -11,7 +11,8 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
-import { Box, Button, Typography, Card, Stack, CircularProgress, CardContent } from "@mui/material";
+import { Box, Typography, Card, Stack, CircularProgress, CardContent } from "@mui/material";
+import { PrimaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
@@ -500,20 +501,16 @@ const ScheduleManagement = () => {
                             </Typography>
                         </div>
 
-                        <Button
-                            variant="contained"
-                            color="primary"
+                        <PrimaryButton
                             startIcon={<IoAdd size={18} />}
                             onClick={handleAddClick}
                             sx={{
-                                fontWeight: 600,
-                                textTransform: "none",
                                 py: 1.25,
                                 px: 3,
                             }}
                         >
                             Add Slot
-                        </Button>
+                        </PrimaryButton>
                     </Stack>
 
                     {/* Main Content */}

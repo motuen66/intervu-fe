@@ -1,4 +1,5 @@
-import { Box, Typography, Stack, Button, Tabs, Tab, CircularProgress } from "@mui/material";
+import { Box, Typography, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
@@ -319,21 +320,17 @@ function InterviewRoomListPage() {
                     </Box>
                     <Stack direction="row" spacing={2}>
                         {user?.role === ROLES.CANDIDATE && (
-                            <Button
-                                variant="outlined"
+                            <SecondaryButton
                                 onClick={() => handleOpenFeedbackModal("all")}
-                                sx={{ borderRadius: 2, fontWeight: 600 }}
                             >
                                 View All Feedbacks
-                            </Button>
+                            </SecondaryButton>
                         )}
-                        <Button
-                            variant="contained"
+                        <PrimaryButton
                             startIcon={<AddIcon />}
-                            sx={{ borderRadius: 2, fontWeight: 600, boxShadow: "none" }}
                         >
                             Book New Session
-                        </Button>
+                        </PrimaryButton>
                     </Stack>
                 </Stack>
 

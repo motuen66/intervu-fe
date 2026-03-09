@@ -3,7 +3,6 @@ import {
     Typography,
     Avatar,
     Stack,
-    Button,
 } from "@mui/material";
 import { Calendar, Clock, Code } from "lucide-react";
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";

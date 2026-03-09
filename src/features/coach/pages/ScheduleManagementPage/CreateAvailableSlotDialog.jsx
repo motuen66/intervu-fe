@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
     Box,
-    Button,
     TextField,
     Typography,
     Modal,
@@ -12,6 +11,7 @@ import {
     MenuItem,
     Chip,
 } from "@mui/material";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
 import toast from "react-hot-toast";
 
@@ -118,13 +118,12 @@ const CreateAvailableSlotDialog = ({
                                     size="small"
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 />
-                                <Button
-                                    variant="outlined"
+                                <SecondaryButton
                                     onClick={handleAddDuplicateDate}
                                     sx={{ minWidth: "auto", px: 1 }}
                                 >
                                     <IoAdd size={20} />
-                                </Button>
+                                </SecondaryButton>
                             </Stack>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                                 {formData.duplicateDates?.map((date) => (
@@ -212,22 +211,17 @@ const CreateAvailableSlotDialog = ({
                         </Box>
 
                         <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
-                            <Button
-                                variant="outlined"
+                            <SecondaryButton
                                 onClick={onClose}
-                                sx={{ textTransform: "none", borderColor: "divider", color: "text.secondary" }}
                             >
                                 Cancel
-                            </Button>
-                            <Button
-                                variant="contained"
-                                color="primary"
+                            </SecondaryButton>
+                            <PrimaryButton
                                 onClick={handleSubmit}
-                                disabled={loading}
-                                sx={{ textTransform: "none" }}
+                                loading={loading}
                             >
                                 Create
-                            </Button>
+                            </PrimaryButton>
                         </Stack>
                     </Stack>
                 </Box>

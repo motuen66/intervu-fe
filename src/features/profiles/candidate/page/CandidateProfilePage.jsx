@@ -15,15 +15,14 @@ import {
     Stack,
     Typography,
     Alert,
-    IconButton,
-    TextField,
     Autocomplete,
-    Button,
     Fade,
     Divider,
     Paper,
     Link,
+    IconButton,
 } from "@mui/material";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import {
     Edit3 as EditIcon,
     X as CloseIcon,
@@ -440,9 +439,7 @@ function CandidateProfilePage() {
                     {canEdit && editMode && (
                         <>
                             <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                                <Button
-                                    variant="outlined"
-                                    color="inherit"
+                                <SecondaryButton
                                     startIcon={<CloseIcon size={18} strokeWidth={2} />}
                                     onClick={async () => {
                                         setEditMode(false);
@@ -450,16 +447,14 @@ function CandidateProfilePage() {
                                     }}
                                 >
                                     Cancel
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
+                                </SecondaryButton>
+                                <PrimaryButton
                                     startIcon={<SaveIcon size={18} strokeWidth={2} />}
                                     onClick={() => setShowConfirmSave(true)}
-                                    disabled={saving}
+                                    loading={saving}
                                 >
-                                    {saving ? "Saving..." : "Save changes"}
-                                </Button>
+                                    Save changes
+                                </PrimaryButton>
                             </Box>
 
                             <ConfirmModal

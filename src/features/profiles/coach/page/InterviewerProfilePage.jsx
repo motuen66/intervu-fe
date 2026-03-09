@@ -7,25 +7,19 @@ import { interviewerProfileEndPoints } from "../service/coachProfileApi";
 import {
     Avatar,
     Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    Divider,
-    Grid,
-    Stack,
-    Typography,
-    Paper,
-    Rating,
-    Container,
-    Fade,
-    Alert,
-    IconButton,
-    TextField,
     Link,
     Autocomplete,
+    Typography,
+    Stack,
+    Grid,
+    Paper,
+    Card,
+    CardContent,
+    Divider,
+    TextField,
+    IconButton,
 } from "@mui/material";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
 import {
     Edit3 as EditIcon,
@@ -729,18 +723,17 @@ function InterviewerProfilePage() {
             {editMode && profile && (
                 <>
                     <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                        <Button variant="outlined" onClick={() => setEditMode(false)} disabled={saving}>
+                        <SecondaryButton onClick={() => setEditMode(false)} disabled={saving}>
                             Cancel
-                        </Button>
-                        <Button
-                            variant="contained"
+                        </SecondaryButton>
+                        <PrimaryButton
                             size="large"
-                            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon size={18} strokeWidth={2} />}
+                            startIcon={<SaveIcon size={18} strokeWidth={2} />}
                             onClick={() => setShowConfirmSave(true)}
-                            disabled={saving}
+                            loading={saving}
                         >
-                            {saving ? "Saving..." : "Save Changes"}
-                        </Button>
+                            Save Changes
+                        </PrimaryButton>
                     </Box>
 
                     <ConfirmModal

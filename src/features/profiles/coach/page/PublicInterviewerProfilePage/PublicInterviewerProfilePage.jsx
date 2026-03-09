@@ -7,7 +7,6 @@ import CoachServicesSection from "../../../../coach/pages/CoachInterviewServiceP
 import {
     Avatar,
     Box,
-    Button,
     Card,
     CardContent,
     Chip,
@@ -20,6 +19,7 @@ import {
     Skeleton,
     useTheme,
 } from "@mui/material";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
 import BookingSlotDialog from "./BookingSlotDialog";
 import ExternalBookingDialog from "./ExternalBookingDialog";
 import JDBookingDialog from "./JDBookingDialog";
@@ -301,13 +301,11 @@ function PublicInterviewerProfilePage() {
                                             ))}
 
                                             {profile.reviews.length > 2 && (
-                                                <Button
-                                                    variant="text"
-                                                    color="primary"
-                                                    sx={{ alignSelf: "flex-start", textTransform: "none" }}
+                                                <TextButton
+                                                    sx={{ alignSelf: "flex-start" }}
                                                 >
                                                     See all {profile.reviews.length} reviews
-                                                </Button>
+                                                </TextButton>
                                             )}
                                         </Stack>
                                     ) : (
@@ -416,72 +414,49 @@ function PublicInterviewerProfilePage() {
                                         </Stack>
                                     </Stack>
 
-                                    <Button
+                                    <PrimaryButton
                                         fullWidth
-                                        variant="contained"
                                         size="large"
                                         onClick={() => setBookingDialogOpen(true)}
                                         sx={{
-                                            backgroundColor: "primary.main",
-                                            "&:hover": { backgroundColor: "primary.dark" },
                                             borderRadius: "8px",
                                             py: 1.5,
                                             fontSize: "1rem",
-                                            fontWeight: 600,
-                                            textTransform: "none",
                                             mb: 1,
                                         }}
                                     >
                                         Book Available Slot
-                                    </Button>
+                                    </PrimaryButton>
 
-                                    <Button
+                                    <SecondaryButton
                                         fullWidth
-                                        variant="outlined"
                                         size="large"
                                         startIcon={<Send size={18} strokeWidth={2} />}
                                         onClick={() => setExternalBookingOpen(true)}
                                         sx={{
-                                            borderColor: "primary.main",
-                                            color: "primary.main",
-                                            "&:hover": {
-                                                borderColor: "primary.dark",
-                                                backgroundColor: "rgba(15,23,42,0.04)",
-                                            },
                                             borderRadius: "8px",
                                             py: 1.5,
                                             fontSize: "0.9rem",
-                                            fontWeight: 600,
-                                            textTransform: "none",
                                             mb: 1,
                                         }}
                                     >
                                         Request External Booking
-                                    </Button>
+                                    </SecondaryButton>
 
-                                    <Button
+                                    <SecondaryButton
                                         fullWidth
-                                        variant="outlined"
                                         size="large"
                                         startIcon={<FileText size={18} strokeWidth={2} />}
                                         onClick={() => setJdBookingOpen(true)}
                                         sx={{
-                                            borderColor: "primary.main",
-                                            color: "primary.main",
-                                            "&:hover": {
-                                                borderColor: "primary.dark",
-                                                backgroundColor: "rgba(15,23,42,0.04)",
-                                            },
                                             borderRadius: "8px",
                                             py: 1.5,
                                             fontSize: "0.9rem",
-                                            fontWeight: 600,
-                                            textTransform: "none",
                                             mb: 2,
                                         }}
                                     >
                                         JD Multi-Round Booking
-                                    </Button>
+                                    </SecondaryButton>
                                 </CardContent>
                             </Card>
                         </Box>

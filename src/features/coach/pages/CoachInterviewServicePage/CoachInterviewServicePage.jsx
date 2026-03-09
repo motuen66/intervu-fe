@@ -6,14 +6,14 @@ import { METHOD } from "../../../../common/constants/api";
 import CreateCoachServiceDialog from "./CreateCoachServiceDialog";
 import UpdateCoachServiceDialog from "./UpdateCoachServiceDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import CircularProgress from "@mui/material/CircularProgress";
-import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
+import {
+    Box,
+    Toolbar,
+    Typography,
+    CircularProgress,
+    IconButton,
+} from "@mui/material";
+import { Edit2 as EditIcon, Trash2 as DeleteIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import "./CoachInterviewServicePage.css";
 import { PrimaryButton } from "../../../../common/components/buttons";
