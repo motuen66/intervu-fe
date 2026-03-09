@@ -13,11 +13,10 @@ export default function BaseCard({ onClick, sx, children, ...props }) {
                 cursor: onClick ? "pointer" : "default",
                 "&:hover": onClick
                     ? {
-                          borderColor: "primary.main",
-                          boxShadow: 1,
-                          transform: "translateY(-1px)",
-                      }
-                    : undefined,
+                        borderColor: "primary.main",
+                        boxShadow: 1,
+                    }
+                    : {},
                 ...(typeof sx === "function" ? sx(theme) : sx),
             })}
             {...props}

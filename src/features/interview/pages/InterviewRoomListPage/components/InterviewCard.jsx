@@ -11,6 +11,7 @@ import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { ROLES } from "../../../../../common/constants/common";
 import { useNavigate } from "react-router-dom";
 import StatusChip from "../../../../../common/components/StatusChip";
+import BaseCard from "../../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
 import { getInterviewRoomStatusConfig } from "../../../../../common/constants/statusConfig";
 
@@ -131,7 +132,7 @@ function InterviewCard({
     };
 
     return (
-        <Box
+        <BaseCard
             onClick={() => {
                 // Only allow navigation for SCHEDULED interviews
                 // ONGOING: Only Join button should work
@@ -142,16 +143,6 @@ function InterviewCard({
             }}
             sx={{
                 p: 2.5,
-                bgcolor: "background.paper",
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: "divider",
-                cursor: onClick ? "pointer" : "default",
-                transition: "all 0.2s ease-in-out",
-                "&:hover": onClick ? {
-                    borderColor: "primary.main",
-                    boxShadow: 1,
-                } : {},
             }}
         >
             {/* Top Row: Avatar, Title, Status */}
@@ -222,7 +213,7 @@ function InterviewCard({
 
                 {getActionButton()}
             </Stack>
-        </Box>
+        </BaseCard>
     );
 }
 

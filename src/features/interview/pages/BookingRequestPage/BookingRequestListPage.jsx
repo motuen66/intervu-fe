@@ -28,14 +28,15 @@ import Toolbar from "@mui/material/Toolbar";
 import toast from "react-hot-toast";
 import "./BookingRequestPage.css";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import StatusChip from "../../../../common/components/StatusChip";
 
 const STATUS_COLOR_MAP = {
-    [BOOKING_REQUEST_STATUS.PENDING]: "status-pending",
-    [BOOKING_REQUEST_STATUS.ACCEPTED]: "status-accepted",
-    [BOOKING_REQUEST_STATUS.REJECTED]: "status-rejected",
-    [BOOKING_REQUEST_STATUS.PAID]: "status-paid",
-    [BOOKING_REQUEST_STATUS.EXPIRED]: "status-expired",
-    [BOOKING_REQUEST_STATUS.CANCELLED]: "status-cancelled",
+    [BOOKING_REQUEST_STATUS.PENDING]: "warning",
+    [BOOKING_REQUEST_STATUS.ACCEPTED]: "success",
+    [BOOKING_REQUEST_STATUS.REJECTED]: "error",
+    [BOOKING_REQUEST_STATUS.PAID]: "info",
+    [BOOKING_REQUEST_STATUS.EXPIRED]: "default",
+    [BOOKING_REQUEST_STATUS.CANCELLED]: "default",
 };
 
 export default function BookingRequestListPage() {
@@ -160,8 +161,8 @@ export default function BookingRequestListPage() {
                         {typeFilter || statusFilter
                             ? "Try adjusting your filters."
                             : isCoach
-                              ? "You have no incoming booking requests yet."
-                              : "You haven't submitted any booking requests yet."}
+                                ? "You have no incoming booking requests yet."
+                                : "You haven't submitted any booking requests yet."}
                     </Typography>
                 </Box>
             ) : (
@@ -200,11 +201,9 @@ export default function BookingRequestListPage() {
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
-                                            <Chip
+                                            <StatusChip
                                                 label={BOOKING_REQUEST_TYPE_LABELS[req.type] || "Unknown"}
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{ fontSize: 12, fontWeight: 600 }}
+                                                color="default"
                                             />
                                         </TableCell>
                                         <TableCell>
@@ -219,9 +218,10 @@ export default function BookingRequestListPage() {
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
-                                            <span className={`status-chip ${STATUS_COLOR_MAP[req.status] || ""}`}>
-                                                {BOOKING_REQUEST_STATUS_LABELS[req.status] || "Unknown"}
-                                            </span>
+                                            <StatusChip
+                                                label={BOOKING_REQUEST_STATUS_LABELS[req.status] || "Unknown"}
+                                                color={STATUS_COLOR_MAP[req.status] || "default"}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             <Typography fontSize={13} color="text.secondary">

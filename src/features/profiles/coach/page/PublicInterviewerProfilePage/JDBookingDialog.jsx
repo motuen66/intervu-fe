@@ -237,18 +237,17 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                 <Typography fontWeight={700} fontSize="0.95rem" color="#111827">
                                     Interview Rounds (min. 2)
                                 </Typography>
-                                <Button
+                                <SecondaryButton
                                     size="small"
                                     startIcon={<AddIcon />}
                                     onClick={addRound}
                                     sx={{
-                                        textTransform: "none",
-                                        color: "var(--mui-palette-primary-main)",
-                                        fontWeight: 600,
+                                        border: "none",
+                                        "&:hover": { border: "none", bgcolor: "rgba(15,23,42,0.06)" }
                                     }}
                                 >
                                     Add Round
-                                </Button>
+                                </SecondaryButton>
                             </Stack>
 
                             <Stack spacing={2}>

@@ -29,6 +29,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { DangerButton, PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import StatusChip from "../../../../common/components/StatusChip";
 import LinkIcon from "@mui/icons-material/Link";
 import CloseIcon from "@mui/icons-material/Close";
 import PaymentIcon from "@mui/icons-material/Payment";
@@ -37,12 +38,12 @@ import toast from "react-hot-toast";
 import "./BookingRequestPage.css";
 
 const STATUS_COLOR_MAP = {
-    [BOOKING_REQUEST_STATUS.PENDING]: "status-pending",
-    [BOOKING_REQUEST_STATUS.ACCEPTED]: "status-accepted",
-    [BOOKING_REQUEST_STATUS.REJECTED]: "status-rejected",
-    [BOOKING_REQUEST_STATUS.PAID]: "status-paid",
-    [BOOKING_REQUEST_STATUS.EXPIRED]: "status-expired",
-    [BOOKING_REQUEST_STATUS.CANCELLED]: "status-cancelled",
+    [BOOKING_REQUEST_STATUS.PENDING]: "warning",
+    [BOOKING_REQUEST_STATUS.ACCEPTED]: "success",
+    [BOOKING_REQUEST_STATUS.REJECTED]: "error",
+    [BOOKING_REQUEST_STATUS.PAID]: "info",
+    [BOOKING_REQUEST_STATUS.EXPIRED]: "default",
+    [BOOKING_REQUEST_STATUS.CANCELLED]: "default",
 };
 
 export default function BookingRequestDetailPage() {
@@ -202,9 +203,10 @@ export default function BookingRequestDetailPage() {
                             Created {formatDate(detail.createdAt)}
                         </Typography>
                     </div>
-                    <span className={`status-chip ${STATUS_COLOR_MAP[detail.status] || ""}`}>
-                        {BOOKING_REQUEST_STATUS_LABELS[detail.status] || "Unknown"}
-                    </span>
+                    <StatusChip
+                        label={BOOKING_REQUEST_STATUS_LABELS[detail.status] || "Unknown"}
+                        color={STATUS_COLOR_MAP[detail.status] || "default"}
+                    />
                 </div>
 
                 <div className="detail-grid">
@@ -325,17 +327,10 @@ export default function BookingRequestDetailPage() {
                                     <div className="round-title">
                                         Round {round.roundNumber}: {round.interviewTypeName || "Interview"}
                                         {round.isCoding && (
-                                            <Chip
+                                            <StatusChip
                                                 label="Coding"
-                                                size="small"
-                                                sx={{
-                                                    ml: 1,
-                                                    height: 20,
-                                                    fontSize: "0.7rem",
-                                                    backgroundColor: "rgba(34,197,94,0.12)",
-                                                    color: "#15803d",
-                                                    fontWeight: 600,
-                                                }}
+                                                color="success"
+                                                sx={{ ml: 1 }}
                                             />
                                         )}
                                     </div>
@@ -387,10 +382,10 @@ export default function BookingRequestDetailPage() {
                     {/* Cancel button — when Pending or Accepted */}
                     {(detail.status === BOOKING_REQUEST_STATUS.PENDING ||
                         detail.status === BOOKING_REQUEST_STATUS.ACCEPTED) && (
-                        <DangerButton loading={cancelling} onClick={handleCancel} startIcon={<CancelIcon />}>
-                            Cancel Request
-                        </DangerButton>
-                    )}
+                            <DangerButton loading={cancelling} onClick={handleCancel} startIcon={<CancelIcon />}>
+                                Cancel Request
+                            </DangerButton>
+                        )}
                 </Stack>
             )}
 
