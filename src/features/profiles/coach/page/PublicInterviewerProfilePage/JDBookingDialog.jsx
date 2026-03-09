@@ -257,7 +257,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                         key={index}
                                         sx={{
                                             p: 2,
-                                            borderRadius: 2,
+                                            borderRadius: "8px",
                                             border: "1px solid #e2e8f0",
                                             backgroundColor: "#fafbfc",
                                         }}
@@ -329,7 +329,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                     sx={{
                                         mt: 2,
                                         p: 1.5,
-                                        borderRadius: 2,
+                                        borderRadius: "8px",
                                         backgroundColor: "#f0f4ff",
                                         display: "flex",
                                         justifyContent: "space-between",

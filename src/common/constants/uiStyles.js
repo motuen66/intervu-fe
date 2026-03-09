@@ -94,7 +94,7 @@ export const fieldStyles = {
 // ─── Modals / Dialogs ──────────────────────────────────────────────────────────
 export const dialogStyles = {
     paper: (theme) => ({
-        borderRadius: 16,
+        borderRadius: "16px",
         backgroundColor: theme.palette.background.paper,
         border: "1px solid",
         borderColor: theme.palette.divider,

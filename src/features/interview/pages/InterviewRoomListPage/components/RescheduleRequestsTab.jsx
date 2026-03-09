@@ -20,7 +20,10 @@ import { Clock, Code, ArrowRight, Calendar, MoreHorizontal, X } from "lucide-rea
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import ConfirmModal from "../../../../../common/components/ConfirmModal";
 import StatusChip from "../../../../../common/components/StatusChip";
+import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
+import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import { getRescheduleRequestStatusConfig } from "../../../../../common/constants/statusConfig";
+import { alpha } from "@mui/material/styles";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -52,9 +55,8 @@ const MutedChip = ({ label, color }) => {
                 ...(!isGray && {
                     bgcolor: (theme) => {
                         const mainColor = theme.palette[color].main;
-                        // Extremely simple faux-opacity for hex colors by relying on a known lighter shade if available, 
-                        // or using the built in alpha if we had it. Since we don't, we'll try to pick from lighter.
-                        return theme.palette[color].lighter || `${mainColor}20`; // 20 hex = ~12% opacity
+                        // Use alpha() to properly handle both hex and CSS variables
+                        return alpha(mainColor, 0.12);
                     }
                 })
             }}
@@ -254,37 +256,28 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                 <Box sx={{ minWidth: 100 }}>
                     {isWaitingForMyResponse && (
                         <Stack direction="row" spacing={0.75}>
-                            <Button
-                                variant="contained"
-                                color="success"
+                            <SuccessButton
                                 size="small"
                                 onClick={() => onApprove(request)}
                                 sx={{
-                                    borderRadius: 1,
-                                    fontWeight: 600,
-                                    boxShadow: "none",
                                     px: 1.5,
                                     py: 0.5,
                                     fontSize: "0.75rem",
                                 }}
                             >
                                 Approve
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                color="error"
+                            </SuccessButton>
+                            <DangerButton
                                 size="small"
                                 onClick={() => onReject(request)}
                                 sx={{
-                                    borderRadius: 1,
-                                    fontWeight: 600,
                                     px: 1.5,
                                     py: 0.5,
                                     fontSize: "0.75rem",
                                 }}
                             >
                                 Reject
-                            </Button>
+                            </DangerButton>
                         </Stack>
                     )}
                 </Box>
@@ -507,6 +500,7 @@ function RescheduleRequestsTab({
                     onClose={handleCancel}
                     maxWidth="sm"
                     fullWidth
+                    PaperProps={{ sx: dialogStyles.paper }}
                 >
                     <DialogTitle>Reject Reschedule Request</DialogTitle>
                     <DialogContent>
@@ -525,18 +519,17 @@ function RescheduleRequestsTab({
                             required
                         />
                     </DialogContent>
-                    <DialogActions sx={{ px: 3, pb: 2 }}>
-                        <Button onClick={handleCancel} color="inherit">
+                    <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+                        <SecondaryButton onClick={handleCancel}>
                             Cancel
-                        </Button>
-                        <Button
+                        </SecondaryButton>
+                        <DangerButton
                             onClick={handleConfirm}
-                            variant="contained"
-                            color="error"
                             disabled={!rejectReason.trim()}
+                            variant="contained"
                         >
                             Reject
-                        </Button>
+                        </DangerButton>
                     </DialogActions>
                 </Dialog>
             )}

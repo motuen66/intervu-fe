@@ -164,7 +164,7 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                                     <Box
                                         sx={{
                                             p: 1.5,
-                                            borderRadius: 2,
+                                            borderRadius: "8px",
                                             backgroundColor: "#f0f4ff",
                                             fontSize: "0.82rem",
                                             color: "#4338ca",

@@ -32,6 +32,7 @@ import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import toast from "react-hot-toast";
+import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 import "./BookingSlotDialog.css";
 
 const STEPS = ["Select Service", "Pick Time on Calendar"];
@@ -550,49 +551,34 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
             <DialogActions sx={{ p: 2, gap: 1, justifyContent: "space-between" }}>
                 <Box>
                     {activeStep === 1 && (
-                        <Button
+                        <SecondaryButton
                             onClick={handleBackStep}
-                            variant="text"
                             startIcon={<ArrowBackIcon />}
-                            sx={{ color: "var(--mui-palette-primary-main)" }}
+                            sx={{ border: "none", "&:hover": { border: "none", bgcolor: "action.hover" } }}
                         >
                             Back
-                        </Button>
+                        </SecondaryButton>
                     )}
                 </Box>
-                <Stack direction="row" spacing={1}>
-                    <Button onClick={onClose} variant="outlined" color="inherit">
+                <Stack direction="row" spacing={1.5}>
+                    <SecondaryButton onClick={onClose}>
                         Cancel
-                    </Button>
+                    </SecondaryButton>
                     {activeStep === 0 ? (
-                        <Button
+                        <PrimaryButton
                             onClick={handleNextStep}
-                            variant="contained"
                             disabled={!selectedService}
-                            sx={{
-                                backgroundColor: "var(--mui-palette-primary-main)",
-                                fontWeight: 600,
-                                "&:hover": { backgroundColor: "#4338CA" },
-                                "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
-                            }}
                         >
                             Next
-                        </Button>
+                        </PrimaryButton>
                     ) : (
-                        <Button
+                        <PrimaryButton
                             onClick={handleConfirmBooking}
-                            variant="contained"
                             disabled={!canConfirm || submitting}
                             loading={submitting}
-                            sx={{
-                                backgroundColor: "var(--mui-palette-primary-main)",
-                                fontWeight: 600,
-                                "&:hover": { backgroundColor: "#4338CA" },
-                                "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
-                            }}
                         >
                             Confirm & Pay
-                        </Button>
+                        </PrimaryButton>
                     )}
                 </Stack>
             </DialogActions>

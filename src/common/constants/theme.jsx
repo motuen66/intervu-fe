@@ -74,7 +74,7 @@ export const theme = createTheme({
         button: { fontFamily: headingFont, textTransform: "none", fontWeight: 700, fontSize: "0.9375rem", letterSpacing: "0" },
     },
     shape: {
-        borderRadius: 10,  // Rounded-rect base — NOT pill, matching mockup
+        borderRadius: 8,  // Default base radius
     },
     components: {
         MuiCssBaseline: {
@@ -89,7 +89,7 @@ export const theme = createTheme({
             defaultProps: { disableElevation: true },
             styleOverrides: {
                 root: {
-                    borderRadius: 8,    // Rounded-rect as seen in mockup
+                    borderRadius: "8px",    // Rounded-rect as seen in mockup
                     fontWeight: 700,
                     transition: "all 0.2s ease-in-out",
                     "&:active": { transform: "scale(0.98)" },
@@ -130,7 +130,7 @@ export const theme = createTheme({
         MuiCard: {
             styleOverrides: {
                 root: {
-                    borderRadius: 16,
+                    borderRadius: "16px",
                     // Long, soft, Navy-tinted shadow — "floating" feel as in prototype
                     boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.06)",
                     border: "1px solid rgba(226, 232, 240, 0.8)",
@@ -144,7 +144,7 @@ export const theme = createTheme({
         },
         MuiPaper: {
             styleOverrides: {
-                rounded: { borderRadius: 12 },
+                rounded: { borderRadius: "12px" },
                 // Navy-tinted shadows for all Paper elevations
                 elevation1: { boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.05)" },
                 elevation2: { boxShadow: "0 2px 4px rgba(15,23,42,0.05), 0 8px 20px rgba(15,23,42,0.07)" },
@@ -174,7 +174,7 @@ export const theme = createTheme({
             styleOverrides: {
                 root: {
                     "& .MuiOutlinedInput-root": {
-                        borderRadius: 8,
+                        borderRadius: "8px",
                         backgroundColor: "#FFFFFF",
                         "& fieldset": { borderColor: "#E2E8F0" },
                         "&:hover fieldset": { borderColor: "#94A3B8" },
@@ -193,7 +193,7 @@ export const theme = createTheme({
         MuiChip: {
             styleOverrides: {
                 root: {
-                    borderRadius: 6,
+                    borderRadius: "6px",
                     fontWeight: 600,
                     fontSize: "0.75rem",
                     border: "1px solid #E2E8F0",
@@ -253,7 +253,7 @@ export const theme = createTheme({
                 tooltip: {
                     backgroundColor: "#0F172A",
                     fontSize: "0.75rem",
-                    borderRadius: 6,
+                    borderRadius: "6px",
                     padding: "6px 10px",
                 },
             },
@@ -270,7 +270,7 @@ export const theme = createTheme({
         },
         MuiSelect: {
             styleOverrides: {
-                outlined: { borderRadius: 8 },
+                outlined: { borderRadius: "8px" },
             },
         },
         MuiBadge: {

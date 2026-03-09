@@ -11,6 +11,7 @@ import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { ROLES } from "../../../../../common/constants/common";
 import { useNavigate } from "react-router-dom";
 import StatusChip from "../../../../../common/components/StatusChip";
+import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
 import { getInterviewRoomStatusConfig } from "../../../../../common/constants/statusConfig";
 
 function InterviewCard({
@@ -65,71 +66,37 @@ function InterviewCard({
                 <Stack direction="row" spacing={1} alignItems="center">
                     {/* Reschedule Button */}
                     {canReschedule ? (
-                        <Button
-                            variant="outlined"
-                            color="primary"
+                        <SecondaryButton
                             size="small"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onRequestReschedule?.(room);
                             }}
-                            sx={{
-                                fontWeight: 600,
-                                fontSize: "0.8rem",
-                                textTransform: "none",
-                                borderRadius: 1.5,
-                                px: 2,
-                                "&:hover": {
-                                    bgcolor: "primary.main",
-                                    color: "#fff",
-                                    borderColor: "primary.main",
-                                },
-                            }}
+                            sx={{ fontSize: "0.8rem", px: 2 }}
                         >
                             Reschedule
-                        </Button>
+                        </SecondaryButton>
                     ) : (
-                        <Button
-                            variant="outlined"
-                            color="primary"
+                        <SecondaryButton
                             size="small"
                             disabled
-                            sx={{
-                                fontWeight: 600,
-                                fontSize: "0.8rem",
-                                textTransform: "none",
-                                borderRadius: 1.5,
-                                px: 2,
-                            }}
+                            sx={{ fontSize: "0.8rem", px: 2 }}
                         >
                             Reschedule
-                        </Button>
+                        </SecondaryButton>
                     )}
 
                     {/* Cancel Button - Always visible */}
-                    <Button
-                        variant="outlined"
-                        color="error"
+                    <DangerButton
                         size="small"
                         onClick={(e) => {
                             e.stopPropagation();
                             onCancel?.(room);
                         }}
-                        sx={{
-                            fontWeight: 600,
-                            fontSize: "0.8rem",
-                            textTransform: "none",
-                            borderRadius: 1.5,
-                            px: 2,
-                            "&:hover": {
-                                bgcolor: "error.main",
-                                color: "#fff",
-                                borderColor: "error.main",
-                            },
-                        }}
+                        sx={{ fontSize: "0.8rem", px: 2 }}
                     >
                         Cancel
-                    </Button>
+                    </DangerButton>
                 </Stack>
             );
         }
@@ -137,26 +104,16 @@ function InterviewCard({
         // ONGOING: Show Join button (interview is happening NOW)
         if (room.status === INTERVIEW_ROOM_STATUS.ON_GOING) {
             return (
-                <Button
-                    variant="contained"
-                    color="success"
+                <SuccessButton
                     size="small"
                     onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/interview/room/${room.id}`);
                     }}
-                    sx={{
-                        fontWeight: 600,
-                        fontSize: "0.875rem",
-                        borderRadius: 1.5,
-                        boxShadow: "none",
-                        "&:hover": {
-                            boxShadow: 1,
-                        }
-                    }}
+                    sx={{ fontSize: "0.875rem", boxShadow: "none" }}
                 >
                     Join Now
-                </Button>
+                </SuccessButton>
             );
         }
 

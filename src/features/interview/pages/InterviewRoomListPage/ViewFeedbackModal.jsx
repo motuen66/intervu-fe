@@ -14,6 +14,8 @@ import {
     Chip,
     Rating,
 } from "@mui/material";
+import { SecondaryButton } from "../../../../common/components/buttons";
+import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import StarIcon from "@mui/icons-material/Star";
@@ -37,19 +39,19 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
                 method: METHOD.GET,
                 endpoint: `/Feedbacks/interview-room/${interviewRoomId}`,
             });
-            
+
             console.log("Feedback API Response:", res);
-            
+
             if (res.success && res.data) {
                 console.log("Feedback Data:", res.data);
-                
+
                 // Handle both array and single object response
                 let feedbackData = res.data;
                 if (Array.isArray(res.data) && res.data.length > 0) {
                     feedbackData = res.data[0]; // Get first feedback if array
                     console.log("Using first feedback from array:", feedbackData);
                 }
-                
+
                 setFeedback(feedbackData);
             } else {
                 console.log("No feedback found in response");
@@ -70,7 +72,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
     };
 
     return (
-        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth PaperProps={{ sx: dialogStyles.paper }}>
             <DialogTitle>
                 <Typography variant="h5" component="div" fontWeight={600}>
                     Interview Feedback
@@ -127,7 +129,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
                                 sx={{
                                     bgcolor: "grey.50",
                                     p: 2,
-                                    borderRadius: 2,
+                                    borderRadius: "8px",
                                     border: "1px solid",
                                     borderColor: "grey.200",
                                 }}
@@ -148,7 +150,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
                                     sx={{
                                         bgcolor: "success.50",
                                         p: 2,
-                                        borderRadius: 2,
+                                        borderRadius: "8px",
                                         border: "1px solid",
                                         borderColor: "success.200",
                                     }}
@@ -170,7 +172,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
                                     sx={{
                                         bgcolor: "warning.50",
                                         p: 2,
-                                        borderRadius: 2,
+                                        borderRadius: "8px",
                                         border: "1px solid",
                                         borderColor: "warning.200",
                                     }}
@@ -208,10 +210,10 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
                 )}
             </DialogContent>
 
-            <DialogActions>
-                <Button onClick={handleClose} variant="outlined">
+            <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
+                <SecondaryButton onClick={handleClose}>
                     Close
-                </Button>
+                </SecondaryButton>
             </DialogActions>
         </Dialog>
     );
