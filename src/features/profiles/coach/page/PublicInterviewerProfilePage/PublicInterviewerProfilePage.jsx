@@ -7,7 +7,6 @@ import CoachServicesSection from "../../../../coach/pages/CoachInterviewServiceP
 import {
     Avatar,
     Box,
-    Card,
     CardContent,
     Chip,
     CircularProgress,
@@ -19,6 +18,7 @@ import {
     Skeleton,
     useTheme,
 } from "@mui/material";
+import BaseCard from "../../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
 import BookingSlotDialog from "./BookingSlotDialog";
 import ExternalBookingDialog from "./ExternalBookingDialog";
@@ -152,7 +152,7 @@ function PublicInterviewerProfilePage() {
                     >
                         <Stack spacing={3}>
                             {/* Profile Header */}
-                            <Card variant="outlined" sx={{ p: 3 }}>
+                            <BaseCard variant="outlined" sx={{ p: 3 }}>
                                 <Box display="flex" alignItems="center">
                                     <Avatar
                                         src={avatarUrl}
@@ -216,10 +216,10 @@ function PublicInterviewerProfilePage() {
                                         )}
                                     </Box>
                                 </Box>
-                            </Card>
+                            </BaseCard>
 
                             {/* Skills Section */}
-                            <Card variant="outlined" sx={{ p: 3 }}>
+                            <BaseCard variant="outlined" sx={{ p: 3 }}>
                                 <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
                                     Skills
                                 </Typography>
@@ -228,10 +228,10 @@ function PublicInterviewerProfilePage() {
                                         <Chip key={skill.id} label={skill.name} variant="outlined" />
                                     ))}
                                 </Stack>
-                            </Card>
+                            </BaseCard>
 
                             {/* Companies Section */}
-                            <Card variant="outlined" sx={{ p: 3 }}>
+                            <BaseCard variant="outlined" sx={{ p: 3 }}>
                                 <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
                                     Companies Worked At
                                 </Typography>
@@ -247,11 +247,11 @@ function PublicInterviewerProfilePage() {
                                         />
                                     ))}
                                 </Stack>
-                            </Card>
+                            </BaseCard>
 
                             {/* Reviews Section */}
                             {profile.rating && profile.sessionsCount > 0 && (
-                                <Card variant="outlined" sx={{ p: 3 }}>
+                                <BaseCard variant="outlined" sx={{ p: 3 }}>
                                     <Stack
                                         direction="row"
                                         justifyContent="space-between"
@@ -313,7 +313,7 @@ function PublicInterviewerProfilePage() {
                                             No detailed reviews available yet.
                                         </Typography>
                                     )}
-                                </Card>
+                                </BaseCard>
                             )}
 
                             {/* Interview Services Section */}
@@ -334,7 +334,7 @@ function PublicInterviewerProfilePage() {
                                 top: 24,
                             }}
                         >
-                            <Card
+                            <BaseCard
                                 elevation={3}
                                 sx={{
                                     borderRadius: "12px",
@@ -458,7 +458,7 @@ function PublicInterviewerProfilePage() {
                                         JD Multi-Round Booking
                                     </SecondaryButton>
                                 </CardContent>
-                            </Card>
+                            </BaseCard>
                         </Box>
                     </Box>
                 </Box>

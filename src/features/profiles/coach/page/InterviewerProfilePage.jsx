@@ -13,12 +13,12 @@ import {
     Stack,
     Grid,
     Paper,
-    Card,
     CardContent,
     Divider,
     TextField,
     IconButton,
 } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
 import {
@@ -326,7 +326,7 @@ function InterviewerProfilePage() {
                 </Alert>
             </Fade>
 
-            <Card
+            <BaseCard
                 elevation={0}
                 sx={{
                     mb: 3,
@@ -373,7 +373,6 @@ function InterviewerProfilePage() {
                     confirmText="Change"
                     cancelText="Cancel"
                 />
-
                 <CardContent sx={{ pt: 0 }}>
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 3 }}>
                         {/* Avatar */}
@@ -502,12 +501,12 @@ function InterviewerProfilePage() {
                         </Box>
                     )}
                 </CardContent>
-            </Card>
+            </BaseCard>
 
             {profile && (
                 <Grid container spacing={3}>
                     <Grid item xs={12} sm={6}>
-                        <Card elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
+                        <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
                             <CardContent>
                                 <Typography
                                     variant="h6"
@@ -600,12 +599,12 @@ function InterviewerProfilePage() {
                                     }
                                 />
                             </CardContent>
-                        </Card>
+                        </BaseCard>
                     </Grid>
 
                     {/* Skills & Companies */}
                     <Grid item xs={12} sm={6}>
-                        <Card elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
+                        <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
                             <CardContent>
                                 <Typography
                                     variant="h6"
@@ -714,7 +713,7 @@ function InterviewerProfilePage() {
                                     )}
                                 </Box>
                             </CardContent>
-                        </Card>
+                        </BaseCard>
                     </Grid>
                 </Grid>
             )}

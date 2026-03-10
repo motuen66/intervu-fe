@@ -11,7 +11,8 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
-import { Box, Typography, Card, Stack, CircularProgress, CardContent } from "@mui/material";
+import { Box, Typography, Stack, CircularProgress, CardContent } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
@@ -516,7 +517,7 @@ const ScheduleManagement = () => {
                     {/* Main Content */}
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
                         {/* Calendar Section */}
-                        <Card
+                        <BaseCard
                             variant="outlined"
                             sx={{
                                 borderColor: "divider",
@@ -622,7 +623,7 @@ const ScheduleManagement = () => {
                                     }}
                                 />
                             </Box>
-                        </Card>
+                        </BaseCard>
 
                         {/* Right Panel: Mini Calendar + Quick Legend */}
                         <Stack spacing={3}>
@@ -635,7 +636,7 @@ const ScheduleManagement = () => {
                                 />
                             </div>
 
-                            <Card
+                            <BaseCard
                                 sx={{
                                     background: "white",
                                     boxShadow: 1,
@@ -655,7 +656,7 @@ const ScheduleManagement = () => {
 
                                     <StatusLegend />
                                 </CardContent>
-                            </Card>
+                            </BaseCard>
 
                             <UpcomingSessionBlog
                                 availabilities={availabilities}

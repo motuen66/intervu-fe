@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Box, Card, CardContent, Typography, IconButton, Stack } from "@mui/material";
+import { Box, CardContent, Typography, IconButton, Stack } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
 const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }) => {
@@ -49,10 +50,10 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
 
     const renderDots = (count) => {
         if (count === 0) return null;
-        
+
         const maxDots = 3;
         const dotsToShow = Math.min(count, maxDots);
-        
+
         return (
             <Box sx={{ display: "flex", gap: "2px", justifyContent: "center", mt: 0.5 }}>
                 {Array.from({ length: dotsToShow }).map((_, idx) => (
@@ -96,7 +97,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     for (let i = 0; i < totalCells; i++) {
         const dayNumber = i - daysInMonth.startingDayOfWeek + 1;
         const isValidDay = dayNumber > 0 && dayNumber <= daysInMonth.daysInMonth;
-        
+
         if (isValidDay) {
             const dateStr = `${daysInMonth.year}-${String(daysInMonth.month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
             const slotsCount = availabilitiesByDate[dateStr] || 0;
@@ -149,7 +150,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     ];
 
     return (
-        <Card
+        <BaseCard
             variant="outlined"
             sx={{
                 borderColor: "divider",
@@ -223,7 +224,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                     </Stack>
                 </Box>
             </CardContent>
-        </Card>
+        </BaseCard>
     );
 };
 

@@ -1,5 +1,6 @@
 import React from "react";
-import { Box, Card, CardContent, Typography, Stack, Button, CircularProgress, Avatar } from "@mui/material";
+import { Box, CardContent, Typography, Stack, Button, CircularProgress, Avatar } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
 import { IoCheckmarkCircle, IoTrash } from "react-icons/io5";
 import { AVAILABILITY_SLOTS_STATUS, getAvailabilityColors } from "../../../../common/constants/status";
 
@@ -24,7 +25,7 @@ const UpcomingSessionBlog = ({
 
 
     return (
-        <Card
+        <BaseCard
             variant="outlined"
             sx={{
                 borderColor: "divider",
@@ -114,7 +115,7 @@ const UpcomingSessionBlog = ({
                     )}
                 </Stack>
             </CardContent>
-        </Card >
+        </BaseCard >
     );
 };
 

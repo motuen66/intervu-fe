@@ -7,7 +7,6 @@ import { candidateProfileEndPoints } from "../service/candidateProfileApi.js";
 import {
     Avatar,
     Box,
-    Card,
     CardContent,
     Chip,
     CircularProgress,
@@ -22,6 +21,7 @@ import {
     Link,
     IconButton,
 } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import {
     Edit3 as EditIcon,
@@ -244,7 +244,7 @@ function CandidateProfilePage() {
                 </Alert>
             </Fade>
 
-            <Card
+            <BaseCard
                 elevation={0}
                 sx={{
                     mb: 3,
@@ -345,13 +345,13 @@ function CandidateProfilePage() {
                         </Box>
                     </Box>
                 </CardContent>
-            </Card>
+            </BaseCard>
 
             {profile && (
                 <>
                     <Grid container spacing={3}>
                         <Grid item xs={12} sm={6}>
-                            <Card elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
+                            <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
                                 <CardContent>
                                     <Typography
                                         variant="h6"
@@ -388,11 +388,11 @@ function CandidateProfilePage() {
                                         }
                                     />
                                 </CardContent>
-                            </Card>
+                            </BaseCard>
                         </Grid>
 
                         <Grid item xs={12} sm={6}>
-                            <Card elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
+                            <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
                                 <CardContent>
                                     <Typography
                                         variant="h6"
@@ -432,7 +432,7 @@ function CandidateProfilePage() {
                                         <UploadCv profile={profile} />
                                     )}
                                 </CardContent>
-                            </Card>
+                            </BaseCard>
                         </Grid>
                     </Grid>
 
