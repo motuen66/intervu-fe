@@ -5,7 +5,6 @@ import {
     DialogContent,
     DialogActions,
     TextField,
-    Button,
     Grid,
     MenuItem,
     Box,
@@ -17,6 +16,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { PrimaryButton, SecondaryButton } from '../../../common/components/buttons';
 
 const USER_ROLES = [
     { value: 0, label: 'Candidate' },
@@ -363,33 +363,12 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                 </DialogContent>
 
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                    <Button
-                        onClick={handleClose}
-                        sx={{
-                            textTransform: 'none',
-                            color: '#6b7280',
-                            '&:hover': {
-                                background: 'rgba(15,23,42,0.05)'
-                            }
-                        }}
-                    >
+                    <SecondaryButton onClick={handleClose}>
                         Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        sx={{
-                            textTransform: 'none',
-                            background: '#4F46E5',
-                            px: 4,
-                            borderRadius: 3,
-                            '&:hover': {
-                                background: '#2952e6'
-                            }
-                        }}
-                    >
+                    </SecondaryButton>
+                    <PrimaryButton type="submit" sx={{ px: 4 }}>
                         {mode === 'create' ? 'Create user' : 'Save changes'}
-                    </Button>
+                    </PrimaryButton>
                 </DialogActions>
             </form>
         </Dialog>

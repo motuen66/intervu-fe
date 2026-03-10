@@ -434,6 +434,7 @@ const ScheduleManagement = () => {
             end: avail.endTime,
             backgroundColor,
             borderColor,
+            textColor: colors.textColor,
             classNames,
             editable: !isPast && !isUnavailable,
             extendedProps: {
