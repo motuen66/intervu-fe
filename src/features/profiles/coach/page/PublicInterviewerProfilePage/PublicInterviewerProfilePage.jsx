@@ -8,7 +8,6 @@ import {
     Avatar,
     Box,
     CardContent,
-    Chip,
     CircularProgress,
     Container,
     Stack,
@@ -23,6 +22,7 @@ import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../commo
 import BookingSlotDialog from "./BookingSlotDialog";
 import ExternalBookingDialog from "./ExternalBookingDialog";
 import JDBookingDialog from "./JDBookingDialog";
+import StatusChip from "../../../../../common/components/StatusChip";
 import { Calendar, Send, FileText, ExternalLink, Star, Briefcase, Building2, Code } from "lucide-react";
 import toast from "react-hot-toast";
 import { PAYOS_TRANSACTION_STATUS, TRANSACTION_STATUS } from "../../../../../common/constants/status";
@@ -225,7 +225,7 @@ function PublicInterviewerProfilePage() {
                                 </Typography>
                                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                                     {profile.skills?.map((skill) => (
-                                        <Chip key={skill.id} label={skill.name} variant="outlined" />
+                                        <StatusChip key={skill.id} label={skill.name} color="primary" />
                                     ))}
                                 </Stack>
                             </BaseCard>
@@ -237,11 +237,11 @@ function PublicInterviewerProfilePage() {
                                 </Typography>
                                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                                     {profile.companies?.map((c) => (
-                                        <Chip
+                                        <StatusChip
                                             key={c.id}
                                             icon={<Building2 size={16} strokeWidth={1.5} />}
                                             label={c.name}
-                                            variant="outlined"
+                                            color="info"
                                             onClick={() => window.open(c.website, "_blank")}
                                             clickable
                                         />

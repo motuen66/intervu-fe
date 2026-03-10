@@ -9,8 +9,8 @@ import {
     FormControl,
     Select,
     MenuItem,
-    Chip,
 } from "@mui/material";
+import StatusChip from "../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoAdd, IoTrash } from "react-icons/io5";
 import toast from "react-hot-toast";
@@ -127,12 +127,11 @@ const UpdateAvailableSlotDialog = ({
                             </Stack>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                                 {formData.duplicateDates?.map((date) => (
-                                    <Chip
+                                    <StatusChip
                                         key={date}
                                         label={date}
                                         onDelete={() => handleRemoveDuplicateDate(date)}
-                                        size="small"
-                                        variant="outlined"
+                                        color="primary"
                                     />
                                 ))}
                             </Box>

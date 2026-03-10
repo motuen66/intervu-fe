@@ -309,13 +309,10 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                                 {service.interviewTypeName || "Interview"}
                                                             </Typography>
                                                             {service.isCoding && (
-                                                                <Chip
+                                                                <StatusChip
                                                                     icon={<CodeIcon sx={{ fontSize: 14 }} />}
                                                                     label="Coding"
-                                                                    size="small"
                                                                     color="primary"
-                                                                    variant="outlined"
-                                                                    sx={{ height: 22, fontSize: "0.7rem" }}
                                                                 />
                                                             )}
                                                         </Stack>

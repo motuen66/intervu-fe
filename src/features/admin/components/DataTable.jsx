@@ -8,16 +8,14 @@ import {
     TableRow,
     TablePagination,
     Paper,
-    Chip,
     IconButton,
     Box,
     Typography,
     CircularProgress
 } from '@mui/material';
-import { alpha } from "@mui/material/styles";
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import StatusChip from '../../../common/components/StatusChip';
 
 export default function DataTable({
     title,
@@ -52,22 +50,30 @@ export default function DataTable({
         const displayValue = column.render ? column.render(value, row) : value;
 
         if (column.type === 'chip') {
-            const resolved = column.chipColor?.(value);
+            const hexColor = column.chipColor?.(value);
+
+            let mappedColor = "default";
+            if (hexColor) {
+                const lowerHex = hexColor.toLowerCase();
+                if (lowerHex.includes('error') || lowerHex.includes('f44336') || lowerHex.includes('d32f2f') || lowerHex === 'error') {
+                    mappedColor = "error";
+                } else if (lowerHex.includes('success') || lowerHex.includes('4caf50') || lowerHex.includes('2e7d32') || lowerHex === 'success') {
+                    mappedColor = "success";
+                } else if (lowerHex.includes('warning') || lowerHex.includes('ff9800') || lowerHex.includes('ed6c02') || lowerHex === 'warning') {
+                    mappedColor = "warning";
+                } else if (lowerHex.includes('info') || lowerHex.includes('2196f3') || lowerHex.includes('0288d1') || lowerHex === 'info') {
+                    mappedColor = "info";
+                } else if (lowerHex.includes('primary') || lowerHex === 'primary') {
+                    mappedColor = "primary";
+                } else if (lowerHex.includes('secondary') || lowerHex === 'secondary') {
+                    mappedColor = "secondary";
+                }
+            }
+
             return (
-                <Chip
+                <StatusChip
                     label={displayValue}
-                    size="small"
-                    sx={(theme) => {
-                        const main = resolved || theme.palette.primary.main;
-                        return {
-                            bgcolor: alpha(main, 0.16),
-                            color: main,
-                            border: "1px solid",
-                            borderColor: alpha(main, 0.32),
-                            fontWeight: 600,
-                            fontSize: "11px",
-                        };
-                    }}
+                    color={mappedColor}
                 />
             );
         }

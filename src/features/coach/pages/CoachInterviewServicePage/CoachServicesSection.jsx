@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Box, CardContent, Chip, CircularProgress, Stack, Typography } from "@mui/material";
+import { Box, CardContent, CircularProgress, Stack, Typography } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import StatusChip from "../../../../common/components/StatusChip";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CodeIcon from "@mui/icons-material/Code";
 import { getCoachInterviewServices } from "../../services/coachInterviewServiceApi";
@@ -74,17 +75,10 @@ export default function CoachServicesSection({ coachId }) {
                                             {svc.interviewTypeName}
                                         </Typography>
                                         {svc.isCoding && (
-                                            <Chip
+                                            <StatusChip
                                                 icon={<CodeIcon sx={{ fontSize: 14 }} />}
                                                 label="Coding"
-                                                size="small"
-                                                sx={{
-                                                    height: 22,
-                                                    fontSize: "0.7rem",
-                                                    backgroundColor: "rgba(34,197,94,0.12)",
-                                                    color: "#15803d",
-                                                    fontWeight: 600,
-                                                }}
+                                                color="success"
                                             />
                                         )}
                                     </Stack>

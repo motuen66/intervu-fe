@@ -8,7 +8,6 @@ import {
     Avatar,
     Box,
     CardContent,
-    Chip,
     CircularProgress,
     Grid,
     Stack,
@@ -22,6 +21,7 @@ import {
     IconButton,
 } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import StatusChip from "../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import {
     Edit3 as EditIcon,
@@ -423,7 +423,11 @@ function CandidateProfilePage() {
                                                 {(profile?.skills || [])
                                                     .filter(Boolean)
                                                     .map((name, i) => (
-                                                        <Chip key={`skill-${i}`} label={name} size="medium" color="primary" variant="outlined" />
+                                                        <StatusChip
+                                                            key={`skill-${i}`}
+                                                            label={name}
+                                                            color="primary"
+                                                        />
                                                     ))}
                                             </Box>
                                         )}

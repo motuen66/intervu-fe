@@ -11,9 +11,9 @@ import {
     Alert,
     Stack,
     Divider,
-    Chip,
     Rating,
 } from "@mui/material";
+import StatusChip from "../../../../common/components/StatusChip";
 import { SecondaryButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -190,10 +190,9 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
                                 <Typography variant="subtitle2" color="text.secondary">
                                     Status:
                                 </Typography>
-                                <Chip
+                                <StatusChip
                                     label={feedback.isSubmitted ? "Submitted" : "Draft"}
                                     color={feedback.isSubmitted ? "success" : "default"}
-                                    size="small"
                                 />
                             </Stack>
                         </Box>

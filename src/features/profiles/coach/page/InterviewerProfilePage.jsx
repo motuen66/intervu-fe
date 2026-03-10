@@ -18,6 +18,7 @@ import {
     TextField,
     IconButton,
 } from "@mui/material";
+import StatusChip from "../../../../common/components/StatusChip";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
@@ -647,12 +648,10 @@ function InterviewerProfilePage() {
                                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
                                             {skillsDisplay.length > 0 ? (
                                                 skillsDisplay.map((s, i) => (
-                                                    <Chip
+                                                    <StatusChip
                                                         key={`skill-${i}`}
                                                         label={s}
-                                                        size="medium"
                                                         color="primary"
-                                                        variant="outlined"
                                                     />
                                                 ))
                                             ) : (
@@ -696,12 +695,10 @@ function InterviewerProfilePage() {
                                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
                                             {companiesDisplay.length > 0 ? (
                                                 companiesDisplay.map((c, i) => (
-                                                    <Chip
+                                                    <StatusChip
                                                         key={`company-${i}`}
                                                         label={c}
-                                                        size="medium"
                                                         color="secondary"
-                                                        variant="outlined"
                                                     />
                                                 ))
                                             ) : (
