@@ -23,6 +23,7 @@ const StatusLegend = () => {
                             mt: "4px",
                             opacity: item.opacity || 1,
                             flexShrink: 0,
+                            boxShadow: `0 0 6px 1px ${item.color}40`,
                         }}
                     />
                     <Box>

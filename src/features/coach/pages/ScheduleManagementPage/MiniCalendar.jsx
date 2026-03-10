@@ -63,7 +63,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                             width: "4px",
                             height: "4px",
                             borderRadius: "50%",
-                            backgroundColor: "primary.main",
+                            backgroundColor: "secondary.main",
                         }}
                     />
                 ))}
@@ -73,7 +73,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         sx={{
                             fontSize: "8px",
                             fontWeight: 600,
-                            color: "primary.main",
+                            color: "secondary.dark",
                             lineHeight: 1,
                         }}
                     >
@@ -116,12 +116,12 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         justifyContent: "center",
                         cursor: "pointer",
                         borderRadius: "8px",
-                        border: isToday ? "2px solid" : (isSelected ? "1px solid" : "none"),
+                        border: isToday ? "2px solid" : (isSelected ? "1.5px solid" : "none"),
                         borderColor: isToday ? "primary.main" : (isSelected ? "primary.light" : "transparent"),
-                        backgroundColor: isToday ? "primary.light" : (isSelected ? "action.hover" : "transparent"),
+                        backgroundColor: isToday ? "primary.main" : (isSelected ? "transparent" : "transparent"),
                         transition: "all 0.2s",
                         "&:hover": {
-                            backgroundColor: "action.hover",
+                            backgroundColor: isToday ? "primary.light" : "action.hover",
                         },
                         position: "relative",
                     }}
@@ -130,7 +130,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         variant="body2"
                         sx={{
                             fontWeight: isToday ? 700 : (isSelected ? 600 : 500),
-                            color: isToday ? "primary.main" : (isSelected ? "primary.dark" : "text.primary"),
+                            color: isToday ? "primary.contrastText" : (isSelected ? "primary.main" : "text.primary"),
                             fontSize: "0.875rem",
                         }}
                     >
@@ -215,7 +215,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                                 width: "6px",
                                 height: "6px",
                                 borderRadius: "50%",
-                                backgroundColor: "primary.main",
+                                backgroundColor: "secondary.main",
                             }}
                         />
                         <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem" }}>

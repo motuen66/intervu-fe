@@ -46,10 +46,10 @@
 .fc .fc-button {
     all: unset;
     display: inline-block;
-    background-color: var(--mui-palette-primary-main);
-    border: 1.5px solid var(--mui-palette-primary-main);
-    color: #ffffff;
-    font-weight: 600;
+    background-color: #ffffff;
+    border: 1.5px solid #e5e7eb;
+    color: #374151;
+    font-weight: 500;
     text-transform: none;
     font-size: 0.875rem;
     border-radius: 8px;
@@ -67,15 +67,16 @@
 }
 
 .fc .fc-button:hover {
-    background-color: var(--mui-palette-primary-main) !important;
-    border-color: var(--mui-palette-primary-light) !important;
-    color: var(--mui-palette-secondary-contrastText) !important;
+    background-color: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    color: #1f2937 !important;
 }
 
 .fc .fc-button-active {
-    background-color: var(--mui-palette-primary-dark) !important;
-    border-color: var(--mui-palette-primary-light) !important;
-    color: var(--mui-palette-secondary-contrastText) !important;
+    background-color: var(--mui-palette-primary-main) !important;
+    border-color: var(--mui-palette-primary-main) !important;
+    color: #ffffff !important;
+    font-weight: 600;
 }
 
 .fc .fc-button:disabled {
