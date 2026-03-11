@@ -5,7 +5,6 @@ import {
     DialogContent,
     DialogActions,
     TextField,
-    Button,
     Grid,
     MenuItem,
     Box,
@@ -17,6 +16,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { PrimaryButton, SecondaryButton } from '../../../common/components/buttons';
 
 const USER_ROLES = [
     { value: 0, label: 'Candidate' },
@@ -73,12 +73,12 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
     const handleChange = (e) => {
         const { name, value } = e.target;
         let finalValue = value;
-        
+
         // Convert role to number
         if (name === 'role') {
             finalValue = parseInt(value, 10);
         }
-        
+
         setFormData(prev => ({
             ...prev,
             [name]: finalValue
@@ -98,17 +98,17 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
 
     const validateForm = () => {
         const newErrors = {};
-        
+
         if (!formData.fullName.trim()) {
             newErrors.fullName = 'Full name is required.';
         }
-        
+
         if (!formData.email.trim()) {
             newErrors.email = 'Email is required.';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = 'Please enter a valid email address.';
         }
-        
+
         if (!formData.password.trim()) {
             newErrors.password = 'Password is required.';
         } else if (formData.password && formData.password.length < 6) {
@@ -120,24 +120,24 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
         } else if (!/^[0-9+\-\s]{8,15}$/.test(formData.phoneNumber.trim())) {
             newErrors.phoneNumber = 'Please enter a valid phone number.';
         }
-        
+
         if (formData.role === '' || formData.role === null) {
             newErrors.role = 'Role is required.';
         }
-        
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         if (!validateForm()) {
             return;
         }
-        
+
         const dataToSubmit = { ...formData };
-        
+
         onSubmit(dataToSubmit, (error) => {
             if (error) {
                 setSubmitError(error);
@@ -158,8 +158,8 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
     };
 
     return (
-        <Dialog 
-            open={open} 
+        <Dialog
+            open={open}
             onClose={handleClose}
             maxWidth="sm"
             fullWidth
@@ -170,8 +170,8 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                 }
             }}
         >
-            <DialogTitle sx={{ 
-                fontWeight: 700, 
+            <DialogTitle sx={{
+                fontWeight: 700,
                 pb: 1,
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -185,10 +185,10 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                         {mode === 'create' ? 'Add a new account to the system.' : 'Update user profile details.'}
                     </Typography>
                 </Box>
-                <IconButton 
+                <IconButton
                     onClick={handleClose}
                     size="small"
-                    sx={{ 
+                    sx={{
                         color: '#6b7280',
                         '&:hover': { background: 'rgba(15,23,42,0.06)' }
                     }}
@@ -196,7 +196,7 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            
+
             <form onSubmit={handleSubmit}>
                 <DialogContent sx={{ pt: 3 }}>
                     <Grid container spacing={2.5} direction="column">
@@ -220,19 +220,19 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
                                         '&:hover fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                         '&.Mui-focused fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                     },
                                     '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#667eea',
+                                        color: '#4F46E5',
                                     },
                                 }}
                             />
                         </Grid>
-                        
+
                         <Grid item xs={12} sx={{ width: '100%' }}>
                             <TextField
                                 fullWidth
@@ -248,19 +248,19 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
                                         '&:hover fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                         '&.Mui-focused fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                     },
                                     '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#667eea',
+                                        color: '#4F46E5',
                                     },
                                 }}
                             />
                         </Grid>
-                        
+
                         <Grid item xs={12} sx={{ width: '100%' }}>
                             <TextField
                                 fullWidth
@@ -274,19 +274,19 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
                                         '&:hover fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                         '&.Mui-focused fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                     },
                                     '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#667eea',
+                                        color: '#4F46E5',
                                     },
                                 }}
                             />
                         </Grid>
-                        
+
                         <Grid item xs={12} sx={{ width: '100%' }}>
                             <TextField
                                 fullWidth
@@ -314,19 +314,19 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
                                         '&:hover fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                         '&.Mui-focused fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                     },
                                     '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#667eea',
+                                        color: '#4F46E5',
                                     },
                                 }}
                             />
                         </Grid>
-                        
+
                         <Grid item xs={12} sx={{ width: '100%' }}>
                             <TextField
                                 fullWidth
@@ -341,14 +341,14 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
                                         '&:hover fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                         '&.Mui-focused fieldset': {
-                                            borderColor: '#667eea',
+                                            borderColor: '#4F46E5',
                                         },
                                     },
                                     '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#667eea',
+                                        color: '#4F46E5',
                                     },
                                 }}
                             >
@@ -361,35 +361,14 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                         </Grid>
                     </Grid>
                 </DialogContent>
-                
+
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                    <Button 
-                        onClick={handleClose}
-                        sx={{ 
-                            textTransform: 'none',
-                            color: '#6b7280',
-                            '&:hover': {
-                                background: 'rgba(15,23,42,0.05)'
-                            }
-                        }}
-                    >
+                    <SecondaryButton onClick={handleClose}>
                         Cancel
-                    </Button>
-                    <Button 
-                        type="submit"
-                        variant="contained"
-                        sx={{
-                            textTransform: 'none',
-                            background: '#2f5cf6',
-                            px: 4,
-                            borderRadius: 3,
-                            '&:hover': {
-                                background: '#2952e6'
-                            }
-                        }}
-                    >
+                    </SecondaryButton>
+                    <PrimaryButton type="submit" sx={{ px: 4 }}>
                         {mode === 'create' ? 'Create user' : 'Save changes'}
-                    </Button>
+                    </PrimaryButton>
                 </DialogActions>
             </form>
         </Dialog>

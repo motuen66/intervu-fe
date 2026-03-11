@@ -3,11 +3,11 @@ import { useDropzone } from 'react-dropzone';
 import {
     Box,
     Typography,
-    Button,
     Paper,
     IconButton,
     CircularProgress
 } from '@mui/material';
+import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import { useTheme, alpha } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -138,7 +138,7 @@ const UploadCv = ({ profile }) => {
                 CV
             </Typography>
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
-                Upload your CV in PDF format. 
+                Upload your CV in PDF format.
                 This will help us parse your skills and experience.
             </Typography>
 
@@ -183,42 +183,24 @@ const UploadCv = ({ profile }) => {
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Button
-                            variant="outlined"
+                        <SecondaryButton
                             onClick={handleViewCv}
                             startIcon={<VisibilityIcon />}
-                            sx={{
-                                color: theme.palette.primary.main,
-                                "&:hover": {
-                                    borderColor: theme.palette.primary.dark,
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                                },
-                                textTransform: "none",
-                                borderRadius: '8px',
-                            }}
                         >
                             View
-                        </Button>
-                        <Button
-                            variant="outlined"
+                        </SecondaryButton>
+                        <SecondaryButton
                             onClick={handleStartUpload}
                             disabled={isLoading}
                             startIcon={<CloudUploadIcon />}
                             sx={{
                                 borderColor: theme.palette.primary.main,
                                 color: theme.palette.primary.main,
-                                "&:hover": {
-                                    borderColor: theme.palette.primary.dark,
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                                },
-                                textTransform: "none",
-                                borderRadius: '8px',
                             }}
                         >
                             Upload New
-                        </Button>
-                        <Button
-                            variant="outlined"
+                        </SecondaryButton>
+                        <SecondaryButton
                             onClick={handleDeleteCv}
                             disabled={isLoading}
                             sx={{
@@ -230,11 +212,10 @@ const UploadCv = ({ profile }) => {
                                     backgroundColor: alpha(theme.palette.error.main, 0.04),
                                     borderColor: theme.palette.error.dark,
                                 },
-                                borderRadius: '8px',
                             }}
                         >
                             <DeleteOutlineIcon />
-                        </Button>
+                        </SecondaryButton>
                     </Box>
                 </Paper>
             ) : (
@@ -305,52 +286,23 @@ const UploadCv = ({ profile }) => {
 
                     <Box sx={{ display: 'flex', gap: 2, mt: 2, justifyContent: 'flex-end' }}>
                         {hasExistingCv && (
-                            <Button
-                                variant="outlined"
+                            <SecondaryButton
                                 onClick={handleCancelUpload}
-                                sx={{
-                                    borderColor: theme.palette.divider,
-                                    color: theme.palette.text.secondary,
-                                    "&:hover": {
-                                        borderColor: theme.palette.text.primary,
-                                        backgroundColor: alpha(theme.palette.text.primary, 0.04),
-                                    },
-                                    textTransform: "none",
-                                    borderRadius: '8px',
-                                }}
                             >
                                 Cancel
-                            </Button>
+                            </SecondaryButton>
                         )}
-                        <Button
-                            variant="contained"
+                        <PrimaryButton
                             onClick={handleUpload}
-                            disabled={!cvFile || isLoading}
+                            loading={isLoading}
+                            disabled={!cvFile}
                             sx={{
-                                background: theme.palette.primary.main,
-                                "&:hover": {
-                                    background: theme.palette.primary.dark,
-                                },
-                                textTransform: "none",
                                 py: 1.5,
                                 px: 4,
-                                borderRadius: '8px',
-                                boxShadow: 'none',
-                                '&:disabled': {
-                                    backgroundColor: theme.palette.action.disabledBackground,
-                                    color: theme.palette.text.disabled
-                                }
                             }}
                         >
-                            {isLoading ? (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <CircularProgress size={20} color="inherit" />
-                                    <span>Uploading...</span>
-                                </Box>
-                            ) : (
-                                'Upload and Process CV'
-                            )}
-                        </Button>
+                            Upload and Process CV
+                        </PrimaryButton>
                     </Box>
                 </>
             )}

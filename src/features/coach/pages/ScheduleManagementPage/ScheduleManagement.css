@@ -1,10 +1,15 @@
 .fc {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-    --fc-border-color: #E5E7EB;
-    --fc-button-bg-color: #FFFFFF;
-    --fc-button-border-color: #E5E7EB;
+    font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif !important;
+    --fc-border-color: #e5e7eb;
+    --fc-button-bg-color: #ffffff;
+    --fc-button-border-color: #e5e7eb;
     --fc-button-text-color: #374151;
-    --fc-button-hover-bg-color: #F9FAFB;
+    --fc-button-hover-bg-color: #f9fafb;
     --fc-button-hover-border-color: var(--mui-palette-primary-light);
     --fc-button-active-bg-color: var(--mui-palette-primary-main);
     --fc-button-active-border-color: var(--mui-palette-primary-light);
@@ -16,14 +21,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;                 
+    gap: 16px;
     margin-bottom: 1.5rem;
 }
 
 .fc .fc-toolbar-chunk {
     display: flex;
     align-items: center;
-    gap: 8px;             
+    gap: 8px;
 }
 
 .fc .fc-button-group {
@@ -41,15 +46,19 @@
 .fc .fc-button {
     all: unset;
     display: inline-block;
-    background-color: var(--mui-palette-primary-main);
-    border: 1.5px solid var(--mui-palette-primary-main);
-    color: #FFFFFF;
-    font-weight: 600;
+    background-color: #ffffff;
+    border: 1.5px solid #e5e7eb;
+    color: #374151;
+    font-weight: 500;
     text-transform: none;
     font-size: 0.875rem;
     border-radius: 8px;
     padding: 8px 16px;
-    font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        sans-serif;
     cursor: pointer;
     line-height: normal;
     text-align: center;
@@ -58,21 +67,22 @@
 }
 
 .fc .fc-button:hover {
-    background-color: var(--mui-palette-primary-main) !important;
-    border-color: var(--mui-palette-primary-light) !important;
-    color:  var(--mui-palette-secondary-contrastText) !important;
+    background-color: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    color: #1f2937 !important;
 }
 
 .fc .fc-button-active {
-    background-color: var(--mui-palette-primary-dark) !important;
-    border-color: var(--mui-palette-primary-light) !important;
-    color: var(--mui-palette-secondary-contrastText) !important;
+    background-color: var(--mui-palette-primary-main) !important;
+    border-color: var(--mui-palette-primary-main) !important;
+    color: #ffffff !important;
+    font-weight: 600;
 }
 
 .fc .fc-button:disabled {
-    background-color: #F3F4F6 !important;
-    border-color: #E5E7EB !important;
-    color: #9CA3AF !important;
+    background-color: #f3f4f6 !important;
+    border-color: #e5e7eb !important;
+    color: #9ca3af !important;
     opacity: 0.6;
     cursor: not-allowed;
 }
@@ -118,7 +128,6 @@
     padding: 4px 2px;
 }
 
-
 /* EVENTS */
 
 .fc .fc-event {
@@ -138,16 +147,9 @@
 
 /* Past Events */
 .fc-event.past-event {
-    opacity: 0.5;
-    background-color: #9CA3AF !important;
-    border-color: #9CA3AF !important;
-    background-image: repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 4px,
-        rgba(0, 0, 0, 0.1) 4px,
-        rgba(0, 0, 0, 0.1) 8px
-    ) !important;
+    opacity: 0.7;
+    background-color: #d1d5db !important;
+    border-color: #9ca3af !important;
     cursor: not-allowed;
 }
 
@@ -158,7 +160,6 @@
 }
 
 .fc .fc-event-title {
-    color: #ffffff;
     font-weight: 600;
 }
 
@@ -176,10 +177,9 @@
 }
 
 .fc .fc-timegrid-event .fc-event-time {
-    color: #ffffff;
+    color: inherit;
     font-size: 0.7rem;
 }
-
 
 /* SCROLLBAR */
 
@@ -205,40 +205,40 @@
 /* LEGEND */
 
 .legend-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
 }
 
 .legend-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
 }
 
 .legend-dot {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 9999px;
-  margin-top: 0.25rem;
-  flex-shrink: 0;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
 }
 
 .legend-text-container {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 
 .legend-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #334155;
-  margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.25rem;
 }
 
 .legend-description {
-  font-size: 0.625rem;
-  color: #94a3b8;
+    font-size: 0.625rem;
+    color: #94a3b8;
 }
 
 /* .dot-available { background-color: var(--mui-palette-primary-main); }

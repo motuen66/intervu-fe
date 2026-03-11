@@ -11,17 +11,10 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
-import {
-    Box,
-    Button,
-    Typography,
-    Card,
-    Stack,
-    CircularProgress,
-    CardContent,
-} from "@mui/material";
+import { Box, Typography, Stack, CircularProgress, CardContent } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
+import { PrimaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
-import { getAllInterviewTypes } from "../../../admin/services/interviewTypeApi";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
 import UpdateAvailableSlotDialog from "./UpdateAvailableSlotDialog";
@@ -45,47 +38,38 @@ const ScheduleManagement = () => {
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({
         date: "",
-        focus: 1, // JobDescription integer
-        typeId: "",
         startHour: 9,
         startMinute: 0,
         endHour: 10,
         endMinute: 0,
         duplicateDates: [], // Added for duplication
     });
-    const [interviewTypes, setInterviewTypes] = useState([]);
-    const FocusEnum = {
-        GeneralSkills: 0,
-        JobDescription: 1,
-    };
     const [confirmOpen, setConfirmOpen] = useState(false);
-    // const [confirmType, set                                                                                                      ] = useState(null); // "update" | "delete"
+    // const [confirmType, set] = useState(null); // "update" | "delete"
     const [selectedItem, setSelectedItem] = useState(null);
 
     // Calculate date range for current month
     const today = new Date();
     const minDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const maxDateStr = `${lastDayOfMonth.getFullYear()}-${String(lastDayOfMonth.getMonth() + 1).padStart(2, "0")}-${String(lastDayOfMonth.getDate()).padStart(2, "0")}`;
+    const maxDate30 = new Date(today);
+    maxDate30.setDate(today.getDate() + 30);
+    const maxDateStr = `${maxDate30.getFullYear()}-${String(maxDate30.getMonth() + 1).padStart(2, "0")}-${String(maxDate30.getDate()).padStart(2, "0")}`;
 
     const showError = (message) => {
         if (!message) return;
         toast.error(message, { id: "availability-error" });
     };
 
-
     const parseLocalDate = (isoString) => {
         const date = new Date(isoString);
-        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")
-            }/${date.getFullYear()}`;
+        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}/${date.getFullYear()}`;
     };
 
     const parseLocalTime = (isoString) => {
         const date = new Date(isoString);
-        return `${date.getHours().toString().padStart(2, "0")}:${date
-            .getMinutes()
-            .toString()
-            .padStart(2, "0")}`;
+        return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     };
 
     useEffect(() => {
@@ -95,29 +79,13 @@ const ScheduleManagement = () => {
             console.log("Fetching availabilities with:", { interviewerId: userId, month, year });
             const fetchAction = dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
             // Log the thunk result for debugging
-            if (fetchAction && typeof fetchAction.then === 'function') {
+            if (fetchAction && typeof fetchAction.then === "function") {
                 fetchAction
                     .then((res) => console.log("fetchAvailabilitiesByMonth result:", res))
                     .catch((err) => console.error("fetchAvailabilitiesByMonth error:", err));
             }
         }
     }, [userId, currentDate.getMonth(), currentDate.getFullYear()]);
-
-    // Fetch interview types for GeneralSkills option
-    useEffect(() => {
-        const loadTypes = async () => {
-            try {
-                const types = await getAllInterviewTypes();
-                console.log("Fetched interview types:", types);
-                const list = Array.isArray(types) ? types : types?.items || [];
-                setInterviewTypes(list || []);
-            } catch (err) {
-                console.error("Failed to load interview types", err);
-            }
-        };
-        loadTypes();
-    }, []);
-
 
     useEffect(() => {
         if (error && error !== "Network Error") {
@@ -128,16 +96,14 @@ const ScheduleManagement = () => {
 
     const handleAddClick = () => {
         setEditingId(null);
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split("T")[0];
         setFormData({
             date: today,
             startHour: 9,
             startMinute: 0,
             endHour: 10,
             endMinute: 0,
-            focus: FocusEnum.JobDescription,
-            typeId: "",
-            duplicateDates: []
+            duplicateDates: [],
         });
         setOpenModal(true);
     };
@@ -156,20 +122,14 @@ const ScheduleManagement = () => {
         setFormData({
             coachId: availability.coachId,
             date: localDateStr,
-            focus: availability.focus,
             startHour: startDate.getHours(),
             startMinute: startDate.getMinutes(),
             endHour: endDate.getHours(),
             endMinute: endDate.getMinutes(),
-            typeId:
-                availability.focus === FocusEnum.GeneralSkills
-                    ? availability.typeId || ""
-                    : "",
-            duplicateDates: []
+            duplicateDates: [],
         });
         setOpenModal(true);
     };
-
 
     const handleDeleteClick = (id) => {
         setSelectedItem(id);
@@ -208,9 +168,7 @@ const ScheduleManagement = () => {
             startMinute: start.getMinutes(),
             endHour: end.getHours(),
             endMinute: end.getMinutes(),
-            focus: FocusEnum.JobDescription,
-            typeId: "",
-            duplicateDates: []
+            duplicateDates: [],
         });
         setOpenModal(true);
         selectInfo.view.calendar.unselect();
@@ -220,6 +178,12 @@ const ScheduleManagement = () => {
         const event = info.event;
         const availabilityId = event.id;
 
+        if (!event.end) {
+            info.revert();
+            toast.error("Invalid end time – cannot resize to exactly midnight");
+            return;
+        }
+
         // Prevent editing past events
         if (event.extendedProps.isPast) {
             toast.error("Cannot modify past availability");
@@ -227,9 +191,9 @@ const ScheduleManagement = () => {
             return;
         }
 
-        // Prevent editing booked slots
-        if (event.extendedProps.isBooked) {
-            toast.error("Cannot modify booked slots");
+        // Prevent editing unavailable slots
+        if (event.extendedProps.isUnavailable) {
+            toast.error("Cannot modify unavailable slots");
             info.revert();
             return;
         }
@@ -248,40 +212,22 @@ const ScheduleManagement = () => {
         const durationMinutes = (endTime - startTime) / (1000 * 60);
 
         // Get availability data from extended props or find in array
-        const avail = availabilities.find(a => String(a.id) === String(availabilityId)) || {
-            focus: event.extendedProps.focus,
-            typeId: event.extendedProps.typeId,
-            coachId: event.extendedProps.coachId || userId
+        const avail = availabilities.find((a) => String(a.id) === String(availabilityId)) || {
+            coachId: event.extendedProps.coachId || userId,
         };
 
-        if (avail.focus === FocusEnum.JobDescription && durationMinutes < 30) {
+        if (durationMinutes < 30) {
             toast.error("Availability must be at least 30 minutes");
             info.revert();
             return;
         }
 
-        // Handle fixed duration for General Skills with type
-        if (avail.focus === FocusEnum.GeneralSkills && avail.typeId) {
-            const type = interviewTypes.find(t => t.id === avail.typeId);
+        const maxAllowed = new Date();
+        maxAllowed.setDate(maxAllowed.getDate() + 30);
+        maxAllowed.setHours(23, 59, 59, 999);
 
-            if (type?.durationMinutes) {
-                const fixedEnd = new Date(startTime);
-                fixedEnd.setMinutes(
-                    fixedEnd.getMinutes() + type.durationMinutes
-                );
-                endTime = fixedEnd;
-                event.setEnd(fixedEnd);
-            }
-        }
-
-        // Check if the event stays within the current month
-        const eventMonth = startTime.getMonth();
-        const eventYear = startTime.getFullYear();
-        const currentMonth = currentDate.getMonth();
-        const currentYear = currentDate.getFullYear();
-
-        if (eventMonth !== currentMonth || eventYear !== currentYear) {
-            toast.error("Cannot move availability to a different month");
+        if (startTime > maxAllowed) {
+            toast.error("Cannot move availability beyond the 30-day window");
             info.revert();
             return;
         }
@@ -290,12 +236,10 @@ const ScheduleManagement = () => {
             coachId: avail.coachId || userId,
             startTime: startTime.toISOString(),
             endTime: endTime.toISOString(),
-            focus: avail.focus,
-            typeId: avail.typeId ?? null,
         };
 
         // Show loading toast
-        const loadingToast = toast.loading("Updating availability...");
+        // const loadingToast = toast.loading("Updating availability...");
 
         try {
             const result = await dispatch(editAvailability({ id: availabilityId, payload }));
@@ -309,9 +253,7 @@ const ScheduleManagement = () => {
                 // Revert the change on error
                 info.revert();
 
-                const payloadMessage = typeof result.payload === "string"
-                    ? result.payload
-                    : result.payload?.message;
+                const payloadMessage = typeof result.payload === "string" ? result.payload : result.payload?.message;
                 const errMsg = payloadMessage || result.error?.message || "Failed to update availability";
                 toast.error(errMsg);
             }
@@ -322,8 +264,6 @@ const ScheduleManagement = () => {
             console.error("Error updating availability:", error);
         }
     };
-
-
 
     const handleSubmit = async () => {
         if (!formData.date) {
@@ -336,12 +276,7 @@ const ScheduleManagement = () => {
         const endHour = Number(formData.endHour);
         const endMinute = Number(formData.endMinute);
 
-        if (
-            Number.isNaN(startHour) ||
-            Number.isNaN(startMinute) ||
-            Number.isNaN(endHour) ||
-            Number.isNaN(endMinute)
-        ) {
+        if (Number.isNaN(startHour) || Number.isNaN(startMinute) || Number.isNaN(endHour) || Number.isNaN(endMinute)) {
             showError("Invalid time value");
             return;
         }
@@ -349,20 +284,19 @@ const ScheduleManagement = () => {
         const startTotalMinutes = startHour * 60 + startMinute;
         const endTotalMinutes = endHour * 60 + endMinute;
 
-        if (startTotalMinutes >= endTotalMinutes) {
-            showError("EndTime must be greater than StartTime");
+        // End can > start
+        const isOvernight = endTotalMinutes <= startTotalMinutes;
+        const durationMinutes = isOvernight
+            ? 24 * 60 - startTotalMinutes + endTotalMinutes
+            : endTotalMinutes - startTotalMinutes;
+
+        if (durationMinutes === 0) {
+            showError("Start time and end time cannot be the same");
             return;
         }
 
-        const durationMinutes = endTotalMinutes - startTotalMinutes;
-
-        if (formData.focus === FocusEnum.JobDescription && durationMinutes < 30) {
+        if (durationMinutes < 30) {
             showError("Availability must be at least 30 minutes");
-            return;
-        }
-
-        if (formData.focus === FocusEnum.GeneralSkills && !formData.typeId) {
-            showError("Type is required for General Skills");
             return;
         }
 
@@ -373,9 +307,11 @@ const ScheduleManagement = () => {
         for (const dateStr of allDates) {
             // dateStr is "YYYY-MM-DD"
             const [year, month, day] = dateStr.split("-").map(Number);
-            
+
             const startTime = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
-            const endTime = new Date(year, month - 1, day, endHour, endMinute, 0, 0);
+            const endTime = isOvernight
+                ? new Date(year, month - 1, day + 1, endHour, endMinute, 0, 0)
+                : new Date(year, month - 1, day, endHour, endMinute, 0, 0);
 
             if (startTime < new Date()) {
                 showError(`Cannot create availability in the past for date: ${dateStr}`);
@@ -386,12 +322,12 @@ const ScheduleManagement = () => {
                 coachId: userId,
                 startTime: startTime.toISOString(),
                 endTime: endTime.toISOString(),
-                focus: formData.focus,
-                typeId: formData.focus === FocusEnum.GeneralSkills ? formData.typeId : null,
             });
         }
 
-        const loadingToast = toast.loading(editingId ? "Updating and duplicating slots..." : "Creating availability slots...");
+        // const loadingToast = toast.loading(
+        //     editingId ? "Updating and duplicating slots..." : "Creating availability slots...",
+        // );
 
         try {
             if (editingId) {
@@ -399,7 +335,7 @@ const ScheduleManagement = () => {
                 const result = await dispatch(editAvailability({ id: editingId, payload: payloads[0] }));
 
                 if (!editAvailability.fulfilled.match(result)) {
-                    toast.dismiss(loadingToast);
+                    // toast.dismiss(loadingToast);
                     const errorMsg = typeof result.payload === "string" ? result.payload : result.payload?.message;
                     showError(errorMsg || "Failed to update main slot");
                     return;
@@ -411,18 +347,19 @@ const ScheduleManagement = () => {
                     console.log("addAvailability (duplicate) result:", res);
                 }
 
-                toast.dismiss(loadingToast);
-                toast.success("Availability updated and duplicated successfully");
+                // toast.dismiss(loadingToast);
+                // toast.success("Availability updated and duplicated successfully");
 
                 const month = currentDate.getMonth() + 1;
                 const year = currentDate.getFullYear();
 
-                await dispatch(fetchAvailabilitiesByMonth({
-                    interviewerId: userId,
-                    month,
-                    year
-                }));
-
+                await dispatch(
+                    fetchAvailabilitiesByMonth({
+                        interviewerId: userId,
+                        month,
+                        year,
+                    }),
+                );
             } else {
                 // Create all slots
                 for (const p of payloads) {
@@ -430,37 +367,36 @@ const ScheduleManagement = () => {
                     console.log("addAvailability result:", res);
                 }
 
-                toast.dismiss(loadingToast);
-                toast.success("Availability slots created successfully");
+                // toast.dismiss(loadingToast);
+                // toast.success("Availability slots created successfully");
 
                 const month = currentDate.getMonth() + 1;
                 const year = currentDate.getFullYear();
 
-                await dispatch(fetchAvailabilitiesByMonth({
-                    interviewerId: userId,
-                    month,
-                    year
-                }));
-
+                await dispatch(
+                    fetchAvailabilitiesByMonth({
+                        interviewerId: userId,
+                        month,
+                        year,
+                    }),
+                );
             }
 
             setOpenModal(false);
             setEditingId(null);
-
         } catch (err) {
-            toast.dismiss(loadingToast);
+            // toast.dismiss(loadingToast);
             console.error(err);
             showError("An unexpected error occurred");
         }
     };
-
 
     const handleMiniCalendarDateClick = (date) => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
             const dateUtc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
             calendarApi.gotoDate(dateUtc);
-            calendarApi.changeView('timeGridDay');
+            calendarApi.changeView("timeGridDay");
             setSelectedDate(dateUtc);
         }
     };
@@ -471,7 +407,10 @@ const ScheduleManagement = () => {
         const eventEnd = avail.endTime;
         const isPast = eventEnd < now; // String comparison works for ISO 8601 format
 
-        let backgroundColor, borderColor, classNames = [], title = "";
+        let backgroundColor,
+            borderColor,
+            classNames = [],
+            title = "";
 
         // Use helper to map numeric API status to colors/titles
         const status = avail.status ?? AVAILABILITY_SLOTS_STATUS.AVAILABLE;
@@ -485,9 +424,8 @@ const ScheduleManagement = () => {
             classNames.push("past-event");
         }
 
-        // Derive isBooked from status for backward compatibility
-        const isBooked = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.RESERVED ||
-            Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
+        // Derive isUnavailable from status
+        const isUnavailable = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.UNAVAILABLE;
 
         return {
             id: String(avail.id),
@@ -496,18 +434,15 @@ const ScheduleManagement = () => {
             end: avail.endTime,
             backgroundColor,
             borderColor,
+            textColor: colors.textColor,
             classNames,
-            editable: !isPast && !isBooked,
+            editable: !isPast && !isUnavailable,
             extendedProps: {
                 isPast,
-                isBooked: isBooked,
+                isUnavailable: isUnavailable,
                 status: avail.status,
-                focus: avail.focus,
-                typeId: avail.typeId,
                 coachId: avail.coachId,
-                candidateId: avail.candidateId
-            }
-
+            },
         };
     });
 
@@ -520,7 +455,9 @@ const ScheduleManagement = () => {
                 if (removeAvailability.fulfilled.match(resultAction)) {
                     toast.success("Availability slot deleted");
                 } else {
-                    showError(resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability");
+                    showError(
+                        resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability",
+                    );
                 }
             } catch (err) {
                 console.error("Error deleting availability:", err);
@@ -532,7 +469,6 @@ const ScheduleManagement = () => {
         // setConfirmType(null);
         setSelectedItem(null);
     };
-
 
     return (
         <>
@@ -567,27 +503,22 @@ const ScheduleManagement = () => {
                             </Typography>
                         </div>
 
-                        <Button
-                            variant="contained"
-                            color="primary"
+                        <PrimaryButton
                             startIcon={<IoAdd size={18} />}
                             onClick={handleAddClick}
                             sx={{
-                                fontWeight: 600,
-                                textTransform: "none",
                                 py: 1.25,
                                 px: 3,
                             }}
-
                         >
                             Add Slot
-                        </Button>
+                        </PrimaryButton>
                     </Stack>
 
                     {/* Main Content */}
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
                         {/* Calendar Section */}
-                        <Card
+                        <BaseCard
                             variant="outlined"
                             sx={{
                                 borderColor: "divider",
@@ -600,8 +531,13 @@ const ScheduleManagement = () => {
                                     <Box
                                         sx={{
                                             position: "absolute",
-                                            top: 0, left: 0, right: 0, bottom: 0,
-                                            display: "flex", justifyContent: "center", alignItems: "center",
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            alignItems: "center",
                                             bgcolor: "rgba(255,255,255,0.4)",
                                             zIndex: 2,
                                             borderRadius: "12px",
@@ -632,9 +568,8 @@ const ScheduleManagement = () => {
                                             return;
                                         }
 
-
                                         const avail = availabilities.find(
-                                            (a) => String(a.id) === String(info.event.id)
+                                            (a) => String(a.id) === String(info.event.id),
                                         );
                                         if (avail) {
                                             handleEditClick(avail);
@@ -659,8 +594,8 @@ const ScheduleManagement = () => {
                                         if (draggedEvent.extendedProps.isPast) {
                                             return false;
                                         }
-                                        // Prevent dragging booked slots
-                                        if (draggedEvent.extendedProps.isBooked) {
+                                        // Prevent dragging unavailable slots
+                                        if (draggedEvent.extendedProps.isUnavailable) {
                                             return false;
                                         }
                                         return true;
@@ -670,16 +605,26 @@ const ScheduleManagement = () => {
                                         const calendarApi = calendarRef.current?.getApi();
                                         if (calendarApi) {
                                             const view = calendarApi.view;
-                                            if (view.type === 'timeGridDay') {
+                                            if (view.type === "timeGridDay") {
                                                 setSelectedDate(view.currentStart);
                                             }
                                         }
                                     }}
                                     height="auto"
                                     timeZone="local"
+                                    slotLabelFormat={{
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                    }}
+                                    eventTimeFormat={{
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                    }}
                                 />
                             </Box>
-                        </Card>
+                        </BaseCard>
 
                         {/* Right Panel: Mini Calendar + Quick Legend */}
                         <Stack spacing={3}>
@@ -692,19 +637,19 @@ const ScheduleManagement = () => {
                                 />
                             </div>
 
-                            <Card
+                            <BaseCard
                                 sx={{
                                     background: "white",
                                     boxShadow: 1,
-                                    border: '1px solid',
-                                    borderColor: 'grey.200',
+                                    border: "1px solid",
+                                    borderColor: "grey.200",
                                 }}
                             >
                                 <CardContent sx={{ p: 2.5 }}>
                                     <Box display="flex" justifyContent="space-between" mb={2}>
                                         <Typography
                                             variant="overline"
-                                            sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1 }}
+                                            sx={{ color: "text.secondary", fontWeight: 600, letterSpacing: 1 }}
                                         >
                                             Quick Legend
                                         </Typography>
@@ -712,7 +657,7 @@ const ScheduleManagement = () => {
 
                                     <StatusLegend />
                                 </CardContent>
-                            </Card>
+                            </BaseCard>
 
                             <UpcomingSessionBlog
                                 availabilities={availabilities}
@@ -721,13 +666,12 @@ const ScheduleManagement = () => {
                                 parseLocalTime={parseLocalTime}
                             />
                         </Stack>
-
                     </Box>
                 </Box>
 
                 {/* Modal Add/Edit */}
-                {openModal && (
-                    editingId ? (
+                {openModal &&
+                    (editingId ? (
                         <UpdateAvailableSlotDialog
                             open={openModal}
                             onClose={() => {
@@ -735,19 +679,15 @@ const ScheduleManagement = () => {
                                 setEditingId(null);
                                 setFormData({
                                     date: "",
-                                    focus: FocusEnum.JobDescription,
-                                    typeId: "",
                                     startHour: 9,
                                     startMinute: 0,
                                     endHour: 10,
                                     endMinute: 0,
-                                    duplicateDates: []
+                                    duplicateDates: [],
                                 });
                             }}
                             formData={formData}
                             setFormData={setFormData}
-                            interviewTypes={interviewTypes}
-                            FocusEnum={FocusEnum}
                             handleSubmit={handleSubmit}
                             handleDelete={handleDeleteFromDialog}
                             loading={loading}
@@ -762,27 +702,22 @@ const ScheduleManagement = () => {
                                 setEditingId(null);
                                 setFormData({
                                     date: "",
-                                    focus: FocusEnum.JobDescription,
-                                    typeId: "",
                                     startHour: 9,
                                     startMinute: 0,
                                     endHour: 10,
                                     endMinute: 0,
-                                    duplicateDates: []
+                                    duplicateDates: [],
                                 });
                             }}
                             formData={formData}
                             setFormData={setFormData}
-                            interviewTypes={interviewTypes}
-                            FocusEnum={FocusEnum}
                             handleSubmit={handleSubmit}
                             loading={loading}
                             minDate={minDateStr}
                             maxDate={maxDateStr}
                         />
-                    )
-                )}
-            </Box >
+                    ))}
+            </Box>
             <ConfirmModal
                 show={confirmOpen}
                 title={"Confirm Delete"}

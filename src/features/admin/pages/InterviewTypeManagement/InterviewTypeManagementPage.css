@@ -1,0 +1,178 @@
+/* Interview Type Management page styles */
+
+.interview-type-management {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.interview-type-panel {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.interview-type-management .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.interview-type-management .toolbar .left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.interview-type-management .title {
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+
+.interview-type-management .search-input {
+    width: 320px;
+}
+
+.interview-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+.interview-type-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.interview-type-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.interview-type-card-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--mui-palette-primary-main);
+}
+
+.interview-type-card-description {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.interview-type-card-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.interview-type-card-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.interview-type-card-meta .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.interview-type-card-meta .meta-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #94a3b8;
+}
+
+.interview-type-card-meta .meta-value {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1f2937;
+}
+
+.interview-type-card-meta .meta-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.meta-pill.pill-yes {
+    background: rgba(34, 197, 94, 0.16);
+    color: #15803d;
+}
+
+.meta-pill.pill-no {
+    background: rgba(248, 113, 113, 0.16);
+    color: #b91c1c;
+}
+
+.meta-pill.pill-active {
+    background: rgba(59, 130, 246, 0.16);
+    color: #1d4ed8;
+}
+
+.meta-pill.pill-inactive {
+    background: rgba(148, 163, 184, 0.2);
+    color: #475569;
+}
+
+.interview-type-empty {
+    padding: 36px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.interview-type-empty-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--mui-palette-primary-main);
+}
+
+.interview-type-empty-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    max-width: 380px;
+}
+
+.interview-type-management .pagination-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 16px 16px;
+}
+
+@media (max-width: 900px) {
+    .interview-type-management .search-input {
+        width: 180px;
+    }
+    .interview-type-card-meta {
+        grid-template-columns: 1fr;
+    }
+}

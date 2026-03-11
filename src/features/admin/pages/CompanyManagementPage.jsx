@@ -58,7 +58,7 @@ export default function CompanyManagementPage() {
                                 transition: 'opacity 0.2s',
                                 '&:hover': { opacity: 1 },
                                 p: 0.5,
-                                color: '#667eea'
+                                color: '#4F46E5'
                             }}
                         >
                             <ContentCopyIcon sx={{ fontSize: '14px' }} />

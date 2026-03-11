@@ -1,0 +1,39 @@
+/* ──────────────────────────────────────
+   JDBookingDialog — Round-specific styles
+   Inherits calendar styles from BookingSlotDialog.css
+   via .booking-calendar-container class
+   ────────────────────────────────────── */
+
+/* ───── Round Cards ───── */
+
+.jd-round-card {
+    padding: 12px 14px;
+    border-radius: 8px !important;
+    transition: all 0.2s ease;
+}
+
+.jd-round-card:hover {
+    border-color: #6366f1 !important;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
+}
+
+.jd-round-card.active {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.03), rgba(99, 102, 241, 0.06));
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+.jd-round-card.dragging {
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25);
+    border-color: #6366f1 !important;
+}
+
+/* ───── Round Events in Calendar ───── */
+
+.jd-calendar-container .fc .jd-round-event {
+    border-radius: 6px !important;
+    opacity: 0.9 !important;
+    border-width: 2px !important;
+    cursor: default !important;
+    font-size: 0.75rem;
+    font-weight: 600;
+}

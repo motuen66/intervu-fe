@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
     Container,
     Typography,
-    Button,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -18,6 +17,8 @@ import { adminEndPoints } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import UserFormModal from '../components/UserFormModal';
 import DataTable from '../components/DataTable';
+import ConfirmModal from '../../../common/components/ConfirmModal';
+import { PrimaryButton } from '../../../common/components/buttons';
 import './AdminDashboard.css';
 
 export default function UserManagementPage() {
@@ -29,12 +30,12 @@ export default function UserManagementPage() {
     const [searchInput, setSearchInput] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
-    
+
     // Modal states
     const [openFormModal, setOpenFormModal] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [formMode, setFormMode] = useState('create'); 
+    const [formMode, setFormMode] = useState('create');
     useEffect(() => {
         fetchUsers();
     }, [page, pageSize, roleFilter, searchTerm]);
@@ -62,7 +63,7 @@ export default function UserManagementPage() {
                 method: METHOD.GET,
                 endpoint: `${adminEndPoints.FILTER_USERS}?${params.join('&')}`,
             });
-            
+
             if (response?.success) {
                 setUsers(response.data?.items || []);
                 setTotalItems(response.data?.totalItems || 0);
@@ -122,13 +123,13 @@ export default function UserManagementPage() {
 
     const handleDeleteConfirm = async () => {
         if (!selectedUser) return;
-        
+
         try {
             const response = await callApi({
                 method: METHOD.DELETE,
                 endpoint: adminEndPoints.DELETE_USER(selectedUser.id),
             });
-            
+
             if (response?.success) {
                 toast.success('Delete user successfully!');
                 fetchUsers();
@@ -146,7 +147,7 @@ export default function UserManagementPage() {
     const handleFormSubmit = async (formData, onError) => {
         try {
             let response;
-            
+
             if (formMode === 'create') {
                 response = await callApi({
                     method: METHOD.POST,
@@ -160,7 +161,7 @@ export default function UserManagementPage() {
                     arg: formData,
                 });
             }
-            
+
             if (response?.success) {
                 toast.success(formMode === 'create' ? 'Tạo user thành công!' : 'Cập nhật user thành công!');
                 setOpenFormModal(false);
@@ -220,27 +221,20 @@ export default function UserManagementPage() {
                     <h2 className="admin-page-title">User</h2>
                     <p className="admin-page-subtitle">Manage user accounts and details.</p>
                 </div>
-                <Button
-                    variant="contained"
+                <PrimaryButton
                     startIcon={<AddIcon />}
                     onClick={handleCreateUser}
                     sx={{
                         textTransform: 'none',
-                        background: '#2f5cf6',
-                        color: '#ffffff',
                         px: 3,
                         py: 1,
                         borderRadius: '999px',
                         fontSize: '14px',
                         fontWeight: 600,
-                        boxShadow: '0 10px 24px rgba(47, 92, 246, 0.32)',
-                        '&:hover': {
-                            background: '#2952e6'
-                        }
                     }}
                 >
                     Create User
-                </Button>
+                </PrimaryButton>
             </div>
 
             <div className="admin-card">
@@ -278,7 +272,7 @@ export default function UserManagementPage() {
                                         borderColor: 'rgba(102, 126, 234, 0.5)'
                                     },
                                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: '#667eea'
+                                        borderColor: '#4F46E5'
                                     }
                                 }}
                                 MenuProps={{
@@ -331,43 +325,20 @@ export default function UserManagementPage() {
             />
 
             {/* Delete Confirmation Dialog */}
-            <Dialog 
-                open={openDeleteDialog} 
-                onClose={() => setOpenDeleteDialog(false)}
-                PaperProps={{
-                    sx: {
-                        borderRadius: 4,
-                        minWidth: 420,
-                        boxShadow: '0 18px 40px rgba(15, 23, 42, 0.2)'
-                    }
-                }}
-            >
-                <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Delete user</DialogTitle>
-                <DialogContent sx={{ pt: 1 }}>
-                    <Typography sx={{ fontSize: '0.95rem', color: '#1f2937' }}>
-                        Are you sure you want to delete <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
-                    </Typography>
-                    <Typography color="error" sx={{ mt: 1, fontSize: '0.875rem' }}>
-                        This action cannot be undone.
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                    <Button 
-                        onClick={() => setOpenDeleteDialog(false)}
-                        sx={{ textTransform: 'none' }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button 
-                        onClick={handleDeleteConfirm}
-                        variant="contained"
-                        color="error"
-                        sx={{ textTransform: 'none', borderRadius: 3, px: 3 }}
-                    >
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <ConfirmModal
+                show={openDeleteDialog}
+                title="Delete user"
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setOpenDeleteDialog(false)}
+                message={
+                    <>
+                        Are you sure you want to delete <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{"\n\n"}
+                        <span style={{ color: '#d32f2f', fontSize: '0.875rem' }}>This action cannot be undone.</span>
+                    </>
+                }
+            />
         </Container>
     );
 }

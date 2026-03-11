@@ -1,30 +1,25 @@
 import React, { useState } from "react";
 import {
     Box,
-    Button,
     TextField,
     Typography,
     Modal,
     Card,
     Stack,
     FormControl,
-    InputLabel,
     Select,
     MenuItem,
-    IconButton,
     Chip,
 } from "@mui/material";
-import { IoAdd, IoClose } from "react-icons/io5";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { IoAdd } from "react-icons/io5";
 import toast from "react-hot-toast";
-import { getInterviewTypeById } from "../../../admin/services/interviewTypeApi";
 
 const CreateAvailableSlotDialog = ({
     open,
     onClose,
     formData,
     setFormData,
-    interviewTypes,
-    FocusEnum,
     handleSubmit,
     loading,
     minDate,
@@ -44,7 +39,7 @@ const CreateAvailableSlotDialog = ({
         }
         setFormData({
             ...formData,
-            duplicateDates: [...formData.duplicateDates, tempDate]
+            duplicateDates: [...formData.duplicateDates, tempDate],
         });
         setTempDate("");
     };
@@ -52,14 +47,21 @@ const CreateAvailableSlotDialog = ({
     const handleRemoveDuplicateDate = (dateToRemove) => {
         setFormData({
             ...formData,
-            duplicateDates: formData.duplicateDates.filter(d => d !== dateToRemove)
+            duplicateDates: formData.duplicateDates.filter((d) => d !== dateToRemove),
         });
     };
 
     return (
         <Modal
             open={open}
-            onClose={onClose}
+            onClose={(event, reason) => {
+                // allow closing only via backdrop click or escape key
+                if (reason === "backdropClick" || reason === "escapeKeyDown") onClose();
+            }}
+            disableScrollLock={false}
+            closeAfterTransition
+            keepMounted
+            BackdropProps={{ style: { position: "fixed" } }}
             sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
         >
             <Card sx={{ width: "90%", maxWidth: "500px", borderRadius: "12px", maxHeight: "90vh", overflowY: "auto" }}>
@@ -78,11 +80,13 @@ const CreateAvailableSlotDialog = ({
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 inputProps={{
-                                    min: minDate || (() => {
-                                        const now = new Date();
-                                        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                                    })(),
-                                    max: maxDate
+                                    min:
+                                        minDate ||
+                                        (() => {
+                                            const now = new Date();
+                                            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                                        })(),
+                                    max: maxDate,
                                 }}
                                 fullWidth
                                 variant="outlined"
@@ -101,97 +105,36 @@ const CreateAvailableSlotDialog = ({
                                     value={tempDate}
                                     onChange={(e) => setTempDate(e.target.value)}
                                     inputProps={{
-                                        min: minDate || (() => {
-                                            const now = new Date();
-                                            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                                        })(),
-                                        max: maxDate
+                                        min:
+                                            minDate ||
+                                            (() => {
+                                                const now = new Date();
+                                                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                                            })(),
+                                        max: maxDate,
                                     }}
                                     fullWidth
                                     variant="outlined"
                                     size="small"
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 />
-                                <Button
-                                    variant="outlined"
+                                <SecondaryButton
                                     onClick={handleAddDuplicateDate}
                                     sx={{ minWidth: "auto", px: 1 }}
                                 >
                                     <IoAdd size={20} />
-                                </Button>
+                                </SecondaryButton>
                             </Stack>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                                 {formData.duplicateDates?.map((date) => (
-                                    <Chip
+                                    <StatusChip
                                         key={date}
                                         label={date}
                                         onDelete={() => handleRemoveDuplicateDate(date)}
-                                        size="small"
-                                        variant="outlined"
+                                        color="primary"
                                     />
                                 ))}
                             </Box>
-                        </Box>
-
-                        <Box>
-                            <FormControl fullWidth margin="normal">
-                                <InputLabel id="focus-label">Focus</InputLabel>
-                                <Select
-                                    labelId="focus-label"
-                                    value={formData.focus}
-                                    label="Focus"
-                                    onChange={(e) => {
-                                        const newFocus = Number(e.target.value);
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            focus: newFocus,
-                                            typeId: newFocus === FocusEnum.GeneralSkills ? prev.typeId : "",
-                                        }));
-                                    }}
-                                >
-                                    <MenuItem value={FocusEnum.JobDescription}>Job Description</MenuItem>
-                                    <MenuItem value={FocusEnum.GeneralSkills}>General Skills</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            {formData.focus === FocusEnum.GeneralSkills && (
-                                <FormControl fullWidth margin="normal">
-                                    <InputLabel id="type-label">Type</InputLabel>
-                                    <Select
-                                        labelId="type-label"
-                                        value={formData.typeId || ""}
-                                        label="Type"
-                                        onChange={async (e) => {
-                                            const selectedTypeId = e.target.value;
-                                            setFormData({ ...formData, typeId: selectedTypeId });
-
-                                            if (selectedTypeId) {
-                                                try {
-                                                    const typeDetails = await getInterviewTypeById(selectedTypeId);
-                                                    const duration = typeDetails.durationMinutes || 0;
-
-                                                    if (duration > 0) {
-                                                        const startTotalMinutes = formData.startHour * 60 + formData.startMinute;
-                                                        const endTotalMinutes = startTotalMinutes + duration;
-                                                        const newEndHour = Math.floor(endTotalMinutes / 60);
-                                                        const newEndMinute = endTotalMinutes % 60;
-                                                        setFormData((prev) => ({ ...prev, typeId: selectedTypeId, endHour: newEndHour, endMinute: newEndMinute }));
-                                                    }
-                                                } catch (error) {
-                                                    console.error("Error fetching interview type details:", error);
-                                                    toast.error("Failed to fetch interview type duration");
-                                                }
-                                            }
-                                        }}
-                                    >
-                                        {interviewTypes.map((t) => (
-                                            <MenuItem key={t.id} value={t.id}>
-                                                {t.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            )}
                         </Box>
 
                         <Box>
@@ -200,28 +143,13 @@ const CreateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.startHour} onChange={(e) => {
-                                        const newHour = Number(e.target.value);
-
-                                        setFormData((prev) => {
-                                            if (prev.focus !== FocusEnum.GeneralSkills || !prev.typeId)
-                                                return { ...prev, startHour: newHour };
-
-                                            const type = interviewTypes.find(t => t.id === prev.typeId);
-                                            if (!type?.durationMinutes)
-                                                return { ...prev, startHour: newHour };
-
-                                            const total = newHour * 60 + prev.startMinute + type.durationMinutes;
-
-                                            return {
-                                                ...prev,
-                                                startHour: newHour,
-                                                endHour: Math.floor(total / 60),
-                                                endMinute: total % 60,
-                                            };
-                                        });
-                                    }}
-                                        sx={{ borderRadius: "8px" }}>
+                                    <Select
+                                        value={formData.startHour}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, startHour: Number(e.target.value) })
+                                        }
+                                        sx={{ borderRadius: "8px" }}
+                                    >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
                                                 {hour.toString().padStart(2, "0")}
@@ -231,7 +159,11 @@ const CreateAvailableSlotDialog = ({
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.startMinute} onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })} sx={{ borderRadius: "8px" }}>
+                                    <Select
+                                        value={formData.startMinute}
+                                        onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
+                                        sx={{ borderRadius: "8px" }}
+                                    >
                                         {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
@@ -248,7 +180,11 @@ const CreateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.endHour} disabled={formData.focus === FocusEnum.GeneralSkills} onChange={(e) => setFormData({ ...formData, endHour: e.target.value })} sx={{ borderRadius: "8px" }}>
+                                    <Select
+                                        value={formData.endHour}
+                                        onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
+                                        sx={{ borderRadius: "8px" }}
+                                    >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
                                                 {hour.toString().padStart(2, "0")}
@@ -258,7 +194,11 @@ const CreateAvailableSlotDialog = ({
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select value={formData.endMinute} disabled={formData.focus === FocusEnum.GeneralSkills} onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })} sx={{ borderRadius: "8px" }}>
+                                    <Select
+                                        value={formData.endMinute}
+                                        onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
+                                        sx={{ borderRadius: "8px" }}
+                                    >
                                         {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
@@ -270,12 +210,17 @@ const CreateAvailableSlotDialog = ({
                         </Box>
 
                         <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
-                            <Button variant="outlined" onClick={onClose} sx={{ textTransform: "none", borderColor: "divider", color: "text.secondary" }}>
+                            <SecondaryButton
+                                onClick={onClose}
+                            >
                                 Cancel
-                            </Button>
-                            <Button variant="contained" color="primary" onClick={handleSubmit} disabled={loading} sx={{ textTransform: "none" }}>
+                            </SecondaryButton>
+                            <PrimaryButton
+                                onClick={handleSubmit}
+                                loading={loading}
+                            >
                                 Create
-                            </Button>
+                            </PrimaryButton>
                         </Stack>
                     </Stack>
                 </Box>

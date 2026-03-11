@@ -1,0 +1,86 @@
+.admin-interviews-page .admin-interviews-card {
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-interviews-empty {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #6b7280;
+}
+
+.admin-interviews-empty h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.admin-interviews-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.admin-interviews-dialog-title {
+  padding: 20px 24px 14px;
+}
+
+.admin-interviews-dialog {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+}
+
+.admin-interviews-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-interviews-dialog-eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.admin-interviews-dialog-title-text {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--mui-palette-primary-main);
+}
+
+.admin-interviews-dialog-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #64748b;
+  max-width: 520px;
+}
+
+.admin-interviews-close {
+  margin-left: auto;
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+}
+
+.admin-interviews-dialog-content {
+  padding: 0;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+}
+
+.admin-interviews-dialog-content .interview-type-management {
+  padding: 18px;
+}
+
+.admin-interviews-dialog .MuiDialogActions-root {
+  padding: 10px 18px 16px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
