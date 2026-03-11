@@ -55,13 +55,7 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{ sx: dialogStyles.paper }}
-        >
+        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{ sx: dialogStyles.paper }}>
             <DialogTitle
                 sx={{
                     fontWeight: 700,
@@ -103,7 +97,7 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
                                 fullWidth
                                 label="Interview Type"
                                 value={item?.interviewTypeName || ""}
-                                disabled
+                                InputProps={{ readOnly: true }}
                             />
                         </Grid>
 

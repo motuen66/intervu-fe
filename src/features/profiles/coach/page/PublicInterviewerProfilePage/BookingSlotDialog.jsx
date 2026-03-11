@@ -34,6 +34,7 @@ import { getCoachInterviewServices } from "../../../../coach/services/coachInter
 import toast from "react-hot-toast";
 import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 import "./BookingSlotDialog.css";
+import StatusChip from "../../../../../common/components/StatusChip";
 
 const STEPS = ["Select Service", "Pick Time on Calendar"];
 

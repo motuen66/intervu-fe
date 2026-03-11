@@ -67,7 +67,7 @@ const CreateAvailableSlotDialog = ({
             <Card sx={{ width: "90%", maxWidth: "500px", borderRadius: "12px", maxHeight: "90vh", overflowY: "auto" }}>
                 <Box sx={{ p: 3 }}>
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
-                        Create Availability Slot
+                        Set Availability Time
                     </Typography>
 
                     <Stack spacing={2.5}>

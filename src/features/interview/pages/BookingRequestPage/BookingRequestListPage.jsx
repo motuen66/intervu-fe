@@ -97,12 +97,12 @@ export default function BookingRequestListPage() {
         <Box className="booking-list-page">
             <Box className="page-header">
                 <Typography variant="h5" fontWeight={700}>
-                    Booking Requests
+                    Your Bookings
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                     {isCoach
-                        ? "Manage incoming booking requests from candidates."
-                        : "Track your booking requests to coaches."}
+                        ? "Manage incoming bookings from candidates."
+                        : "Track your bookings to coaches."}
                 </Typography>
             </Box>
 
@@ -155,14 +155,14 @@ export default function BookingRequestListPage() {
             ) : items.length === 0 ? (
                 <Box textAlign="center" py={6}>
                     <Typography variant="h6" color="text.secondary">
-                        No booking requests found
+                        No booking found
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                         {typeFilter || statusFilter
                             ? "Try adjusting your filters."
                             : isCoach
-                                ? "You have no incoming booking requests yet."
-                                : "You haven't submitted any booking requests yet."}
+                                ? "You have no incoming bookings yet."
+                                : "You haven't submitted any bookings yet."}
                     </Typography>
                 </Box>
             ) : (
