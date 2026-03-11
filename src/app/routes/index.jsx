@@ -18,6 +18,7 @@ import BookingRequestListPage from "../../features/interview/pages/BookingReques
 import BookingRequestDetailPage from "../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
 import App from "../../App";
+import PaymentHistoryPage from "../../features/payments/pages/PaymentHistoryPage.jsx";
 import InterviewQuestionsPage from "../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx";
 import QuestionDetailPage from "../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx";
 import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx";
@@ -54,6 +55,16 @@ export const routes = [
             { path: "/user/profile", element: <UserProfilePage /> },
             { path: "/settings", element: <UserProfilePage /> },
         ],
+    },
+
+    // Payment history page (candidate & coach)
+    {
+        element: (
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER]}>
+                <MainLayout />
+            </ProtectedRoute>
+        ),
+        children: [{ path: "/payment-history", element: <PaymentHistoryPage /> }],
     },
 
     {

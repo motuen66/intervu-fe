@@ -354,7 +354,7 @@ const MainLayout = () => {
                         <div className="navbar-logo-icon">V</div>
                         <h1>INTERVU</h1>
                     </div>
-
+                    
                     {/* Navigation Menu */}
                     <div className="navbar-menu">
                         {currentMenuItems.map((item) => (
@@ -426,6 +426,15 @@ const MainLayout = () => {
                                         }}
                                     >
                                         View Profile
+                                    </button>
+                                    <button
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                          navigate('/payment-history');
+                                          setIsUserDropdownOpen(false);
+                                        }}
+                                    >
+                                        View Payment History
                                     </button>
                                     <button
                                         className="dropdown-item"
