@@ -36,7 +36,7 @@ const UpcomingSessionBlog = ({
         >
             <CardContent sx={{ p: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "text.primary" }}>
-                    Upcoming Interview Slots
+                    Upcoming Interview Times
                     {/* ({upcomingSlots.length}) */}
                 </Typography>
 
@@ -79,7 +79,7 @@ const UpcomingSessionBlog = ({
 
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
                                             <Typography variant="body2" sx={{ fontWeight: 600, color: avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? 'text.primary' : 'text.secondary' }} noWrap>
-                                                {avail.candidateName || avail.candidate?.fullName || avail.candidate?.name || (avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? 'Booked' : 'No Booking Yet')}
+                                                {avail.candidateName || avail.candidate?.fullName || avail.candidate?.name || (avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? 'Booked' : '')}
                                             </Typography>
 
                                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontWeight: 500 }} noWrap>

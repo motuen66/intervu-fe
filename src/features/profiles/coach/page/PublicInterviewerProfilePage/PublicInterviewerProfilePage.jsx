@@ -20,7 +20,6 @@ import {
 import BaseCard from "../../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
 import BookingSlotDialog from "./BookingSlotDialog";
-import ExternalBookingDialog from "./ExternalBookingDialog";
 import JDBookingDialog from "./JDBookingDialog";
 import StatusChip from "../../../../../common/components/StatusChip";
 import { Calendar, Send, FileText, ExternalLink, Star, Briefcase, Building2, Code } from "lucide-react";
@@ -33,7 +32,6 @@ function PublicInterviewerProfilePage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-    const [externalBookingOpen, setExternalBookingOpen] = useState(false);
     const [jdBookingOpen, setJdBookingOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const { slugProfileUrl } = useParams();
@@ -431,21 +429,6 @@ function PublicInterviewerProfilePage() {
                                     <SecondaryButton
                                         fullWidth
                                         size="large"
-                                        startIcon={<Send size={18} strokeWidth={2} />}
-                                        onClick={() => setExternalBookingOpen(true)}
-                                        sx={{
-                                            borderRadius: "8px",
-                                            py: 1.5,
-                                            fontSize: "0.9rem",
-                                            mb: 1,
-                                        }}
-                                    >
-                                        Request External Booking
-                                    </SecondaryButton>
-
-                                    <SecondaryButton
-                                        fullWidth
-                                        size="large"
                                         startIcon={<FileText size={18} strokeWidth={2} />}
                                         onClick={() => setJdBookingOpen(true)}
                                         sx={{
@@ -479,13 +462,6 @@ function PublicInterviewerProfilePage() {
                 onClose={() => setBookingDialogOpen(false)}
                 interviewerId={profile?.user?.id}
                 onSlotSelected={handleSlotSelected}
-            />
-
-            {/* External Booking Dialog (Flow B) */}
-            <ExternalBookingDialog
-                open={externalBookingOpen}
-                onClose={() => setExternalBookingOpen(false)}
-                coachId={profile?.user?.id}
             />
 
             {/* JD Multi-Round Booking Dialog (Flow C) */}

@@ -18,6 +18,10 @@ import BookingRequestListPage from "../../features/interview/pages/BookingReques
 import BookingRequestDetailPage from "../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
 import App from "../../App";
+import InterviewQuestionsPage from "../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx";
+import QuestionDetailPage from "../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx";
+import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx";
+import SavedQuestionsPage from "../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx";
 
 export const routes = [
     { path: "/", element: <Navigate to="/home" replace /> },
@@ -27,6 +31,17 @@ export const routes = [
 
     // Home page (public)
     { element: <MainLayout />, children: [{ path: "/home", element: <HomePage /> }] },
+
+    // Questions pages (public)
+    {
+        element: <MainLayout />,
+        children: [
+            { path: "/questions", element: <InterviewQuestionsPage /> },
+            { path: "/questions/share", element: <ShareExperiencePage /> },
+            { path: "/questions/saved", element: <SavedQuestionsPage /> },
+            { path: "/questions/:id", element: <QuestionDetailPage /> },
+        ],
+    },
 
     // Profile route - accessible by all authenticated users
     {

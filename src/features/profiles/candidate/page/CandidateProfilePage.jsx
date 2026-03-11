@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { candidateProfileEndPoints } from "../service/candidateProfileApi.js";
+import { interactionEndPoints } from "../../../interviewQuestions/service/interactionApi.js";
 import {
     Avatar,
     Box,
@@ -19,6 +20,13 @@ import {
     Paper,
     Link,
     IconButton,
+    TextField,
+    Tab,
+    Tabs,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemText,
 } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import StatusChip from "../../../../common/components/StatusChip";
@@ -44,6 +52,7 @@ import { ROLES } from "../../../../common/constants/common";
 
 function CandidateProfilePage() {
     const { id: routeId, slugProfileUrl, profileUrl } = useParams();
+    const navigate = useNavigate();
     const user = useUser();
 
     const [profile, setProfile] = useState(null);
@@ -60,6 +69,9 @@ function CandidateProfilePage() {
     const [pendingAvatarLocalUrl, setPendingAvatarLocalUrl] = useState(null);
     const [showConfirmAvatar, setShowConfirmAvatar] = useState(false);
     const [showConfirmSave, setShowConfirmSave] = useState(false);
+    const [tabValue, setTabValue] = useState(0);
+    const [savedQuestions, setSavedQuestions] = useState([]);
+    const [loadingSaved, setLoadingSaved] = useState(false);
     const dispatch = useDispatch();
 
     const endpoint = useMemo(() => {
@@ -121,8 +133,8 @@ function CandidateProfilePage() {
                     const skills = Array.isArray(skillsRes.data)
                         ? skillsRes.data
                         : Array.isArray(skillsRes.data?.items)
-                            ? skillsRes.data.items
-                            : [];
+                          ? skillsRes.data.items
+                          : [];
                     setAllSkills(skills);
                     setAllSkillNames(skills.map((sk) => (sk && (sk.name || String(sk))) || "").filter(Boolean));
                 }
@@ -136,6 +148,19 @@ function CandidateProfilePage() {
     const isCandidate = user?.role === ROLES.CANDIDATE || String(user?.role).toLowerCase() === "candidate";
     const isSelf = (!routeId && !slugProfileUrl) || String(routeId) === String(user?.id);
     const canEdit = isCandidate && isSelf;
+
+    // Fetch saved questions when user switches to that tab
+    useEffect(() => {
+        if (tabValue !== 1 || !isSelf || !isCandidate) return;
+        setLoadingSaved(true);
+        callApi({ method: METHOD.GET, endpoint: interactionEndPoints.GET_SAVED_QUESTIONS })
+            .then(({ data }) => {
+                const items = data?.items ?? data?.data ?? (Array.isArray(data) ? data : []);
+                setSavedQuestions(items);
+            })
+            .catch(console.error)
+            .finally(() => setLoadingSaved(false));
+    }, [tabValue, isSelf, isCandidate]);
 
     const handleSave = async () => {
         if (!canEdit) return;
@@ -180,19 +205,31 @@ function CandidateProfilePage() {
     const handleConfirmAvatar = async () => {
         setShowConfirmAvatar(false);
         if (!pendingAvatarFile) return;
-        console
+        console;
         try {
             const data = await uploadImage(user.id, pendingAvatarFile);
             if (data?.profilePictureUrl) {
                 const updatedUser = { ...user, profilePicture: data.profilePictureUrl };
-                try { localStorage.setItem("user", JSON.stringify(updatedUser)); } catch (e) { console.warn(e); }
+                try {
+                    localStorage.setItem("user", JSON.stringify(updatedUser));
+                } catch (e) {
+                    console.warn(e);
+                }
                 dispatch(setUserData(updatedUser));
-                setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl }, profilePicture: data.profilePictureUrl }));
+                setProfile((prev) => ({
+                    ...prev,
+                    user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl },
+                    profilePicture: data.profilePictureUrl,
+                }));
                 setAvatarKey(Date.now());
             }
         } catch (err) {
             console.error(err);
-            setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
+            setProfile((prev) => ({
+                ...prev,
+                user: { ...(prev?.user || {}), profilePicture: prevAvatar },
+                profilePicture: prevAvatar,
+            }));
         } finally {
             setPendingAvatarFile(null);
             setPendingAvatarLocalUrl(null);
@@ -201,7 +238,11 @@ function CandidateProfilePage() {
     };
 
     const handleCancelAvatar = () => {
-        setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
+        setProfile((prev) => ({
+            ...prev,
+            user: { ...(prev?.user || {}), profilePicture: prevAvatar },
+            profilePicture: prevAvatar,
+        }));
         setPendingAvatarFile(null);
         setPendingAvatarLocalUrl(null);
         setPrevAvatar(null);
@@ -233,7 +274,8 @@ function CandidateProfilePage() {
 
     const avatarUrl = profile?.profilePicture || profile?.user?.profilePicture || "";
     const viewingBySlug = Boolean(slugProfileUrl || profileUrl);
-    const fullName = profile?.user?.fullName ?? profile?.fullName ?? (viewingBySlug ? "Unnamed" : user?.fullName || "Unnamed");
+    const fullName =
+        profile?.user?.fullName ?? profile?.fullName ?? (viewingBySlug ? "Unnamed" : user?.fullName || "Unnamed");
     const email = profile?.user?.email ?? profile?.email ?? (viewingBySlug ? "-" : user?.email || "-");
 
     return (
@@ -332,7 +374,8 @@ function CandidateProfilePage() {
                                             }));
 
                                             setShowConfirmAvatar(true);
-                                        }} />
+                                        }}
+                                        />
                                     </IconButton>
                                 )}
                             </Box>
@@ -349,139 +392,207 @@ function CandidateProfilePage() {
 
             {profile && (
                 <>
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6}>
-                            <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
-                                <CardContent>
-                                    <Typography
-                                        variant="h6"
-                                        fontWeight={600}
-                                        gutterBottom
-                                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                                    >
-                                        <EmailIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
-                                        Contact Information
-                                    </Typography>
-                                    <Divider sx={{ mb: 2 }} />
-
-                                    <InfoRow icon={<EmailIcon size={18} strokeWidth={2} />} label="Email" content={email} />
-
-                                    <InfoRow
-                                        icon={<LinkIcon size={18} strokeWidth={2} />}
-                                        label="Portfolio"
-                                        content={
-                                            editMode ? (
-                                                <TextField
-                                                    size="small"
-                                                    fullWidth
-                                                    placeholder="Portfolio URL"
-                                                    value={profile.portfolioUrl || ""}
-                                                    onChange={(e) => setProfile((prev) => ({ ...prev, portfolioUrl: e.target.value }))}
-                                                />
-                                            ) : profile.portfolioUrl ? (
-                                                <Link href={profile.portfolioUrl} target="_blank" rel="noopener" sx={{ fontWeight: 500 }}>
-                                                    {profile.portfolioUrl}
-                                                </Link>
-                                            ) : (
-                                                <Typography color="text.secondary">Not provided</Typography>
-                                            )
-                                        }
-                                    />
-                                </CardContent>
-                            </BaseCard>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
-                                <CardContent>
-                                    <Typography
-                                        variant="h6"
-                                        fontWeight={600}
-                                        gutterBottom
-                                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                                    >
-                                        <CodeIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
-                                        Expertise
-                                    </Typography>
-                                    <Divider sx={{ mb: 2 }} />
-
-                                    <Box sx={{ mb: 3 }}>
-                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={600}>
-                                            SKILLS
-                                        </Typography>
-                                        {editMode ? (
-                                            <Autocomplete
-                                                multiple
-                                                options={allSkillNames || []}
-                                                getOptionLabel={(option) => String(option)}
-                                                value={profile?.skills || []}
-                                                onChange={(_, value) => setProfile((prev) => ({ ...prev, skills: value }))}
-                                                renderInput={(params) => <TextField {...params} placeholder="Add skills" size="small" />}
-                                            />
-                                        ) : (
-                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-                                                {(profile?.skills || [])
-                                                    .filter(Boolean)
-                                                    .map((name, i) => (
-                                                        <StatusChip
-                                                            key={`skill-${i}`}
-                                                            label={name}
-                                                            color="primary"
-                                                        />
-                                                    ))}
-                                            </Box>
-                                        )}
-                                    </Box>
-                                    {user.role === ROLES.CANDIDATE && (
-                                        <UploadCv profile={profile} />
-                                    )}
-                                </CardContent>
-                            </BaseCard>
-                        </Grid>
-                    </Grid>
-
-                    {canEdit && editMode && (
+                    {isSelf && isCandidate && (
+                        <Tabs
+                            value={tabValue}
+                            onChange={(_, v) => setTabValue(v)}
+                            sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
+                        >
+                            <Tab label="Profile" />
+                            <Tab label="Saved Questions" />
+                        </Tabs>
+                    )}
+                    {tabValue === 0 && (
                         <>
-                            <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                                <SecondaryButton
-                                    startIcon={<CloseIcon size={18} strokeWidth={2} />}
-                                    onClick={async () => {
-                                        setEditMode(false);
-                                        await reloadProfile();
-                                    }}
-                                >
-                                    Cancel
-                                </SecondaryButton>
-                                <PrimaryButton
-                                    startIcon={<SaveIcon size={18} strokeWidth={2} />}
-                                    onClick={() => setShowConfirmSave(true)}
-                                    loading={saving}
-                                >
-                                    Save changes
-                                </PrimaryButton>
-                            </Box>
+                            <Grid container spacing={3}>
+                                <Grid item xs={12} sm={6}>
+                                    <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
+                                        <CardContent>
+                                            <Typography
+                                                variant="h6"
+                                                fontWeight={600}
+                                                gutterBottom
+                                                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                                            >
+                                                <EmailIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
+                                                Contact Information
+                                            </Typography>
+                                            <Divider sx={{ mb: 2 }} />
 
-                            <ConfirmModal
-                                show={showConfirmSave}
-                                title="Confirm save"
-                                message="Are you sure you want to save changes to your profile?"
-                                onConfirm={async () => {
-                                    setShowConfirmSave(false);
-                                    await handleSave();
-                                }}
-                                onCancel={() => setShowConfirmSave(false)}
-                                confirmText="Save"
-                                cancelText="Cancel"
-                            />
+                                            <InfoRow
+                                                icon={<EmailIcon fontSize="small" />}
+                                                label="Email"
+                                                content={email}
+                                            />
 
+                                            <InfoRow
+                                                icon={<LinkIcon fontSize="small" />}
+                                                label="Portfolio"
+                                                content={
+                                                    editMode ? (
+                                                        <TextField
+                                                            size="small"
+                                                            fullWidth
+                                                            placeholder="Portfolio URL"
+                                                            value={profile.portfolioUrl || ""}
+                                                            onChange={(e) =>
+                                                                setProfile((prev) => ({
+                                                                    ...prev,
+                                                                    portfolioUrl: e.target.value,
+                                                                }))
+                                                            }
+                                                        />
+                                                    ) : profile.portfolioUrl ? (
+                                                        <Link
+                                                            href={profile.portfolioUrl}
+                                                            target="_blank"
+                                                            rel="noopener"
+                                                            sx={{ fontWeight: 500 }}
+                                                        >
+                                                            {profile.portfolioUrl}
+                                                        </Link>
+                                                    ) : (
+                                                        <Typography color="text.secondary">Not provided</Typography>
+                                                    )
+                                                }
+                                            />
+                                        </CardContent>
+                                    </BaseCard>
+                                </Grid>
+
+                                <Grid item xs={12} sm={6}>
+                                    <BaseCard
+                                        elevation={0}
+                                        sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}
+                                    >
+                                        <CardContent>
+                                            <Typography
+                                                variant="h6"
+                                                fontWeight={600}
+                                                gutterBottom
+                                                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                                            >
+                                                <CodeIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
+                                                Expertise
+                                            </Typography>
+                                            <Divider sx={{ mb: 2 }} />
+
+                                            <Box sx={{ mb: 3 }}>
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    color="text.secondary"
+                                                    gutterBottom
+                                                    fontWeight={600}
+                                                >
+                                                    SKILLS
+                                                </Typography>
+                                                {editMode ? (
+                                                    <Autocomplete
+                                                        multiple
+                                                        options={allSkillNames || []}
+                                                        getOptionLabel={(option) => String(option)}
+                                                        value={profile?.skills || []}
+                                                        onChange={(_, value) =>
+                                                            setProfile((prev) => ({ ...prev, skills: value }))
+                                                        }
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                placeholder="Add skills"
+                                                                size="small"
+                                                            />
+                                                        )}
+                                                    />
+                                                ) : (
+                                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
+                                                        {(profile?.skills || []).filter(Boolean).map((name, i) => (
+                                                            <StatusChip
+                                                                key={`skill-${i}`}
+                                                                label={name}
+                                                                color="primary"
+                                                            />
+                                                        ))}
+                                                    </Box>
+                                                )}
+                                            </Box>
+                                            {user.role === ROLES.CANDIDATE && <UploadCv profile={profile} />}
+                                        </CardContent>
+                                    </BaseCard>
+                                </Grid>
+                            </Grid>
+
+                            {canEdit && editMode && (
+                                <>
+                                    <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                                        <SecondaryButton
+                                            startIcon={<CloseIcon size={18} strokeWidth={2} />}
+                                            onClick={async () => {
+                                                setEditMode(false);
+                                                await reloadProfile();
+                                            }}
+                                        >
+                                            Cancel
+                                        </SecondaryButton>
+                                        <PrimaryButton
+                                            startIcon={<SaveIcon size={18} strokeWidth={2} />}
+                                            onClick={() => setShowConfirmSave(true)}
+                                            loading={saving}
+                                        >
+                                            Save changes
+                                        </PrimaryButton>
+                                    </Box>
+
+                                    <ConfirmModal
+                                        show={showConfirmSave}
+                                        title="Confirm save"
+                                        message="Are you sure you want to save changes to your profile?"
+                                        onConfirm={async () => {
+                                            setShowConfirmSave(false);
+                                            await handleSave();
+                                        }}
+                                        onCancel={() => setShowConfirmSave(false)}
+                                        confirmText="Save"
+                                        cancelText="Cancel"
+                                    />
+                                </>
+                            )}
                         </>
+                    )}{" "}
+                    {/* end tabValue === 0 */}
+                    {tabValue === 1 && isSelf && isCandidate && (
+                        <Box>
+                            {loadingSaved ? (
+                                <Box display="flex" justifyContent="center" py={4}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : savedQuestions.length === 0 ? (
+                                <Typography align="center" color="text.secondary" py={4}>
+                                    No saved questions yet.
+                                </Typography>
+                            ) : (
+                                <List disablePadding>
+                                    {savedQuestions.map((q) => (
+                                        <ListItem key={q.id} disablePadding>
+                                            <ListItemButton
+                                                onClick={() => navigate(`/questions/${q.id}`)}
+                                                sx={{ borderRadius: 1, mb: 0.5 }}
+                                            >
+                                                <ListItemText
+                                                    primary={q.content ?? q.title ?? "Untitled"}
+                                                    secondary={`${q.answerCount ?? 0} answers · ${q.vote ?? q.voteCount ?? 0} votes`}
+                                                />
+                                            </ListItemButton>
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            )}
+                        </Box>
                     )}
                 </>
             )}
         </Box>
     );
 }
-
 
 function InfoRow({ icon, label, content }) {
     return (

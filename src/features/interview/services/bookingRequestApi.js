@@ -5,25 +5,12 @@ import { METHOD } from "../../../common/constants/api";
 const BASE_URL = `${BE_BASE_URL}/booking-requests`;
 
 export const bookingRequestEndPoints = {
-    CREATE_EXTERNAL: `${BASE_URL}/external`,
     CREATE_JD_INTERVIEW: `${BASE_URL}/jd-interview`,
     RESPOND: (id) => `${BASE_URL}/${id}/respond`,
     PAY: (id) => `${BASE_URL}/${id}/pay`,
     CANCEL: (id) => `${BASE_URL}/${id}/cancel`,
     GET_LIST: BASE_URL,
     GET_DETAIL: (id) => `${BASE_URL}/${id}`,
-};
-
-/**
- * Flow B: Candidate requests a session outside the coach's available time
- */
-export const createExternalBookingRequest = async (payload) => {
-    const result = await callApi({
-        method: METHOD.POST,
-        endpoint: bookingRequestEndPoints.CREATE_EXTERNAL,
-        arg: payload,
-    });
-    return result.data;
 };
 
 /**

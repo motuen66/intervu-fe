@@ -27,3 +27,61 @@ export const getYearDiff = (start, end) => {
     }
     return yearDiff;
 };
+
+export function toLocalDateTimeWithOffset(date) {
+    if (!date) return null;
+
+    if (!(date instanceof Date)) {
+        date = new Date(date);
+    }
+
+    function pad(n) {
+        return n < 10 ? "0" + n : n;
+    }
+
+    var offset = -date.getTimezoneOffset();
+    var sign = offset >= 0 ? "+" : "-";
+
+    var hoursOffset = pad(Math.floor(Math.abs(offset) / 60));
+    var minutesOffset = pad(Math.abs(offset) % 60);
+
+    return (
+        date.getFullYear() +
+        "-" +
+        pad(date.getMonth() + 1) +
+        "-" +
+        pad(date.getDate()) +
+        "T" +
+        pad(date.getHours()) +
+        ":" +
+        pad(date.getMinutes()) +
+        ":" +
+        pad(date.getSeconds()) +
+        sign +
+        hoursOffset +
+        ":" +
+        minutesOffset
+    );
+}
+
+export function timeAgo(dateStr) {
+    if (!dateStr) return "";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const days = Math.floor(diff / 86_400_000);
+    if (days === 0) return "today";
+    if (days === 1) return "1 day ago";
+    if (days < 30) return `${days} days ago`;
+    const months = Math.floor(days / 30);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+}
+
+export function formatDateTime(dateStr) {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleString("en-US", {
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    });
+}

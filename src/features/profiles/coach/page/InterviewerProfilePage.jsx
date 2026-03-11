@@ -7,6 +7,7 @@ import { interviewerProfileEndPoints } from "../service/coachProfileApi";
 import {
     Avatar,
     Box,
+    Fade,
     Link,
     Autocomplete,
     Typography,

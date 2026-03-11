@@ -40,7 +40,6 @@ function LoginPage() {
                 email: data.email,
                 password: data.password,
             },
-            displaySuccessMessage: true,
             alertErrorMessage: true,
         });
 
