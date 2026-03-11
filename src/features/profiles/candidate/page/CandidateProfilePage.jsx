@@ -8,22 +8,19 @@ import { interactionEndPoints } from "../../../interviewQuestions/service/intera
 import {
     Avatar,
     Box,
-    Card,
     CardContent,
-    Chip,
     CircularProgress,
     Grid,
     Stack,
     Typography,
     Alert,
-    IconButton,
-    TextField,
     Autocomplete,
-    Button,
     Fade,
     Divider,
     Paper,
     Link,
+    IconButton,
+    TextField,
     Tab,
     Tabs,
     List,
@@ -31,17 +28,20 @@ import {
     ListItemButton,
     ListItemText,
 } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
+import StatusChip from "../../../../common/components/StatusChip";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import {
-    Edit as EditIcon,
-    Close as CloseIcon,
+    Edit3 as EditIcon,
+    X as CloseIcon,
     Save as SaveIcon,
-    Work as WorkIcon,
-    Person as PersonIcon,
-    Email as EmailIcon,
+    Briefcase as WorkIcon,
+    User as PersonIcon,
+    Mail as EmailIcon,
     Link as LinkIcon,
     Code as CodeIcon,
-} from "@mui/icons-material";
-import { CameraAlt as CameraIcon } from "@mui/icons-material";
+    Camera as CameraIcon,
+} from "lucide-react";
 import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
@@ -279,14 +279,14 @@ function CandidateProfilePage() {
     const email = profile?.user?.email ?? profile?.email ?? (viewingBySlug ? "-" : user?.email || "-");
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1100, mx: "auto" }}>
+        <Box sx={{ minHeight: "100vh" }}>
             <Fade in={saveSuccess}>
                 <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSaveSuccess(false)}>
                     Profile updated successfully!
                 </Alert>
             </Fade>
 
-            <Card
+            <BaseCard
                 elevation={0}
                 sx={{
                     mb: 3,
@@ -313,7 +313,7 @@ function CandidateProfilePage() {
                                 "&:hover": { bgcolor: "white" },
                             }}
                         >
-                            {editMode ? <CloseIcon /> : <EditIcon />}
+                            {editMode ? <CloseIcon size={20} strokeWidth={2} /> : <EditIcon size={20} strokeWidth={2} />}
                         </IconButton>
                     )}
 
@@ -359,28 +359,22 @@ function CandidateProfilePage() {
                                             },
                                         }}
                                     >
-                                        <CameraIcon fontSize="small" />
-                                        <input
-                                            hidden
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (!file) return;
-                                                const localUrl = URL.createObjectURL(file);
-                                                setPrevAvatar(
-                                                    profile?.profilePicture || profile?.user?.profilePicture || "",
-                                                );
-                                                setPendingAvatarFile(file);
-                                                setPendingAvatarLocalUrl(localUrl);
-                                                setProfile((prev) => ({
-                                                    ...prev,
-                                                    user: { ...(prev?.user || {}), profilePicture: localUrl },
-                                                    profilePicture: localUrl,
-                                                }));
+                                        <CameraIcon size={18} strokeWidth={2} />
+                                        <input hidden type="file" accept="image/*" onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            const localUrl = URL.createObjectURL(file);
+                                            setPrevAvatar(profile?.profilePicture || profile?.user?.profilePicture || "");
+                                            setPendingAvatarFile(file);
+                                            setPendingAvatarLocalUrl(localUrl);
+                                            setProfile((prev) => ({
+                                                ...prev,
+                                                user: { ...(prev?.user || {}), profilePicture: localUrl },
+                                                profilePicture: localUrl,
+                                            }));
 
-                                                setShowConfirmAvatar(true);
-                                            }}
+                                            setShowConfirmAvatar(true);
+                                        }}
                                         />
                                     </IconButton>
                                 )}
@@ -394,7 +388,7 @@ function CandidateProfilePage() {
                         </Box>
                     </Box>
                 </CardContent>
-            </Card>
+            </BaseCard>
 
             {profile && (
                 <>
@@ -412,10 +406,7 @@ function CandidateProfilePage() {
                         <>
                             <Grid container spacing={3}>
                                 <Grid item xs={12} sm={6}>
-                                    <Card
-                                        elevation={0}
-                                        sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}
-                                    >
+                                    <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
                                         <CardContent>
                                             <Typography
                                                 variant="h6"
@@ -423,7 +414,7 @@ function CandidateProfilePage() {
                                                 gutterBottom
                                                 sx={{ display: "flex", alignItems: "center", gap: 1 }}
                                             >
-                                                <EmailIcon color="primary" />
+                                                <EmailIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
                                                 Contact Information
                                             </Typography>
                                             <Divider sx={{ mb: 2 }} />
@@ -466,11 +457,11 @@ function CandidateProfilePage() {
                                                 }
                                             />
                                         </CardContent>
-                                    </Card>
+                                    </BaseCard>
                                 </Grid>
 
                                 <Grid item xs={12} sm={6}>
-                                    <Card
+                                    <BaseCard
                                         elevation={0}
                                         sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}
                                     >
@@ -481,7 +472,7 @@ function CandidateProfilePage() {
                                                 gutterBottom
                                                 sx={{ display: "flex", alignItems: "center", gap: 1 }}
                                             >
-                                                <CodeIcon color="primary" />
+                                                <CodeIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
                                                 Expertise
                                             </Typography>
                                             <Divider sx={{ mb: 2 }} />
@@ -515,12 +506,10 @@ function CandidateProfilePage() {
                                                 ) : (
                                                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
                                                         {(profile?.skills || []).filter(Boolean).map((name, i) => (
-                                                            <Chip
+                                                            <StatusChip
                                                                 key={`skill-${i}`}
                                                                 label={name}
-                                                                size="medium"
                                                                 color="primary"
-                                                                variant="outlined"
                                                             />
                                                         ))}
                                                     </Box>
@@ -528,33 +517,29 @@ function CandidateProfilePage() {
                                             </Box>
                                             {user.role === ROLES.CANDIDATE && <UploadCv profile={profile} />}
                                         </CardContent>
-                                    </Card>
+                                    </BaseCard>
                                 </Grid>
                             </Grid>
 
                             {canEdit && editMode && (
                                 <>
                                     <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                                        <Button
-                                            variant="outlined"
-                                            color="inherit"
-                                            startIcon={<CloseIcon />}
+                                        <SecondaryButton
+                                            startIcon={<CloseIcon size={18} strokeWidth={2} />}
                                             onClick={async () => {
                                                 setEditMode(false);
                                                 await reloadProfile();
                                             }}
                                         >
                                             Cancel
-                                        </Button>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            startIcon={<SaveIcon />}
+                                        </SecondaryButton>
+                                        <PrimaryButton
+                                            startIcon={<SaveIcon size={18} strokeWidth={2} />}
                                             onClick={() => setShowConfirmSave(true)}
-                                            disabled={saving}
+                                            loading={saving}
                                         >
-                                            {saving ? "Saving..." : "Save changes"}
-                                        </Button>
+                                            Save changes
+                                        </PrimaryButton>
                                     </Box>
 
                                     <ConfirmModal

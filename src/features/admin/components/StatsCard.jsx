@@ -1,20 +1,25 @@
-import { Card, CardContent, Typography, Box } from '@mui/material';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import { CardContent, Typography, Box } from "@mui/material";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import BaseCard from "../../../common/components/cards/BaseCard";
 
-export default function StatsCard({ title, value, icon: Icon, color = '#4F46E5', trend }) {
+export default function StatsCard({ title, value, icon: Icon, color = "primary.main", trend }) {
     return (
-        <Card
-            sx={{
-                background: 'rgba(255,255,255,0.95)',
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${color}40`,
-                borderRadius: '12px',
-                boxShadow: `0 2px 12px rgba(0,0,0,0.08), 0 0 20px ${color}10`,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: `0 4px 20px rgba(0,0,0,0.12), 0 0 30px ${color}20`,
-                }
+        <BaseCard
+            sx={(theme) => {
+                const resolved = color?.includes?.(".") ? theme.palette?.[color.split(".")[0]]?.[color.split(".")[1]] : color;
+                const main = resolved || theme.palette.primary.main;
+                return {
+                    background: "rgba(255,255,255,0.95)",
+                    backdropFilter: "blur(10px)",
+                    border: `1px solid ${main}40`,
+                    borderRadius: "12px",
+                    boxShadow: `0 2px 12px rgba(0,0,0,0.08), 0 0 20px ${main}10`,
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: `0 4px 20px rgba(0,0,0,0.12), 0 0 30px ${main}20`,
+                    },
+                };
             }}
         >
             <CardContent sx={{ p: 3 }}>
@@ -26,12 +31,30 @@ export default function StatsCard({ title, value, icon: Icon, color = '#4F46E5',
                         width: '40px',
                         height: '40px',
                         borderRadius: '8px',
-                        background: `${color}20`,
+                        background: (theme) => {
+                            const resolved = color?.includes?.(".")
+                                ? theme.palette?.[color.split(".")[0]]?.[color.split(".")[1]]
+                                : color;
+                            const main = resolved || theme.palette.primary.main;
+                            return `${main}20`;
+                        },
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        {Icon && <Icon sx={{ color: color, fontSize: '20px' }} />}
+                        {Icon && (
+                            <Icon
+                                sx={{
+                                    color: (theme) => {
+                                        const resolved = color?.includes?.(".")
+                                            ? theme.palette?.[color.split(".")[0]]?.[color.split(".")[1]]
+                                            : color;
+                                        return resolved || theme.palette.primary.main;
+                                    },
+                                    fontSize: "20px",
+                                }}
+                            />
+                        )}
                     </Box>
                 </Box>
 
@@ -41,13 +64,13 @@ export default function StatsCard({ title, value, icon: Icon, color = '#4F46E5',
 
                 {trend && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <TrendingUpIcon sx={{ color: '#4ade80', fontSize: '16px' }} />
-                        <Typography variant="caption" sx={{ color: '#4ade80', fontSize: '12px' }}>
+                        <TrendingUpIcon sx={{ color: "success.main", fontSize: "16px" }} />
+                        <Typography variant="caption" sx={{ color: "success.main", fontSize: "12px" }}>
                             {trend}
                         </Typography>
                     </Box>
                 )}
             </CardContent>
-        </Card>
+        </BaseCard>
     );
 }

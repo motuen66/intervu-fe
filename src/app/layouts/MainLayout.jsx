@@ -1,27 +1,30 @@
-import { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import './MainLayout.css';
+import "./MainLayout.css";
 import { Container, Avatar } from "@mui/material";
-import { ROLES } from '../../common/constants/common';
-import { callApi } from '../../common/utils/apiConnector';
-import { METHOD } from '../../common/constants/api';
-import { authEndPoints } from '../../features/auth/services/authApi';
+import { ROLES } from "../../common/constants/common";
+import { callApi } from "../../common/utils/apiConnector";
+import { METHOD } from "../../common/constants/api";
+import { authEndPoints } from "../../features/auth/services/authApi";
 import { setUserData } from "../../common/store/authSlice";
 import { userEndPoints } from "../../common/services/userApi";
-import NotificationDropdown from '../../features/notification/components/NotificationDropdown';
-import useNotificationHub from '../../features/notification/hooks/useNotificationHub';
-import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
-import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
-import VideoCameraFrontOutlinedIcon from '@mui/icons-material/VideoCameraFrontOutlined';
-import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
-import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
-import QuizOutlinedIcon from '@mui/icons-material/QuizOutlined';
-import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
-import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
-import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import NotificationDropdown from "../../features/notification/components/NotificationDropdown";
+import useNotificationHub from "../../features/notification/hooks/useNotificationHub";
+import {
+    LayoutDashboard,
+    Calendar,
+    Video,
+    Users,
+    Building2,
+    HelpCircle,
+    CircleDollarSign,
+    BarChart2,
+    Bell,
+    LogOut,
+    ChevronDown,
+    Search,
+} from "lucide-react";
 
 const MainLayout = () => {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -157,15 +160,15 @@ const MainLayout = () => {
     }, [userData?.id]);
 
     const adminNavItems = [
-        { label: "Dashboard", icon: DashboardOutlinedIcon, path: "/admin/dashboard" },
-        { label: "Schedules", icon: CalendarMonthOutlinedIcon, path: "/admin/schedules" },
-        { label: "Interviews", icon: VideoCameraFrontOutlinedIcon, path: "/admin/interviews" },
-        { label: "Users", icon: PeopleOutlineOutlinedIcon, path: "/admin/users" },
-        { label: "Company", icon: BusinessOutlinedIcon, path: "/admin/companies" },
-        { label: "Question Bank", icon: QuizOutlinedIcon, path: "/admin/question-bank" },
+        { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
+        { label: "Schedules", icon: Calendar, path: "/admin/schedules" },
+        { label: "Interviews", icon: Video, path: "/admin/interviews" },
+        { label: "Users", icon: Users, path: "/admin/users" },
+        { label: "Company", icon: Building2, path: "/admin/companies" },
+        { label: "Question Bank", icon: HelpCircle, path: "/admin/question-bank" },
         {
             label: "Income",
-            icon: PaidOutlinedIcon,
+            icon: CircleDollarSign,
             key: "income",
             children: [
                 { label: "Earnings", path: "/admin/income/earnings" },
@@ -173,7 +176,7 @@ const MainLayout = () => {
                 { label: "Payouts", path: "/admin/income/payouts" },
             ],
         },
-        { label: "Reports", icon: BarChartOutlinedIcon, path: "/admin/reports" },
+        { label: "Reports", icon: BarChart2, path: "/admin/reports" },
     ];
 
     const isMenuItemActive = (path) => location.pathname === path;
@@ -197,13 +200,13 @@ const MainLayout = () => {
                                                 type="button"
                                             >
                                                 <span className="sidebar-item-icon">
-                                                    <Icon />
+                                                    <Icon size={20} strokeWidth={1.5} color="#64748B" />
                                                 </span>
                                                 <span className="sidebar-item-text">{item.label}</span>
                                                 <span
                                                     className={`sidebar-item-arrow ${openGroups[item.key] ? "open" : ""}`}
                                                 >
-                                                    <ExpandMoreIcon />
+                                                    <ChevronDown size={16} strokeWidth={2} color="#64748B" />
                                                 </span>
                                             </button>
                                             {openGroups[item.key] && (
@@ -232,7 +235,7 @@ const MainLayout = () => {
                                         type="button"
                                     >
                                         <span className="sidebar-item-icon">
-                                            <Icon />
+                                            <Icon size={20} strokeWidth={1.5} color="#64748B" />
                                         </span>
                                         <span className="sidebar-item-text">{item.label}</span>
                                     </button>
@@ -248,13 +251,13 @@ const MainLayout = () => {
                                 type="button"
                             >
                                 <span className="sidebar-item-icon">
-                                    <NotificationsNoneOutlinedIcon />
+                                    <Bell size={20} strokeWidth={1.5} color="#64748B" />
                                 </span>
                                 <span className="sidebar-item-text">Notification</span>
                             </button>
                             <button className="sidebar-item" onClick={handleLogout} type="button">
                                 <span className="sidebar-item-icon">
-                                    <LogoutOutlinedIcon />
+                                    <LogOut size={20} strokeWidth={1.5} color="#64748B" />
                                 </span>
                                 <span className="sidebar-item-text">Log out</span>
                             </button>
@@ -262,52 +265,41 @@ const MainLayout = () => {
                     </nav>
                 </aside>
 
-        <div className="admin-content">
-          <header className="admin-topbar">
-            <div className="admin-search">
-              <input
-                type="text"
-                placeholder="Search..."
-                className="admin-search-input"
-              />
-              <span className="admin-search-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </span>
-            </div>
-            <div className="admin-actions">
-              <NotificationDropdown />
-              <div className="admin-user-dropdown">
-                <button
-                    className="admin-avatar-btn"
-                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                    title="Account"
-                >
-                    <Avatar
-                        src={remoteAvatar ?? userData?.profilePicture}
-                        alt={userData?.fullName || "User"}
-                        sx={{ width: 36, height: 36 }}
-                        imgProps={{
-                            onError: (e) => {
-                                e.currentTarget.style.display = "none";
-                            },
-                        }}
-                    >
-                        {!(remoteAvatar ?? userData?.profilePicture) &&
-                            (userData?.fullName
-                                ?.split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase() ||
-                                "U")}
-                    </Avatar>
-                </button>
+                <div className="admin-content">
+                    <header className="admin-topbar">
+                        <div className="admin-search">
+                            <input type="text" placeholder="Search..." className="admin-search-input" />
+                            <span className="admin-search-icon">
+                                <Search size={20} strokeWidth={1.5} color="#64748B" />
+                            </span>
+                        </div>
+                        <div className="admin-actions">
+                            <NotificationDropdown />
+                            <div className="admin-user-dropdown">
+                                <button
+                                    className="admin-avatar-btn"
+                                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                                    title="Account"
+                                >
+                                    <Avatar
+                                        src={remoteAvatar ?? userData?.profilePicture}
+                                        alt={userData?.fullName || "User"}
+                                        sx={{ width: 36, height: 36 }}
+                                        imgProps={{
+                                            onError: (e) => {
+                                                e.currentTarget.style.display = "none";
+                                            },
+                                        }}
+                                    >
+                                        {!(remoteAvatar ?? userData?.profilePicture) &&
+                                            (userData?.fullName
+                                                ?.split(" ")
+                                                .map((n) => n[0])
+                                                .join("")
+                                                .toUpperCase() ||
+                                                "U")}
+                                    </Avatar>
+                                </button>
 
                                 {isUserDropdownOpen && (
                                     <div className="dropdown-menu admin-dropdown-menu">
@@ -359,6 +351,7 @@ const MainLayout = () => {
                 <div className="navbar-container">
                     {/* Logo */}
                     <div className="navbar-logo">
+                        <div className="navbar-logo-icon">V</div>
                         <h1>INTERVU</h1>
                     </div>
 
@@ -377,24 +370,12 @@ const MainLayout = () => {
 
                     {/* Right Section */}
                     <div className="navbar-right">
-                        {/* Search Bar */}
-                        <div className="search-container">
-                            <svg className="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                />
-                            </svg>
-                            <input type="text" className="search-input" placeholder="Search..." />
-                        </div>
 
                         {/* Upgrade Button */}
-                        {userData?.role === ROLES.CANDIDATE && <button className="upgrade-btn">Upgrade Pro</button>}
+                        {userData?.role === ROLES.CANDIDATE && <button className="app-btn">Upgrade Pro</button>}
 
-            {/* Notification Icon */}
-            <NotificationDropdown />
+                        {/* Notification Dropdown */}
+                        <NotificationDropdown />
 
                         {/* User Avatar Dropdown */}
                         <div className="user-dropdown">
@@ -418,8 +399,8 @@ const MainLayout = () => {
                                             ?.split(" ")
                                             .map((n) => n[0])
                                             .join("")
-                                            .toUpperCase() ||
-                                            "U")}
+                                            .toUpperCase()
+                                            .slice(0, 2) || "U")}
                                 </Avatar>
                             </button>
 
@@ -438,8 +419,8 @@ const MainLayout = () => {
                                                 role === ROLES.INTERVIEWER
                                                     ? "/interviewer/profile"
                                                     : role === ROLES.CANDIDATE
-                                                      ? "/candidate/profile"
-                                                      : "/user/profile";
+                                                        ? "/candidate/profile"
+                                                        : "/user/profile";
                                             navigate(path);
                                             setIsUserDropdownOpen(false);
                                         }}
@@ -478,7 +459,7 @@ const MainLayout = () => {
 
             {/* Main Content */}
             <main className="main-content">
-                <Container>
+                <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
                     <Outlet />
                 </Container>
             </main>

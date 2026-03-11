@@ -2,17 +2,17 @@ import {
     Box,
     Typography,
     Avatar,
-    Chip,
     Stack,
-    Button,
 } from "@mui/material";
-import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import CodeIcon from "@mui/icons-material/Code";
+import { Calendar, Clock, Code } from "lucide-react";
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { ROLES } from "../../../../../common/constants/common";
 import { useNavigate } from "react-router-dom";
+import StatusChip from "../../../../../common/components/StatusChip";
+import BaseCard from "../../../../../common/components/cards/BaseCard";
+import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
+import { getInterviewRoomStatusConfig } from "../../../../../common/constants/statusConfig";
 
 function InterviewCard({
     room,
@@ -38,81 +38,23 @@ function InterviewCard({
         return "Participant";
     };
 
+    const getParticipantAvatar = () => {
+        if (user?.role === ROLES.CANDIDATE) {
+            return room.coachAvatar;
+        }
+        if (user?.role === ROLES.INTERVIEWER) {
+            return room.candidateAvatar;
+        }
+        return undefined;
+    };
+
     const getStatusChip = () => {
-        // If scheduled but has been rescheduled, show "RESCHEDULED" status
-        if (room.status === INTERVIEW_ROOM_STATUS.SCHEDULED && isRescheduled) {
-            return (
-                <Chip
-                    label="Rescheduled"
-                    size="small"
-                    sx={{
-                        bgcolor: "rgba(3, 169, 244, 0.12)",
-                        color: "#0288d1",
-                        fontWeight: 600,
-                        fontSize: "0.7rem",
-                        height: 24,
-                        borderRadius: 1.5,
-                    }}
-                />
-            );
-        }
+        const config = getInterviewRoomStatusConfig(room.status, {
+            isRescheduled,
+            hasPendingReschedule,
+        });
 
-        // If has pending reschedule request, show "PENDING RESCHEDULE"
-        if (room.status === INTERVIEW_ROOM_STATUS.SCHEDULED && hasPendingReschedule) {
-            return (
-                <Chip
-                    label="Pending Reschedule"
-                    size="small"
-                    sx={{
-                        bgcolor: "rgba(255, 152, 0, 0.12)",
-                        color: "#e65100",
-                        fontWeight: 600,
-                        fontSize: "0.7rem",
-                        height: 24,
-                        borderRadius: 1.5,
-                    }}
-                />
-            );
-        }
-
-        const statusConfig = {
-            [INTERVIEW_ROOM_STATUS.SCHEDULED]: {
-                label: "Scheduled",
-                color: "primary",
-                sx: { bgcolor: "rgba(25, 118, 210, 0.12)", color: "#1565c0" }
-            },
-            [INTERVIEW_ROOM_STATUS.ON_GOING]: {
-                label: "Ongoing",
-                color: "success",
-                sx: { bgcolor: "rgba(46, 125, 50, 0.12)", color: "#2e7d32" }
-            },
-            [INTERVIEW_ROOM_STATUS.COMPLETED]: {
-                label: "Completed",
-                color: "default",
-                sx: { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#616161" }
-            },
-            [INTERVIEW_ROOM_STATUS.CANCELLED]: {
-                label: "Cancelled",
-                color: "error",
-                sx: { bgcolor: "rgba(211, 47, 47, 0.12)", color: "#c62828" }
-            },
-        };
-
-        const config = statusConfig[room.status] || statusConfig[INTERVIEW_ROOM_STATUS.SCHEDULED];
-
-        return (
-            <Chip
-                label={config.label}
-                size="small"
-                sx={{
-                    ...config.sx,
-                    fontWeight: 600,
-                    fontSize: "0.7rem",
-                    height: 24,
-                    borderRadius: 1.5,
-                }}
-            />
-        );
+        return <StatusChip label={config.label} color={config.color} />;
     };
 
     const getActionButton = () => {
@@ -124,71 +66,37 @@ function InterviewCard({
                 <Stack direction="row" spacing={1} alignItems="center">
                     {/* Reschedule Button */}
                     {canReschedule ? (
-                        <Button
-                            variant="outlined"
-                            color="primary"
+                        <SecondaryButton
                             size="small"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onRequestReschedule?.(room);
                             }}
-                            sx={{
-                                fontWeight: 600,
-                                fontSize: "0.8rem",
-                                textTransform: "none",
-                                borderRadius: 1.5,
-                                px: 2,
-                                "&:hover": {
-                                    bgcolor: "primary.main",
-                                    color: "#fff",
-                                    borderColor: "primary.main",
-                                },
-                            }}
+                            sx={{ fontSize: "0.8rem", px: 2 }}
                         >
                             Reschedule
-                        </Button>
+                        </SecondaryButton>
                     ) : (
-                        <Button
-                            variant="outlined"
-                            color="primary"
+                        <SecondaryButton
                             size="small"
                             disabled
-                            sx={{
-                                fontWeight: 600,
-                                fontSize: "0.8rem",
-                                textTransform: "none",
-                                borderRadius: 1.5,
-                                px: 2,
-                            }}
+                            sx={{ fontSize: "0.8rem", px: 2 }}
                         >
                             Reschedule
-                        </Button>
+                        </SecondaryButton>
                     )}
 
                     {/* Cancel Button - Always visible */}
-                    <Button
-                        variant="outlined"
-                        color="error"
+                    <DangerButton
                         size="small"
                         onClick={(e) => {
                             e.stopPropagation();
                             onCancel?.(room);
                         }}
-                        sx={{
-                            fontWeight: 600,
-                            fontSize: "0.8rem",
-                            textTransform: "none",
-                            borderRadius: 1.5,
-                            px: 2,
-                            "&:hover": {
-                                bgcolor: "error.main",
-                                color: "#fff",
-                                borderColor: "error.main",
-                            },
-                        }}
+                        sx={{ fontSize: "0.8rem", px: 2 }}
                     >
                         Cancel
-                    </Button>
+                    </DangerButton>
                 </Stack>
             );
         }
@@ -196,26 +104,16 @@ function InterviewCard({
         // ONGOING: Show Join button (interview is happening NOW)
         if (room.status === INTERVIEW_ROOM_STATUS.ON_GOING) {
             return (
-                <Button
-                    variant="contained"
-                    color="success"
+                <SuccessButton
                     size="small"
                     onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/interview/room/${room.id}`);
                     }}
-                    sx={{
-                        fontWeight: 600,
-                        fontSize: "0.875rem",
-                        borderRadius: 1.5,
-                        boxShadow: "none",
-                        "&:hover": {
-                            boxShadow: 1,
-                        }
-                    }}
+                    sx={{ fontSize: "0.875rem", boxShadow: "none" }}
                 >
                     Join Now
-                </Button>
+                </SuccessButton>
             );
         }
 
@@ -233,7 +131,7 @@ function InterviewCard({
     };
 
     return (
-        <Box
+        <BaseCard
             onClick={() => {
                 // Only allow navigation for SCHEDULED interviews
                 // ONGOING: Only Join button should work
@@ -244,30 +142,22 @@ function InterviewCard({
             }}
             sx={{
                 p: 2.5,
-                bgcolor: "background.paper",
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: "divider",
-                cursor: onClick ? "pointer" : "default",
-                transition: "all 0.2s ease-in-out",
-                "&:hover": onClick ? {
-                    borderColor: "primary.main",
-                    boxShadow: 1,
-                } : {},
             }}
         >
             {/* Top Row: Avatar, Title, Status */}
             <Stack direction="row" spacing={2} alignItems="flex-start">
                 <Avatar
+                    src={getParticipantAvatar() || ""}
                     sx={{
-                        bgcolor: "primary.main",
                         width: 44,
                         height: 44,
                         fontSize: "1rem",
                         fontWeight: 600,
+                        bgcolor: getParticipantAvatar() ? "transparent" : "var(--mui-palette-secondary-main)",
+                        color: getParticipantAvatar() ? "inherit" : "var(--mui-palette-primary-main)",
                     }}
                 >
-                    {getInitials(getParticipantName())}
+                    {!getParticipantAvatar() ? getInitials(getParticipantName()) : null}
                 </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography
@@ -297,19 +187,19 @@ function InterviewCard({
             >
                 <Stack direction="row" spacing={2.5} alignItems="center">
                     <Stack direction="row" spacing={0.75} alignItems="center">
-                        <CalendarTodayOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Calendar size={16} strokeWidth={1.5} color="var(--mui-palette-text-secondary)" />
                         <Typography variant="body2" color="text.secondary">
                             {formattedDateTime(room.scheduledTime)}
                         </Typography>
                     </Stack>
                     <Stack direction="row" spacing={0.75} alignItems="center">
-                        <AccessTimeOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Clock size={16} strokeWidth={1.5} color="var(--mui-palette-text-secondary)" />
                         <Typography variant="body2" color="text.secondary">
                             {room.durationMinutes || 60} min
                         </Typography>
                     </Stack>
                     <Stack direction="row" spacing={0.75} alignItems="center">
-                        <CodeIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Code size={16} strokeWidth={1.5} color="var(--mui-palette-text-secondary)" />
                         <Typography
                             variant="body2"
                             color="text.secondary"
@@ -322,7 +212,7 @@ function InterviewCard({
 
                 {getActionButton()}
             </Stack>
-        </Box>
+        </BaseCard>
     );
 }
 

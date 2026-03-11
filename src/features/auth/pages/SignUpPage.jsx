@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import useLoading from "../../../common/hooks/useLoading";
 import DarkVeil from './LoginPage/DarkVeil';
 import SplitText from "./LoginPage/SplitText";
-import { TextField, Button, Typography } from '@mui/material';
+import { TextField, Typography } from '@mui/material';
+import { PrimaryButton } from "../../../common/components/buttons";
 
 function SignUpPage() {
     const navigate = useNavigate();
@@ -219,29 +220,18 @@ function SignUpPage() {
                                 {isLoading ? (
                                     <Typography color="#666">...Loading</Typography>
                                 ) : (
-                                    <Button
+                                    <PrimaryButton
                                         type="submit"
-                                        variant="contained"
-                                        disabled={isLoading}
+                                        loading={isLoading}
                                         fullWidth
                                         sx={{
                                             padding: '14px 28px',
                                             borderRadius: '10px',
-                                            background: '#4F46E5',
-                                            textTransform: 'none',
                                             fontSize: '17px',
-                                            fontWeight: 700,
-                                            boxShadow: '0 4px 14px rgba(91, 95, 199, 0.4)',
-                                            transition: 'all 0.3s ease',
-                                            '&:hover': {
-                                                background: '#4A4EB8',
-                                                boxShadow: '0 6px 20px rgba(91, 95, 199, 0.6)',
-                                                transform: 'translateY(-2px)'
-                                            }
                                         }}
                                     >
                                         Sign up
-                                    </Button>
+                                    </PrimaryButton>
                                 )}
                             </div>
 

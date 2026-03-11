@@ -11,7 +11,9 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
-import { Box, Button, Typography, Card, Stack, CircularProgress, CardContent } from "@mui/material";
+import { Box, Typography, Stack, CircularProgress, CardContent } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
+import { PrimaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
@@ -432,6 +434,7 @@ const ScheduleManagement = () => {
             end: avail.endTime,
             backgroundColor,
             borderColor,
+            textColor: colors.textColor,
             classNames,
             editable: !isPast && !isUnavailable,
             extendedProps: {
@@ -500,26 +503,22 @@ const ScheduleManagement = () => {
                             </Typography>
                         </div>
 
-                        <Button
-                            variant="contained"
-                            color="primary"
+                        <PrimaryButton
                             startIcon={<IoAdd size={18} />}
                             onClick={handleAddClick}
                             sx={{
-                                fontWeight: 600,
-                                textTransform: "none",
                                 py: 1.25,
                                 px: 3,
                             }}
                         >
                             Add Slot
-                        </Button>
+                        </PrimaryButton>
                     </Stack>
 
                     {/* Main Content */}
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
                         {/* Calendar Section */}
-                        <Card
+                        <BaseCard
                             variant="outlined"
                             sx={{
                                 borderColor: "divider",
@@ -625,7 +624,7 @@ const ScheduleManagement = () => {
                                     }}
                                 />
                             </Box>
-                        </Card>
+                        </BaseCard>
 
                         {/* Right Panel: Mini Calendar + Quick Legend */}
                         <Stack spacing={3}>
@@ -638,7 +637,7 @@ const ScheduleManagement = () => {
                                 />
                             </div>
 
-                            <Card
+                            <BaseCard
                                 sx={{
                                     background: "white",
                                     boxShadow: 1,
@@ -658,7 +657,7 @@ const ScheduleManagement = () => {
 
                                     <StatusLegend />
                                 </CardContent>
-                            </Card>
+                            </BaseCard>
 
                             <UpcomingSessionBlog
                                 availabilities={availabilities}

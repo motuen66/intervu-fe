@@ -40,7 +40,7 @@
 .coach-service-card-title {
     font-weight: 700;
     font-size: 15px;
-    color: #0f172a;
+    color: var(--mui-palette-primary-main);
 }
 
 .coach-service-card-subtitle {
@@ -117,7 +117,7 @@
 .coach-service-empty-title {
     font-size: 16px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--mui-palette-primary-main);
 }
 
 .coach-service-empty-subtitle {

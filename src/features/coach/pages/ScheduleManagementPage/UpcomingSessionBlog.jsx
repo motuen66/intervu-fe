@@ -1,6 +1,8 @@
 import React from "react";
-import { Box, Card, CardContent, Typography, Stack, Button, CircularProgress, Avatar } from "@mui/material";
-import { IoCheckmarkCircle, IoTrash } from "react-icons/io5";
+import { Box, CardContent, Typography, Stack, Button, CircularProgress, Avatar } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
+import StatusChip from "../../../../common/components/StatusChip";
+import { CheckCircle, XCircle, Clock } from "lucide-react";
 import { AVAILABILITY_SLOTS_STATUS, getAvailabilityColors } from "../../../../common/constants/status";
 
 const UpcomingSessionBlog = ({
@@ -24,7 +26,7 @@ const UpcomingSessionBlog = ({
 
 
     return (
-        <Card
+        <BaseCard
             variant="outlined"
             sx={{
                 borderColor: "divider",
@@ -63,7 +65,7 @@ const UpcomingSessionBlog = ({
                                         cursor: avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? "default" : "pointer",
                                         "&:hover": {
                                             borderColor: "primary.main",
-                                            boxShadow: "0 2px 8px rgba(79, 70, 229, 0.1)",
+                                            boxShadow: "0 2px 8px rgba(15, 23, 42, 0.1)",
                                         },
                                     }}
                                 >
@@ -85,20 +87,12 @@ const UpcomingSessionBlog = ({
                                             </Typography>
                                         </Box>
 
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            {(() => {
-                                                const colorObj = getAvailabilityColors(avail.status, isPast(avail.endTime));
-                                                const color = colorObj?.border || colorObj?.bg || '#4F46E5';
-                                                return (
-                                                    <>
-                                                        <IoCheckmarkCircle size={14} style={{ color }} />
-                                                        <Typography variant="caption" sx={{ fontWeight: 600, color }}>
-                                                            {avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? "Booked" : avail.status === AVAILABILITY_SLOTS_STATUS.RESERVED ? "Reserved" : "Available"}
-                                                        </Typography>
-                                                    </>
-                                                );
-                                            })()}
-                                        </Stack>
+                                        <StatusChip
+                                            label={avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? "BOOKED" : avail.status === AVAILABILITY_SLOTS_STATUS.RESERVED ? "RESERVED" : "AVAILABLE"}
+                                            color={avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? "error" : avail.status === AVAILABILITY_SLOTS_STATUS.RESERVED ? "warning" : "secondary"}
+                                            variant="filled"
+                                            icon={avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? <XCircle size={14} /> : <CheckCircle size={14} />}
+                                        />
 
                                     </Stack>
 
@@ -114,7 +108,7 @@ const UpcomingSessionBlog = ({
                     )}
                 </Stack>
             </CardContent>
-        </Card >
+        </BaseCard >
     );
 };
 

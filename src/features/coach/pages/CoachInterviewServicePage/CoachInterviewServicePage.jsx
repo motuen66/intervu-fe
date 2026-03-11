@@ -6,16 +6,17 @@ import { METHOD } from "../../../../common/constants/api";
 import CreateCoachServiceDialog from "./CreateCoachServiceDialog";
 import UpdateCoachServiceDialog from "./UpdateCoachServiceDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import CircularProgress from "@mui/material/CircularProgress";
-import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
+import {
+    Box,
+    Toolbar,
+    Typography,
+    CircularProgress,
+    IconButton,
+} from "@mui/material";
+import { Edit2 as EditIcon, Trash2 as DeleteIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import "./CoachInterviewServicePage.css";
+import { PrimaryButton } from "../../../../common/components/buttons";
 
 export default function CoachInterviewServicePage() {
     const [items, setItems] = useState([]);
@@ -97,19 +98,6 @@ export default function CoachInterviewServicePage() {
         }
     };
 
-    const primaryCtaSx = {
-        textTransform: "none",
-        background: "#2f5cf6",
-        color: "#ffffff",
-        px: 3,
-        py: 1,
-        borderRadius: "999px",
-        fontSize: "14px",
-        fontWeight: 600,
-        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
-        "&:hover": { background: "#2952e6" },
-    };
-
     return (
         <Box className="coach-service-management" p={2}>
             <div className="coach-service-panel">
@@ -121,9 +109,9 @@ export default function CoachInterviewServicePage() {
                         </Typography>
                     </Box>
                     <Box>
-                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
+                        <PrimaryButton onClick={() => setOpenCreate(true)}>
                             Add Service
-                        </Button>
+                        </PrimaryButton>
                     </Box>
                 </Toolbar>
 
@@ -137,9 +125,9 @@ export default function CoachInterviewServicePage() {
                         <div className="coach-service-empty-subtitle">
                             Add your first interview service to start accepting bookings from candidates.
                         </div>
-                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={{ ...primaryCtaSx, mt: 1 }}>
+                        <PrimaryButton onClick={() => setOpenCreate(true)} sx={{ mt: 1 }}>
                             Add Service
-                        </Button>
+                        </PrimaryButton>
                     </Box>
                 ) : (
                     <Box className="coach-service-grid">

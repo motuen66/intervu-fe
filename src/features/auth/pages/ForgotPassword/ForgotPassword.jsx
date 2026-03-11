@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { TextField, Button, Typography, Alert } from '@mui/material';
+import { TextField, Typography, Alert } from '@mui/material';
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { callApi } from '../../../../common/utils/apiConnector';
 import { METHOD } from '../../../../common/constants/api';
 import { authEndPoints } from '../../services/authApi';
@@ -77,33 +78,18 @@ function ForgotPassword() {
                             }}
                         />
 
-                        <Button
+                        <PrimaryButton
                             fullWidth
                             type="submit"
-                            variant="contained"
-                            disabled={loading}
-                            style={{
+                            loading={loading}
+                            sx={{
                                 padding: '12px',
-                                background: loading ? '#ccc' : 'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)',
-                                color: '#fff',
                                 fontSize: '15px',
-                                fontWeight: 600,
-                                borderRadius: '8px',
-                                textTransform: 'none',
-                                boxShadow: '0 4px 14px rgba(91, 95, 199, 0.4)',
-                                transition: 'all 0.3s ease',
                                 marginBottom: '16px'
                             }}
-                            sx={{
-                                '&:hover': {
-                                    background: loading ? '#ccc' : '#4A4EB8',
-                                    boxShadow: '0 6px 20px rgba(91, 95, 199, 0.6)',
-                                    transform: 'translateY(-2px)'
-                                }
-                            }}
                         >
-                            {loading ? 'Sending...' : 'Send Reset Link'}
-                        </Button>
+                            Send Reset Link
+                        </PrimaryButton>
 
                         <div style={{ textAlign: 'center' }}>
                             <Typography
@@ -132,31 +118,16 @@ function ForgotPassword() {
                         <Typography variant="body2" style={{ color: 'rgba(0,0,0,0.6)', marginBottom: '20px' }}>
                             Please check your email inbox and spam folder.
                         </Typography>
-                        <Button
+                        <PrimaryButton
                             fullWidth
-                            variant="contained"
                             onClick={handleBackToLogin}
-                            style={{
-                                padding: '12px',
-                                background: 'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)',
-                                color: '#fff',
-                                fontSize: '15px',
-                                fontWeight: 600,
-                                borderRadius: '8px',
-                                textTransform: 'none',
-                                boxShadow: '0 4px 14px rgba(91, 95, 199, 0.4)',
-                                transition: 'all 0.3s ease'
-                            }}
                             sx={{
-                                '&:hover': {
-                                    background: '#4A4EB8',
-                                    boxShadow: '0 6px 20px rgba(91, 95, 199, 0.6)',
-                                    transform: 'translateY(-2px)'
-                                }
+                                padding: '12px',
+                                fontSize: '15px',
                             }}
                         >
                             Back to Login
-                        </Button>
+                        </PrimaryButton>
                     </div>
                 )}
             </div>

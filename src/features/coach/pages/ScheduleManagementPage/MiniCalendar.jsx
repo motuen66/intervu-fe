@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Box, Card, CardContent, Typography, IconButton, Stack } from "@mui/material";
+import { Box, CardContent, Typography, IconButton, Stack } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
 const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }) => {
@@ -49,10 +50,10 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
 
     const renderDots = (count) => {
         if (count === 0) return null;
-        
+
         const maxDots = 3;
         const dotsToShow = Math.min(count, maxDots);
-        
+
         return (
             <Box sx={{ display: "flex", gap: "2px", justifyContent: "center", mt: 0.5 }}>
                 {Array.from({ length: dotsToShow }).map((_, idx) => (
@@ -62,7 +63,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                             width: "4px",
                             height: "4px",
                             borderRadius: "50%",
-                            backgroundColor: "primary.main",
+                            backgroundColor: "secondary.main",
                         }}
                     />
                 ))}
@@ -72,7 +73,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         sx={{
                             fontSize: "8px",
                             fontWeight: 600,
-                            color: "primary.main",
+                            color: "secondary.dark",
                             lineHeight: 1,
                         }}
                     >
@@ -96,7 +97,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     for (let i = 0; i < totalCells; i++) {
         const dayNumber = i - daysInMonth.startingDayOfWeek + 1;
         const isValidDay = dayNumber > 0 && dayNumber <= daysInMonth.daysInMonth;
-        
+
         if (isValidDay) {
             const dateStr = `${daysInMonth.year}-${String(daysInMonth.month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
             const slotsCount = availabilitiesByDate[dateStr] || 0;
@@ -115,12 +116,12 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         justifyContent: "center",
                         cursor: "pointer",
                         borderRadius: "8px",
-                        border: isToday ? "2px solid" : (isSelected ? "1px solid" : "none"),
+                        border: isToday ? "2px solid" : (isSelected ? "1.5px solid" : "none"),
                         borderColor: isToday ? "primary.main" : (isSelected ? "primary.light" : "transparent"),
-                        backgroundColor: isToday ? "primary.light" : (isSelected ? "action.hover" : "transparent"),
+                        backgroundColor: isToday ? "primary.main" : (isSelected ? "transparent" : "transparent"),
                         transition: "all 0.2s",
                         "&:hover": {
-                            backgroundColor: "action.hover",
+                            backgroundColor: isToday ? "primary.light" : "action.hover",
                         },
                         position: "relative",
                     }}
@@ -129,7 +130,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         variant="body2"
                         sx={{
                             fontWeight: isToday ? 700 : (isSelected ? 600 : 500),
-                            color: isToday ? "primary.main" : (isSelected ? "primary.dark" : "text.primary"),
+                            color: isToday ? "primary.contrastText" : (isSelected ? "primary.main" : "text.primary"),
                             fontSize: "0.875rem",
                         }}
                     >
@@ -149,7 +150,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     ];
 
     return (
-        <Card
+        <BaseCard
             variant="outlined"
             sx={{
                 borderColor: "divider",
@@ -214,7 +215,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                                 width: "6px",
                                 height: "6px",
                                 borderRadius: "50%",
-                                backgroundColor: "primary.main",
+                                backgroundColor: "secondary.main",
                             }}
                         />
                         <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem" }}>
@@ -223,7 +224,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                     </Stack>
                 </Box>
             </CardContent>
-        </Card>
+        </BaseCard>
     );
 };
 

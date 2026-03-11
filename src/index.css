@@ -24,8 +24,8 @@ html {
     font-family: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: var(--mui-palette-text-primary);
-    background: var(--mui-palette-background-default);
+    color: var(--mui-palette-text-primary, var(--mui-palette-primary-main));
+    background-color: var(--mui-palette-background-default, #f8fafc);
 }
 
 * {

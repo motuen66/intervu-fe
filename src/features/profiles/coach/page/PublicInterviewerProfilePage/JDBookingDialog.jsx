@@ -5,7 +5,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
@@ -19,6 +18,7 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import Divider from "@mui/material/Divider";
+import TextField from "@mui/material/TextField";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -49,6 +49,9 @@ import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { validateJDBookingRounds } from "./jdBookingValidation";
 import toast from "react-hot-toast";
+import FormTextField from "../../../../../common/components/form/FormTextField";
+import { dialogStyles } from "../../../../../common/constants/uiStyles";
+import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 import "./JDBookingDialog.css";
 
 const STEPS = ["Job Details", "Configure Rounds"];
@@ -641,7 +644,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             onClose={handleClose}
             maxWidth="lg"
             fullWidth
-            PaperProps={{ sx: { borderRadius: 3, background: "rgba(255,255,255,0.98)" } }}
+            PaperProps={{ sx: dialogStyles.paper }}
         >
             <DialogTitle
                 sx={{ fontWeight: 700, pb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}
@@ -658,7 +661,6 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-
             <DialogContent sx={{ pt: 2, minHeight: 500 }}>
                 <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
                     {STEPS.map((label) => (
@@ -803,6 +805,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                 ))}
                             </Stack>
                         </Box>
+
 
                         {/* Right: Rounds Panel */}
                         <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0 }}>

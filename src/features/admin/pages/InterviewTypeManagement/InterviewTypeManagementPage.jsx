@@ -14,6 +14,7 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import "./InterviewTypeManagementPage.css";
+import { PrimaryButton } from "../../../../common/components/buttons";
 
 export default function InterviewTypeManagementPage() {
     const [items, setItems] = useState([]);
@@ -108,21 +109,6 @@ export default function InterviewTypeManagementPage() {
         return "Inactive";
     };
 
-    const primaryCtaSx = {
-        textTransform: "none",
-        background: "#2f5cf6",
-        color: "#ffffff",
-        px: 3,
-        py: 1,
-        borderRadius: "999px",
-        fontSize: "14px",
-        fontWeight: 600,
-        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
-        "&:hover": {
-            background: "#2952e6",
-        },
-    };
-
     return (
         <Box className="interview-type-management" p={2}>
             <div className="interview-type-panel">
@@ -145,9 +131,9 @@ export default function InterviewTypeManagementPage() {
                     </Box>
 
                     <Box>
-                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
+                        <PrimaryButton onClick={() => setOpenCreate(true)}>
                             Create New
-                        </Button>
+                        </PrimaryButton>
                     </Box>
                 </Toolbar>
 
@@ -161,9 +147,9 @@ export default function InterviewTypeManagementPage() {
                         <div className="interview-type-empty-subtitle">
                             Create your first interview type to get started.
                         </div>
-                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
+                        <PrimaryButton onClick={() => setOpenCreate(true)}>
                             Create New
-                        </Button>
+                        </PrimaryButton>
                     </Box>
                 ) : (
                     <Box className="interview-type-grid">

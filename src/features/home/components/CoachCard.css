@@ -1,6 +1,6 @@
 /* Interviewer Card - Exponent Style */
 .interviewer-card {
-    background: #ffffff;
+    background: var(--mui-palette-background-paper);
     border-radius: var(--radius-xl);
     padding: 24px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -144,8 +144,8 @@
 }
 
 .skill-tag {
-    background: #f3f4f6;
-    color: #374151;
+    background: var(--mui-palette-action-hover);
+    color: var(--mui-palette-text-primary);
     padding: 8px 14px;
     border-radius: var(--radius-sm);
     font-size: 14px;
@@ -153,8 +153,8 @@
 }
 
 .skill-tag.more-tag {
-    background: #e5e7eb;
-    color: #6b7280;
+    background: var(--mui-palette-action-selected);
+    color: var(--mui-palette-text-secondary);
 }
 
 /* Book Now Button */

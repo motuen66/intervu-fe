@@ -32,6 +32,7 @@ import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import toast from "react-hot-toast";
+import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 import "./BookingSlotDialog.css";
 
 const STEPS = ["Select Service", "Pick Time on Calendar"];
@@ -150,8 +151,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                 title: `${selectedService.interviewType?.name || selectedService.name || "Interview"} (${selectedService.durationMinutes}m)`,
                 start: selectedStartTime.toISOString(),
                 end: endTime.toISOString(),
-                backgroundColor: "#4f46e5",
-                borderColor: "#4f46e5",
+                backgroundColor: "var(--mui-palette-primary-main)",
+                borderColor: "var(--mui-palette-primary-main)",
                 textColor: "#fff",
                 classNames: ["booking-preview"],
                 editable: true,
@@ -365,13 +366,10 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                                 {service.interviewTypeName || "Interview"}
                                                             </Typography>
                                                             {service.isCoding && (
-                                                                <Chip
+                                                                <StatusChip
                                                                     icon={<CodeIcon sx={{ fontSize: 14 }} />}
                                                                     label="Coding"
-                                                                    size="small"
                                                                     color="primary"
-                                                                    variant="outlined"
-                                                                    sx={{ height: 22, fontSize: "0.7rem" }}
                                                                 />
                                                             )}
                                                         </Stack>
@@ -396,7 +394,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                     </Stack>
 
                                                     {isSelected && (
-                                                        <CheckCircleIcon sx={{ color: "#4f46e5", fontSize: 28 }} />
+                                                        <CheckCircleIcon sx={{ color: "var(--mui-palette-primary-main)", fontSize: 28 }} />
                                                     )}
                                                 </Stack>
                                             </Box>
@@ -493,7 +491,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                 width: 14,
                                                 height: 14,
                                                 borderRadius: "3px",
-                                                bgcolor: "#4f46e5",
+                                                bgcolor: "var(--mui-palette-primary-main)",
                                             }}
                                         />
                                         <Typography variant="caption" color="text.secondary">
@@ -546,7 +544,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                             <Typography
                                                 variant="subtitle2"
                                                 fontWeight={700}
-                                                sx={{ mb: 1.5, color: "#4f46e5" }}
+                                                sx={{ mb: 1.5, color: "var(--mui-palette-primary-main)" }}
                                             >
                                                 Booking Summary
                                             </Typography>
@@ -593,7 +591,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                 <Typography variant="body2" fontWeight={600}>
                                                     Total
                                                 </Typography>
-                                                <Typography variant="subtitle1" fontWeight={700} color="#4f46e5">
+                                                <Typography variant="subtitle1" fontWeight={700} color="var(--mui-palette-primary-main)">
                                                     {selectedService?.price?.toLocaleString()} VND
                                                 </Typography>
                                             </Box>
@@ -609,49 +607,34 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
             <DialogActions sx={{ p: 2, gap: 1, justifyContent: "space-between" }}>
                 <Box>
                     {activeStep === 1 && (
-                        <Button
+                        <SecondaryButton
                             onClick={handleBackStep}
-                            variant="text"
                             startIcon={<ArrowBackIcon />}
-                            sx={{ color: "#4f46e5" }}
+                            sx={{ border: "none", "&:hover": { border: "none", bgcolor: "action.hover" } }}
                         >
                             Back
-                        </Button>
+                        </SecondaryButton>
                     )}
                 </Box>
-                <Stack direction="row" spacing={1}>
-                    <Button onClick={onClose} variant="outlined" color="inherit">
+                <Stack direction="row" spacing={1.5}>
+                    <SecondaryButton onClick={onClose}>
                         Cancel
-                    </Button>
+                    </SecondaryButton>
                     {activeStep === 0 ? (
-                        <Button
+                        <PrimaryButton
                             onClick={handleNextStep}
-                            variant="contained"
                             disabled={!selectedService}
-                            sx={{
-                                backgroundColor: "#4F46E5",
-                                fontWeight: 600,
-                                "&:hover": { backgroundColor: "#4338CA" },
-                                "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
-                            }}
                         >
                             Next
-                        </Button>
+                        </PrimaryButton>
                     ) : (
-                        <Button
+                        <PrimaryButton
                             onClick={handleConfirmBooking}
-                            variant="contained"
                             disabled={!canConfirm || submitting}
                             loading={submitting}
-                            sx={{
-                                backgroundColor: "#4F46E5",
-                                fontWeight: 600,
-                                "&:hover": { backgroundColor: "#4338CA" },
-                                "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
-                            }}
                         >
                             Confirm & Pay
-                        </Button>
+                        </PrimaryButton>
                     )}
                 </Stack>
             </DialogActions>

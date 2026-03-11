@@ -66,11 +66,30 @@ export const BOOKING_REQUEST_TYPE_LABELS = {
     [BOOKING_REQUEST_TYPE.JD_INTERVIEW]: "JD Interview",
 };
 
+import { theme } from "./theme";
+
 export const getAvailabilityColors = (status, isPast = false) => {
+    const { palette } = theme;
+
     const colors = {
-        AVAILABLE: { bg: "#4F46E5", border: "#4F46E5", title: "Available" },
-        UNAVAILABLE: { bg: "#EF4444", border: "#EF4444", title: "Unavailable" },
-        PAST: { bg: "#9CA3AF", border: "#9CA3AF", title: "Past" },
+        AVAILABLE: {
+            bg: palette.secondary.main, // #D9F99D (Electric Lime)
+            border: palette.secondary.dark, // #BEF264
+            title: "Available",
+            textColor: palette.secondary.contrastText, // #0F172A (Navy)
+        },
+        UNAVAILABLE: {
+            bg: "#F43F5E", // Rose — specific to schedule, not in theme error palette
+            border: "#e11d48",
+            title: "Unavailable",
+            textColor: "#ffffff",
+        },
+        PAST: {
+            bg: "#D1D5DB", // Neutral Gray — not a direct theme token
+            border: palette.text.disabled, // #94A3B8
+            title: "Past Slot",
+            textColor: palette.text.secondary, // #64748B
+        },
     };
 
     if (isPast) return colors.PAST;

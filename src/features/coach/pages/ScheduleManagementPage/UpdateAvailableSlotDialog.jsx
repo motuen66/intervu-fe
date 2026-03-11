@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
     Box,
-    Button,
     TextField,
     Typography,
     Modal,
@@ -10,8 +9,9 @@ import {
     FormControl,
     Select,
     MenuItem,
-    Chip,
 } from "@mui/material";
+import StatusChip from "../../../../common/components/StatusChip";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoAdd, IoTrash } from "react-icons/io5";
 import toast from "react-hot-toast";
 
@@ -118,22 +118,20 @@ const UpdateAvailableSlotDialog = ({
                                     size="small"
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 />
-                                <Button
-                                    variant="outlined"
+                                <SecondaryButton
                                     onClick={handleAddDuplicateDate}
                                     sx={{ minWidth: "auto", px: 1 }}
                                 >
                                     <IoAdd size={20} />
-                                </Button>
+                                </SecondaryButton>
                             </Stack>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                                 {formData.duplicateDates?.map((date) => (
-                                    <Chip
+                                    <StatusChip
                                         key={date}
                                         label={date}
                                         onDelete={() => handleRemoveDuplicateDate(date)}
-                                        size="small"
-                                        variant="outlined"
+                                        color="primary"
                                     />
                                 ))}
                             </Box>
@@ -212,33 +210,26 @@ const UpdateAvailableSlotDialog = ({
                         </Box>
 
                         <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ mt: 3 }}>
-                            <Button
-                                variant="outlined"
+                            <SecondaryButton
                                 color="error"
                                 startIcon={<IoTrash size={16} />}
                                 onClick={handleDelete}
                                 disabled={loading}
-                                sx={{ textTransform: "none" }}
                             >
                                 Delete
-                            </Button>
+                            </SecondaryButton>
                             <Stack direction="row" spacing={2}>
-                                <Button
-                                    variant="outlined"
+                                <SecondaryButton
                                     onClick={onClose}
-                                    sx={{ textTransform: "none", borderColor: "divider", color: "text.secondary" }}
                                 >
                                     Cancel
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
+                                </SecondaryButton>
+                                <PrimaryButton
                                     onClick={handleSubmit}
-                                    disabled={loading}
-                                    sx={{ textTransform: "none" }}
+                                    loading={loading}
                                 >
                                     Update
-                                </Button>
+                                </PrimaryButton>
                             </Stack>
                         </Stack>
                     </Stack>
