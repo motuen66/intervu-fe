@@ -1,20 +1,10 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Box, Card, CardContent, Typography, IconButton, Stack } from "@mui/material";
+import React, { useState, useMemo } from "react";
+import { Box, CardContent, Typography, IconButton, Stack } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
-import { getAvailabilitiesByMonth } from "../../services/availabilityApi";
 
-const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, availabilities = [] }) => {
+const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }) => {
     const [displayDate, setDisplayDate] = useState(new Date());
-    const [monthAvailabilities, setMonthAvailabilities] = useState([]);
-
-    useEffect(() => {
-        if (!interviewerId) return;
-        getAvailabilitiesByMonth(interviewerId, displayDate.getMonth() + 1, displayDate.getFullYear())
-            .then((data) => setMonthAvailabilities(Array.isArray(data) ? data : []))
-            .catch(() => setMonthAvailabilities([]));
-        // Re-fetch when month changes OR when Redux availabilities changes (add/delete)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [interviewerId, displayDate.getMonth(), displayDate.getFullYear(), availabilities.length]);
 
     const daysInMonth = useMemo(() => {
         const year = displayDate.getFullYear();
@@ -30,7 +20,7 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
     // Group availabilities by date
     const availabilitiesByDate = useMemo(() => {
         const map = {};
-        monthAvailabilities.forEach((avail) => {
+        availabilities.forEach((avail) => {
             // Only count future/current slots
             const startDate = new Date(avail.startTime);
             const endDate = new Date(avail.endTime);
@@ -43,7 +33,7 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
             }
         });
         return map;
-    }, [monthAvailabilities]);
+    }, [availabilities]);
 
     const handlePrevMonth = () => {
         setDisplayDate(new Date(displayDate.getFullYear(), displayDate.getMonth() - 1, 1));
@@ -73,7 +63,7 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
                             width: "4px",
                             height: "4px",
                             borderRadius: "50%",
-                            backgroundColor: "primary.main",
+                            backgroundColor: "secondary.main",
                         }}
                     />
                 ))}
@@ -83,7 +73,7 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
                         sx={{
                             fontSize: "8px",
                             fontWeight: 600,
-                            color: "primary.main",
+                            color: "secondary.dark",
                             lineHeight: 1,
                         }}
                     >
@@ -98,9 +88,7 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
     // Get selected date string for comparison
-    const selectedDateStr = selectedDate
-        ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`
-        : null;
+    const selectedDateStr = selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}` : null;
 
     // Generate calendar grid
     const calendarDays = [];
@@ -128,12 +116,12 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
                         justifyContent: "center",
                         cursor: "pointer",
                         borderRadius: "8px",
-                        border: isToday ? "2px solid" : isSelected ? "1px solid" : "none",
-                        borderColor: isToday ? "primary.main" : isSelected ? "primary.light" : "transparent",
-                        backgroundColor: isToday ? "primary.light" : isSelected ? "action.hover" : "transparent",
+                        border: isToday ? "2px solid" : (isSelected ? "1.5px solid" : "none"),
+                        borderColor: isToday ? "primary.main" : (isSelected ? "primary.light" : "transparent"),
+                        backgroundColor: isToday ? "primary.main" : (isSelected ? "transparent" : "transparent"),
                         transition: "all 0.2s",
                         "&:hover": {
-                            backgroundColor: "action.hover",
+                            backgroundColor: isToday ? "primary.light" : "action.hover",
                         },
                         position: "relative",
                     }}
@@ -141,15 +129,15 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
                     <Typography
                         variant="body2"
                         sx={{
-                            fontWeight: isToday ? 700 : isSelected ? 600 : 500,
-                            color: isToday ? "primary.main" : isSelected ? "primary.dark" : "text.primary",
+                            fontWeight: isToday ? 700 : (isSelected ? 600 : 500),
+                            color: isToday ? "primary.contrastText" : (isSelected ? "primary.main" : "text.primary"),
                             fontSize: "0.875rem",
                         }}
                     >
                         {dayNumber}
                     </Typography>
                     {renderDots(slotsCount)}
-                </Box>,
+                </Box>
             );
         } else {
             calendarDays.push(<Box key={i} />);
@@ -157,22 +145,12 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
     }
 
     const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
     ];
 
     return (
-        <Card
+        <BaseCard
             variant="outlined"
             sx={{
                 borderColor: "divider",
@@ -237,7 +215,7 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
                                 width: "6px",
                                 height: "6px",
                                 borderRadius: "50%",
-                                backgroundColor: "primary.main",
+                                backgroundColor: "secondary.main",
                             }}
                         />
                         <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem" }}>
@@ -246,7 +224,7 @@ const MiniCalendar = ({ onDateClick, currentDate, selectedDate, interviewerId, a
                     </Stack>
                 </Box>
             </CardContent>
-        </Card>
+        </BaseCard>
     );
 };
 

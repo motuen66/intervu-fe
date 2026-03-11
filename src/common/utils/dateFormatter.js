@@ -28,6 +28,15 @@ export const getYearDiff = (start, end) => {
     return yearDiff;
 };
 
+export const formatCurrency = (amount) => {
+    return new Intl.NumberFormat(navigator.language, {
+        style: "currency",
+        currency: "VND",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(amount || 0);
+};
+
 export function toLocalDateTimeWithOffset(date) {
     if (!date) return null;
 
@@ -62,4 +71,26 @@ export function toLocalDateTimeWithOffset(date) {
         ":" +
         minutesOffset
     );
+}
+
+export function timeAgo(dateStr) {
+    if (!dateStr) return "";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const days = Math.floor(diff / 86_400_000);
+    if (days === 0) return "today";
+    if (days === 1) return "1 day ago";
+    if (days < 30) return `${days} days ago`;
+    const months = Math.floor(days / 30);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+}
+
+export function formatDateTime(dateStr) {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleString("en-US", {
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    });
 }

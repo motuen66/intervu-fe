@@ -1,7 +1,6 @@
 import {
     Box,
     Typography,
-    Button,
     List,
     ListItem,
     Paper,
@@ -10,6 +9,7 @@ import {
     AccordionSummary,
     AccordionDetails,
 } from "@mui/material";
+import { DangerButton, PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Videocam, VideocamOff, Mic, MicOff, ExpandMore } from "@mui/icons-material";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
@@ -38,9 +38,9 @@ function VideoPanel({
             }}
         >
             <Box mb={2} display="flex" justifyContent="flex-end">
-                <Button variant="contained" color="error" onClick={onLeaveRoom} endIcon={<ExitToAppIcon />}>
+                <DangerButton onClick={onLeaveRoom} endIcon={<ExitToAppIcon />}>
                     Leave
-                </Button>
+                </DangerButton>
             </Box>
             {/* Peers List */}
             <Accordion elevation={0} sx={{ mb: 2, border: "1px solid", borderColor: "divider" }}>
@@ -106,20 +106,30 @@ function VideoPanel({
                     />
                 </Box>
                 <Stack direction="row" display={"flex"} justifyContent={"center"} spacing={4}>
-                    <Button
-                        variant={isCameraOn ? "contained" : "outlined"}
-                        color={isCameraOn ? "primary" : "error"}
+                    <SecondaryButton
                         onClick={onToggleCamera}
+                        sx={{
+                            bgcolor: isCameraOn ? "primary.main" : "error.main",
+                            color: "white",
+                            "&:hover": {
+                                bgcolor: isCameraOn ? "primary.dark" : "error.dark",
+                            }
+                        }}
                     >
                         {isCameraOn ? <Videocam /> : <VideocamOff />}
-                    </Button>
-                    <Button
-                        variant={isMicOn ? "contained" : "outlined"}
-                        color={isMicOn ? "primary" : "error"}
+                    </SecondaryButton>
+                    <SecondaryButton
                         onClick={onToggleMic}
+                        sx={{
+                            bgcolor: isMicOn ? "primary.main" : "error.main",
+                            color: "white",
+                            "&:hover": {
+                                bgcolor: isMicOn ? "primary.dark" : "error.dark",
+                            }
+                        }}
                     >
                         {isMicOn ? <Mic /> : <MicOff />}
-                    </Button>
+                    </SecondaryButton>
                 </Stack>
             </Paper>
         </Box>

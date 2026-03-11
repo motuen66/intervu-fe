@@ -1,0 +1,230 @@
+/* ──────────────────────────────────────
+   BookingSlotDialog — FullCalendar theme
+   ────────────────────────────────────── */
+
+.booking-calendar-container .fc {
+    font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif !important;
+    --fc-border-color: #e5e7eb;
+    --fc-button-bg-color: #ffffff;
+    --fc-button-border-color: #e5e7eb;
+    --fc-button-text-color: #374151;
+    --fc-button-hover-bg-color: #f3f4f6;
+    --fc-button-hover-border-color: #6366f1;
+    --fc-button-active-bg-color: var(--mui-palette-primary-main);
+    --fc-button-active-border-color: var(--mui-palette-primary-main);
+    --fc-today-bg-color: rgba(79, 70, 229, 0.05);
+    --fc-event-border-color: transparent;
+}
+
+/* Toolbar */
+.booking-calendar-container .fc .fc-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 1rem;
+}
+
+.booking-calendar-container .fc .fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.booking-calendar-container .fc .fc-toolbar-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* Buttons */
+.booking-calendar-container .fc .fc-button-group {
+    display: flex;
+    gap: 4px;
+}
+
+.booking-calendar-container .fc .fc-button-group > .fc-button {
+    margin: 0 !important;
+    border-radius: 6px !important;
+}
+
+.booking-calendar-container .fc .fc-button {
+    all: unset;
+    display: inline-block;
+    background-color: var(--mui-palette-primary-main);
+    border: 1.5px solid var(--mui-palette-primary-main);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.booking-calendar-container .fc .fc-button:hover {
+    background-color: #4338ca;
+    border-color: #4338ca;
+}
+
+.booking-calendar-container .fc .fc-button.fc-button-active,
+.booking-calendar-container .fc .fc-button:active {
+    background-color: var(--mui-palette-primary-main) !important;
+    border-color: var(--mui-palette-primary-main) !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+}
+
+.booking-calendar-container .fc .fc-prev-button,
+.booking-calendar-container .fc .fc-next-button {
+    background-color: #fff;
+    border: 1.5px solid #e5e7eb;
+    color: #374151;
+    padding: 4px 8px;
+}
+
+.booking-calendar-container .fc .fc-prev-button:hover,
+.booking-calendar-container .fc .fc-next-button:hover {
+    background-color: #f3f4f6;
+    border-color: #6366f1;
+    color: var(--mui-palette-primary-main);
+}
+
+.booking-calendar-container .fc .fc-today-button {
+    background-color: #fff !important;
+    border: 1.5px solid #e5e7eb !important;
+    color: #374151 !important;
+    font-weight: 500;
+}
+
+.booking-calendar-container .fc .fc-today-button:hover {
+    background-color: #f3f4f6 !important;
+    border-color: #6366f1 !important;
+    color: var(--mui-palette-primary-main) !important;
+}
+
+.booking-calendar-container .fc .fc-today-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Column headers */
+.booking-calendar-container .fc .fc-col-header-cell {
+    background-color: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 8px 0;
+}
+
+.booking-calendar-container .fc .fc-col-header-cell-cushion {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+}
+
+/* Time labels */
+.booking-calendar-container .fc .fc-timegrid-slot-label-cushion {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+/* Available slots — background events */
+.booking-calendar-container .fc .fc-bg-event {
+    opacity: 0.25;
+    border-radius: 4px;
+}
+
+/* Selected booking preview */
+.booking-calendar-container .fc .booking-preview {
+    border-radius: 6px !important;
+    opacity: 0.9 !important;
+    border: 2px solid var(--mui-palette-primary-main) !important;
+    cursor: grab;
+}
+
+/* Dragging cursor for draggable events (closed hand) */
+.booking-calendar-container .fc .fc-event.fc-event-draggable {
+    cursor: grab;
+}
+
+.booking-calendar-container .fc .fc-event.fc-event-dragging {
+    cursor: grabbing !important;
+}
+
+/* Now indicator */
+.booking-calendar-container .fc .fc-timegrid-now-indicator-line {
+    border-color: #ef4444;
+    border-width: 2px;
+}
+
+.booking-calendar-container .fc .fc-timegrid-now-indicator-arrow {
+    border-color: #ef4444;
+}
+
+/* Cursor for time grid — indicate clickable */
+.booking-calendar-container .fc .fc-timegrid-slot {
+    cursor: crosshair;
+}
+
+/* Scrollbar */
+.booking-calendar-container .fc .fc-scroller::-webkit-scrollbar {
+    width: 6px;
+}
+
+.booking-calendar-container .fc .fc-scroller::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 3px;
+}
+
+/* ───── Service Selection Cards ───── */
+
+.service-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.service-card:hover {
+    border-color: #6366f1;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+.service-card.selected {
+    border-color: var(--mui-palette-primary-main);
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.04), rgba(99, 102, 241, 0.08));
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* ───── Summary Panel ───── */
+
+.booking-summary {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #fafafe, #f5f3ff);
+}
+
+.booking-summary .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.booking-summary .summary-divider {
+    border: none;
+    border-top: 1px dashed #d1d5db;
+    margin: 8px 0;
+}

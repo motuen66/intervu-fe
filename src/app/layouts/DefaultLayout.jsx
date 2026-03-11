@@ -34,7 +34,7 @@ const DefaultLayout = () => {
             <CssBaseline />
             {/* Header */}
             <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Container maxWidth="lg">
+                <Container maxWidth={false} sx={{ maxWidth: "1350px" }}>
                     <Toolbar disableGutters sx={{ py: 1.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700, flexGrow: 1 }}>
                             Intervu
@@ -42,7 +42,9 @@ const DefaultLayout = () => {
                         {userData?.profilePicture ? (
                             <img src={userData.profilePicture} alt="User Avatar" className="avatar-img" />
                         ) : (
-                            <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }} />
+                            <Avatar sx={{ width: 40, height: 40, bgcolor: "var(--mui-palette-secondary-main)", color: "var(--mui-palette-primary-main)", fontWeight: 700, fontSize: "14px" }}>
+                                {userData?.fullName?.charAt(0).toUpperCase() || "U"}
+                            </Avatar>
                         )}
                         <Button variant="outlined" sx={{ ml: 2 }} onClick={logout}>
                             Sign In
@@ -53,14 +55,14 @@ const DefaultLayout = () => {
 
             {/* Main */}
             <Box component="main" sx={{ flex: 1 }}>
-                <Container>
+                <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
                     <Outlet />
                 </Container>
             </Box>
 
             {/* Footer */}
             <Box component="footer" sx={{ borderTop: 1, borderColor: "divider", bgcolor: "background.default" }}>
-                <Container maxWidth="lg" sx={{ py: 2 }}>
+                <Container maxWidth={false} sx={{ maxWidth: "1350px", py: 2 }}>
                     <Typography variant="body2" color="text.secondary">
                         © {new Date().getFullYear()} Intervu. All rights reserved.
                     </Typography>

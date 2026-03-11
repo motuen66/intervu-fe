@@ -1,5 +1,6 @@
-import { Box, Typography, Stack, Button, Tabs, Tab, CircularProgress } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
+import { Box, Typography, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { Plus as AddIcon } from "lucide-react";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -129,9 +130,9 @@ function InterviewRoomListPage() {
                 const avgScore =
                     completedRooms.length > 0
                         ? (
-                              completedRooms.reduce((acc, room) => acc + (room.score || 0), 0) /
-                              completedRooms.filter((r) => r.score).length
-                          ).toFixed(1)
+                            completedRooms.reduce((acc, room) => acc + (room.score || 0), 0) /
+                            completedRooms.filter((r) => r.score).length
+                        ).toFixed(1)
                         : null;
 
                 setStats({
@@ -299,8 +300,8 @@ function InterviewRoomListPage() {
     }
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: "background.default", minHeight: "100vh" }}>
-            <Box sx={{ maxWidth: 1200, mx: "auto" }}>
+        <Box sx={{ minHeight: "100vh" }}>
+            <Box>
                 {/* Header */}
                 <Stack
                     direction={{ xs: "column", sm: "row" }}
@@ -319,21 +320,17 @@ function InterviewRoomListPage() {
                     </Box>
                     <Stack direction="row" spacing={2}>
                         {user?.role === ROLES.CANDIDATE && (
-                            <Button
-                                variant="outlined"
+                            <SecondaryButton
                                 onClick={() => handleOpenFeedbackModal("all")}
-                                sx={{ borderRadius: 2, fontWeight: 600 }}
                             >
                                 View All Feedbacks
-                            </Button>
+                            </SecondaryButton>
                         )}
-                        <Button
-                            variant="contained"
+                        <PrimaryButton
                             startIcon={<AddIcon />}
-                            sx={{ borderRadius: 2, fontWeight: 600, boxShadow: "none" }}
                         >
                             Book New Session
-                        </Button>
+                        </PrimaryButton>
                     </Stack>
                 </Stack>
 
@@ -416,11 +413,10 @@ function InterviewRoomListPage() {
                 <ConfirmModal
                     show={cancelConfirmState.open}
                     title="Cancel Interview"
-                    message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${
-                        cancelConfirmState.previewRefundPercent === null
-                            ? "Unable to calculate refund preview."
-                            : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
-                    }`}
+                    message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${cancelConfirmState.previewRefundPercent === null
+                        ? "Unable to calculate refund preview."
+                        : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
+                        }`}
                     onConfirm={handleConfirmCancelInterview}
                     onCancel={handleCloseCancelConfirm}
                     confirmText="Cancel Interview"

@@ -18,6 +18,8 @@ import {
     TableRow,
     TableCell,
 } from "@mui/material";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { dialogStyles } from "../../../../common/constants/uiStyles";
 import CloseIcon from "@mui/icons-material/Close";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -262,10 +264,10 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
             maxWidth="md"
             fullWidth
             PaperProps={{
-                sx: {
-                    borderRadius: 3,
+                sx: (theme) => ({
+                    ...dialogStyles.paper(theme),
                     maxHeight: "90vh",
-                },
+                }),
             }}
         >
             {/* Header */}
@@ -384,10 +386,10 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                                                         "&:hover":
                                                                             hasSlot && !isPast
                                                                                 ? {
-                                                                                      bgcolor: isSelected
-                                                                                          ? "primary.main"
-                                                                                          : "primary.lighter",
-                                                                                  }
+                                                                                    bgcolor: isSelected
+                                                                                        ? "primary.main"
+                                                                                        : "primary.lighter",
+                                                                                }
                                                                                 : {},
                                                                     }}
                                                                 >
@@ -429,71 +431,71 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                         )}
                                     </Box>
 
-                                                    <Box sx={{ maxHeight: 280, overflowY: "auto" }}>
+                                    <Box sx={{ maxHeight: 280, overflowY: "auto" }}>
                                         {slotsForSelectedDate.length > 0 ? (
                                             <Stack spacing={1}>
                                                 {slotsForSelectedDate.map((slot) => {
                                                     const slotId = slot.id || slot.Id;
                                                     const selectedId = selectedSlot?.id || selectedSlot?.Id;
                                                     const isSelected = slotId === selectedId;
-                                                    
+
                                                     return (
-                                                    <Paper
-                                                        key={slotId}
-                                                        onClick={() => handleSlotClick(slot)}
-                                                        sx={{
-                                                            p: 1.5,
-                                                            cursor: "pointer",
-                                                            border: "1px solid",
-                                                            borderColor: isSelected ? "primary.main" : "divider",
-                                                            bgcolor: isSelected ? "primary.main" : "background.paper",
-                                                            transition: "all 0.2s ease-in-out",
-                                                            "&:hover": {
-                                                                borderColor: "primary.main",
-                                                                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                                                            },
-                                                        }}
-                                                    >
-                                                        <Stack
-                                                            direction="row"
-                                                            alignItems="center"
-                                                            justifyContent="space-between"
+                                                        <Paper
+                                                            key={slotId}
+                                                            onClick={() => handleSlotClick(slot)}
+                                                            sx={{
+                                                                p: 1.5,
+                                                                cursor: "pointer",
+                                                                border: "1px solid",
+                                                                borderColor: isSelected ? "primary.main" : "divider",
+                                                                bgcolor: isSelected ? "primary.main" : "background.paper",
+                                                                transition: "all 0.2s ease-in-out",
+                                                                "&:hover": {
+                                                                    borderColor: "primary.main",
+                                                                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                                                },
+                                                            }}
                                                         >
-                                                            <Stack direction="row" spacing={1} alignItems="center">
-                                                                <AccessTimeIcon
-                                                                    fontSize="small"
-                                                                    sx={{
-                                                                        color: isSelected ? "white" : "primary.main",
-                                                                    }}
-                                                                />
-                                                                <Typography
-                                                                    variant="body2"
-                                                                    fontWeight={600}
-                                                                    color={isSelected ? "white" : "primary.main"}
-                                                                >
-                                                                    {parseTime(getSlotStartTime(slot))} - {parseTime(getSlotEndTime(slot))}
-                                                                </Typography>
+                                                            <Stack
+                                                                direction="row"
+                                                                alignItems="center"
+                                                                justifyContent="space-between"
+                                                            >
+                                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                                    <AccessTimeIcon
+                                                                        fontSize="small"
+                                                                        sx={{
+                                                                            color: isSelected ? "white" : "primary.main",
+                                                                        }}
+                                                                    />
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        fontWeight={600}
+                                                                        color={isSelected ? "white" : "primary.main"}
+                                                                    >
+                                                                        {parseTime(getSlotStartTime(slot))} - {parseTime(getSlotEndTime(slot))}
+                                                                    </Typography>
+                                                                </Stack>
+                                                                {isSelected && (
+                                                                    <Box
+                                                                        sx={{
+                                                                            width: 20,
+                                                                            height: 20,
+                                                                            borderRadius: "50%",
+                                                                            bgcolor: "white",
+                                                                            display: "flex",
+                                                                            alignItems: "center",
+                                                                            justifyContent: "center",
+                                                                            fontSize: "12px",
+                                                                            fontWeight: "bold",
+                                                                            color: "primary.main",
+                                                                        }}
+                                                                    >
+                                                                        ✓
+                                                                    </Box>
+                                                                )}
                                                             </Stack>
-                                                            {isSelected && (
-                                                                <Box
-                                                                    sx={{
-                                                                        width: 20,
-                                                                        height: 20,
-                                                                        borderRadius: "50%",
-                                                                        bgcolor: "white",
-                                                                        display: "flex",
-                                                                        alignItems: "center",
-                                                                        justifyContent: "center",
-                                                                        fontSize: "12px",
-                                                                        fontWeight: "bold",
-                                                                        color: "primary.main",
-                                                                    }}
-                                                                >
-                                                                    ✓
-                                                                </Box>
-                                                            )}
-                                                        </Stack>
-                                                    </Paper>
+                                                        </Paper>
                                                     );
                                                 })}
                                             </Stack>
@@ -528,7 +530,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                 onChange={(e) => setReason(e.target.value)}
                                 sx={{
                                     "& .MuiOutlinedInput-root": {
-                                        borderRadius: 2,
+                                        borderRadius: "8px",
                                     },
                                 }}
                             />
@@ -539,34 +541,20 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
 
             {/* Actions */}
             <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                <Button
-                    variant="text"
+                <SecondaryButton
                     onClick={handleClose}
-                    sx={{
-                        color: "text.secondary",
-                        fontWeight: 600,
-                        px: 3,
-                    }}
                 >
                     Cancel
-                </Button>
-                <Button
-                    variant="contained"
+                </SecondaryButton>
+                <PrimaryButton
                     onClick={handleSubmit}
                     disabled={!isFormValid || isSubmitting || loading}
                     endIcon={<SendIcon />}
-                    sx={{
-                        borderRadius: 2,
-                        fontWeight: 600,
-                        px: 3,
-                        boxShadow: "none",
-                        "&:hover": {
-                            boxShadow: "none",
-                        },
-                    }}
+                    loading={isSubmitting}
+                    sx={{ boxShadow: "none" }}
                 >
                     {isSubmitting ? "Sending..." : "Send Request"}
-                </Button>
+                </PrimaryButton>
             </DialogActions>
         </Dialog>
     );

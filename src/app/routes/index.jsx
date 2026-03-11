@@ -14,8 +14,15 @@ import CandidateProfilePage from "../../features/profiles/candidate/page/Candida
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
+import BookingRequestListPage from "../../features/interview/pages/BookingRequestPage/BookingRequestListPage";
+import BookingRequestDetailPage from "../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
 import App from "../../App";
+import PaymentHistoryPage from "../../features/payments/pages/PaymentHistoryPage.jsx";
+import InterviewQuestionsPage from "../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx";
+import QuestionDetailPage from "../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx";
+import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx";
+import SavedQuestionsPage from "../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx";
 
 export const routes = [
     { path: "/", element: <Navigate to="/home" replace /> },
@@ -25,6 +32,17 @@ export const routes = [
 
     // Home page (public)
     { element: <MainLayout />, children: [{ path: "/home", element: <HomePage /> }] },
+
+    // Questions pages (public)
+    {
+        element: <MainLayout />,
+        children: [
+            { path: "/questions", element: <InterviewQuestionsPage /> },
+            { path: "/questions/share", element: <ShareExperiencePage /> },
+            { path: "/questions/saved", element: <SavedQuestionsPage /> },
+            { path: "/questions/:id", element: <QuestionDetailPage /> },
+        ],
+    },
 
     // Profile route - accessible by all authenticated users
     {
@@ -39,6 +57,16 @@ export const routes = [
         ],
     },
 
+    // Payment history page (candidate & coach)
+    {
+        element: (
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER]}>
+                <MainLayout />
+            </ProtectedRoute>
+        ),
+        children: [{ path: "/payment-history", element: <PaymentHistoryPage /> }],
+    },
+
     {
         element: (
             <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER]}>
@@ -49,8 +77,25 @@ export const routes = [
             { path: "/", element: <App /> },
             { path: "/admin", element: <AdminDashboard /> },
             { path: "/interview", element: <InterviewRoomListPage /> },
-            { path: "/interview", element: <MainLayout />, children: [{ index: true, element: <InterviewRoomListPage /> }] },
+            {
+                path: "/interview",
+                element: <MainLayout />,
+                children: [{ index: true, element: <InterviewRoomListPage /> }],
+            },
             { path: "/interview/room/:roomId", element: <InterviewRoomPage /> },
+        ],
+    },
+
+    // Booking requests (accessible by both candidate and coach)
+    {
+        element: (
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER]}>
+                <MainLayout />
+            </ProtectedRoute>
+        ),
+        children: [
+            { path: "/booking-requests", element: <BookingRequestListPage /> },
+            { path: "/booking-requests/:id", element: <BookingRequestDetailPage /> },
         ],
     },
 

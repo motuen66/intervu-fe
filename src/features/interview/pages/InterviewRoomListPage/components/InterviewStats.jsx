@@ -1,7 +1,5 @@
 import { Box, Stack, Typography } from "@mui/material";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import StarOutlineIcon from "@mui/icons-material/StarOutline";
+import { Calendar, CheckCircle, Star } from "lucide-react";
 
 const StatCard = ({ icon, label, value, iconBgColor, iconColor }) => (
     <Box
@@ -49,21 +47,21 @@ function InterviewStats({ upcomingCount, completedCount, avgScore }) {
             sx={{ mb: 4 }}
         >
             <StatCard
-                icon={<CalendarTodayIcon sx={{ color: "primary.main", fontSize: 24 }} />}
+                icon={<Calendar size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />}
                 label="Upcoming"
                 value={upcomingCount}
                 iconBgColor="primary.lighter"
                 iconColor="primary.main"
             />
             <StatCard
-                icon={<CheckCircleOutlineIcon sx={{ color: "secondary.main", fontSize: 24 }} />}
+                icon={<CheckCircle size={24} strokeWidth={1.5} color="var(--mui-palette-secondary-main)" />}
                 label="Completed"
                 value={completedCount}
                 iconBgColor="secondary.lighter"
                 iconColor="secondary.main"
             />
             <StatCard
-                icon={<StarOutlineIcon sx={{ color: "warning.main", fontSize: 24 }} />}
+                icon={<Star size={24} strokeWidth={1.5} color="var(--mui-palette-warning-main)" />}
                 label="Avg. Score"
                 value={avgScore ? `${avgScore}/10` : "—"}
                 iconBgColor="warning.lighter"

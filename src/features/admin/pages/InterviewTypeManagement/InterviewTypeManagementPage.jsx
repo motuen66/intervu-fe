@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { interviewTypeEndPoints } from "../../services/interviewTypeApi";
+import { callApi } from "../../../../common/utils/apiConnector";
+import { METHOD } from "../../../../common/constants/api";
 import CreateInterviewTypeDialog from "./CreateInterviewTypeDialog";
 import UpdateInterviewTypeDialog from "./UpdateInterviewTypeDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
@@ -12,6 +14,7 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import "./InterviewTypeManagementPage.css";
+import { PrimaryButton } from "../../../../common/components/buttons";
 
 export default function InterviewTypeManagementPage() {
     const [items, setItems] = useState([]);
@@ -36,25 +39,12 @@ export default function InterviewTypeManagementPage() {
                 if (q) params.set("q", q);
 
                 const url = `${interviewTypeEndPoints.GET_ALL_TYPES}?${params.toString()}`;
-                const response = await fetch(url, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
+                const result = await callApi({
+                    method: METHOD.GET,
+                    endpoint: url,
                 });
-                if (!response.ok) {
-                    const text = await response.text().catch(() => "");
-                    throw new Error(`Request failed: ${response.status} ${response.statusText} ${text}`);
-                }
-                const data = await response.json().catch(() => {
-                    throw new Error("Invalid JSON response from interview types endpoint");
-                });
-                if (!data || data.success === false) {
-                    throw new Error(data?.message || "Interview types API returned an error");
-                }
 
-                const itemsList = data.items || data.data || [];
+                const itemsList = result.data.items || [];
                 setItems(itemsList || []);
             } catch (err) {
                 console.error(err);
@@ -95,14 +85,10 @@ export default function InterviewTypeManagementPage() {
         setConfirmOpen(false);
         if (!deletingId) return;
         try {
-            const res = await fetch(interviewTypeEndPoints.DELETE_TYPE(deletingId), {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
+            await callApi({
+                method: METHOD.DELETE,
+                endpoint: interviewTypeEndPoints.DELETE_TYPE(deletingId),
             });
-            if (!res.ok) throw new Error("Delete failed");
             // reload page after delete
             fetchItems(page, pageSize, search);
         } catch (err) {
@@ -111,7 +97,6 @@ export default function InterviewTypeManagementPage() {
             setDeletingId(null);
         }
     };
-
 
     // const handleSearchChange = (e) => {
     //     setSearch(e.target.value);
@@ -122,21 +107,6 @@ export default function InterviewTypeManagementPage() {
     const getStatusLabel = (value) => {
         if (value === 1 || value === "1" || value === true) return "Active";
         return "Inactive";
-    };
-
-    const primaryCtaSx = {
-        textTransform: "none",
-        background: "#2f5cf6",
-        color: "#ffffff",
-        px: 3,
-        py: 1,
-        borderRadius: "999px",
-        fontSize: "14px",
-        fontWeight: 600,
-        boxShadow: "0 10px 24px rgba(47, 92, 246, 0.32)",
-        "&:hover": {
-            background: "#2952e6",
-        },
     };
 
     return (
@@ -161,9 +131,9 @@ export default function InterviewTypeManagementPage() {
                     </Box>
 
                     <Box>
-                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
+                        <PrimaryButton onClick={() => setOpenCreate(true)}>
                             Create New
-                        </Button>
+                        </PrimaryButton>
                     </Box>
                 </Toolbar>
 
@@ -177,13 +147,13 @@ export default function InterviewTypeManagementPage() {
                         <div className="interview-type-empty-subtitle">
                             Create your first interview type to get started.
                         </div>
-                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={primaryCtaSx}>
+                        <PrimaryButton onClick={() => setOpenCreate(true)}>
                             Create New
-                        </Button>
+                        </PrimaryButton>
                     </Box>
                 ) : (
                     <Box className="interview-type-grid">
-                        {items.map((it) => (
+                        {items?.map((it) => (
                             <div key={it.id} className="interview-type-card">
                                 <div className="interview-type-card-header">
                                     <div>
@@ -204,11 +174,13 @@ export default function InterviewTypeManagementPage() {
                                 <div className="interview-type-card-meta">
                                     <div className="meta-item">
                                         <span className="meta-label">Duration</span>
-                                        <span className="meta-value">{it.durationMinutes} min</span>
+                                        <span className="meta-value">{it.suggestedDurationMinutes} min</span>
                                     </div>
                                     <div className="meta-item">
-                                        <span className="meta-label">Base Price</span>
-                                        <span className="meta-value">{it.basePrice}</span>
+                                        <span className="meta-label">Price Range</span>
+                                        <span className="meta-value">
+                                            {it.minPrice} - {it.maxPrice}
+                                        </span>
                                     </div>
                                     <div className="meta-item">
                                         <span className="meta-label">Is Coding</span>
@@ -229,7 +201,6 @@ export default function InterviewTypeManagementPage() {
                         ))}
                     </Box>
                 )}
-
             </div>
 
             <CreateInterviewTypeDialog

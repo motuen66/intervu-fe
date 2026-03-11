@@ -81,7 +81,7 @@ function InterviewFilterBar({
                     ))}
                 </Select>
 
-                <Button
+                {/* <Button
                     variant="outlined"
                     startIcon={<FileDownloadOutlinedIcon />}
                     onClick={onExport}
@@ -96,7 +96,7 @@ function InterviewFilterBar({
                     }}
                 >
                     Export
-                </Button>
+                </Button> */}
             </Stack>
         </Stack>
     );

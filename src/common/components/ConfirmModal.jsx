@@ -7,10 +7,12 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
+import { PrimaryButton, SecondaryButton } from "./buttons";
+import { dialogStyles } from "../constants/uiStyles";
 
 function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText = "Confirm", cancelText = "Cancel" }) {
     return (
-        <Dialog open={show} onClose={onCancel}>
+        <Dialog open={show} onClose={onCancel} PaperProps={{ sx: dialogStyles.paper }}>
             <DialogTitle
                 sx={{
                     display: "flex",
@@ -34,13 +36,13 @@ function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText =
             <DialogContent dividers>
                 <DialogContentText sx={{ whiteSpace: "pre-line" }}>{message}</DialogContentText>
             </DialogContent>
-            <DialogActions>
-                <Button onClick={onCancel} color="secondary" variant="outlined">
+            <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+                <SecondaryButton onClick={onCancel}>
                     {cancelText}
-                </Button>
-                <Button onClick={onConfirm} color="primary" variant="contained">
+                </SecondaryButton>
+                <PrimaryButton onClick={onConfirm}>
                     {confirmText}
-                </Button>
+                </PrimaryButton>
             </DialogActions>
         </Dialog>
     );
