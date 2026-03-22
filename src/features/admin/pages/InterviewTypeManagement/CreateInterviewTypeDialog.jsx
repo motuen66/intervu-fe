@@ -8,6 +8,8 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { interviewTypeEndPoints } from "../../services/interviewTypeApi";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -28,40 +30,16 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
         minPrice: 0,
         maxPrice: 0,
         status: 1,
+        evaluationStructure: [
+            {
+                type: "",
+                question: "",
+            },
+        ],
     });
     const [saving, setSaving] = useState(false);
 
-    const handleChange = (key) => (e) => {
-        const value = e?.target?.type === "checkbox" ? e.target.checked : e.target.value;
-        setForm((s) => ({ ...s, [key]: value }));
-    };
-
-    const handleSubmit = async () => {
-        setSaving(true);
-        try {
-            await callApi({
-                method: METHOD.POST,
-                endpoint: interviewTypeEndPoints.CREATE_TYPE,
-                arg: form,
-            });
-            onCreated && onCreated();
-            setForm({
-                name: "",
-                description: "",
-                isCoding: false,
-                suggestedDurationMinutes: 30,
-                minPrice: 0,
-                maxPrice: 0,
-                status: 1,
-            });
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleClose = () => {
+    const resetForm = () => {
         setForm({
             name: "",
             description: "",
@@ -70,7 +48,72 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
             minPrice: 0,
             maxPrice: 0,
             status: 1,
+            evaluationStructure: [
+                {
+                    type: "",
+                    question: "",
+                },
+            ],
         });
+    };
+
+    const handleChange = (key) => (e) => {
+        const value = e?.target?.type === "checkbox" ? e.target.checked : e.target.value;
+        setForm((s) => ({ ...s, [key]: value }));
+    };
+
+    const handleEvaluationChange = (index, key, value) => {
+        setForm((s) => {
+            const next = [...(s.evaluationStructure || [])];
+            next[index] = { ...next[index], [key]: value };
+            return { ...s, evaluationStructure: next };
+        });
+    };
+
+    const handleAddEvaluation = () => {
+        setForm((s) => ({
+            ...s,
+            evaluationStructure: [...(s.evaluationStructure || []), { type: "", question: "" }],
+        }));
+    };
+
+    const handleRemoveEvaluation = (index) => {
+        setForm((s) => {
+            const next = [...(s.evaluationStructure || [])];
+            next.splice(index, 1);
+            return {
+                ...s,
+                evaluationStructure: next.length === 0 ? [{ type: "", question: "" }] : next,
+            };
+        });
+    };
+
+    const handleSubmit = async () => {
+        setSaving(true);
+        try {
+            const evaluationStructure = (form.evaluationStructure || [])
+                .map((item) => ({
+                    type: item.type?.trim() || "",
+                    question: item.question?.trim() || "",
+                }))
+                .filter((item) => item.type || item.question);
+
+            await callApi({
+                method: METHOD.POST,
+                endpoint: interviewTypeEndPoints.CREATE_TYPE,
+                arg: { ...form, evaluationStructure },
+            });
+            onCreated && onCreated();
+            resetForm();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleClose = () => {
+        resetForm();
         onClose();
     };
 
@@ -78,9 +121,8 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
         <Dialog
             open={open}
             onClose={handleClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
-            PaperProps={{ sx: dialogStyles.paper }}
         >
             <DialogTitle
                 sx={{
@@ -192,6 +234,68 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
                                     "& .MuiFormControlLabel-label": { color: "#111827" },
                                 }}
                             />
+                        </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+                                <Typography sx={{ fontWeight: 600, color: "#111827" }}>
+                                    Evaluation structure
+                                </Typography>
+                            </Box>
+
+                            <Box display="flex" flexDirection="column" gap={2}>
+                                {(form.evaluationStructure || []).map((item, idx) => (
+                                    <Box
+                                        key={idx}
+                                        sx={{
+                                            border: "1px solid #e5e7eb",
+                                            borderRadius: 1.5,
+                                            p: 2,
+                                            bgcolor: "#f8fafc",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 1.5,
+                                        }}
+                                    >
+                                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                                            <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>
+                                                Item {idx + 1}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleRemoveEvaluation(idx)}
+                                                disabled={(form.evaluationStructure || []).length === 1}
+                                            >
+                                                <DeleteOutlineIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+
+                                        <FormTextField
+                                            fullWidth
+                                            label="Category / Type"
+                                            value={item.type}
+                                            onChange={(e) => handleEvaluationChange(idx, "type", e.target.value)}
+                                            required
+                                        />
+                                        <FormTextField
+                                            fullWidth
+                                            label="Guiding question"
+                                            value={item.question}
+                                            onChange={(e) => handleEvaluationChange(idx, "question", e.target.value)}
+                                            multiline
+                                            rows={3}
+                                            required
+                                        />
+                                    </Box>
+                                ))}
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<AddCircleOutlineIcon />}
+                                    onClick={handleAddEvaluation}
+                                    sx={{ fontWeight: 600 }}
+                                >
+                                    Add
+                                </Button>
+                            </Box>
                         </Grid>
                     </Grid>
                 </DialogContent>
