@@ -157,6 +157,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                 textColor: "#fff",
                 classNames: ["booking-preview"],
                 editable: true,
+                durationEditable: false,
             });
         }
 
