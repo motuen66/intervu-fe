@@ -36,7 +36,7 @@ function SignUpPage() {
             alertErrorMessage: true,
         });
 
-        if (success && confirm("Đăng ký thành công! Login để tiếp tục")) {
+        if (success) {
             navigate("/login");
         }
         resetForm();
@@ -209,7 +209,7 @@ function SignUpPage() {
                                     }}
                                     {...register('password', {
                                         required: 'Password is required',
-                                        minLength: { value: 6, message: 'Password must be at least 6 characters' }
+                                        minLength: { value: 8, message: 'Password must be at least 8 characters' }
                                     })}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
