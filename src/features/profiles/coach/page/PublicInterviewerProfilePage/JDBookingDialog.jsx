@@ -337,6 +337,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 backgroundColor: "#6366f1",
                 groupId: "availability",
                 editable: false,
+                durationEditable: false,
             }));
 
         // Round preview events
@@ -356,6 +357,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     textColor: "#fff",
                     classNames: ["jd-round-event"],
                     editable: true,
+                    durationEditable: false,
                 };
             })
             .filter(Boolean);
