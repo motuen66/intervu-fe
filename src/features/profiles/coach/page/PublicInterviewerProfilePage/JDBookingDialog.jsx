@@ -42,19 +42,17 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { addMonths, addMinutes, format } from "date-fns";
-import { AIM_LEVEL, AIM_LEVEL_LABELS } from "../../../../../common/constants/status";
+import { AIM_LEVEL_LABELS } from "../../../../../common/constants/status";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import { createJDBookingRequest, payBookingRequest } from "../../../../interview/services/bookingRequestApi";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { validateJDBookingRounds } from "./jdBookingValidation";
 import toast from "react-hot-toast";
-import FormTextField from "../../../../../common/components/form/FormTextField";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
-import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 import "./JDBookingDialog.css";
 
-const STEPS = ["Job Details", "Configure Rounds"];
+const STEPS = ["Job Details & Rounds", "Schedule Rounds"];
 const ROUND_COLORS = ["#4f46e5", "#0891b2", "#7c3aed", "#db2777", "#ea580c", "#059669"];
 
 let nextRoundId = 1;
@@ -201,6 +199,96 @@ function SortableRoundCard({
     );
 }
 
+function RoundScheduleCard({ round, index, isActive, color, service, disabled, onActivate }) {
+    const handleClick = () => {
+        if (disabled) {
+            toast.error(`Vui lòng đặt thời gian cho Round ${index} trước.`);
+            return;
+        }
+        onActivate();
+    };
+
+    return (
+        <Paper
+            onClick={handleClick}
+            className={`jd-round-card ${isActive ? "active" : ""}`}
+            sx={{ borderLeft: `4px solid ${color}`, cursor: disabled ? "not-allowed" : "pointer" }}
+            variant="outlined"
+        >
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Typography fontWeight={600} fontSize="0.85rem" color="#374151">
+                    Round {index + 1}
+                </Typography>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                    {isActive && (
+                        <Chip
+                            label="Scheduling"
+                            size="small"
+                            sx={{ height: 20, fontSize: "0.65rem", bgcolor: color, color: "#fff" }}
+                        />
+                    )}
+                    {round.startTime && (
+                        <Chip
+                            label="Scheduled"
+                            size="small"
+                            variant="outlined"
+                            color="success"
+                            sx={{ height: 20, fontSize: "0.65rem" }}
+                        />
+                    )}
+                    {disabled && !round.startTime && (
+                        <Chip
+                            label="Locked"
+                            size="small"
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: "0.65rem", color: "#9ca3af", borderColor: "#e5e7eb" }}
+                        />
+                    )}
+                </Stack>
+            </Stack>
+
+            <Stack spacing={1}>
+                <Typography fontWeight={600} fontSize="0.9rem" color="#111827">
+                    {service?.interviewTypeName || "Chưa chọn dịch vụ"}
+                </Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                    {service && (
+                        <Stack direction="row" spacing={0.3} alignItems="center">
+                            <AccessTimeIcon sx={{ fontSize: 14, color: "#9ca3af" }} />
+                            <Typography variant="caption" color="text.secondary">
+                                {service.durationMinutes}m
+                            </Typography>
+                        </Stack>
+                    )}
+                    {service?.isCoding && (
+                        <Chip
+                            icon={<CodeIcon sx={{ fontSize: 12 }} />}
+                            label="Coding"
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            sx={{ height: 18, fontSize: "0.6rem" }}
+                        />
+                    )}
+                </Stack>
+
+                {round.startTime ? (
+                    <Box sx={{ p: 1, borderRadius: 1, bgcolor: `${color}10` }}>
+                        <Typography variant="caption" fontWeight={600} sx={{ color }}>
+                            {format(round.startTime, "dd/MM/yyyy HH:mm")}
+                            {service && ` – ${format(addMinutes(round.startTime, service.durationMinutes), "HH:mm")}`}
+                        </Typography>
+                    </Box>
+                ) : (
+                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                        Chưa chọn thời gian
+                    </Typography>
+                )}
+            </Stack>
+        </Paper>
+    );
+}
+
 /**
  * Flow C: Candidate submits JD + CV for a multi-round interview plan
  * Step 1: JD URL, CV URL, Aim Level
@@ -322,6 +410,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             return sum + (svc?.price || 0);
         }, 0);
 
+    const hasScheduledPreviousRounds = (index) => rounds.slice(0, index).every((r) => r.startTime);
+
     // ─── Calendar Events ───────────────────────────────
     const calendarEvents = useMemo(() => {
         const now = new Date();
@@ -369,6 +459,10 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const handleCalendarDateClick = useCallback(
         (info) => {
             const currentRound = rounds[activeRoundIndex];
+            if (!hasScheduledPreviousRounds(activeRoundIndex)) {
+                toast.error("Vui lòng hoàn tất thời gian cho các round trước.");
+                return;
+            }
             if (!currentRound?.coachInterviewServiceId) {
                 toast.error(`Please select a service for Round ${activeRoundIndex + 1} first`);
                 return;
@@ -414,7 +508,9 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     if (prevSvc) {
                         const prevEnd = addMinutes(prev.startTime, prevSvc.durationMinutes);
                         if (snappedTime.getTime() < prevEnd.getTime() + gapMs) {
-                            toast.error(`Round ${activeRoundIndex + 1} must start at least 15 minutes after Round ${activeRoundIndex} ends.`);
+                            toast.error(
+                                `Round ${activeRoundIndex + 1} must start at least 15 minutes after Round ${activeRoundIndex} ends.`,
+                            );
                             return;
                         }
                     }
@@ -427,7 +523,9 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 if (next.startTime && next.coachInterviewServiceId) {
                     const nextStart = next.startTime;
                     if (endTime.getTime() + gapMs > nextStart.getTime()) {
-                        toast.error(`Round ${activeRoundIndex + 1} must end at least 15 minutes before Round ${activeRoundIndex + 2} starts.`);
+                        toast.error(
+                            `Round ${activeRoundIndex + 1} must end at least 15 minutes before Round ${activeRoundIndex + 2} starts.`,
+                        );
                         return;
                     }
                 }
@@ -458,6 +556,12 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             const targetRound = rounds[roundIndex];
             const svc = getServiceForRound(targetRound);
             if (!svc) {
+                info.revert();
+                return;
+            }
+
+            if (!hasScheduledPreviousRounds(roundIndex)) {
+                toast.error("Vui lòng hoàn tất thời gian cho các round trước.");
                 info.revert();
                 return;
             }
@@ -502,7 +606,9 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     if (prevSvc) {
                         const prevEnd = addMinutes(prev.startTime, prevSvc.durationMinutes);
                         if (snappedTime.getTime() < prevEnd.getTime() + gapMs) {
-                            toast.error(`Round ${roundIndex + 1} must start at least 15 minutes after Round ${roundIndex} ends.`);
+                            toast.error(
+                                `Round ${roundIndex + 1} must start at least 15 minutes after Round ${roundIndex} ends.`,
+                            );
                             info.revert();
                             return;
                         }
@@ -516,7 +622,9 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 if (next.startTime && next.coachInterviewServiceId) {
                     const nextStart = next.startTime;
                     if (endTime.getTime() + gapMs > nextStart.getTime()) {
-                        toast.error(`Round ${roundIndex + 1} must end at least 15 minutes before Round ${roundIndex + 2} starts.`);
+                        toast.error(
+                            `Round ${roundIndex + 1} must end at least 15 minutes before Round ${roundIndex + 2} starts.`,
+                        );
                         info.revert();
                         return;
                     }
@@ -590,11 +698,16 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     };
 
     // ─── Step Navigation ───────────────────────────────
-    const canProceedStep1 = form.jobDescriptionUrl.trim() && form.cvUrl.trim();
+    const allRoundsHaveServices = rounds.every((r) => r.coachInterviewServiceId);
+    const canProceedStep1 = form.jobDescriptionUrl.trim() && form.cvUrl.trim() && allRoundsHaveServices;
     const allRoundsConfigured = rounds.every((r) => r.coachInterviewServiceId && r.startTime);
 
     const handleNextStep = () => {
-        if (activeStep === 0 && canProceedStep1) setActiveStep(1);
+        if (activeStep === 0 && canProceedStep1) {
+            const nextIndex = rounds.findIndex((r) => !r.startTime);
+            setActiveRoundIndex(nextIndex === -1 ? 0 : nextIndex);
+            setActiveStep(1);
+        }
     };
 
     const handleBackStep = () => {
@@ -641,13 +754,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     );
 
     return (
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            maxWidth="lg"
-            fullWidth
-            PaperProps={{ sx: dialogStyles.paper }}
-        >
+        <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth PaperProps={{ sx: dialogStyles.paper }}>
             <DialogTitle
                 sx={{ fontWeight: 700, pb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}
             >
@@ -680,47 +787,127 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
                 {/* ──── STEP 1: Job Details ──── */}
                 {activeStep === 0 && (
-                    <Grid container spacing={2.5} direction="column">
-                        <Grid item xs={12} sx={{ width: "100%" }}>
-                            <TextField
-                                fullWidth
-                                label="Job Description URL"
-                                value={form.jobDescriptionUrl}
-                                onChange={(e) => setForm({ ...form, jobDescriptionUrl: e.target.value })}
-                                required
-                                placeholder="https://..."
-                                sx={fieldSx}
-                            />
+                    <Stack spacing={3}>
+                        <Grid container spacing={2.5} direction="column">
+                            <Grid item xs={12} sx={{ width: "100%" }}>
+                                <TextField
+                                    fullWidth
+                                    label="Job Description URL"
+                                    value={form.jobDescriptionUrl}
+                                    onChange={(e) => setForm({ ...form, jobDescriptionUrl: e.target.value })}
+                                    required
+                                    placeholder="https://..."
+                                    sx={fieldSx}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sx={{ width: "100%" }}>
+                                <TextField
+                                    fullWidth
+                                    label="CV URL"
+                                    value={form.cvUrl}
+                                    onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
+                                    required
+                                    placeholder="https://..."
+                                    sx={fieldSx}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sx={{ width: "100%" }}>
+                                <TextField
+                                    fullWidth
+                                    select
+                                    label="Target Level (optional)"
+                                    value={form.aimLevel}
+                                    onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
+                                    sx={fieldSx}
+                                >
+                                    <MenuItem value="">None</MenuItem>
+                                    {Object.entries(AIM_LEVEL_LABELS).map(([val, label]) => (
+                                        <MenuItem key={val} value={val}>
+                                            {label}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </Grid>
                         </Grid>
-                        <Grid item xs={12} sx={{ width: "100%" }}>
-                            <TextField
-                                fullWidth
-                                label="CV URL"
-                                value={form.cvUrl}
-                                onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
-                                required
-                                placeholder="https://..."
-                                sx={fieldSx}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sx={{ width: "100%" }}>
-                            <TextField
-                                fullWidth
-                                select
-                                label="Target Level (optional)"
-                                value={form.aimLevel}
-                                onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
-                                sx={fieldSx}
-                            >
-                                <MenuItem value="">None</MenuItem>
-                                {Object.entries(AIM_LEVEL_LABELS).map(([val, label]) => (
-                                    <MenuItem key={val} value={val}>
-                                        {label}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
-                        </Grid>
-                    </Grid>
+
+                        <Divider />
+
+                        <Box>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+                                <Box>
+                                    <Typography fontWeight={700} fontSize="0.95rem" color="#111827">
+                                        Pick rounds, services, and order
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Sắp xếp thứ tự round trước khi chọn thời gian.
+                                    </Typography>
+                                </Box>
+                                <Button
+                                    size="small"
+                                    startIcon={<AddIcon />}
+                                    onClick={addRound}
+                                    sx={{ textTransform: "none", color: "#4F46E5", fontWeight: 600 }}
+                                >
+                                    Add
+                                </Button>
+                            </Stack>
+
+                            {loadingServices ? (
+                                <Box display="flex" justifyContent="center" py={3}>
+                                    <CircularProgress size={24} />
+                                </Box>
+                            ) : (
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext items={roundIds} strategy={verticalListSortingStrategy}>
+                                        <Stack spacing={1.2}>
+                                            {rounds.map((round, index) => (
+                                                <SortableRoundCard
+                                                    key={round.id}
+                                                    round={round}
+                                                    index={index}
+                                                    isActive={activeRoundIndex === index}
+                                                    canDelete={rounds.length > 2}
+                                                    color={getRoundColor(index)}
+                                                    service={getServiceForRound(round)}
+                                                    services={services}
+                                                    fieldSx={fieldSx}
+                                                    onActivate={() => setActiveRoundIndex(index)}
+                                                    onRemove={() => removeRound(index)}
+                                                    onServiceChange={(val) => updateRoundService(index, val)}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </SortableContext>
+                                </DndContext>
+                            )}
+
+                            <Divider sx={{ my: 1.5 }} />
+
+                            {getTotalPrice() > 0 && (
+                                <Box
+                                    sx={{
+                                        p: 1.5,
+                                        borderRadius: 2,
+                                        backgroundColor: "#f0f4ff",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Typography fontSize="0.85rem" color="#4338ca" fontWeight={600}>
+                                        Estimated Total
+                                    </Typography>
+                                    <Typography fontSize="1rem" color="#4338ca" fontWeight={700}>
+                                        {getTotalPrice().toLocaleString()} ₫
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+                    </Stack>
                 )}
 
                 {/* ──── STEP 2: Rounds + Calendar ──── */}
@@ -808,85 +995,44 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                             </Stack>
                         </Box>
 
-
-                        {/* Right: Rounds Panel */}
-                        <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0 }}>
+                        {/* Right: Scheduling Panel */}
+                        <Box sx={{ width: { xs: "100%", md: 340 }, flexShrink: 0 }}>
                             <Stack spacing={1.5}>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Box>
                                     <Typography fontWeight={700} fontSize="0.95rem" color="#111827">
-                                        Interview Rounds
+                                        Schedule rounds in order
                                     </Typography>
-                                    <Button
-                                        size="small"
-                                        startIcon={<AddIcon />}
-                                        onClick={addRound}
-                                        sx={{ textTransform: "none", color: "#4F46E5", fontWeight: 600 }}
-                                    >
-                                        Add
-                                    </Button>
-                                </Stack>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Hoàn tất thời gian cho round trước rồi mới tới round tiếp theo.
+                                    </Typography>
+                                </Box>
 
-                                {loadingServices ? (
-                                    <Box display="flex" justifyContent="center" py={3}>
-                                        <CircularProgress size={24} />
-                                    </Box>
-                                ) : (
-                                    <DndContext
-                                        sensors={sensors}
-                                        collisionDetection={closestCenter}
-                                        onDragEnd={handleDragEnd}
-                                    >
-                                        <SortableContext items={roundIds} strategy={verticalListSortingStrategy}>
-                                            {rounds.map((round, index) => (
-                                                <SortableRoundCard
-                                                    key={round.id}
-                                                    round={round}
-                                                    index={index}
-                                                    isActive={activeRoundIndex === index}
-                                                    canDelete={rounds.length > 2}
-                                                    color={getRoundColor(index)}
-                                                    service={getServiceForRound(round)}
-                                                    services={services}
-                                                    fieldSx={fieldSx}
-                                                    onActivate={() => setActiveRoundIndex(index)}
-                                                    onRemove={() => removeRound(index)}
-                                                    onServiceChange={(val) => updateRoundService(index, val)}
-                                                />
-                                            ))}
-                                        </SortableContext>
-                                    </DndContext>
-                                )}
+                                <Stack spacing={1.2}>
+                                    {rounds.map((round, index) => {
+                                        const service = getServiceForRound(round);
+                                        const locked = !hasScheduledPreviousRounds(index) && index !== 0;
+                                        return (
+                                            <RoundScheduleCard
+                                                key={round.id}
+                                                round={round}
+                                                index={index}
+                                                isActive={activeRoundIndex === index}
+                                                color={getRoundColor(index)}
+                                                service={service}
+                                                disabled={locked}
+                                                onActivate={() => setActiveRoundIndex(index)}
+                                            />
+                                        );
+                                    })}
+                                </Stack>
 
                                 <Divider />
 
-                                {/* Total */}
-                                {getTotalPrice() > 0 && (
-                                    <Box
-                                        sx={{
-                                            p: 1.5,
-                                            borderRadius: 2,
-                                            backgroundColor: "#f0f4ff",
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Typography fontSize="0.85rem" color="#4338ca" fontWeight={600}>
-                                            Estimated Total
-                                        </Typography>
-                                        <Typography fontSize="1rem" color="#4338ca" fontWeight={700}>
-                                            {getTotalPrice().toLocaleString()} ₫
-                                        </Typography>
-                                    </Box>
-                                )}
-
-                                {/* Instructions */}
                                 {!allRoundsConfigured && (
                                     <Paper sx={{ p: 2, textAlign: "center", bgcolor: "#f9fafb", borderRadius: "10px" }}>
                                         <EventAvailableIcon sx={{ fontSize: 32, color: "#9ca3af", mb: 0.5 }} />
                                         <Typography variant="body2" color="text.secondary" fontSize="0.8rem">
-                                            Select a service for each round, then click within the{" "}
-                                            <strong style={{ color: "#6366f1" }}>highlighted areas</strong> on the
+                                            Chọn thời gian lần lượt cho từng round bằng cách nhấn vào vùng khả dụng trên
                                             calendar.
                                         </Typography>
                                     </Paper>
