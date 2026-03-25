@@ -1,19 +1,9 @@
 import React, { useState } from "react";
-import {
-    Box,
-    TextField,
-    Typography,
-    Modal,
-    Card,
-    Stack,
-    FormControl,
-    Select,
-    MenuItem,
-    Chip,
-} from "@mui/material";
+import { Box, TextField, Typography, Modal, Card, Stack, FormControl, Select, MenuItem, Chip } from "@mui/material";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
 import toast from "react-hot-toast";
+import StatusChip from "../../../../common/components/StatusChip";
 
 const CreateAvailableSlotDialog = ({
     open,
@@ -118,10 +108,7 @@ const CreateAvailableSlotDialog = ({
                                     size="small"
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 />
-                                <SecondaryButton
-                                    onClick={handleAddDuplicateDate}
-                                    sx={{ minWidth: "auto", px: 1 }}
-                                >
+                                <SecondaryButton onClick={handleAddDuplicateDate} sx={{ minWidth: "auto", px: 1 }}>
                                     <IoAdd size={20} />
                                 </SecondaryButton>
                             </Stack>
@@ -210,15 +197,8 @@ const CreateAvailableSlotDialog = ({
                         </Box>
 
                         <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
-                            <SecondaryButton
-                                onClick={onClose}
-                            >
-                                Cancel
-                            </SecondaryButton>
-                            <PrimaryButton
-                                onClick={handleSubmit}
-                                loading={loading}
-                            >
+                            <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+                            <PrimaryButton onClick={handleSubmit} loading={loading}>
                                 Create
                             </PrimaryButton>
                         </Stack>

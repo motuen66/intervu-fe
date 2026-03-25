@@ -7,6 +7,7 @@ import useLoading from "../../../common/hooks/useLoading";
 import SplitText from "./LoginPage/SplitText";
 import { TextField, Typography } from '@mui/material';
 import { PrimaryButton } from "../../../common/components/buttons";
+import toast from "react-hot-toast";
 
 function SignUpPage() {
     const navigate = useNavigate();
@@ -36,6 +37,8 @@ function SignUpPage() {
         });
 
         if (success) {
+            toast.success("Account created successfully! Please log in.");
+            await new Promise(resolve => setTimeout(resolve, 3000));
             navigate("/login");
         }
         resetForm();

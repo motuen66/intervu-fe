@@ -11,6 +11,7 @@ import { ROLES } from "../../../../common/constants/common.js";
 import FeedbackListModal from "./FeedbackListModal.jsx";
 import RescheduleRequestModal from "./RescheduleRequestModal.jsx";
 import ConfirmModal from "../../../../common/components/ConfirmModal.jsx";
+import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
 
 // Import sub-components
 import InterviewStats from "./components/InterviewStats.jsx";
@@ -395,12 +396,20 @@ function InterviewRoomListPage() {
                 </TabPanel>
 
                 {/* Feedback Modal */}
+
                 <FeedbackListModal
                     open={feedbackModalState.open}
                     onClose={handleCloseFeedbackModal}
                     mode={feedbackModalState.mode}
                     onFeedbackSubmitted={checkPendingFeedbacks}
                 />
+
+
+                {/*<ViewFeedbackModal
+                    open={feedbackModalState.open}
+                    onClose={handleCloseFeedbackModal}
+                    interviewRoomId={pastRooms?.[0]?.id || null}
+                />*/}
 
                 {/* Reschedule Request Modal */}
                 <RescheduleRequestModal
