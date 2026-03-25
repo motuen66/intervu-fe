@@ -8,15 +8,15 @@ export const theme = createTheme({
     palette: {
         mode: "light",
         primary: {
-            light: "#334155",       // Slate 700 — hover state
-            main: "#0F172A",        // Deep Navy
-            dark: "#020617",        // Near-black
+            light: "#334155", // Slate 700 — hover state
+            main: "#0F172A", // Deep Navy
+            dark: "#020617", // Near-black
             contrastText: "#FFFFFF",
         },
         secondary: {
-            light: "#ECFCCB",       // Lime 100
-            main: "#D9F99D",        // Electric Lime — AI features, badges, accents
-            dark: "#BEF264",        // Lime 300
+            light: "#ECFCCB", // Lime 100
+            main: "#D9F99D", // Electric Lime — AI features, badges, accents
+            dark: "#BEF264", // Lime 300
             contrastText: "#0F172A",
         },
         success: {
@@ -44,14 +44,14 @@ export const theme = createTheme({
             contrastText: "#FFFFFF",
         },
         background: {
-            default: "#F8FAFC",     // Soft Blue-Gray (Slate 50)
-            paper: "#FFFFFF",       // Pure White
+            default: "#F8FAFC", // Soft Blue-Gray (Slate 50)
+            paper: "#FFFFFF", // Pure White
         },
-        divider: "#E2E8F0",         // Slate 200
+        divider: "#E2E8F0", // Slate 200
         text: {
-            primary: "#0F172A",     // Sharp Navy
-            secondary: "#64748B",   // Muted Slate
-            disabled: "#94A3B8",    // Slate 400
+            primary: "#0F172A", // Sharp Navy
+            secondary: "#64748B", // Muted Slate
+            disabled: "#94A3B8", // Slate 400
         },
         action: {
             hover: "rgba(15, 23, 42, 0.04)",
@@ -61,20 +61,44 @@ export const theme = createTheme({
     },
     typography: {
         fontFamily: bodyFont,
-        h1: { fontFamily: headingFont, fontWeight: 800, fontSize: "2.75rem", lineHeight: 1.15, letterSpacing: "-0.03em" },
+        h1: {
+            fontFamily: headingFont,
+            fontWeight: 800,
+            fontSize: "2.75rem",
+            lineHeight: 1.15,
+            letterSpacing: "-0.03em",
+        },
         h2: { fontFamily: headingFont, fontWeight: 700, fontSize: "2rem", lineHeight: 1.25, letterSpacing: "-0.02em" },
-        h3: { fontFamily: headingFont, fontWeight: 700, fontSize: "1.5rem", lineHeight: 1.35, letterSpacing: "-0.01em" },
+        h3: {
+            fontFamily: headingFont,
+            fontWeight: 700,
+            fontSize: "1.5rem",
+            lineHeight: 1.35,
+            letterSpacing: "-0.01em",
+        },
         h4: { fontFamily: headingFont, fontWeight: 600, fontSize: "1.25rem", lineHeight: 1.4 },
         h5: { fontFamily: headingFont, fontWeight: 600, fontSize: "1rem", lineHeight: 1.5 },
         h6: { fontFamily: headingFont, fontWeight: 600, fontSize: "0.875rem", lineHeight: 1.5 },
         body1: { fontSize: "1rem", lineHeight: 1.6 },
         body2: { fontSize: "0.875rem", lineHeight: 1.6 },
         caption: { fontSize: "0.75rem", lineHeight: 1.5, letterSpacing: "0.04em" },
-        overline: { fontFamily: headingFont, fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" },
-        button: { fontFamily: headingFont, textTransform: "none", fontWeight: 700, fontSize: "0.9375rem", letterSpacing: "0" },
+        overline: {
+            fontFamily: headingFont,
+            fontSize: "0.6875rem",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+        },
+        button: {
+            fontFamily: headingFont,
+            textTransform: "none",
+            fontWeight: 700,
+            fontSize: "0.9375rem",
+            letterSpacing: "0",
+        },
     },
     shape: {
-        borderRadius: 8,  // Default base radius
+        borderRadius: 8, // Default base radius
     },
     components: {
         MuiCssBaseline: {
@@ -89,7 +113,7 @@ export const theme = createTheme({
             defaultProps: { disableElevation: true },
             styleOverrides: {
                 root: {
-                    borderRadius: "8px",    // Rounded-rect as seen in mockup
+                    borderRadius: "8px", // Rounded-rect as seen in mockup
                     fontWeight: 700,
                     transition: "all 0.2s ease-in-out",
                     "&:active": { transform: "scale(0.98)" },
@@ -276,6 +300,14 @@ export const theme = createTheme({
         MuiBadge: {
             styleOverrides: {
                 badge: { fontWeight: 700, fontSize: "0.6875rem" },
+            },
+        },
+        MuiBackdrop: {
+            styleOverrides: {
+                root: {
+                    backdropFilter: "blur(8px)",
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                },
             },
         },
     },

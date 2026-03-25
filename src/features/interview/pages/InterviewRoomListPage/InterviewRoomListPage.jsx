@@ -12,6 +12,7 @@ import FeedbackListModal from "./FeedbackListModal.jsx";
 import RescheduleRequestModal from "./RescheduleRequestModal.jsx";
 import ConfirmModal from "../../../../common/components/ConfirmModal.jsx";
 import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
+import CoachEvaluationModal from "./CoachEvaluationModal.jsx";
 
 // Import sub-components
 import InterviewStats from "./components/InterviewStats.jsx";
@@ -58,6 +59,7 @@ function InterviewRoomListPage() {
     });
     const [activeTab, setActiveTab] = useState(0);
     const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null });
+    const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
 
     // Fetch initial data once on mount
     useEffect(() => {
@@ -68,6 +70,9 @@ function InterviewRoomListPage() {
         fetchRescheduleRequests();
         if (user.role === ROLES.CANDIDATE) {
             checkPendingFeedbacks();
+        }
+        if (user.role === ROLES.INTERVIEWER) {
+            checkPendingCoachEvaluations();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Only run once on mount
@@ -131,9 +136,9 @@ function InterviewRoomListPage() {
                 const avgScore =
                     completedRooms.length > 0
                         ? (
-                            completedRooms.reduce((acc, room) => acc + (room.score || 0), 0) /
-                            completedRooms.filter((r) => r.score).length
-                        ).toFixed(1)
+                              completedRooms.reduce((acc, room) => acc + (room.score || 0), 0) /
+                              completedRooms.filter((r) => r.score).length
+                          ).toFixed(1)
                         : null;
 
                 setStats({
@@ -179,6 +184,25 @@ function InterviewRoomListPage() {
             }
         } catch (error) {
             console.error("Failed to check pending feedbacks:", error);
+        }
+    };
+
+    const checkPendingCoachEvaluations = async () => {
+        try {
+            const res = await callApi({
+                method: METHOD.GET,
+                endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=100&Statuses=${INTERVIEW_ROOM_STATUS.COMPLETED}`,
+            });
+            const rooms = res?.data || [];
+            const pendingRoom = rooms.find(
+                (room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED && room.isEvaluationCompleted === false,
+            );
+            console.log("Checked pending coach evaluations. Rooms:", rooms, "Pending evaluation room:", pendingRoom);
+            if (pendingRoom) {
+                setCoachEvaluationState({ open: true, room: pendingRoom });
+            }
+        } catch (error) {
+            console.error("Failed to check pending coach evaluations:", error);
         }
     };
 
@@ -292,6 +316,14 @@ function InterviewRoomListPage() {
     const handleOpenFeedbackModal = (mode) => setFeedbackModalState({ open: true, mode });
     const handleCloseFeedbackModal = () => setFeedbackModalState({ open: false, mode: "pending" });
 
+    const handleCloseCoachEvaluation = () => setCoachEvaluationState({ open: false, room: null });
+
+    const handleCoachEvaluationSubmitted = async () => {
+        setCoachEvaluationState({ open: false, room: null });
+        await fetchRooms([2, 3]);
+        await checkPendingCoachEvaluations();
+    };
+
     if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
@@ -321,17 +353,11 @@ function InterviewRoomListPage() {
                     </Box>
                     <Stack direction="row" spacing={2}>
                         {user?.role === ROLES.CANDIDATE && (
-                            <SecondaryButton
-                                onClick={() => handleOpenFeedbackModal("all")}
-                            >
+                            <SecondaryButton onClick={() => handleOpenFeedbackModal("all")}>
                                 View All Feedbacks
                             </SecondaryButton>
                         )}
-                        <PrimaryButton
-                            startIcon={<AddIcon />}
-                        >
-                            Book New Session
-                        </PrimaryButton>
+                        <PrimaryButton startIcon={<AddIcon />}>Book New Session</PrimaryButton>
                     </Stack>
                 </Stack>
 
@@ -404,6 +430,12 @@ function InterviewRoomListPage() {
                     onFeedbackSubmitted={checkPendingFeedbacks}
                 />
 
+                <CoachEvaluationModal
+                    open={coachEvaluationState.open}
+                    room={coachEvaluationState.room}
+                    onClose={handleCloseCoachEvaluation}
+                    onSubmitted={handleCoachEvaluationSubmitted}
+                />
 
                 {/*<ViewFeedbackModal
                     open={feedbackModalState.open}
@@ -422,10 +454,11 @@ function InterviewRoomListPage() {
                 <ConfirmModal
                     show={cancelConfirmState.open}
                     title="Cancel Interview"
-                    message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${cancelConfirmState.previewRefundPercent === null
-                        ? "Unable to calculate refund preview."
-                        : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
-                        }`}
+                    message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${
+                        cancelConfirmState.previewRefundPercent === null
+                            ? "Unable to calculate refund preview."
+                            : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
+                    }`}
                     onConfirm={handleConfirmCancelInterview}
                     onCancel={handleCloseCancelConfirm}
                     confirmText="Cancel Interview"
