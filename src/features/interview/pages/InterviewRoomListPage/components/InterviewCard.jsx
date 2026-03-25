@@ -108,7 +108,7 @@ function InterviewCard({
                     size="small"
                     onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/interview/room/${room.id}`);
+                        navigate(`/interview/precheck/${room.id}`);
                     }}
                     sx={{ fontSize: "0.875rem", boxShadow: "none" }}
                 >
