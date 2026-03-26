@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchInterviewers,
@@ -8,12 +8,14 @@ import {
 } from '../store/homeSlice';
 import FilterBar from '../components/FilterBar';
 import CoachCar from '../components/CoachCard';
-import { Star, ArrowRight, Search } from 'lucide-react';
+import SmartMatchModal from '../../smartSearch/components/SmartMatchModal';
+import { Star, ArrowRight, Search, Sparkles } from 'lucide-react';
 import './HomePage.css';
 
 function HomePage() {
   const dispatch = useDispatch();
   const browseSectionRef = useRef(null);
+  const [smartMatchOpen, setSmartMatchOpen] = useState(false);
   const {
     interviewers,
     loading,
@@ -177,7 +179,31 @@ function HomePage() {
 
       {/* Browse Section */}
       <section className="browse-section" ref={browseSectionRef}>
-        <h2>Browse all coaches</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ margin: 0 }}>Browse all coaches</h2>
+          <button
+            className="hero-cta"
+            onClick={() => setSmartMatchOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, #BEF264 0%, #D9F99D 100%)',
+              color: '#0F172A',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '10px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.875rem',
+              boxShadow: '0 2px 12px rgba(217, 249, 157, 0.4)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Sparkles size={18} />
+            Smart AI Match
+          </button>
+        </div>
 
         {/* Filters */}
         <FilterBar />
@@ -220,6 +246,9 @@ function HomePage() {
           </>
         )}
       </section>
+
+      {/* Smart Match Modal */}
+      <SmartMatchModal open={smartMatchOpen} onClose={() => setSmartMatchOpen(false)} />
     </div>
   );
 }
