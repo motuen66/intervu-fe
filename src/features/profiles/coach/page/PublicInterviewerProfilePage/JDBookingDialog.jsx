@@ -24,6 +24,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import CheckIcon from "@mui/icons-material/Check";
 import CircularProgress from "@mui/material/CircularProgress";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
@@ -83,6 +84,8 @@ function SortableRoundCard({
         zIndex: isDragging ? 10 : "auto",
     };
 
+    const sequenceHint = index === 0 ? "Runs first" : `Runs after Round ${index}`;
+
     return (
         <Paper
             ref={setNodeRef}
@@ -93,7 +96,7 @@ function SortableRoundCard({
             variant="outlined"
         >
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                <Stack direction="row" spacing={0.5} alignItems="center">
+                <Stack direction="row" spacing={0.75} alignItems="center">
                     <Box
                         ref={setActivatorNodeRef}
                         {...attributes}
@@ -110,9 +113,15 @@ function SortableRoundCard({
                     >
                         <DragIndicatorIcon sx={{ fontSize: 18 }} />
                     </Box>
-                    <Typography fontWeight={600} fontSize="0.85rem" color="#374151">
-                        Round {index + 1}
-                    </Typography>
+                    <Box className="jd-order-badge" sx={{ backgroundColor: color }}>
+                        {index + 1}
+                    </Box>
+                    <Stack spacing={0.2}>
+                        <Typography fontWeight={700} fontSize="0.84rem" color="#1f2937">
+                            Round {index + 1}
+                        </Typography>
+                        <Typography className="jd-round-sequence-hint">{sequenceHint}</Typography>
+                    </Stack>
                 </Stack>
                 <Stack direction="row" spacing={0.5} alignItems="center">
                     {isActive && (
@@ -199,93 +208,57 @@ function SortableRoundCard({
     );
 }
 
-function RoundScheduleCard({ round, index, isActive, color, service, disabled, onActivate }) {
+function RoundScheduleTimelineItem({
+    round,
+    index,
+    isActive,
+    service,
+    disabled,
+    blockedByRoundNumber,
+    isLast,
+    onActivate,
+}) {
     const handleClick = () => {
         if (disabled) {
-            toast.error(`Vui lòng đặt thời gian cho Round ${index} trước.`);
+            toast.error(`Please set a time for Round ${index + 1} first.`);
             return;
         }
         onActivate();
     };
 
+    const isDone = Boolean(round.startTime);
+    const isPending = !isDone && disabled;
+    const statusClassName = isDone ? "done" : isPending ? "pending" : "current";
+
+    let subtitle = "Selecting time...";
+    if (isDone) {
+        subtitle = format(round.startTime, "MMM dd 'at' HH:mm");
+    } else if (isPending) {
+        subtitle = blockedByRoundNumber ? `Complete Round ${blockedByRoundNumber} first` : "Pending";
+    }
+
     return (
-        <Paper
+        <Box
             onClick={handleClick}
-            className={`jd-round-card ${isActive ? "active" : ""}`}
-            sx={{ borderLeft: `4px solid ${color}`, cursor: disabled ? "not-allowed" : "pointer" }}
-            variant="outlined"
+            className={`jd-schedule-item ${statusClassName} ${isActive ? "active" : ""}`}
+            sx={{ cursor: disabled ? "not-allowed" : "pointer" }}
         >
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                <Typography fontWeight={600} fontSize="0.85rem" color="#374151">
-                    Round {index + 1}
-                </Typography>
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                    {isActive && (
-                        <Chip
-                            label="Scheduling"
-                            size="small"
-                            sx={{ height: 20, fontSize: "0.65rem", bgcolor: color, color: "#fff" }}
-                        />
-                    )}
-                    {round.startTime && (
-                        <Chip
-                            label="Scheduled"
-                            size="small"
-                            variant="outlined"
-                            color="success"
-                            sx={{ height: 20, fontSize: "0.65rem" }}
-                        />
-                    )}
-                    {disabled && !round.startTime && (
-                        <Chip
-                            label="Locked"
-                            size="small"
-                            variant="outlined"
-                            sx={{ height: 20, fontSize: "0.65rem", color: "#9ca3af", borderColor: "#e5e7eb" }}
-                        />
-                    )}
-                </Stack>
-            </Stack>
+            <Box className="jd-schedule-marker-wrap">
+                <Box className="jd-schedule-marker">
+                    {isDone ? <CheckIcon sx={{ fontSize: 12 }} /> : <Typography>{index + 1}</Typography>}
+                </Box>
+                {!isLast && <Box className="jd-schedule-line" />}
+            </Box>
 
-            <Stack spacing={1}>
-                <Typography fontWeight={600} fontSize="0.9rem" color="#111827">
-                    {service?.interviewTypeName || "Chưa chọn dịch vụ"}
+            <Box className="jd-schedule-content">
+                <Typography className="jd-schedule-title" component="p">
+                    {service?.interviewTypeName || `Round ${index + 1}`}
                 </Typography>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                    {service && (
-                        <Stack direction="row" spacing={0.3} alignItems="center">
-                            <AccessTimeIcon sx={{ fontSize: 14, color: "#9ca3af" }} />
-                            <Typography variant="caption" color="text.secondary">
-                                {service.durationMinutes}m
-                            </Typography>
-                        </Stack>
-                    )}
-                    {service?.isCoding && (
-                        <Chip
-                            icon={<CodeIcon sx={{ fontSize: 12 }} />}
-                            label="Coding"
-                            size="small"
-                            variant="outlined"
-                            color="primary"
-                            sx={{ height: 18, fontSize: "0.6rem" }}
-                        />
-                    )}
-                </Stack>
-
-                {round.startTime ? (
-                    <Box sx={{ p: 1, borderRadius: 1, bgcolor: `${color}10` }}>
-                        <Typography variant="caption" fontWeight={600} sx={{ color }}>
-                            {format(round.startTime, "dd/MM/yyyy HH:mm")}
-                            {service && ` – ${format(addMinutes(round.startTime, service.durationMinutes), "HH:mm")}`}
-                        </Typography>
-                    </Box>
-                ) : (
-                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                        Chưa chọn thời gian
-                    </Typography>
-                )}
-            </Stack>
-        </Paper>
+                <Typography className="jd-schedule-subtitle" component="p">
+                    {subtitle}
+                </Typography>
+            </Box>
+        </Box>
     );
 }
 
@@ -311,6 +284,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [rounds, setRounds] = useState(() => [createRound(), createRound()]);
     const [activeRoundIndex, setActiveRoundIndex] = useState(0);
+    const [stepTransitionClass, setStepTransitionClass] = useState("jd-step-enter-forward");
 
     // DnD sensors
     const sensors = useSensors(
@@ -410,6 +384,12 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             return sum + (svc?.price || 0);
         }, 0);
 
+    const getTotalDurationMinutes = () =>
+        rounds.reduce((sum, r) => {
+            const svc = getServiceForRound(r);
+            return sum + (svc?.durationMinutes || 0);
+        }, 0);
+
     const hasScheduledPreviousRounds = (index) => rounds.slice(0, index).every((r) => r.startTime);
 
     // ─── Calendar Events ───────────────────────────────
@@ -460,7 +440,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
         (info) => {
             const currentRound = rounds[activeRoundIndex];
             if (!hasScheduledPreviousRounds(activeRoundIndex)) {
-                toast.error("Vui lòng hoàn tất thời gian cho các round trước.");
+                toast.error("Please complete scheduling previous rounds first.");
                 return;
             }
             if (!currentRound?.coachInterviewServiceId) {
@@ -531,7 +511,16 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 }
             }
 
-            setRounds((prev) => prev.map((r, i) => (i === activeRoundIndex ? { ...r, startTime: snappedTime } : r)));
+            let nextRoundIndex = -1;
+            setRounds((prev) => {
+                const updated = prev.map((r, i) => (i === activeRoundIndex ? { ...r, startTime: snappedTime } : r));
+                nextRoundIndex = updated.findIndex((r, i) => i > activeRoundIndex && !r.startTime);
+                return updated;
+            });
+
+            if (nextRoundIndex !== -1) {
+                setActiveRoundIndex(nextRoundIndex);
+            }
             toast.success(`Round ${activeRoundIndex + 1} set to ${format(snappedTime, "dd/MM HH:mm")}`);
         },
         [activeRoundIndex, rounds, services, freeSlots],
@@ -561,7 +550,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             }
 
             if (!hasScheduledPreviousRounds(roundIndex)) {
-                toast.error("Vui lòng hoàn tất thời gian cho các round trước.");
+                toast.error("Please complete scheduling previous rounds first.");
                 info.revert();
                 return;
             }
@@ -631,11 +620,31 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 }
             }
 
-            setRounds((prev) => prev.map((r, i) => (i === roundIndex ? { ...r, startTime: snappedTime } : r)));
+            let nextRoundIndex = -1;
+            setRounds((prev) => {
+                const updated = prev.map((r, i) => (i === roundIndex ? { ...r, startTime: snappedTime } : r));
+                nextRoundIndex = updated.findIndex((r, i) => i > roundIndex && !r.startTime);
+                return updated;
+            });
+
+            if (nextRoundIndex !== -1) {
+                setActiveRoundIndex(nextRoundIndex);
+            }
             toast.success(`Round ${roundIndex + 1} moved to ${format(snappedTime, "dd/MM HH:mm")}`);
         },
         [rounds, services, freeSlots],
     );
+
+    const handleFocusNextRound = () => {
+        const nextIndex = getNextRoundToSchedule(activeRoundIndex);
+        if (nextIndex === -1) {
+            toast.success("All rounds are already scheduled.");
+            return;
+        }
+
+        setActiveRoundIndex(nextIndex);
+        toast.success(`Moved to Round ${nextIndex + 1}`);
+    };
 
     // ─── Submission ────────────────────────────────────
     const handleSubmit = async () => {
@@ -701,17 +710,31 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const allRoundsHaveServices = rounds.every((r) => r.coachInterviewServiceId);
     const canProceedStep1 = form.jobDescriptionUrl.trim() && form.cvUrl.trim() && allRoundsHaveServices;
     const allRoundsConfigured = rounds.every((r) => r.coachInterviewServiceId && r.startTime);
+    const completedRoundCount = rounds.filter((r) => Boolean(r.startTime)).length;
+
+    const getNextRoundToSchedule = useCallback(
+        (fromIndex) => {
+            const nextAfterCurrent = rounds.findIndex((r, i) => i > fromIndex && !r.startTime);
+            if (nextAfterCurrent !== -1) return nextAfterCurrent;
+            return rounds.findIndex((r) => !r.startTime);
+        },
+        [rounds],
+    );
 
     const handleNextStep = () => {
         if (activeStep === 0 && canProceedStep1) {
             const nextIndex = rounds.findIndex((r) => !r.startTime);
+            setStepTransitionClass("jd-step-enter-forward");
             setActiveRoundIndex(nextIndex === -1 ? 0 : nextIndex);
             setActiveStep(1);
         }
     };
 
     const handleBackStep = () => {
-        if (activeStep === 1) setActiveStep(0);
+        if (activeStep === 1) {
+            setStepTransitionClass("jd-step-enter-backward");
+            setActiveStep(0);
+        }
     };
 
     const handleClose = () => {
@@ -749,6 +772,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 if (oldIndex > prevIdx && newIndex <= prevIdx) return prevIdx + 1;
                 return prevIdx;
             });
+
+            toast.success("Round order updated");
         },
         [rounds],
     );
@@ -785,262 +810,336 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     </Alert>
                 )}
 
-                {/* ──── STEP 1: Job Details ──── */}
-                {activeStep === 0 && (
-                    <Stack spacing={3}>
-                        <Grid container spacing={2.5} direction="column">
-                            <Grid item xs={12} sx={{ width: "100%" }}>
-                                <TextField
-                                    fullWidth
-                                    label="Job Description URL"
-                                    value={form.jobDescriptionUrl}
-                                    onChange={(e) => setForm({ ...form, jobDescriptionUrl: e.target.value })}
-                                    required
-                                    placeholder="https://..."
-                                    sx={fieldSx}
-                                />
+                <Box key={activeStep} className={`jd-step-transition ${stepTransitionClass}`}>
+                    {/* ──── STEP 1: Job Details ──── */}
+                    {activeStep === 0 && (
+                        <Stack spacing={3}>
+                            <Grid container spacing={2.5} direction="column">
+                                <Grid item xs={12} sx={{ width: "100%" }}>
+                                    <TextField
+                                        fullWidth
+                                        label="Job Description URL"
+                                        value={form.jobDescriptionUrl}
+                                        onChange={(e) => setForm({ ...form, jobDescriptionUrl: e.target.value })}
+                                        required
+                                        placeholder="https://..."
+                                        sx={fieldSx}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sx={{ width: "100%" }}>
+                                    <TextField
+                                        fullWidth
+                                        label="CV URL"
+                                        value={form.cvUrl}
+                                        onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
+                                        required
+                                        placeholder="https://..."
+                                        sx={fieldSx}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sx={{ width: "100%" }}>
+                                    <TextField
+                                        fullWidth
+                                        select
+                                        label="Target Level (optional)"
+                                        value={form.aimLevel}
+                                        onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
+                                        sx={fieldSx}
+                                    >
+                                        <MenuItem value="">None</MenuItem>
+                                        {Object.entries(AIM_LEVEL_LABELS).map(([val, label]) => (
+                                            <MenuItem key={val} value={val}>
+                                                {label}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+                                </Grid>
                             </Grid>
-                            <Grid item xs={12} sx={{ width: "100%" }}>
-                                <TextField
-                                    fullWidth
-                                    label="CV URL"
-                                    value={form.cvUrl}
-                                    onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
-                                    required
-                                    placeholder="https://..."
-                                    sx={fieldSx}
-                                />
-                            </Grid>
-                            <Grid item xs={12} sx={{ width: "100%" }}>
-                                <TextField
-                                    fullWidth
-                                    select
-                                    label="Target Level (optional)"
-                                    value={form.aimLevel}
-                                    onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
-                                    sx={fieldSx}
+
+                            <Divider />
+
+                            <Box>
+                                <Stack
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                    sx={{ mb: 1.5 }}
                                 >
-                                    <MenuItem value="">None</MenuItem>
-                                    {Object.entries(AIM_LEVEL_LABELS).map(([val, label]) => (
-                                        <MenuItem key={val} value={val}>
-                                            {label}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                            </Grid>
-                        </Grid>
+                                    <Box>
+                                        <Typography fontWeight={700} fontSize="0.95rem" color="#111827">
+                                            Build your interview sequence
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Configure each round and set the exact execution order.
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        size="small"
+                                        startIcon={<AddIcon />}
+                                        onClick={addRound}
+                                        sx={{ textTransform: "none", color: "#4F46E5", fontWeight: 600 }}
+                                    >
+                                        Add
+                                    </Button>
+                                </Stack>
 
-                        <Divider />
-
-                        <Box>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                                <Box>
-                                    <Typography fontWeight={700} fontSize="0.95rem" color="#111827">
-                                        Pick rounds, services, and order
+                                <Paper className="jd-sequence-panel" variant="outlined">
+                                    <Typography className="jd-sequence-title">Execution Sequence</Typography>
+                                    <Typography className="jd-sequence-desc">
+                                        Top to bottom is the exact interview order. Drag cards to reorder.
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Sắp xếp thứ tự round trước khi chọn thời gian.
-                                    </Typography>
-                                </Box>
-                                <Button
-                                    size="small"
-                                    startIcon={<AddIcon />}
-                                    onClick={addRound}
-                                    sx={{ textTransform: "none", color: "#4F46E5", fontWeight: 600 }}
-                                >
-                                    Add
-                                </Button>
-                            </Stack>
+                                    <Stack direction="row" spacing={0.6} alignItems="center" flexWrap="wrap">
+                                        {rounds.map((round, index) => {
+                                            const service = getServiceForRound(round);
+                                            return (
+                                                <React.Fragment key={round.id}>
+                                                    <Box className="jd-sequence-chip">
+                                                        <Typography component="span" className="jd-sequence-chip-order">
+                                                            {index + 1}.
+                                                        </Typography>{" "}
+                                                        {service?.interviewTypeName || `Round ${index + 1}`}
+                                                    </Box>
+                                                    {index < rounds.length - 1 && (
+                                                        <Typography className="jd-sequence-arrow">{"->"}</Typography>
+                                                    )}
+                                                </React.Fragment>
+                                            );
+                                        })}
+                                    </Stack>
+                                </Paper>
 
-                            {loadingServices ? (
-                                <Box display="flex" justifyContent="center" py={3}>
-                                    <CircularProgress size={24} />
-                                </Box>
-                            ) : (
-                                <DndContext
-                                    sensors={sensors}
-                                    collisionDetection={closestCenter}
-                                    onDragEnd={handleDragEnd}
-                                >
-                                    <SortableContext items={roundIds} strategy={verticalListSortingStrategy}>
-                                        <Stack spacing={1.2}>
-                                            {rounds.map((round, index) => (
-                                                <SortableRoundCard
-                                                    key={round.id}
-                                                    round={round}
-                                                    index={index}
-                                                    isActive={activeRoundIndex === index}
-                                                    canDelete={rounds.length > 2}
-                                                    color={getRoundColor(index)}
-                                                    service={getServiceForRound(round)}
-                                                    services={services}
-                                                    fieldSx={fieldSx}
-                                                    onActivate={() => setActiveRoundIndex(index)}
-                                                    onRemove={() => removeRound(index)}
-                                                    onServiceChange={(val) => updateRoundService(index, val)}
-                                                />
-                                            ))}
-                                        </Stack>
-                                    </SortableContext>
-                                </DndContext>
-                            )}
+                                {loadingServices ? (
+                                    <Box display="flex" justifyContent="center" py={3}>
+                                        <CircularProgress size={24} />
+                                    </Box>
+                                ) : (
+                                    <DndContext
+                                        sensors={sensors}
+                                        collisionDetection={closestCenter}
+                                        onDragEnd={handleDragEnd}
+                                    >
+                                        <SortableContext items={roundIds} strategy={verticalListSortingStrategy}>
+                                            <Stack spacing={1.2}>
+                                                {rounds.map((round, index) => (
+                                                    <SortableRoundCard
+                                                        key={round.id}
+                                                        round={round}
+                                                        index={index}
+                                                        isActive={activeRoundIndex === index}
+                                                        canDelete={rounds.length > 2}
+                                                        color={getRoundColor(index)}
+                                                        service={getServiceForRound(round)}
+                                                        services={services}
+                                                        fieldSx={fieldSx}
+                                                        onActivate={() => setActiveRoundIndex(index)}
+                                                        onRemove={() => removeRound(index)}
+                                                        onServiceChange={(val) => updateRoundService(index, val)}
+                                                    />
+                                                ))}
+                                            </Stack>
+                                        </SortableContext>
+                                    </DndContext>
+                                )}
 
-                            <Divider sx={{ my: 1.5 }} />
+                                <Divider sx={{ my: 1.5 }} />
 
-                            {getTotalPrice() > 0 && (
-                                <Box
-                                    sx={{
-                                        p: 1.5,
-                                        borderRadius: 2,
-                                        backgroundColor: "#f0f4ff",
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <Typography fontSize="0.85rem" color="#4338ca" fontWeight={600}>
-                                        Estimated Total
-                                    </Typography>
-                                    <Typography fontSize="1rem" color="#4338ca" fontWeight={700}>
-                                        {getTotalPrice().toLocaleString()} ₫
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Box>
-                    </Stack>
-                )}
-
-                {/* ──── STEP 2: Rounds + Calendar ──── */}
-                {activeStep === 1 && (
-                    <Stack direction={{ xs: "column", md: "row" }} spacing={2.5}>
-                        {/* Left: Calendar */}
-                        <Box sx={{ flex: 1 }} className="jd-calendar-container booking-calendar-container">
-                            {loadingSlots && (
-                                <Box
-                                    sx={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        display: "flex",
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                        bgcolor: "rgba(255,255,255,0.6)",
-                                        zIndex: 2,
-                                        borderRadius: "12px",
-                                    }}
-                                >
-                                    <CircularProgress />
-                                </Box>
-                            )}
-                            <FullCalendar
-                                ref={calendarRef}
-                                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                initialView="timeGridWeek"
-                                headerToolbar={{
-                                    left: "prev,next today",
-                                    center: "title",
-                                    right: "timeGridWeek,timeGridDay",
-                                }}
-                                buttonText={{ today: "Today", week: "Week", day: "Day" }}
-                                events={calendarEvents}
-                                dateClick={handleCalendarDateClick}
-                                selectable={false}
-                                editable={false}
-                                eventStartEditable={true}
-                                eventDurationEditable={false}
-                                eventDrop={handleEventDrop}
-                                eventConstraint="availability"
-                                now={new Date()}
-                                nowIndicator={true}
-                                snapDuration="00:15:00"
-                                height="auto"
-                                timeZone="local"
-                                slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-                                eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-                                allDaySlot={false}
-                                slotMinTime="06:00:00"
-                                slotMaxTime="23:00:00"
-                                expandRows={false}
-                                dayMaxEvents={true}
-                            />
-                            <Stack direction="row" spacing={3} sx={{ mt: 1.5, px: 1 }}>
-                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                {getTotalPrice() > 0 && (
                                     <Box
                                         sx={{
-                                            width: 14,
-                                            height: 14,
-                                            borderRadius: "3px",
-                                            bgcolor: "rgba(99, 102, 241, 0.25)",
-                                            border: "1px solid #6366f1",
+                                            p: 1.5,
+                                            borderRadius: 2,
+                                            backgroundColor: "#f0f4ff",
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
                                         }}
-                                    />
-                                    <Typography variant="caption" color="text.secondary">
-                                        Available
-                                    </Typography>
-                                </Stack>
-                                {rounds.map((_, i) => (
-                                    <Stack key={i} direction="row" spacing={0.5} alignItems="center">
+                                    >
+                                        <Typography fontSize="0.85rem" color="#4338ca" fontWeight={600}>
+                                            Estimated Total
+                                        </Typography>
+                                        <Typography fontSize="1rem" color="#4338ca" fontWeight={700}>
+                                            {getTotalPrice().toLocaleString()} ₫
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
+                        </Stack>
+                    )}
+
+                    {/* ──── STEP 2: Rounds + Calendar ──── */}
+                    {activeStep === 1 && (
+                        <Stack direction={{ xs: "column", md: "row" }} spacing={2.5}>
+                            {/* Left: Calendar */}
+                            <Box sx={{ flex: 1 }} className="jd-calendar-container booking-calendar-container">
+                                {loadingSlots && (
+                                    <Box
+                                        sx={{
+                                            position: "absolute",
+                                            inset: 0,
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            bgcolor: "rgba(255,255,255,0.6)",
+                                            zIndex: 2,
+                                            borderRadius: "12px",
+                                        }}
+                                    >
+                                        <CircularProgress />
+                                    </Box>
+                                )}
+                                <FullCalendar
+                                    ref={calendarRef}
+                                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                                    initialView="timeGridWeek"
+                                    headerToolbar={{
+                                        left: "prev,next today",
+                                        center: "title",
+                                        right: "timeGridWeek,timeGridDay",
+                                    }}
+                                    buttonText={{ today: "Today", week: "Week", day: "Day" }}
+                                    events={calendarEvents}
+                                    dateClick={handleCalendarDateClick}
+                                    selectable={false}
+                                    editable={false}
+                                    eventStartEditable={true}
+                                    eventDurationEditable={false}
+                                    eventDrop={handleEventDrop}
+                                    eventConstraint="availability"
+                                    now={new Date()}
+                                    nowIndicator={true}
+                                    snapDuration="00:15:00"
+                                    height="auto"
+                                    timeZone="local"
+                                    slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+                                    eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+                                    allDaySlot={false}
+                                    slotMinTime="06:00:00"
+                                    slotMaxTime="23:00:00"
+                                    expandRows={false}
+                                    dayMaxEvents={true}
+                                />
+                                <Stack direction="row" spacing={3} sx={{ mt: 1.5, px: 1 }}>
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
                                         <Box
                                             sx={{
                                                 width: 14,
                                                 height: 14,
                                                 borderRadius: "3px",
-                                                bgcolor: getRoundColor(i),
+                                                bgcolor: "rgba(99, 102, 241, 0.25)",
+                                                border: "1px solid #6366f1",
                                             }}
                                         />
                                         <Typography variant="caption" color="text.secondary">
-                                            Round {i + 1}
+                                            Available
                                         </Typography>
                                     </Stack>
-                                ))}
-                            </Stack>
-                        </Box>
-
-                        {/* Right: Scheduling Panel */}
-                        <Box sx={{ width: { xs: "100%", md: 340 }, flexShrink: 0 }}>
-                            <Stack spacing={1.5}>
-                                <Box>
-                                    <Typography fontWeight={700} fontSize="0.95rem" color="#111827">
-                                        Schedule rounds in order
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Hoàn tất thời gian cho round trước rồi mới tới round tiếp theo.
-                                    </Typography>
-                                </Box>
-
-                                <Stack spacing={1.2}>
-                                    {rounds.map((round, index) => {
-                                        const service = getServiceForRound(round);
-                                        const locked = !hasScheduledPreviousRounds(index) && index !== 0;
-                                        return (
-                                            <RoundScheduleCard
-                                                key={round.id}
-                                                round={round}
-                                                index={index}
-                                                isActive={activeRoundIndex === index}
-                                                color={getRoundColor(index)}
-                                                service={service}
-                                                disabled={locked}
-                                                onActivate={() => setActiveRoundIndex(index)}
+                                    {rounds.map((_, i) => (
+                                        <Stack key={i} direction="row" spacing={0.5} alignItems="center">
+                                            <Box
+                                                sx={{
+                                                    width: 14,
+                                                    height: 14,
+                                                    borderRadius: "3px",
+                                                    bgcolor: getRoundColor(i),
+                                                }}
                                             />
-                                        );
-                                    })}
+                                            <Typography variant="caption" color="text.secondary">
+                                                Round {i + 1}
+                                            </Typography>
+                                        </Stack>
+                                    ))}
                                 </Stack>
+                            </Box>
 
-                                <Divider />
-
-                                {!allRoundsConfigured && (
-                                    <Paper sx={{ p: 2, textAlign: "center", bgcolor: "#f9fafb", borderRadius: "10px" }}>
-                                        <EventAvailableIcon sx={{ fontSize: 32, color: "#9ca3af", mb: 0.5 }} />
-                                        <Typography variant="body2" color="text.secondary" fontSize="0.8rem">
-                                            Chọn thời gian lần lượt cho từng round bằng cách nhấn vào vùng khả dụng trên
-                                            calendar.
+                            {/* Right: Scheduling Panel */}
+                            <Box sx={{ width: { xs: "100%", md: 340 }, flexShrink: 0 }}>
+                                <Stack spacing={1.5} className="jd-schedule-panel">
+                                    <Box>
+                                        <Typography fontWeight={700} fontSize="0.95rem" color="#111827">
+                                            Schedule rounds in order
                                         </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Click a round on the left to set its time by clicking an available slot on
+                                        </Typography>
+                                    </Box>
+
+                                    <Stack spacing={0.5}>
+                                        {rounds.map((round, index) => {
+                                            const service = getServiceForRound(round);
+                                            const locked = !hasScheduledPreviousRounds(index) && index !== 0;
+                                            const blockedByRoundIndex = locked
+                                                ? rounds.findIndex(
+                                                      (prevRound, prevIndex) =>
+                                                          prevIndex < index && !prevRound.startTime,
+                                                  )
+                                                : -1;
+                                            return (
+                                                <RoundScheduleTimelineItem
+                                                    key={round.id}
+                                                    round={round}
+                                                    index={index}
+                                                    isActive={activeRoundIndex === index}
+                                                    service={service}
+                                                    disabled={locked}
+                                                    blockedByRoundNumber={
+                                                        blockedByRoundIndex >= 0 ? blockedByRoundIndex + 1 : undefined
+                                                    }
+                                                    isLast={index === rounds.length - 1}
+                                                    onActivate={() => setActiveRoundIndex(index)}
+                                                />
+                                            );
+                                        })}
+                                    </Stack>
+
+                                    {!allRoundsConfigured && (
+                                        <Button
+                                            onClick={handleFocusNextRound}
+                                            variant="contained"
+                                            className="jd-next-round-btn"
+                                        >
+                                            Next Round
+                                        </Button>
+                                    )}
+
+                                    <Divider />
+
+                                    <Paper className="jd-schedule-summary" variant="outlined">
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="caption">Progress</Typography>
+                                            <Typography variant="caption" fontWeight={700}>
+                                                {completedRoundCount}/{rounds.length} rounds
+                                            </Typography>
+                                        </Stack>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="caption">Total duration</Typography>
+                                            <Typography variant="caption" fontWeight={700}>
+                                                {getTotalDurationMinutes()} min
+                                            </Typography>
+                                        </Stack>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="caption">Estimated total</Typography>
+                                            <Typography variant="caption" fontWeight={700}>
+                                                {getTotalPrice().toLocaleString()} VND
+                                            </Typography>
+                                        </Stack>
                                     </Paper>
-                                )}
-                            </Stack>
-                        </Box>
-                    </Stack>
-                )}
+
+                                    {!allRoundsConfigured && (
+                                        <Paper
+                                            sx={{ p: 2, textAlign: "center", bgcolor: "#f9fafb", borderRadius: "10px" }}
+                                        >
+                                            <EventAvailableIcon sx={{ fontSize: 32, color: "#9ca3af", mb: 0.5 }} />
+                                            <Typography variant="body2" color="text.secondary" fontSize="0.8rem">
+                                                Select times for each round in order by clicking an available slot on
+                                                the calendar.
+                                            </Typography>
+                                        </Paper>
+                                    )}
+                                </Stack>
+                            </Box>
+                        </Stack>
+                    )}
+                </Box>
             </DialogContent>
 
             <DialogActions sx={{ p: 2, gap: 1, justifyContent: "space-between" }}>
