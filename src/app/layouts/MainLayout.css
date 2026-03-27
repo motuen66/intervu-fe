@@ -276,6 +276,12 @@
     gap: 8px;
 }
 
+.navbar-logo-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .navbar-logo-icon {
     width: 32px;
     height: 32px;
@@ -296,6 +302,14 @@
     text-transform: uppercase;
     margin: 0;
     color: var(--mui-palette-primary-main);
+}
+
+.navbar-logo-copy span {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6b7280;
 }
 
 /* Navigation Menu */

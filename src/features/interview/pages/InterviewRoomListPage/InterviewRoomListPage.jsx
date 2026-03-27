@@ -58,8 +58,8 @@ function InterviewRoomListPage() {
         previewRefundPercent: null,
     });
     const [activeTab, setActiveTab] = useState(0);
-    const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null });
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
+    const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null, nextSessionIn: "—" });
 
     // Fetch initial data once on mount
     useEffect(() => {
@@ -93,58 +93,121 @@ function InterviewRoomListPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]); // Refetch when tab changes
 
+    const groupRoomsByBooking = (roomsList) => {
+        const grouped = {};
+        const standalone = [];
+
+        roomsList.forEach(room => {
+            if (room.bookingRequestId) {
+                if (!grouped[room.bookingRequestId]) {
+                    grouped[room.bookingRequestId] = [];
+                }
+                grouped[room.bookingRequestId].push(room);
+            } else {
+                standalone.push(room);
+            }
+        });
+
+        const combinedRooms = Object.values(grouped).map(group => {
+            if (group.length === 1) return group[0];
+
+            // Sort by roundNumber (or scheduledTime)
+            group.sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
+
+            // Find current/next round
+            let activeRoundIndex = group.findIndex(r => r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
+            if (activeRoundIndex === -1) {
+                activeRoundIndex = group.findIndex(r => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED);
+            }
+            if (activeRoundIndex === -1) {
+                // All done or cancelled, pick the last one or last completed
+                activeRoundIndex = group.length - 1;
+            }
+
+            const activeRoom = group[activeRoundIndex];
+            
+            return {
+                ...activeRoom,
+                id: activeRoom.id, 
+                rounds: group,
+                currentRound: activeRoundIndex + 1,
+                // Status of the grouped card is the status of the active round
+            };
+        });
+
+        const all = [...standalone, ...combinedRooms];
+        // Sort newest first based on scheduled time
+        all.sort((a, b) => new Date(b.scheduledTime) - new Date(a.scheduledTime));
+        return all;
+    };
+
     const fetchRooms = async (statuses = null) => {
         setLoading(true);
         try {
-            // Build query params
-            let endpoint = interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=100";
-            if (statuses && statuses.length > 0) {
-                statuses.forEach((status) => {
-                    endpoint += `&Statuses=${status}`;
-                });
-            }
-
-            const res = await callApi({
+            // Fetch ALL rooms to properly group multi-round bookings
+            const allRoomsRes = await callApi({
                 method: METHOD.GET,
-                endpoint: endpoint,
+                endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
             });
-            const interviewRooms = res?.data || [];
+            const allRoomsData = allRoomsRes?.data || [];
+            
+            // Group rooms
+            const groupedRooms = groupRoomsByBooking(allRoomsData);
 
-            console.log("Fetched rooms with statuses:", statuses, "Data:", interviewRooms);
+            console.log("Grouped Rooms:", groupedRooms);
 
-            // Update state based on which statuses were fetched
-            if (statuses && statuses.includes(0)) {
-                // Upcoming tab: statuses [0, 1]
-                console.log("Setting upcoming rooms:", interviewRooms);
-                setUpcomingRooms(interviewRooms);
-            } else if (statuses && statuses.includes(2)) {
-                // Past history tab: statuses [2, 3]
-                console.log("Setting past rooms:", interviewRooms);
-                setPastRooms(interviewRooms);
+            // Filter into Upcoming (0, 1) and Past (2, 3)
+            const upcomingRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED || r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
+            const pastRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED || r.status === INTERVIEW_ROOM_STATUS.CANCELLED);
+
+            // Update state
+            if (statuses === null || statuses.includes(0)) {
+                setUpcomingRooms(upcomingRoomsList);
             }
+            
+            setPastRooms(pastRoomsList); // Always set past rooms so UpcomingTab can display Recent History
 
-            // Calculate stats on initial load (fetch all data for stats)
-            if (statuses && statuses.includes(0)) {
-                // Only calculate stats when fetching upcoming data (initial load or upcoming tab)
-                const allRooms = await callApi({
-                    method: METHOD.GET,
-                    endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
-                });
-                const allRoomsData = allRooms?.data || [];
-                const upcomingCount = allRoomsData.filter((r) => r.status === 0 || r.status === 1).length;
-                const completedRooms = allRoomsData.filter((r) => r.status === 2);
-                const avgScore =
-                    completedRooms.length > 0
-                        ? (
-                              completedRooms.reduce((acc, room) => acc + (room.score || 0), 0) /
-                              completedRooms.filter((r) => r.score).length
-                          ).toFixed(1)
-                        : null;
+            // Calculate stats
+            if (statuses === null || statuses.includes(0)) {
+                const upcomingCount = upcomingRoomsList.length;
+                const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
+                
+                let avgScore = null;
+                // Calculate average score across ALL individual completed rooms, not just grouped ones
+                const allCompletedIndividualRooms = allRoomsData.filter(r => r.status === INTERVIEW_ROOM_STATUS.COMPLETED && typeof r.score === 'number');
+                if (allCompletedIndividualRooms.length > 0) {
+                    const totalScore = allCompletedIndividualRooms.reduce((acc, room) => acc + room.score, 0);
+                    avgScore = (totalScore / allCompletedIndividualRooms.length).toFixed(1);
+                }
+
+                // Next session calculation
+                const now = new Date();
+                let nextSession = "—";
+                const upcomingFutureRooms = upcomingRoomsList
+                    .map(r => ({ ...r, dateObj: new Date(r.scheduledTime) }))
+                    .filter(r => !isNaN(r.dateObj.getTime()) && r.dateObj >= now)
+                    .sort((a, b) => a.dateObj - b.dateObj);
+
+                if (upcomingFutureRooms.length > 0) {
+                    const diffMs = upcomingFutureRooms[0].dateObj - now;
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    
+                    if (diffDays > 0) {
+                        nextSession = `${diffDays}d ${diffHours}h`;
+                    } else if (diffHours > 0) {
+                        nextSession = `${diffHours}h`;
+                    } else {
+                        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                        nextSession = `${diffMins}m`;
+                    }
+                }
 
                 setStats({
                     upcoming: upcomingCount,
                     completed: completedRooms.length,
                     avgScore: avgScore && !isNaN(avgScore) ? parseFloat(avgScore) : null,
+                    nextSessionIn: nextSession,
                 });
             }
         } catch (error) {
@@ -363,9 +426,11 @@ function InterviewRoomListPage() {
 
                 {/* Stats Section */}
                 <InterviewStats
+                    totalCount={stats.completed}
                     upcomingCount={stats.upcoming}
                     completedCount={stats.completed}
                     avgScore={stats.avgScore}
+                    nextSessionIn={stats.nextSessionIn}
                 />
 
                 {/* Tabs Navigation */}
@@ -399,6 +464,7 @@ function InterviewRoomListPage() {
                 <TabPanel value={activeTab} index={0}>
                     <UpcomingTab
                         rooms={upcomingRooms}
+                        recentRooms={pastRooms}
                         user={user}
                         loading={loading}
                         onRequestReschedule={handleRequestReschedule}

@@ -5,7 +5,9 @@ import {
     Stack,
     Pagination,
     CircularProgress,
+    Grid,
 } from "@mui/material";
+import toast from "react-hot-toast";
 import InterviewCard from "./InterviewCard";
 import InterviewFilterBar from "./InterviewFilterBar";
 import { useNavigate } from "react-router-dom";
@@ -64,6 +66,18 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
     const handleCardClick = (room) => {
         // Past interviews should not navigate to room
         // Users can only view details, not enter the room
+        if (room.status === 2) { // 2 = COMPLETED
+            if (!room.score) {
+                toast("No feedback available yet.", {
+                    style: {
+                        borderRadius: "10px",
+                        background: "#333",
+                        color: "#fff",
+                    },
+                });
+                return;
+            }
+        }
         return;
     };
 
@@ -110,17 +124,18 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
                     </Typography>
                 </Box>
             ) : (
-                <Stack spacing={2}>
+                <Grid container spacing={1.75}>
                     {paginatedRooms.map((room) => (
-                        <InterviewCard
-                            key={room.id}
-                            room={room}
-                            user={user}
-                            onClick={handleCardClick}
-                            showActions={false}
-                        />
+                        <Grid key={room.id} item xs={12} sm={6} md={4}>
+                            <InterviewCard
+                                room={room}
+                                user={user}
+                                onClick={handleCardClick}
+                                showActions={true}
+                            />
+                        </Grid>
                     ))}
-                </Stack>
+                </Grid>
             )}
 
             {/* Pagination */}
