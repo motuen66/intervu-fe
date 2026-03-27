@@ -4,6 +4,7 @@ import {
     Avatar,
     Stack,
     Divider,
+    Tooltip,
     IconButton,
     Menu,
     MenuItem,
@@ -32,6 +33,8 @@ function InterviewCard({
     showActions = true,
     hasPendingReschedule = false
 }) {
+    const FIXED_CARD_HEIGHT = 346;
+
     const navigate = useNavigate();
     const isOngoing = room.status === INTERVIEW_ROOM_STATUS.ON_GOING;
     const isScheduled = room.status === INTERVIEW_ROOM_STATUS.SCHEDULED;
@@ -151,6 +154,55 @@ function InterviewCard({
     const getParticipantReviewCount = () => {
         return room.coachReviewCount ?? room.reviewCount ?? null;
     };
+
+    const getInterviewTypeBadgeStyle = (typeName) => {
+        const normalizedType = String(typeName || "").toLowerCase();
+
+        if (normalizedType.includes("technical")) {
+            return {
+                textColor: "#0A2A66",
+                bg: "linear-gradient(135deg, rgba(78, 165, 255, 0.28) 0%, rgba(124, 92, 255, 0.26) 48%, rgba(82, 228, 255, 0.24) 100%)",
+                borderColor: "rgba(92, 155, 255, 0.45)",
+                glowColor: "#6BA8FF",
+                dotColor: "#3F8CFF",
+            };
+        }
+
+        if (normalizedType.includes("cv") || normalizedType.includes("resume")) {
+            return {
+                textColor: "#2C3E05",
+                bg: "linear-gradient(135deg, rgba(162, 243, 87, 0.3) 0%, rgba(88, 222, 125, 0.26) 46%, rgba(255, 232, 121, 0.22) 100%)",
+                borderColor: "rgba(123, 214, 102, 0.45)",
+                glowColor: "#91D562",
+                dotColor: "#62B63E",
+            };
+        }
+
+        if (normalizedType.includes("soft")) {
+            return {
+                textColor: "#044C58",
+                bg: "linear-gradient(135deg, rgba(87, 231, 205, 0.3) 0%, rgba(72, 181, 255, 0.25) 55%, rgba(158, 128, 255, 0.22) 100%)",
+                borderColor: "rgba(95, 206, 222, 0.45)",
+                glowColor: "#5CC9D6",
+                dotColor: "#1EB0AA",
+            };
+        }
+
+        const formatTypeName = (name) => {
+        if (!name) return "";
+        // Remove "INTERVIEW" or "SESSION" from the end, case-insensitively
+        const formatted = name.replace(/\s*(INTERVIEW|SESSION)\s*$/i, "").trim();
+        return formatted || name;
+    };
+
+    return {
+        textColor: "#26374A",
+        bg: "linear-gradient(135deg, rgba(163, 232, 255, 0.3) 0%, rgba(181, 200, 255, 0.25) 52%, rgba(182, 244, 203, 0.22) 100%)",
+        borderColor: "rgba(132, 184, 233, 0.45)",
+        glowColor: "#7FB3DF",
+        dotColor: "#4F88BC",
+    };
+};
 
     const getParticipantSlug = () => {
         if (user?.role === ROLES.CANDIDATE) {
@@ -323,12 +375,16 @@ function InterviewCard({
             .slice(0, 2);
     };
 
+    const hasMultipleRounds = room.rounds && room.rounds.length > 1;
+
+    const formatTypeName = (name) => {
+        if (!name) return "";
+        return name.replace(/\s*(INTERVIEW|SESSION)\s*$/i, "").trim() || name;
+    };
+
     return (
         <BaseCard
             onClick={() => {
-                // Only allow navigation for SCHEDULED interviews
-                // ONGOING: Only Join button should work
-                // COMPLETED/CANCELLED/NO_SHOW: Should not navigate (past interviews)
                 if (room.status === INTERVIEW_ROOM_STATUS.SCHEDULED) {
                     onClick?.(room);
                 }
@@ -337,8 +393,12 @@ function InterviewCard({
                 p: { xs: 1, md: 1.25 },
                 borderRadius: "18px",
                 border: "1px solid var(--mui-palette-divider)",
-                minHeight: 260,
-                height: "100%",
+                width: "100%",
+                minWidth: 0,
+                maxWidth: "100%",
+                height: `${FIXED_CARD_HEIGHT}px`,
+                minHeight: `${FIXED_CARD_HEIGHT}px`,
+                maxHeight: `${FIXED_CARD_HEIGHT}px`,
                 display: "flex",
                 flexDirection: "column",
                 position: "relative",
@@ -412,6 +472,7 @@ function InterviewCard({
                     {!(participantAvatarUrl || getParticipantAvatar()) ? getInitials(getParticipantName()) : null}
                 </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
+                    {/* Modern Interview Type Badge - "Overline" Style */}
                     <Typography
                         variant="subtitle1"
                         fontWeight={700}
@@ -420,16 +481,27 @@ function InterviewCard({
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
+                            lineHeight: 1.2,
                         }}
                     >
                         {getParticipantName()}
                     </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ mt: 0.15, fontWeight: 500 }}>
+                    <Typography
+                        variant="body1"
+                        color="text.secondary"
+                        sx={{
+                            mt: 0.25,
+                            fontWeight: 500,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
                         {getParticipantHeadline()}
                     </Typography>
 
                     {typeof getParticipantRating() === "number" && (
-                        <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mt: 0.45 }}>
+                        <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mt: 0.6 }}>
                             <Star size={16} strokeWidth={1.9} color="var(--mui-palette-primary-main)" fill="var(--mui-palette-primary-main)" />
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>
                                 {Number(getParticipantRating()).toFixed(1)}
@@ -442,30 +514,68 @@ function InterviewCard({
                         </Stack>
                     )}
                 </Box>
-                <Stack spacing={0.75} alignItems="flex-end" sx={{ minWidth: 0, pr: 4.5 }}>
-                    <Box
-                        sx={{
-                            px: 1.5,
-                            py: 0.5,
-                            borderRadius: '16px',
-                            bgcolor: 'secondary.main',
-                            color: 'secondary.contrastText',
-                            fontWeight: 800,
-                            fontSize: '0.65rem',
-                            letterSpacing: 0.5,
-                            textTransform: 'uppercase',
-                            whiteSpace: 'nowrap'
-                        }}
-                    >
-                        {room.interviewTypeName || "INTERVIEW SESSION"}
-                    </Box>
+
+                <Stack spacing={0.5} alignItems="flex-end" sx={{ ml: 1, pr: 4.5 }}>
+                    {(() => {
+                        const originalName = room.interviewTypeName || "INTERVIEW SESSION";
+                        const displayTypeName = formatTypeName(originalName);
+                        const badgeStyle = getInterviewTypeBadgeStyle(originalName);
+
+                        return (
+                            <Box
+                                sx={{
+                                    px: 1,
+                                    py: 0.35,
+                                    borderRadius: "6px",
+                                    background: alpha(badgeStyle.dotColor, 0.08),
+                                    color: badgeStyle.textColor,
+                                    fontWeight: 800,
+                                    fontSize: "0.62rem",
+                                    letterSpacing: "0.08em",
+                                    textTransform: "uppercase",
+                                    whiteSpace: "nowrap",
+                                    border: "1px solid",
+                                    borderColor: alpha(badgeStyle.dotColor, 0.15),
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 0.8,
+                                    position: "relative",
+                                    transition: "all 200ms ease",
+                                    "&:hover": {
+                                        background: alpha(badgeStyle.dotColor, 0.12),
+                                        borderColor: alpha(badgeStyle.dotColor, 0.25),
+                                        transform: "translateY(-1px)",
+                                    },
+                                }}
+                            >
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        width: 5,
+                                        height: 5,
+                                        borderRadius: "50%",
+                                        bgcolor: badgeStyle.dotColor,
+                                        boxShadow: `0 0 8px ${badgeStyle.dotColor}`,
+                                        flexShrink: 0,
+                                        animation: "pulse-dot 2s infinite ease-in-out",
+                                        "@keyframes pulse-dot": {
+                                            "0%": { opacity: 1, transform: "scale(1)" },
+                                            "50%": { opacity: 0.5, transform: "scale(0.85)" },
+                                            "100%": { opacity: 1, transform: "scale(1)" },
+                                        },
+                                    }}
+                                />
+                                {displayTypeName}
+                            </Box>
+                        );
+                    })()}
                 </Stack>
             </Stack>
 
             <Divider sx={{ my: 1, borderColor: "var(--mui-palette-divider)" }} />
 
             {/* Session Type + Join State */}
-            <Stack spacing={1.5} sx={{ mb: 1.75 }}>
+            <Stack spacing={1.5} sx={{ mb: 1.75, height: 104, width: '100%' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography
                         variant="body2"
@@ -475,78 +585,178 @@ function InterviewCard({
                             fontWeight: 800,
                             fontSize: "0.75rem",
                             color: "var(--mui-palette-text-secondary)",
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
                         }}
                     >
-                        {room.rounds && room.rounds.length > 1 ? "Interview Progress" : "Individual Session"}
+                        {hasMultipleRounds ? "Interview Progress" : formatTypeName(room.interviewTypeName || "Interview Session")}
                     </Typography>
-                    {room.rounds && room.rounds.length > 1 && (
-                        <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ height: 24, display: 'flex', alignItems: 'center' }}>
+                        {hasMultipleRounds ? (
                             <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--mui-palette-text-secondary)" }}>
                                 Round {room.currentRound || 1} of {room.rounds.length}
                             </Typography>
-                        </Stack>
-                    )}
+                        ) : (
+                            getStatusChip()
+                        )}
+                    </Box>
                 </Stack>
-                {room.rounds && room.rounds.length > 1 ? (
-                        <Stack direction="row" spacing={1} sx={{ width: "100%" }}>
-                            {room.rounds.map((round, index) => {
-                                const isCurrent = index + 1 === (room.currentRound || 1);
-                                const isCompleted = index + 1 < (room.currentRound || 1) || round.status === 'COMPLETED';
-                                const isUpcoming = !isCurrent && !isCompleted;
-                                
-                                return (
-                                    <Box key={index} sx={{ flex: 1 }}>
-                                        {/* Progress Bar Segment */}
-                                        <Box
-                                            sx={{
-                                                height: 6,
-                                                borderRadius: "999px",
-                                                bgcolor: isCompleted || isCurrent ? "secondary.main" : "action.disabledBackground",
-                                                mb: 1
-                                            }}
-                                        />
-                                        
-                                        {/* Icon & Label */}
-                                        <Stack direction="row" spacing={0.75} alignItems="center">
-                                            {isCompleted && (
-                                                <CheckCircle2 size={16} color="var(--mui-palette-success-main)" fill="var(--mui-palette-success-main)" strokeWidth={1.5} style={{ flexShrink: 0, color: "white" }} />
-                                            )}
-                                            {isCurrent && (
-                                                <CircleDot size={16} color="var(--mui-palette-secondary-dark)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
-                                            )}
-                                            {isUpcoming && (
-                                                <Circle size={16} fill="var(--mui-palette-action-disabledBackground)" color="var(--mui-palette-action-disabledBackground)" strokeWidth={0} style={{ flexShrink: 0 }} />
-                                            )}
-                                            
-                                            <Typography 
-                                                variant="caption" 
-                                                sx={{ 
-                                                    fontSize: '0.75rem', 
-                                                    fontWeight: isCurrent || isCompleted ? 700 : 600, 
-                                                    color: isUpcoming ? "text.disabled" : "text.primary", 
-                                                    whiteSpace: 'nowrap', 
-                                                    overflow: 'hidden', 
-                                                    textOverflow: 'ellipsis' 
+                {hasMultipleRounds ? (
+                    <Stack
+                        direction="row"
+                        spacing={0.5}
+                        sx={{
+                            width: "100%",
+                        }}
+                    >
+                        {room.rounds.map((round, index) => {
+                            const isEntirelyCompleted = room.status === INTERVIEW_ROOM_STATUS.COMPLETED;
+                            const isCompleted = isEntirelyCompleted || index + 1 < (room.currentRound || 1) || round.status === 'COMPLETED';
+                            const isCurrent = !isEntirelyCompleted && index + 1 === (room.currentRound || 1);
+                            const isUpcoming = !isCurrent && !isCompleted;
+                            const roundDisplayName = formatTypeName(round.interviewTypeName || round.name || `Round ${index + 1}`);
+
+                            return (
+                                <Box key={index} sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                                    {/* Progress Bar Segment */}
+                                    <Box
+                                        sx={{
+                                            height: 8,
+                                            borderRadius: index === 0
+                                                ? "999px 0 0 999px"
+                                                : (index === room.rounds.length - 1 ? "0 999px 999px 0" : "0"),
+                                            bgcolor: isCompleted
+                                                ? "success.main"
+                                                : isCurrent
+                                                    ? "secondary.main"
+                                                    : "action.disabledBackground",
+                                            mb: 1.25,
+                                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            position: 'relative',
+                                            ...(isCurrent && {
+                                                boxShadow: (theme) => `0 0 10px ${alpha(theme.palette.secondary.main, 0.5)}`,
+                                                animation: 'pulse-lime 2s infinite ease-in-out',
+                                                '@keyframes pulse-lime': {
+                                                    '0%': { opacity: 1 },
+                                                    '50%': { opacity: 0.75 },
+                                                    '100%': { opacity: 1 },
+                                                }
+                                            })
+                                        }}
+                                    />
+
+                                    {/* Icon & Label */}
+                                    <Stack direction="row" spacing={0.75} alignItems="center" sx={{ px: 0.2, overflow: 'hidden' }}>
+                                        {isCompleted && (
+                                            <CheckCircle2
+                                                size={14}
+                                                color="var(--mui-palette-success-main)"
+                                                fill={isEntirelyCompleted ? "var(--mui-palette-success-main)" : "none"}
+                                                strokeWidth={2.5}
+                                                style={{ flexShrink: 0 }}
+                                            />
+                                        )}
+                                        {isCurrent && (
+                                            <CircleDot
+                                                size={14}
+                                                color="var(--mui-palette-secondary-dark)"
+                                                strokeWidth={3}
+                                                style={{ flexShrink: 0 }}
+                                            />
+                                        )}
+                                        {isUpcoming && (
+                                            <Circle
+                                                size={14}
+                                                color="var(--mui-palette-text-disabled)"
+                                                strokeWidth={2}
+                                                style={{ flexShrink: 0 }}
+                                            />
+                                        )}
+
+                                        <Tooltip
+                                            title={roundDisplayName}
+                                            arrow
+                                            placement="top"
+                                        >
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: isCurrent || isCompleted ? 750 : 600,
+                                                    color: isCompleted ? "success.dark" : (isUpcoming ? "text.disabled" : "text.primary"),
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    letterSpacing: 0.1,
+                                                    minWidth: 0
                                                 }}
                                             >
-                                                {round.interviewTypeName || round.name || `Round ${index + 1}`}
+                                                {roundDisplayName}
                                             </Typography>
-                                        </Stack>
-                                    </Box>
-                                );
-                            })}
-                        </Stack>
+                                        </Tooltip>
+                                    </Stack>
+                                </Box>
+                            );
+                        })}
+                    </Stack>
                 ) : (
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Box
-                            sx={{
-                                flex: 1,
-                                height: 6,
-                                borderRadius: "999px",
-                                bgcolor: "secondary.main",
-                            }}
-                        />
-                        {getStatusChip()}
+                    <Stack spacing={1.25} sx={{ width: "100%" }}>
+                        <Stack direction="row" spacing={0} alignItems="center" sx={{ width: "100%" }}>
+                            <Box
+                                sx={{
+                                    flex: 1,
+                                    height: 8,
+                                    borderRadius: "999px",
+                                    bgcolor: room.status === INTERVIEW_ROOM_STATUS.COMPLETED
+                                        ? "success.main"
+                                        : "secondary.main",
+                                    transition: 'all 0.3s ease',
+                                    ...(room.status === INTERVIEW_ROOM_STATUS.ON_GOING && {
+                                        animation: 'pulse-lime 2s infinite ease-in-out',
+                                        boxShadow: (theme) => `0 0 10px ${alpha(theme.palette.secondary.main, 0.4)}`,
+                                    })
+                                }}
+                            />
+                        </Stack>
+                        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ px: 0.2 }}>
+                            {room.status === INTERVIEW_ROOM_STATUS.COMPLETED && (
+                                <CheckCircle2
+                                    size={14}
+                                    color="var(--mui-palette-success-main)"
+                                    fill="var(--mui-palette-success-main)"
+                                    strokeWidth={2.5}
+                                />
+                            )}
+                            {room.status === INTERVIEW_ROOM_STATUS.ON_GOING && (
+                                <CircleDot
+                                    size={14}
+                                    color="var(--mui-palette-secondary-dark)"
+                                    strokeWidth={3}
+                                />
+                            )}
+                            {room.status === INTERVIEW_ROOM_STATUS.SCHEDULED && (
+                                <Circle
+                                    size={14}
+                                    color="var(--mui-palette-text-disabled)"
+                                    strokeWidth={2}
+                                />
+                            )}
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 750,
+                                    color: room.status === INTERVIEW_ROOM_STATUS.COMPLETED ? "success.dark" : "text.primary",
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    letterSpacing: 0.1,
+                                }}
+                            >
+                                {formatTypeName(room.interviewTypeName || "Session")}
+                            </Typography>
+                        </Stack>
                     </Stack>
                 )}
             </Stack>

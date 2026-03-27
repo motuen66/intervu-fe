@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Dna,
   ArrowRight,
-  BrainCircuit,
-  FileCheck2,
-  MessageSquareMore,
-  ShieldCheck,
-  Video
+  MonitorPlay,
+  ScanSearch,
+  Terminal,
+  LibraryBig,
+  Zap,
+  GitMerge,
+  Trophy,
+  LineChart
 } from 'lucide-react';
 import { PrimaryButton, SecondaryButton, TextButton } from '../../../common/components/buttons';
 import { gsap } from 'gsap';
@@ -96,57 +100,75 @@ const floatingCards = [
 
 const overviewCards = [
   {
-    icon: <Video size={20} />,
-    label: 'Live mocks',
-    title: 'Practice inside realistic interview rooms.',
-    meta: 'Code, prompts, pressure'
+    icon: <Dna size={20} className="text-blue-400" />,
+    label: 'AI GAP ANALYSIS',
+    title: 'Decode your DNA. Bridge the Gap.',
+    meta: 'CV VS JD MATCHING • SKILL DEFICIT • TARGET ALIGNMENT',
+    size: 'wide' // Bento wide
   },
   {
-    icon: <FileCheck2 size={20} />,
-    label: 'Structured feedback',
-    title: 'Turn each mock into the next fix.',
-    meta: 'Notes, scoring, retry'
+    icon: <MonitorPlay size={20} className="text-purple-400" />,
+    label: 'HYBRID MOCK ROOMS',
+    title: 'Practice where the pressure is real.',
+    meta: 'AI AVATARS • ELITE COACHES • LIVE CODING',
   },
   {
-    icon: <BrainCircuit size={20} />,
-    label: 'Targeted prep',
-    title: 'Train by role, topic, and difficulty.',
-    meta: 'Behavioral, technical, system design'
-  }
+    icon: <Zap size={20} className="text-yellow-400" />,
+    label: 'INTELLIGENT FEEDBACK',
+    title: 'Turn your weak spots into your edge.',
+    meta: 'SENTIMENT ANALYSIS • ACTIONABLE STEPS • SCORECARD',
+  },
+  {
+    icon: <GitMerge size={20} className="text-green-400" />,
+    label: 'DYNAMIC ROADMAPS',
+    title: 'A custom path for every ambition.',
+    meta: 'ADAPTIVE LEARNING • ROLE-SPECIFIC • MILESTONES',
+    size: 'tall' // Bento tall
+  },
+  {
+    icon: <LineChart size={20} className="text-red-400" />,
+    label: 'PROGRESS ANALYTICS',
+    title: 'Visualize your growth in real-time.',
+    meta: 'READINESS INDEX • SKILL TRACKING • GROWTH CURVE',
+  },
 ];
 
 const moduleStories = [
   {
     step: '01',
-    label: 'Mock rooms',
-    title: 'Run realistic interview sessions.',
-    description: 'Video, code, prompts, and pressure in one guided room.',
+    label: 'Identify Gaps',
+    title: 'Decode your alignment.',
+    description: 'AI scans your CV against JD requirements to pinpoint exactly where you stand.',
     accent: 'var(--story-blue)',
-    icon: <Video size={18} />
+    icon: <ScanSearch size={18} />,
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000' // Placeholder 1 (GAP ANALYSIS)
   },
   {
     step: '02',
-    label: 'Feedback',
-    title: 'Turn each session into a sharper next pass.',
-    description: 'Structured notes make improvement obvious instead of vague.',
+    label: 'Question Bank',
+    title: 'Weaponize your knowledge.',
+    description: 'Access 10,000+ targeted questions mapped to your specific skill gaps and job roles.',
     accent: 'var(--story-pink)',
-    icon: <MessageSquareMore size={18} />
+    icon: <LibraryBig size={18} />,
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1000' // Placeholder 2 (ROADMAP)
   },
   {
     step: '03',
-    label: 'Question bank',
-    title: 'Practice the exact shape of the interview.',
-    description: 'Target by role, topic, and level of difficulty.',
+    label: 'Mock Session',
+    title: 'Execute under pressure.',
+    description: 'Apply your prep in high-fidelity rooms with AI or elite coaches and live coding.',
     accent: 'var(--story-green)',
-    icon: <BrainCircuit size={18} />
+    icon: <Terminal size={18} />,
+    image: 'https://images.unsplash.com/photo-1587620962725-abab7fe55159?auto=format&fit=crop&q=80&w=1000' // Placeholder 3 (MOCK ROOM)
   },
   {
     step: '04',
-    label: 'Hiring mode',
-    title: 'Standardize rubrics without flattening interviews.',
-    description: 'Cleaner signal across rounds and interviewers.',
+    label: 'Mastery',
+    title: 'Dominate the interview.',
+    description: 'Visualize your progress, fix every weakness, and step into the room with total confidence.',
     accent: 'var(--story-violet)',
-    icon: <ShieldCheck size={18} />
+    icon: <Trophy size={18} />,
+    image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=1000' // Placeholder 4 (MASTERY)
   }
 ];
 
@@ -162,15 +184,21 @@ function LandingPage() {
   const storyCopyRef = useRef(null);
   const activeModuleRef = useRef(0);
   const [activeWord, setActiveWord] = useState(0);
-  const [pointer, setPointer] = useState({ x: 0, y: 0 });
+  const activeWordRef = useRef(0);
   const [heroProgress, setHeroProgress] = useState(0);
   const [activeModule, setActiveModule] = useState(0);
 
+  // Performance-optimized refs for high-frequency updates
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const orbSyncRef = useRef({ rotation: { x: 0, y: 0 }, floatingY: 0 });
+  const cardsRef = useRef([]);
+
   useEffect(() => {
     const handleMove = event => {
-      const x = event.clientX / window.innerWidth - 0.5;
-      const y = event.clientY / window.innerHeight - 0.5;
-      setPointer({ x, y });
+      pointerRef.current = {
+        x: event.clientX / window.innerWidth - 0.5,
+        y: event.clientY / window.innerHeight - 0.5
+      };
     };
 
     window.addEventListener('pointermove', handleMove);
@@ -199,22 +227,53 @@ function LandingPage() {
   useEffect(() => {
     if (!heroRef.current || !titleRef.current) return undefined;
 
-    // Chỉ giữ lại hiệu ứng floating-card và storyLoop, bỏ hiệu ứng opacity kinetic-word
-    const storyLoop = setInterval(() => {
-      setActiveWord(prev => (prev + 1) % kineticWords.length);
-    }, 2500);
-
-    gsap.to('.floating-card', {
-      y: -15,
-      duration: 3,
-      ease: 'sine.inOut',
-      repeat: -1,
-      yoyo: true,
-      stagger: 0.15
+    // Scroll-based Hero Parallax
+    const heroTrigger = ScrollTrigger.create({
+      trigger: heroRef.current,
+      start: 'top top',
+      end: 'bottom top',
+      scrub: true,
+      onUpdate: self => setHeroProgress(self.progress)
     });
 
-    return () => clearInterval(storyLoop);
-  }, []);
+    // Autonomous Word Switching
+    const storyLoop = setInterval(() => {
+      setActiveWord(prev => {
+        const next = (prev + 1) % kineticWords.length;
+        activeWordRef.current = next;
+        return next;
+      });
+    }, 2500);
+
+    // High-performance direct-DOM update loop for cards
+    const updateCards = () => {
+      const p = pointerRef.current;
+      const orb = orbSyncRef.current;
+      const hp = heroProgress;
+
+      cardsRef.current.forEach((cardEl, i) => {
+        if (!cardEl) return;
+        const card = floatingCards[i];
+
+        // Orbital physics calculation
+        const x = p.x * (i % 2 === 0 ? -24 : 24) + card.dx * hp + (orb.rotation.y * 50);
+        const y = p.y * (i < 3 ? -18 : 18) + card.dy * hp - Math.sin(hp * Math.PI) * card.drift + (orb.rotation.x * 50) + (orb.floatingY * 100);
+        const rotate = card.rotate + p.x * 8 + hp * (i % 2 === 0 ? -16 : 16);
+        const scale = 1 - hp * 0.12 + (i === activeWordRef.current || i === activeWordRef.current + 3 ? 0.04 : 0);
+
+        cardEl.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotate}deg) scale(${scale})`;
+        cardEl.style.opacity = (1 - hp * 0.28).toString();
+      });
+    };
+
+    gsap.ticker.add(updateCards);
+
+    return () => {
+      heroTrigger.kill();
+      clearInterval(storyLoop);
+      gsap.ticker.remove(updateCards);
+    };
+  }, [heroProgress]);
 
   useEffect(() => {
     if (!pageRef.current) return undefined;
@@ -467,20 +526,7 @@ function LandingPage() {
     };
   }, []);
 
-  const cardStyles = useMemo(
-    () =>
-      floatingCards.map((card, index) => ({
-        left: card.x,
-        top: card.y,
-        transform: `translate3d(${pointer.x * (index % 2 === 0 ? -24 : 24) + card.dx * heroProgress
-          }px, ${pointer.y * (index < 3 ? -18 : 18) + card.dy * heroProgress - Math.sin(heroProgress * Math.PI) * card.drift
-          }px, 0) rotate(${card.rotate + pointer.x * 8 + heroProgress * (index % 2 === 0 ? -16 : 16)}deg) scale(${1 - heroProgress * 0.12 + (index === activeWord || index === activeWord + 3 ? 0.04 : 0)
-          })`,
-        opacity: 1 - heroProgress * 0.28,
-        zIndex: 20 - index
-      })),
-    [activeWord, heroProgress, pointer]
-  );
+
 
   const heroVisualStyle = useMemo(
     () => ({
@@ -519,46 +565,52 @@ function LandingPage() {
         <div className="hero-noise" />
         <div className="hero-grid-pattern" />
 
-        <div className="landing-shell hero-polished-layout">
-          <div className="hero-copy-polished">
-            <div className="hero-copy-topline">
-              <span>Interview rehearsal</span>
+        <div className="landing-shell">
+          <div className="hero-polished-layout">
+            <div className="hero-copy-polished">
+              <div className="hero-copy-topline">
+                <span>Interview rehearsal</span>
+              </div>
+              <div className="kinetic-stack" ref={titleRef}>
+                {kineticWords.map((word, index) => (
+                  <span
+                    key={word}
+                    className={index === activeWord ? 'kinetic-word is-active' : 'kinetic-word'}
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+
+              <div className="hero-cta-row">
+                <PrimaryButton onClick={() => navigate('/home')} sx={{ minWidth: 140 }}>
+                  Start now
+                </PrimaryButton>
+                <SecondaryButton onClick={() => navigate('/questions')} sx={{ minWidth: 140 }}>
+                  Explore bank <ArrowRight size={16} />
+                </SecondaryButton>
+              </div>
             </div>
-            <div className="kinetic-stack" ref={titleRef}>
-              {kineticWords.map((word, index) => (
-                <span
-                  key={word}
-                  className={index === activeWord ? 'kinetic-word is-active' : 'kinetic-word'}
+
+            <div className="hero-visual-polished" style={heroVisualStyle}>
+              <ThreeHero
+                pointer={pointerRef.current}
+                onUpdate={(sync) => { orbSyncRef.current = sync; }}
+              />
+
+              {floatingCards.map((card, index) => (
+                <article
+                  key={card.label}
+                  ref={el => { cardsRef.current[index] = el; }}
+                  className={`floating-card ${card.type}`}
+                  style={{ left: card.x, top: card.y }}
                 >
-                  {word}
-                </span>
+                  <span className="floating-card-label">{card.label}</span>
+                  <strong className="floating-card-title">{card.title}</strong>
+                  <small className="floating-card-detail">{card.detail}</small>
+                </article>
               ))}
             </div>
-
-            <div className="hero-cta-row">
-              <PrimaryButton onClick={() => navigate('/home')} sx={{ minWidth: 140 }}>
-                Start now
-              </PrimaryButton>
-              <SecondaryButton onClick={() => navigate('/questions')} sx={{ minWidth: 140 }}>
-                Explore bank <ArrowRight size={16} />
-              </SecondaryButton>
-            </div>
-          </div>
-
-          <div className="hero-visual-polished" style={heroVisualStyle}>
-            <ThreeHero />
-
-            {floatingCards.map((card, index) => (
-              <article
-                key={card.label}
-                className={`floating-card ${card.type}`}
-                style={cardStyles[index]}
-              >
-                <span className="floating-card-label">{card.label}</span>
-                <strong className="floating-card-title">{card.title}</strong>
-                <small className="floating-card-detail">{card.detail}</small>
-              </article>
-            ))}
           </div>
         </div>
       </section>
@@ -604,9 +656,12 @@ function LandingPage() {
                     <div
                       className="story-preview-surface"
                       style={{
-                        transform: `rotate(${(-4 + clampedStoryProgress * 5).toFixed(2)}deg) translateY(${clampedStoryProgress * 12}px)`
+                        transform: `rotate(${(-4 + clampedStoryProgress * 5).toFixed(2)}deg) translateY(${clampedStoryProgress * 12}px)`,
+                        background: activeStory.image ? `url(${activeStory.image}) center/cover no-repeat` : '#fff'
                       }}
-                    />
+                    >
+                      {activeStory.image && <div className="story-image-overlay" />}
+                    </div>
                     <div
                       className="story-preview-orb"
                       style={{
@@ -651,18 +706,29 @@ function LandingPage() {
       >
         <div className="landing-shell">
           <div className="section-heading-block">
-            <div className="section-kicker section-kicker-spread">
+            <div className="section-kicker section-kicker-spread" data-reveal>
               <span data-text-body>Overview</span>
               <p data-text-body>The full system, summarized after the story finishes.</p>
             </div>
-            <h2 className="section-stage-title">
+            <h2 className="section-stage-title" data-reveal>
               See the full rehearsal system.
             </h2>
           </div>
 
           <div className="overview-grid">
-            {overviewCards.map(card => (
-              <article key={`${card.label}-${card.title}`} className="overview-card">
+            {overviewCards.map((card, idx) => (
+              <article
+                key={card.label}
+                className={`overview-card ${card.size ? `bento-${card.size}` : ''}`}
+                data-reveal
+                style={{ transitionDelay: `${idx * 0.08}s` }}
+                onPointerMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                  e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                }}
+              >
+                <div className="bento-card-spotlight" />
                 <div className="bento-card-top">
                   <span className="bento-icon">{card.icon}</span>
                   <p>{card.label}</p>
@@ -695,6 +761,12 @@ function LandingPage() {
           </div>
         </div>
       </section>
+
+      <footer className="landing-footer-simple">
+        <div className="landing-shell">
+          <p>&copy; 2026 Intervu. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }

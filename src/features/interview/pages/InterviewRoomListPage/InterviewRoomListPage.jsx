@@ -1,10 +1,12 @@
 import { Box, Typography, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
+import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 import { ROLES } from "../../../../common/constants/common.js";
@@ -44,6 +46,7 @@ function a11yProps(index) {
 
 function InterviewRoomListPage() {
     const user = useUser();
+    const navigate = useNavigate();
     const [upcomingRooms, setUpcomingRooms] = useState([]);
     const [pastRooms, setPastRooms] = useState([]);
     const [rescheduleRequests, setRescheduleRequests] = useState([]);
@@ -329,16 +332,25 @@ function InterviewRoomListPage() {
         }
 
         try {
-            await callApi({
+            // Multi-round bookings (rounds.length > 1) use CANCEL_BOOKING_REQUEST
+            // Single-round or standalone sessions use CANCEL_INTERVIEW
+            const endpoint = (room.rounds?.length > 1) 
+                ? interviewEndPoints.CANCEL_BOOKING_REQUEST(room.bookingRequestId)
+                : interviewEndPoints.CANCEL_INTERVIEW(room.id);
+
+            const response = await callApi({
                 method: METHOD.POST,
-                endpoint: interviewEndPoints.CANCEL_INTERVIEW(room.id),
-                displaySuccessMessage: true,
+                endpoint: endpoint,
+                displaySuccessMessage: false,
                 alertErrorMessage: true,
             });
 
-            await fetchRooms([0, 1]);
-            await fetchRooms([2, 3]);
-            await fetchRescheduleRequests();
+            if (response?.success) {
+                toast.success(response.message || "Interview cancelled successfully");
+                await fetchRooms([0, 1]);
+                await fetchRooms([2, 3]);
+                await fetchRescheduleRequests();
+            }
         } catch (error) {
             console.error("Failed to cancel interview:", error);
         } finally {
@@ -420,7 +432,12 @@ function InterviewRoomListPage() {
                                 View All Feedbacks
                             </SecondaryButton>
                         )}
-                        <PrimaryButton startIcon={<AddIcon />}>Book New Session</PrimaryButton>
+                        <PrimaryButton 
+                            startIcon={<AddIcon />}
+                            onClick={() => navigate("/")}
+                        >
+                            Book New Session
+                        </PrimaryButton>
                     </Stack>
                 </Stack>
 

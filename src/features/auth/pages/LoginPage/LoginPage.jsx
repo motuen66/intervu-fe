@@ -6,11 +6,11 @@ import { METHOD } from "../../../../common/constants/api";
 import { authEndPoints } from "../../services/authApi";
 import { useDispatch } from "react-redux";
 import { setToken, setUserData } from "../../../../common/store/authSlice";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import toast from "react-hot-toast";
 import SplitText from "./SplitText";
-import { TextField, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
+import { TextField, Typography, Box } from '@mui/material';
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
 
@@ -19,20 +19,15 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 function LoginPage() {
     const isLoading = useLoading();
     const navigate = useNavigate();
+    const location = useLocation();
     const theme = useTheme();
     const dispatch = useDispatch();
     const googleButtonRef = useRef(null);
     const [googleReady, setGoogleReady] = useState(false);
     const [googleSubmitting, setGoogleSubmitting] = useState(false);
-    const [isSuspendedPopupOpen, setIsSuspendedPopupOpen] = useState(false);
 
     const handleAuthSuccess = useCallback(
         (responseData) => {
-            if (responseData.user.status === 1 || responseData.user.status === 'Inactive') {
-                setIsSuspendedPopupOpen(true);
-                return;
-            }
-
             localStorage.setItem("user", JSON.stringify(responseData.user));
             localStorage.setItem("token", JSON.stringify(responseData.token));
             dispatch(setUserData(responseData.user));
@@ -442,39 +437,6 @@ function LoginPage() {
                 </div>
             </div>
 
-            <Dialog
-                open={isSuspendedPopupOpen}
-                onClose={() => setIsSuspendedPopupOpen(false)}
-                aria-labelledby="suspended-dialog-title"
-                aria-describedby="suspended-dialog-description"
-                PaperProps={{
-                    sx: {
-                        borderRadius: '16px',
-                        padding: '8px',
-                        maxWidth: '450px'
-                    }
-                }}
-            >
-                <DialogTitle id="suspended-dialog-title" sx={{ fontWeight: 700, pb: 1, color: theme.palette.error.main }}>
-                    Account Suspended
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="suspended-dialog-description" sx={{ color: theme.palette.text.primary }}>
-                        Your account has been suspended. You are not allowed to log into the system. 
-                        Please contact the administrator via email at <strong>admin@intervu.com</strong> for further information.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button 
-                        onClick={() => setIsSuspendedPopupOpen(false)} 
-                        variant="contained" 
-                        color="primary"
-                        sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
-                    >
-                        Close
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </div>
     );
 }

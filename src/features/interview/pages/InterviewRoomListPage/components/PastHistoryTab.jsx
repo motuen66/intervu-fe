@@ -5,14 +5,13 @@ import {
     Stack,
     Pagination,
     CircularProgress,
-    Grid,
 } from "@mui/material";
 import toast from "react-hot-toast";
 import InterviewCard from "./InterviewCard";
 import InterviewFilterBar from "./InterviewFilterBar";
 import { useNavigate } from "react-router-dom";
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 6;
 
 function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
     const navigate = useNavigate();
@@ -124,18 +123,29 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
                     </Typography>
                 </Box>
             ) : (
-                <Grid container spacing={1.75}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            sm: "repeat(2, minmax(0, 1fr))",
+                            md: "repeat(3, minmax(0, 1fr))",
+                        },
+                        gap: 1.75,
+                        width: "100%",
+                    }}
+                >
                     {paginatedRooms.map((room) => (
-                        <Grid key={room.id} item xs={12} sm={6} md={4}>
+                        <Box key={room.id} sx={{ display: "flex", width: "100%" }}>
                             <InterviewCard
                                 room={room}
                                 user={user}
                                 onClick={handleCardClick}
                                 showActions={true}
                             />
-                        </Grid>
+                        </Box>
                     ))}
-                </Grid>
+                </Box>
             )}
 
             {/* Pagination */}

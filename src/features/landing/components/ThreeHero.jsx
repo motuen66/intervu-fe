@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-function ThreeHero() {
+function ThreeHero({ pointer, onUpdate }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -24,13 +24,12 @@ function ThreeHero() {
     rootGroup.add(orbGroup);
     scene.add(rootGroup);
 
-    // Xanh lá theme: #10b981 (0x10b981)
     const ambient = new THREE.AmbientLight(0xffffff, 1.08);
-    const key = new THREE.PointLight(0x10b981, 18, 20, 2); // xanh lá
+    const key = new THREE.PointLight(0x10b981, 18, 20, 2);
     key.position.set(3.2, 2.4, 4.5);
-    const fill = new THREE.PointLight(0x10b981, 10, 18, 2); // xanh lá
+    const fill = new THREE.PointLight(0x10b981, 10, 18, 2);
     fill.position.set(-3, -1.6, 3.5);
-    const rim = new THREE.PointLight(0x10b981, 8, 18, 2); // xanh lá
+    const rim = new THREE.PointLight(0x10b981, 12, 18, 2);
     rim.position.set(0, 3.4, -1.5);
     scene.add(ambient, key, fill, rim);
 
@@ -117,14 +116,6 @@ function ThreeHero() {
     );
     rootGroup.add(glowSprite);
 
-    let targetRotationX = 0.38;
-    let targetRotationY = 0.56;
-    let pointerX = 0;
-    let pointerY = 0;
-    let drag = false;
-    let lastPointerX = 0;
-    let lastPointerY = 0;
-
     const resize = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
@@ -135,18 +126,21 @@ function ThreeHero() {
       camera.updateProjectionMatrix();
     };
 
-    const onPointerMove = event => {
-      const bounds = canvas.getBoundingClientRect();
-      pointerX = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-      pointerY = ((event.clientY - bounds.top) / bounds.height) * 2 - 1;
+    window.addEventListener('resize', resize);
+    resize();
 
+    let drag = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+
+    const onPointerMoveLocal = event => {
       if (drag) {
         const deltaX = event.clientX - lastPointerX;
         const deltaY = event.clientY - lastPointerY;
-        targetRotationY += deltaX * 0.008;
-        targetRotationX += deltaY * 0.008;
         lastPointerX = event.clientX;
         lastPointerY = event.clientY;
+        targetRotationY += deltaX * 0.008;
+        targetRotationX += deltaY * 0.008;
       }
     };
 
@@ -160,24 +154,38 @@ function ThreeHero() {
       drag = false;
     };
 
-    window.addEventListener('resize', resize);
-    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointermove', onPointerMoveLocal);
     canvas.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointerup', onPointerUp);
-    resize();
 
     const clock = new THREE.Clock();
     let animationId = 0;
+    let targetRotationX = 0.38;
+    let targetRotationY = 0.56;
 
+    // Use the passed pointer values directly
     const animate = () => {
       const elapsed = clock.getElapsedTime();
 
-      targetRotationX += (pointerY * 0.18 - targetRotationX) * 0.012;
-      targetRotationY += (pointerX * 0.18 - targetRotationY) * 0.012;
+      // Sensitivity matching
+      const pX = pointer.x * 2;
+      const pY = pointer.y * 2;
+
+      targetRotationX += (pY * 0.18 - targetRotationX) * 0.012;
+      targetRotationY += (pX * 0.18 - targetRotationY) * 0.012;
 
       rootGroup.rotation.x += (targetRotationX - rootGroup.rotation.x) * 0.08;
       rootGroup.rotation.y += (targetRotationY - rootGroup.rotation.y) * 0.08;
-      rootGroup.position.y = Math.sin(elapsed * 1.2) * 0.14;
+      const floatingY = Math.sin(elapsed * 1.2) * 0.14;
+      rootGroup.position.y = floatingY;
+
+      // Report back for card sync
+      if (onUpdate) {
+        onUpdate({
+          rotation: { x: rootGroup.rotation.x, y: rootGroup.rotation.y },
+          floatingY
+        });
+      }
 
       core.rotation.x = elapsed * 0.52;
       core.rotation.y = elapsed * 0.68;
@@ -197,7 +205,7 @@ function ThreeHero() {
     return () => {
       window.cancelAnimationFrame(animationId);
       window.removeEventListener('resize', resize);
-      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointermove', onPointerMoveLocal);
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointerup', onPointerUp);
       particlesGeometry.dispose();
@@ -206,7 +214,7 @@ function ThreeHero() {
       renderer.dispose();
       scene.clear();
     };
-  }, []);
+  }, [pointer, onUpdate]);
 
   return <canvas ref={canvasRef} className="three-hero-canvas" aria-hidden="true" />;
 }
