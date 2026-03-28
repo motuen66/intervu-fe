@@ -1,10 +1,12 @@
 import { Box, Typography, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
+import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 import { ROLES } from "../../../../common/constants/common.js";
@@ -44,6 +46,7 @@ function a11yProps(index) {
 
 function InterviewRoomListPage() {
     const user = useUser();
+    const navigate = useNavigate();
     const [upcomingRooms, setUpcomingRooms] = useState([]);
     const [pastRooms, setPastRooms] = useState([]);
     const [rescheduleRequests, setRescheduleRequests] = useState([]);
@@ -58,8 +61,9 @@ function InterviewRoomListPage() {
         previewRefundPercent: null,
     });
     const [activeTab, setActiveTab] = useState(0);
-    const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null });
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
+    const [viewFeedbackState, setViewFeedbackState] = useState({ open: false, interviewRoomId: null });
+    const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null, nextSessionIn: "—" });
 
     // Fetch initial data once on mount
     useEffect(() => {
@@ -87,64 +91,125 @@ function InterviewRoomListPage() {
         } else if (activeTab === 1) {
             // Past History: Fetch COMPLETED (2) and CANCELLED (3)
             fetchRooms([2, 3]);
-        } else if (activeTab === 2) {
-            fetchRescheduleRequests();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]); // Refetch when tab changes
 
+    const groupRoomsByBooking = (roomsList) => {
+        const grouped = {};
+        const standalone = [];
+
+        roomsList.forEach(room => {
+            if (room.bookingRequestId) {
+                if (!grouped[room.bookingRequestId]) {
+                    grouped[room.bookingRequestId] = [];
+                }
+                grouped[room.bookingRequestId].push(room);
+            } else {
+                standalone.push(room);
+            }
+        });
+
+        const combinedRooms = Object.values(grouped).map(group => {
+            if (group.length === 1) return group[0];
+
+            // Sort by roundNumber (or scheduledTime)
+            group.sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
+
+            // Find current/next round
+            let activeRoundIndex = group.findIndex(r => r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
+            if (activeRoundIndex === -1) {
+                activeRoundIndex = group.findIndex(r => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED);
+            }
+            if (activeRoundIndex === -1) {
+                // All done or cancelled, pick the last one or last completed
+                activeRoundIndex = group.length - 1;
+            }
+
+            const activeRoom = group[activeRoundIndex];
+            
+            return {
+                ...activeRoom,
+                id: activeRoom.id, 
+                rounds: group,
+                currentRound: activeRoundIndex + 1,
+                // Status of the grouped card is the status of the active round
+            };
+        });
+
+        const all = [...standalone, ...combinedRooms];
+        // Sort newest first based on scheduled time
+        all.sort((a, b) => new Date(b.scheduledTime) - new Date(a.scheduledTime));
+        return all;
+    };
+
     const fetchRooms = async (statuses = null) => {
         setLoading(true);
         try {
-            // Build query params
-            let endpoint = interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=100";
-            if (statuses && statuses.length > 0) {
-                statuses.forEach((status) => {
-                    endpoint += `&Statuses=${status}`;
-                });
-            }
-
-            const res = await callApi({
+            // Fetch ALL rooms to properly group multi-round bookings
+            const allRoomsRes = await callApi({
                 method: METHOD.GET,
-                endpoint: endpoint,
+                endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
             });
-            const interviewRooms = res?.data || [];
+            const allRoomsData = allRoomsRes?.data || [];
+            
+            // Group rooms
+            const groupedRooms = groupRoomsByBooking(allRoomsData);
 
-            console.log("Fetched rooms with statuses:", statuses, "Data:", interviewRooms);
+            console.log("Grouped Rooms:", groupedRooms);
 
-            // Update state based on which statuses were fetched
-            if (statuses && statuses.includes(0)) {
-                // Upcoming tab: statuses [0, 1]
-                console.log("Setting upcoming rooms:", interviewRooms);
-                setUpcomingRooms(interviewRooms);
-            } else if (statuses && statuses.includes(2)) {
-                // Past history tab: statuses [2, 3]
-                console.log("Setting past rooms:", interviewRooms);
-                setPastRooms(interviewRooms);
+            // Filter into Upcoming (0, 1) and Past (2, 3)
+            const upcomingRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED || r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
+            const pastRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED || r.status === INTERVIEW_ROOM_STATUS.CANCELLED);
+
+            // Update state
+            if (statuses === null || statuses.includes(0)) {
+                setUpcomingRooms(upcomingRoomsList);
             }
+            
+            setPastRooms(pastRoomsList); // Always set past rooms so UpcomingTab can display Recent History
 
-            // Calculate stats on initial load (fetch all data for stats)
-            if (statuses && statuses.includes(0)) {
-                // Only calculate stats when fetching upcoming data (initial load or upcoming tab)
-                const allRooms = await callApi({
-                    method: METHOD.GET,
-                    endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
-                });
-                const allRoomsData = allRooms?.data || [];
-                const upcomingCount = allRoomsData.filter((r) => r.status === 0 || r.status === 1).length;
-                const completedRooms = allRoomsData.filter((r) => r.status === 2);
-                const avgScore =
-                    completedRooms.length > 0
-                        ? (
-                              completedRooms.reduce((acc, room) => acc + (room.score || 0), 0) /
-                              completedRooms.filter((r) => r.score).length
-                          ).toFixed(1)
-                        : null;
+            // Calculate stats
+            if (statuses === null || statuses.includes(0)) {
+                const upcomingCount = upcomingRoomsList.length;
+                const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
+                
+                let avgScore = null;
+                // Calculate average score across ALL individual completed rooms, not just grouped ones
+                const allCompletedIndividualRooms = allRoomsData.filter(r => r.status === INTERVIEW_ROOM_STATUS.COMPLETED && typeof r.score === 'number');
+                if (allCompletedIndividualRooms.length > 0) {
+                    const totalScore = allCompletedIndividualRooms.reduce((acc, room) => acc + room.score, 0);
+                    avgScore = (totalScore / allCompletedIndividualRooms.length).toFixed(1);
+                }
+
+                // Next session calculation
+                const now = new Date();
+                let nextSession = "—";
+                const upcomingFutureRooms = upcomingRoomsList
+                    .map(r => ({ ...r, dateObj: new Date(r.scheduledTime) }))
+                    .filter(r => !isNaN(r.dateObj.getTime()) && r.dateObj >= now)
+                    .sort((a, b) => a.dateObj - b.dateObj);
+
+                if (upcomingFutureRooms.length > 0) {
+                    const diffMs = upcomingFutureRooms[0].dateObj - now;
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    
+                    if (diffDays > 0) {
+                        nextSession = `${diffDays}d ${diffHours}h`;
+                    } else if (diffHours > 0) {
+                        nextSession = `${diffHours}h`;
+                    } else {
+                        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                        nextSession = `${diffMins}m`;
+                    }
+                }
 
                 setStats({
                     upcoming: upcomingCount,
                     completed: completedRooms.length,
                     avgScore: avgScore && !isNaN(avgScore) ? parseFloat(avgScore) : null,
+                    nextSessionIn: nextSession,
                 });
             }
         } catch (error) {
@@ -266,16 +331,25 @@ function InterviewRoomListPage() {
         }
 
         try {
-            await callApi({
+            // Multi-round bookings (rounds.length > 1) use CANCEL_BOOKING_REQUEST
+            // Single-round or standalone sessions use CANCEL_INTERVIEW
+            const endpoint = (room.rounds?.length > 1) 
+                ? interviewEndPoints.CANCEL_BOOKING_REQUEST(room.bookingRequestId)
+                : interviewEndPoints.CANCEL_INTERVIEW(room.id);
+
+            const response = await callApi({
                 method: METHOD.POST,
-                endpoint: interviewEndPoints.CANCEL_INTERVIEW(room.id),
-                displaySuccessMessage: true,
+                endpoint: endpoint,
+                displaySuccessMessage: false,
                 alertErrorMessage: true,
             });
 
-            await fetchRooms([0, 1]);
-            await fetchRooms([2, 3]);
-            await fetchRescheduleRequests();
+            if (response?.success) {
+                toast.success(response.message || "Interview cancelled successfully");
+                await fetchRooms([0, 1]);
+                await fetchRooms([2, 3]);
+                await fetchRescheduleRequests();
+            }
         } catch (error) {
             console.error("Failed to cancel interview:", error);
         } finally {
@@ -324,6 +398,15 @@ function InterviewRoomListPage() {
         await checkPendingCoachEvaluations();
     };
 
+    const handleViewFeedback = (room) => {
+        if (!room?.id) return;
+        setViewFeedbackState({ open: true, interviewRoomId: room.id });
+    };
+
+    const handleCloseViewFeedback = () => {
+        setViewFeedbackState({ open: false, interviewRoomId: null });
+    };
+
     if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
@@ -351,21 +434,20 @@ function InterviewRoomListPage() {
                             Track your upcoming practice sessions and review past performance feedback.
                         </Typography>
                     </Box>
-                    <Stack direction="row" spacing={2}>
-                        {user?.role === ROLES.CANDIDATE && (
-                            <SecondaryButton onClick={() => handleOpenFeedbackModal("all")}>
-                                View All Feedbacks
-                            </SecondaryButton>
-                        )}
-                        <PrimaryButton startIcon={<AddIcon />}>Book New Session</PrimaryButton>
-                    </Stack>
+                    <Box>
+                        <SecondaryButton onClick={() => handleOpenFeedbackModal("all")}>
+                            View All Feedbacks
+                        </SecondaryButton>
+                    </Box>
                 </Stack>
 
                 {/* Stats Section */}
                 <InterviewStats
+                    totalCount={stats.completed}
                     upcomingCount={stats.upcoming}
                     completedCount={stats.completed}
                     avgScore={stats.avgScore}
+                    nextSessionIn={stats.nextSessionIn}
                 />
 
                 {/* Tabs Navigation */}
@@ -388,10 +470,6 @@ function InterviewRoomListPage() {
                     >
                         <Tab label="Upcoming" {...a11yProps(0)} />
                         <Tab label="Past History" {...a11yProps(1)} />
-                        <Tab
-                            label={`Reschedule Request${rescheduleRequests.length > 0 ? ` (${rescheduleRequests.length})` : ""}`}
-                            {...a11yProps(2)}
-                        />
                     </Tabs>
                 </Box>
 
@@ -399,25 +477,22 @@ function InterviewRoomListPage() {
                 <TabPanel value={activeTab} index={0}>
                     <UpcomingTab
                         rooms={upcomingRooms}
+                        recentRooms={pastRooms}
                         user={user}
                         loading={loading}
                         onRequestReschedule={handleRequestReschedule}
                         onCancelInterview={handleCancelInterview}
+                        onViewFeedback={handleViewFeedback}
                         rescheduleRequests={rescheduleRequests}
                     />
                 </TabPanel>
 
                 <TabPanel value={activeTab} index={1}>
-                    <PastHistoryTab rooms={pastRooms} user={user} loading={loading} />
-                </TabPanel>
-
-                <TabPanel value={activeTab} index={2}>
-                    <RescheduleRequestsTab
-                        requests={rescheduleRequests}
-                        user={user}
-                        loading={rescheduleLoading}
-                        onApprove={handleApproveReschedule}
-                        onReject={handleRejectReschedule}
+                    <PastHistoryTab 
+                        rooms={pastRooms} 
+                        user={user} 
+                        loading={loading} 
+                        onViewFeedback={handleViewFeedback}
                     />
                 </TabPanel>
 
@@ -437,11 +512,11 @@ function InterviewRoomListPage() {
                     onSubmitted={handleCoachEvaluationSubmitted}
                 />
 
-                {/*<ViewFeedbackModal
-                    open={feedbackModalState.open}
-                    onClose={handleCloseFeedbackModal}
-                    interviewRoomId={pastRooms?.[0]?.id || null}
-                />*/}
+                <ViewFeedbackModal
+                    open={viewFeedbackState.open}
+                    onClose={handleCloseViewFeedback}
+                    interviewRoomId={viewFeedbackState.interviewRoomId}
+                />
 
                 {/* Reschedule Request Modal */}
                 <RescheduleRequestModal

@@ -5,8 +5,10 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
-import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button, Tooltip, IconButton } from "@mui/material";
+import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button, Tooltip, IconButton, Chip } from "@mui/material";
 import { ROLES } from "../../../../common/constants/common.js";
+import DescriptionIcon from "@mui/icons-material/Description";
+import TuneIcon from "@mui/icons-material/Tune";
 
 function QuestionPanel({
     user,
@@ -212,12 +214,35 @@ function QuestionPanel({
                 </Box>
             ) : (
                 // DISPLAY VIEW (Both roles)
-                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                    <Tabs value={problemTab} onChange={(e, newValue) => setProblemTab(newValue)}>
+                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, bgcolor: "white", borderRadius: 2 }}>
+                    <Box sx={{ px: 3, pt: 3, pb: 1, borderBottom: "1px solid #F3F4F6", display: "block" }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "#8B5CF6", mb: 2 }}>
+                            <DescriptionIcon fontSize="small" />
+                            <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1 }}>PROBLEM STATEMENT</Typography>
+                        </Stack>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: "#111827", mb: 2 }}>
+                            {problemData?.shortName || "Problem Title"}
+                        </Typography>
+                        {problemData && (
+                            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                                <Chip label="MEDIUM" size="small" sx={{ bgcolor: "#DCFCE7", color: "#166534", fontWeight: 600, fontSize: "0.75rem", height: 24 }} />
+                                <Chip label="STRINGS" size="small" sx={{ bgcolor: "#F3F4F6", color: "#4B5563", fontWeight: 600, fontSize: "0.75rem", height: 24 }} />
+                            </Stack>
+                        )}
+                        <Typography variant="body2" sx={{ color: "#4B5563", mb: 2 }}>
+                            Given a string <code style={{ color: "#3B82F6", fontWeight: 'bold' }}> s</code>, return the longest palindromic substring in <code style={{ color: "#3B82F6", fontWeight: 'bold' }}> s</code>.
+                        </Typography>
+                    </Box>
+                    <Tabs value={problemTab} onChange={(e, newValue) => setProblemTab(newValue)} sx={{ borderBottom: "1px solid #F3F4F6", px: 2, '& .MuiTab-root': { minWidth: 'auto', px: 2, textTransform: 'none', fontWeight: 600 } }}>
                         <Tab label="Description" />
-                        <Tab label="Test Cases" disabled={!problemData} />
+                        <Tab label={
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                                <TuneIcon fontSize="small" />
+                                <span>TEST CASES</span>
+                            </Stack>
+                        } disabled={!problemData} />
                     </Tabs>
-                    <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+                    <Box sx={{ flex: 1, overflowY: "auto", p: problemTab === 0 ? 3 : 2, bgcolor: problemTab === 0 ? "transparent" : "#F9FAFB" }}>
                         {problemTab === 0 && (
                             <Box className="ql-snow">
                                 <Box className="ql-editor" sx={{ p: 0, whiteSpace: "pre-wrap", fontFamily: "body" }}>

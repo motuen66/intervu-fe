@@ -12,6 +12,7 @@ import {
     Stack,
     Divider,
     Rating,
+    IconButton,
 } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
 import { SecondaryButton } from "../../../../common/components/buttons";
@@ -19,6 +20,7 @@ import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import StarIcon from "@mui/icons-material/Star";
+import CloseIcon from "@mui/icons-material/Close";
 
 function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
     const [feedback, setFeedback] = useState(null);
@@ -72,11 +74,26 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
     };
 
     return (
-        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth PaperProps={{ sx: dialogStyles.paper }}>
-            <DialogTitle>
-                <Typography variant="h5" component="div" fontWeight={600}>
-                    Interview Feedback
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    ...dialogStyles.paper,
+                    borderRadius: "24px",
+                    overflow: "hidden",
+                }
+            }}
+        >
+            <DialogTitle sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: "-0.01em" }}>
+                    Performance Feedback
                 </Typography>
+                <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
+                    <CloseIcon />
+                </IconButton>
             </DialogTitle>
 
             <DialogContent>

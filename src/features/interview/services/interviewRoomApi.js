@@ -7,6 +7,7 @@ export const interviewEndPoints = {
     SUBMIT_COACH_EVALUATION: (interviewRoomId) => `/interviewroom/${interviewRoomId}/coach-evaluation`,
 
     CANCEL_INTERVIEW: (interviewRoomId) => `/interview-booking/cancel/${interviewRoomId}`,
+    CANCEL_BOOKING_REQUEST: (bookingRequestId) => `/booking-requests/${bookingRequestId}/cancel`,
 
     // Reschedule Request endpoints (kebab-case to match backend controller route)
     RESCHEDULE_REQUESTS: "/reschedule-requests",

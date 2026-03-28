@@ -6,11 +6,11 @@ import { METHOD } from "../../../../common/constants/api";
 import { authEndPoints } from "../../services/authApi";
 import { useDispatch } from "react-redux";
 import { setToken, setUserData } from "../../../../common/store/authSlice";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import toast from "react-hot-toast";
 import SplitText from "./SplitText";
-import { TextField, Typography } from '@mui/material';
+import { TextField, Typography, Box } from '@mui/material';
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
 
@@ -19,6 +19,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 function LoginPage() {
     const isLoading = useLoading();
     const navigate = useNavigate();
+    const location = useLocation();
     const theme = useTheme();
     const dispatch = useDispatch();
     const googleButtonRef = useRef(null);
@@ -435,6 +436,7 @@ function LoginPage() {
 
                 </div>
             </div>
+
         </div>
     );
 }

@@ -3,7 +3,7 @@ import { BE_BASE_URL } from "../../../../common/constants/env";
 import * as signalR from "@microsoft/signalr";
 import { useEffect, useRef, useState, useCallback } from "react";
 import useUser from '../../../../common/hooks/useUser';
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography, Stack, IconButton } from "@mui/material";
 import QuestionPanel from "./QuestionPanel";
 import VideoPanel from "./VideoPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
@@ -11,6 +11,12 @@ import { ROLES } from "../../../../common/constants/common.js";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
+import SettingsIcon from "@mui/icons-material/Settings";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
 
@@ -79,6 +85,8 @@ function InterviewRoomPage() {
     const iceCandidatesQueue = useRef([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [roomInfo, setRoomInfo] = useState(null);
+    const [remainingTime, setRemainingTime] = useState("--:--");
 
     // --- Resizable layout state ---
     const containerRef = useRef(null);
@@ -157,6 +165,7 @@ function InterviewRoomPage() {
             });
 
             const room = res.data.find(item => item.id === roomId);
+            setRoomInfo(room || null);
             if (room.status !== INTERVIEW_ROOM_STATUS.ON_GOING &&
                 room.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
                 setError("This interview is not in progress. You will be redirected.");
@@ -170,6 +179,26 @@ function InterviewRoomPage() {
             setTimeout(() => navigate("/interview"), 3000);
         }
     }, [roomId, navigate, user]);
+
+    useEffect(() => {
+        if (!roomInfo?.scheduledTime) return;
+        const interval = setInterval(() => {
+            const now = new Date();
+            // Defaulting to 60-minute interview if end time is not provided
+            const endTime = new Date(new Date(roomInfo.scheduledTime).getTime() + 60 * 60 * 1000);
+            const diff = endTime - now;
+            
+            if (diff <= 0) {
+                setRemainingTime("00:00");
+                clearInterval(interval);
+            } else {
+                const mins = Math.floor(diff / 60000);
+                const secs = Math.floor((diff % 60000) / 1000);
+                setRemainingTime(`${mins}:${secs.toString().padStart(2, '0')}`);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [roomInfo]);
 
     useEffect(() => {
         if (user) {
@@ -945,16 +974,51 @@ function InterviewRoomPage() {
     }
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "#FAFAFA" }}>
             {/* Header */}
-            {/* <AppBar position="static" color="default" elevation={1}>
-                <Toolbar>
-                    <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                        Interview Room: <strong>{roomId}</strong>
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 3,
+                    py: 1.5,
+                    borderBottom: "1px solid #E5E7EB",
+                    background: "#FFFFFF",
+                }}
+            >
+                <Stack direction="row" alignItems="center" spacing={3}>
+                    <Button 
+                        variant="outlined" 
+                        color="error" 
+                        size="small" 
+                        startIcon={<ExitToAppIcon />} 
+                        onClick={leaveRoom}
+                        sx={{ fontWeight: "bold", textTransform: "none", borderRadius: 2 }}
+                    >
+                        Leave Room
+                    </Button>
+                    {roomInfo?.interviewTypeName && (
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1F2937", borderLeft: "1px solid #E5E7EB", pl: 3 }}>
+                            {roomInfo.interviewTypeName}
+                        </Typography>
+                    )}
+                    <Typography variant="body2" sx={{ color: "#6B7280", fontWeight: 600, bgcolor: "#F3F4F6", px: 1.5, py: 0.5, borderRadius: 2 }}>
+                        SESSION ID: {roomId || 'TR-992-XQ'}
                     </Typography>
-                    
-                </Toolbar>
-            </AppBar> */}
+                </Stack>
+                <Stack direction="row" alignItems="center" spacing={3}>
+                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: "#6B7280" }}>
+                        <AccessTimeIcon fontSize="small" />
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {remainingTime} Remaining
+                        </Typography>
+                    </Stack>
+                    <IconButton size="small" sx={{ color: "#6B7280" }}><SettingsIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" sx={{ color: "#6B7280" }}><HelpOutlineIcon fontSize="small" /></IconButton>
+                    <Avatar sx={{ width: 32, height: 32, src: user?.avatarUrl || '' }} alt={user?.name || 'User'} />
+                </Stack>
+            </Box>
 
             {/* Resizable 3-column layout */}
             <Box
@@ -1053,6 +1117,7 @@ function InterviewRoomPage() {
                         onToggleMic={toggleMic}
                         onLeaveRoom={leaveRoom}
                         user={user}
+                        roomInfo={roomInfo}
                     />
                 </Box>
             </Box>

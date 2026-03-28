@@ -16,6 +16,7 @@ export const adminEndPoints = {
     GET_USER_BY_ID: (id) => `${ADMIN_BASE_URL}/users/${id}`,
     UPDATE_USER: (id) => `${ADMIN_BASE_URL}/users/${id}`,
     DELETE_USER: (id) => `${ADMIN_BASE_URL}/users/${id}`,
+    ACTIVATE_USER: (id) => `${ADMIN_BASE_URL}/users/${id}/activate`,
 
     // Question Reports Endpoints
     GET_QUESTION_REPORTS: `${BE_BASE_URL}/questions/reports`,

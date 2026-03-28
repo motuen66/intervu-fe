@@ -4,14 +4,22 @@ import {
     Box,
     Container,
     FormControl,
+    IconButton,
+    ListItemIcon,
+    ListItemText,
     MenuItem,
     Select,
     Typography,
 } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import BlockIcon from "@mui/icons-material/Block";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import toast from "react-hot-toast";
 import DataTable from "../components/DataTable";
 import StatusChip from "../../../common/components/StatusChip";
 import ConfirmModal from "../../../common/components/ConfirmModal";
+import ActionMenu from "../../../common/components/ActionMenu";
 import { DangerButton, SecondaryButton } from "../../../common/components/buttons";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
@@ -111,6 +119,8 @@ export default function AdminReportsPage() {
     const [updatingIds, setUpdatingIds] = useState({});
     const [deletingQuestionIds, setDeletingQuestionIds] = useState({});
     const [deleteQuestionTarget, setDeleteQuestionTarget] = useState(null);
+    const [actionMenuAnchor, setActionMenuAnchor] = useState(null);
+    const [actionMenuRow, setActionMenuRow] = useState(null);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -320,59 +330,20 @@ export default function AdminReportsPage() {
                     const canDismiss = status !== REPORT_STATUSES.DISMISSED;
                     const isUpdating = !!updatingIds[row?.id];
                     const isDeletingQuestion = !!deletingQuestionIds[row?.questionId];
+                    const isBusy = isUpdating || isDeletingQuestion;
 
                     return (
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <SecondaryButton
-                                disabled={!row?.id || !canReview || isUpdating || isDeletingQuestion}
-                                loading={canReview && isUpdating}
-                                onClick={() => handleUpdateStatus(row.id, "Reviewed", row.status)}
-                                sx={{
-                                    minWidth: 86,
-                                    height: 30,
-                                    borderRadius: "999px",
-                                    fontSize: "11px",
-                                    fontWeight: 700,
-                                    px: 1.5,
+                        <Box sx={{ display: "flex", justifyContent: "center" }}>
+                            <IconButton
+                                size="small"
+                                disabled={isBusy}
+                                onClick={(e) => {
+                                    setActionMenuAnchor(e.currentTarget);
+                                    setActionMenuRow(row);
                                 }}
                             >
-                                Reviewed
-                            </SecondaryButton>
-                            <DangerButton
-                                disabled={!row?.id || !canDismiss || isUpdating || isDeletingQuestion}
-                                loading={canDismiss && isUpdating}
-                                onClick={() => handleUpdateStatus(row.id, "Dismissed", row.status)}
-                                sx={{
-                                    minWidth: 86,
-                                    height: 30,
-                                    borderRadius: "999px",
-                                    fontSize: "11px",
-                                    fontWeight: 700,
-                                    px: 1.5,
-                                    bgcolor: "secondary.main",
-                                    color: "secondary.contrastText",
-                                    "&:hover": {
-                                        bgcolor: "secondary.dark",
-                                    },
-                                }}
-                            >
-                                Dismissed
-                            </DangerButton>
-                            <DangerButton
-                                disabled={!row?.questionId || isDeletingQuestion || isUpdating}
-                                loading={isDeletingQuestion}
-                                onClick={() => openDeleteQuestionModal(row.questionId, row.questionTitle)}
-                                sx={{
-                                    minWidth: 120,
-                                    height: 30,
-                                    borderRadius: "999px",
-                                    fontSize: "11px",
-                                    fontWeight: 700,
-                                    px: 1.5,
-                                }}
-                            >
-                                Delete Question
-                            </DangerButton>
+                                <MoreVertIcon fontSize="small" />
+                            </IconButton>
                         </Box>
                     );
                 },
@@ -380,6 +351,16 @@ export default function AdminReportsPage() {
         ],
         [deletingQuestionIds, updatingIds],
     );
+
+    const menuRow = actionMenuRow;
+    const menuStatus = normalizeStatusKey(menuRow?.status);
+    const menuCanReview = menuStatus !== REPORT_STATUSES.REVIEWED && menuStatus !== REPORT_STATUSES.DISMISSED;
+    const menuCanDismiss = menuStatus !== REPORT_STATUSES.DISMISSED;
+
+    const handleCloseMenu = () => {
+        setActionMenuAnchor(null);
+        setActionMenuRow(null);
+    };
 
     return (
         <Container maxWidth="xl" className="admin-page">
@@ -472,6 +453,59 @@ export default function AdminReportsPage() {
                     </>
                 }
             />
+
+            <ActionMenu
+                anchorEl={actionMenuAnchor}
+                open={Boolean(actionMenuAnchor)}
+                onClose={handleCloseMenu}
+            >
+                <MenuItem
+                    disabled={!menuCanReview}
+                    onClick={() => {
+                        handleUpdateStatus(menuRow.id, "Reviewed", menuRow.status);
+                        handleCloseMenu();
+                    }}
+                >
+                    <ListItemIcon>
+                        <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
+                    </ListItemIcon>
+                    <ListItemText
+                        primary="Reviewed"
+                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
+                    />
+                </MenuItem>
+                <MenuItem
+                    disabled={!menuCanDismiss}
+                    onClick={() => {
+                        handleUpdateStatus(menuRow.id, "Dismissed", menuRow.status);
+                        handleCloseMenu();
+                    }}
+                >
+                    <ListItemIcon>
+                        <BlockIcon fontSize="small" sx={{ color: "warning.main" }} />
+                    </ListItemIcon>
+                    <ListItemText
+                        primary="Dismissed"
+                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
+                    />
+                </MenuItem>
+                <MenuItem
+                    disabled={!menuRow?.questionId}
+                    onClick={() => {
+                        openDeleteQuestionModal(menuRow.questionId, menuRow.questionTitle);
+                        handleCloseMenu();
+                    }}
+                    sx={{ color: "error.main" }}
+                >
+                    <ListItemIcon>
+                        <DeleteOutlineIcon fontSize="small" sx={{ color: "error.main" }} />
+                    </ListItemIcon>
+                    <ListItemText
+                        primary="Delete Question"
+                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
+                    />
+                </MenuItem>
+            </ActionMenu>
         </Container>
     );
 }

@@ -1,4 +1,4 @@
-import { Box, Button, CircularProgress, IconButton, MenuItem, Paper, Select, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, IconButton, MenuItem, Paper, Select, Stack, Tooltip, Typography, Divider, ButtonGroup } from "@mui/material";
 import CodeIcon from "@mui/icons-material/Code";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -7,6 +7,11 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import Editor from "@monaco-editor/react";
 import { useEffect, useRef } from "react";
 import { ROLES } from "../../../../common/constants/common.js";
+import HistoryIcon from "@mui/icons-material/History";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import LanguageIcon from "@mui/icons-material/Language";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 
 function CodeEditorPanel({
     languages,
@@ -79,57 +84,40 @@ function CodeEditorPanel({
                 height: "100%",
             }}
         >
-            {/* Toolbar */}
             <Stack
                 direction="row"
                 spacing={1}
                 alignItems="center"
                 sx={{
-                    px: 1,
-                    py: 0.5,
-                    borderBottom: "1px solid #ccc",
-                    background: "#f9f9f9",
+                    px: 2,
+                    py: 1.5,
+                    borderBottom: "1px solid #E5E7EB",
+                    background: "#F9FAFB",
                     flexShrink: 0,
+                    justifyContent: "space-between"
                 }}
             >
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "#F97316", bgcolor: "#FFF", px: 2, py: 1, borderRadius: 2, border: "1px solid #E5E7EB" }}>
+                    <InsertDriveFileIcon fontSize="small" />
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#ef6c00" }}>solution.js</Typography>
+                </Stack>
                 {user?.role === ROLES.CANDIDATE ? (
                     <Select
                         value={language}
                         onChange={handleLanguageChange}
                         size="small"
-                        sx={{ minWidth: 120, ".MuiSelect-select": { py: 0.5 } }}
+                        sx={{ minWidth: 150, '.MuiOutlinedInput-notchedOutline': { border: 'none' }, '.MuiSelect-select': { py: 0.5, color: '#6B7280', fontWeight: 500 } }}
                     >
                         {Object.keys(languages).map((lang) => (
                             <MenuItem key={lang} value={lang}>
-                                {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                                {lang === 'javascript' ? 'JavaScript (Node.js 18)' : lang.charAt(0).toUpperCase() + lang.slice(1)}
                             </MenuItem>
                         ))}
                     </Select>
                 ) : (
-                    <Typography variant="subtitle2" sx={{ px: 1 }}>
-                        Language: <strong>{language.charAt(0).toUpperCase() + language.slice(1)}</strong>
+                    <Typography variant="subtitle2" sx={{ px: 1, color: '#6B7280' }}>
+                        {language === 'javascript' ? 'JavaScript (Node.js 18)' : language.charAt(0).toUpperCase() + language.slice(1)}
                     </Typography>
-                )}
-                {user?.role === ROLES.CANDIDATE && (
-                    <>
-                        <Tooltip title="Format Code (Shift+Alt+F)">
-                            <IconButton onClick={formatCode} size="small">
-                                <CodeIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                        <Box sx={{ flexGrow: 1 }} />
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            onClick={runCode}
-                            startIcon={isRunning ? <CircularProgress size={16} color="inherit" /> : <PlayArrowIcon />}
-                            disabled={isRunning}
-                            sx={{ textTransform: "none" }}
-                        >
-                            {isRunning ? "Running..." : "Run"}
-                        </Button>
-                    </>
                 )}
             </Stack>
 
@@ -148,8 +136,9 @@ function CodeEditorPanel({
             >
                 <Editor
                     key={language}
-                    height="100%" // sẽ fill tuyệt đối container
+                    height="100%"
                     language={language}
+                    theme="vs-dark"
                     value={code}
                     onMount={onEditorMount}
                     onChange={handleCodeChange}
@@ -158,7 +147,9 @@ function CodeEditorPanel({
                         minimap: { enabled: false },
                         scrollbar: { vertical: "auto", horizontal: "auto" },
                         scrollBeyondLastLine: false,
-                        fontSize: 14,
+                        fontSize: 15,
+                        fontFamily: "'Fira Code', 'JetBrains Mono', 'Courier New', monospace",
+                        padding: { top: 16 }
                     }}
                 />
             </Box>
@@ -301,6 +292,45 @@ function CodeEditorPanel({
                     )}
                 </Box>
             </Box>
+
+            {/* Bottom Action Bar */}
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{
+                    px: 3,
+                    py: 1.5,
+                    borderTop: "1px solid #E5E7EB",
+                    background: "#FFFFFF",
+                    flexShrink: 0
+                }}
+            >
+                <Stack direction="row" spacing={3}>
+                    <Button startIcon={<FolderOpenIcon />} sx={{ color: "#6B7280", fontWeight: 600, textTransform: "none" }}>Files</Button>
+                    <Button startIcon={<HistoryIcon />} sx={{ color: "#6B7280", fontWeight: 600, textTransform: "none" }}>History</Button>
+                </Stack>
+                {user?.role === ROLES.CANDIDATE && (
+                    <Stack direction="row" spacing={2}>
+                        <Button
+                            variant="outlined"
+                            onClick={runCode}
+                            startIcon={isRunning ? <CircularProgress size={16} color="inherit" /> : <PlayArrowIcon />}
+                            disabled={isRunning}
+                            sx={{ textTransform: "none", fontWeight: 600, color: "#374151", borderColor: "#D1D5DB", bgcolor: "#F9FAFB" }}
+                        >
+                            {isRunning ? "Running..." : "Run Code"}
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<CloudUploadIcon />}
+                            sx={{ textTransform: "none", fontWeight: 600, bgcolor: "#A3E635", color: "#166534", '&:hover': { bgcolor: "#84CC16" } }}
+                        >
+                            Submit Solution
+                        </Button>
+                    </Stack>
+                )}
+            </Stack>
         </Box>
     );
 }

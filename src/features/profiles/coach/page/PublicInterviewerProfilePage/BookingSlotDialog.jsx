@@ -38,7 +38,7 @@ import StatusChip from "../../../../../common/components/StatusChip";
 
 const STEPS = ["Select Service", "Pick Time on Calendar"];
 
-const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => {
+const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initialService = null }) => {
     // Step management
     const [activeStep, setActiveStep] = useState(0);
 
@@ -62,6 +62,11 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
         if (open && interviewerId) {
             loadServices();
             fetchAvailableSlots();
+            
+            if (initialService) {
+                setSelectedService(initialService);
+                setActiveStep(1);
+            }
         }
         if (!open) {
             // Reset state when dialog closes
@@ -71,7 +76,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
             setContainingSlot(null);
             setError(null);
         }
-    }, [open, interviewerId]);
+    }, [open, interviewerId, initialService]);
 
     const loadServices = async () => {
         setLoadingServices(true);
