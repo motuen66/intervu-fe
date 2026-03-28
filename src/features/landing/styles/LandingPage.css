@@ -16,6 +16,22 @@
   --nav-height: 80px;
 }
 
+:root {
+  --polished-bg: #ffffff;
+  --polished-text: #050505;
+  --polished-muted: #64748b;
+  --polished-border: #f1f5f9;
+  --polished-accent: #0f172a;
+
+  --story-blue: #3b82f6;
+  --story-pink: #ec4899;
+  --story-green: #d9f99d;
+  /* Brand Electric Lime */
+  --story-violet: #8b5cf6;
+
+  --nav-height: 80px;
+}
+
 .landing-page.polished-light {
   background-color: var(--polished-bg);
   color: var(--polished-text);
@@ -48,7 +64,8 @@
   letter-spacing: -0.05em;
   color: var(--polished-text);
   white-space: nowrap;
-  opacity: 0.15; /* Heavily muted when not active */
+  opacity: 0.15;
+  /* Heavily muted when not active */
   filter: blur(1px);
   transform: translateX(0) scale(1);
   transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
@@ -121,9 +138,11 @@
 
 .hero-polished-layout {
   display: flex;
-  justify-content: center; /* More balanced centering */
+  justify-content: center;
+  /* More balanced centering */
   align-items: center;
-  gap: 120px; /* Stronger separation as requested */
+  gap: 120px;
+  /* Stronger separation as requested */
   width: 100%;
   z-index: 10;
   position: relative;
@@ -134,7 +153,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  flex: 0 0 520px; /* Fixed width for better layout sync */
+  flex: 0 0 520px;
+  /* Fixed width for better layout sync */
   z-index: 2;
 }
 
@@ -344,8 +364,10 @@
 .story-preview-icon {
   width: 64px;
   height: 64px;
-  background-color: #0f172a; /* Solid Navy anchor */
-  color: #d9f99d; /* Lime icon */
+  background-color: #0f172a;
+  /* Solid Navy anchor */
+  color: #d9f99d;
+  /* Lime icon */
   border: 1px solid rgba(217, 249, 157, 0.2);
   border-radius: 1.25rem;
   display: flex;
@@ -429,12 +451,14 @@
   max-width: 560px;
   background: white;
   border-radius: 2.5rem;
-  box-shadow: 
+  box-shadow:
     0 40px 100px rgba(0, 0, 0, 0.1),
     inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-  z-index: 3; /* Move above orb */
+  z-index: 3;
+  /* Move above orb */
   border: 1px solid rgba(0, 0, 0, 0.04);
-  overflow: hidden; /* For images */
+  overflow: hidden;
+  /* For images */
   position: relative;
   transition: background 0.5s ease;
 }
@@ -545,7 +569,8 @@
   gap: 2rem;
   margin-top: 6rem;
   padding: 0 5%;
-  perspective: 1000px; /* Enable 3D depth for cards */
+  perspective: 1000px;
+  /* Enable 3D depth for cards */
 }
 
 .overview-card.bento-wide {
@@ -564,8 +589,8 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  transition: 
-    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), 
+  transition:
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
     box-shadow 0.5s ease,
     border-color 0.5s ease;
   min-height: 280px;
@@ -577,7 +602,7 @@
 .overview-card:hover {
   transform: translateY(-24px) scale(1.1) rotateX(4deg);
   border-color: rgba(217, 249, 157, 0.8);
-  box-shadow: 
+  box-shadow:
     0 60px 120px rgba(0, 0, 0, 0.15),
     0 0 40px rgba(217, 249, 157, 0.2);
   z-index: 10;
@@ -591,11 +616,9 @@
   height: 100%;
   pointer-events: none;
   z-index: 1;
-  background: radial-gradient(
-    600px circle at var(--mouse-x, 0) var(--mouse-y, 0),
-    rgba(217, 249, 157, 0.15),
-    transparent 40%
-  );
+  background: radial-gradient(600px circle at var(--mouse-x, 0) var(--mouse-y, 0),
+      rgba(217, 249, 157, 0.15),
+      transparent 40%);
   opacity: 0;
   transition: opacity 0.5s;
 }
@@ -613,13 +636,16 @@
 .bento-icon {
   width: 44px;
   height: 44px;
-  background: rgba(15, 23, 42, 0.03); /* Subtle dark glass */
-  border: 1px solid rgba(217, 249, 157, 0.2); /* Neon border */
+  background: rgba(15, 23, 42, 0.03);
+  /* Subtle dark glass */
+  border: 1px solid rgba(217, 249, 157, 0.2);
+  /* Neon border */
   border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #10b981; /* Brand highlight */
+  color: #10b981;
+  /* Brand highlight */
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -812,7 +838,8 @@
 }
 
 .landing-footer-simple {
-  padding: 24px 0 80px; /* 24px top, 80px bottom for page end spacing */
+  padding: 24px 0 80px;
+  /* 24px top, 80px bottom for page end spacing */
   border-top: 1px solid rgba(0, 0, 0, 0.05);
   text-align: center;
   background: #f9fafb;

@@ -18,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import StatusChip from "../../../../../common/components/StatusChip";
 import BaseCard from "../../../../../common/components/cards/BaseCard";
-import { SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
 import { getInterviewRoomStatusConfig } from "../../../../../common/constants/statusConfig";
 import { alpha } from "@mui/material/styles";
 import { callApi } from "../../../../../common/utils/apiConnector";
@@ -33,7 +33,7 @@ function InterviewCard({
     showActions = true,
     hasPendingReschedule = false
 }) {
-    const FIXED_CARD_HEIGHT = 400;
+    const FIXED_CARD_HEIGHT = 380;
 
     const navigate = useNavigate();
     const isOngoing = room.status === INTERVIEW_ROOM_STATUS.ON_GOING;
@@ -189,20 +189,20 @@ function InterviewCard({
         }
 
         const formatTypeName = (name) => {
-        if (!name) return "";
-        // Remove "INTERVIEW" or "SESSION" from the end, case-insensitively
-        const formatted = name.replace(/\s*(INTERVIEW|SESSION)\s*$/i, "").trim();
-        return formatted || name;
-    };
+            if (!name) return "";
+            // Remove "INTERVIEW" or "SESSION" from the end, case-insensitively
+            const formatted = name.replace(/\s*(INTERVIEW|SESSION)\s*$/i, "").trim();
+            return formatted || name;
+        };
 
-    return {
-        textColor: "#26374A",
-        bg: "linear-gradient(135deg, rgba(163, 232, 255, 0.3) 0%, rgba(181, 200, 255, 0.25) 52%, rgba(182, 244, 203, 0.22) 100%)",
-        borderColor: "rgba(132, 184, 233, 0.45)",
-        glowColor: "#7FB3DF",
-        dotColor: "#4F88BC",
+        return {
+            textColor: "#26374A",
+            bg: "linear-gradient(135deg, rgba(163, 232, 255, 0.3) 0%, rgba(181, 200, 255, 0.25) 52%, rgba(182, 244, 203, 0.22) 100%)",
+            borderColor: "rgba(132, 184, 233, 0.45)",
+            glowColor: "#7FB3DF",
+            dotColor: "#4F88BC",
+        };
     };
-};
 
     const getParticipantSlug = () => {
         if (user?.role === ROLES.CANDIDATE) {
@@ -275,30 +275,30 @@ function InterviewCard({
             return (
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
                     {/* Cancel Button */}
-                    <DangerButton
+                    <SecondaryButton
                         onClick={(e) => {
                             e.stopPropagation();
                             onCancel?.(room);
                         }}
                     >
                         Cancel
-                    </DangerButton>
+                    </SecondaryButton>
 
                     {/* Reschedule Button */}
                     {user?.role === ROLES.CANDIDATE && (
                         canReschedule ? (
-                            <SecondaryButton
+                            <PrimaryButton
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onRequestReschedule?.(room);
                                 }}
                             >
                                 Reschedule
-                            </SecondaryButton>
+                            </PrimaryButton>
                         ) : (
-                            <SecondaryButton disabled>
+                            <PrimaryButton disabled>
                                 Reschedule
-                            </SecondaryButton>
+                            </PrimaryButton>
                         )
                     )}
                 </Stack>
@@ -575,7 +575,7 @@ function InterviewCard({
             <Divider sx={{ my: 1, borderColor: "var(--mui-palette-divider)" }} />
 
             {/* Session Type + Join State */}
-            <Stack spacing={1.5} sx={{ mb: 1.75, height: 104, width: '100%' }}>
+            <Stack spacing={1} sx={{ mb: 1.5, height: 86, width: '100%', minHeight: 86 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography
                         variant="body2"
@@ -667,7 +667,7 @@ function InterviewCard({
                                                         ? "999px 0 0 999px"
                                                         : (index === room.rounds.length - 1 ? "0 999px 999px 0" : "0"),
                                                     bgcolor: room.status === INTERVIEW_ROOM_STATUS.CANCELLED
-                                                        ? "error.main" 
+                                                        ? "error.main"
                                                         : isCompleted
                                                             ? "success.main"
                                                             : isCurrent
@@ -817,16 +817,15 @@ function InterviewCard({
             </Stack>
 
             {/* Date-Time Panel */}
-            {hasMultipleRounds && (
-                <Typography 
-                    variant="caption" 
-                    sx={{ 
-                        color: '#475569', 
-                        fontWeight: 800, 
-                        fontSize: '0.68rem', 
+            <Box sx={{ minHeight: 22, display: "flex", alignItems: "center", mb: 0.5 }}>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        color: '#475569',
+                        fontWeight: 800,
+                        fontSize: '0.68rem',
                         letterSpacing: '0.05em',
                         textTransform: 'uppercase',
-                        mb: 0.75,
                         display: 'flex',
                         alignItems: 'center',
                         gap: 0.5,
@@ -834,39 +833,25 @@ function InterviewCard({
                     }}
                 >
                     <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: 'currentColor' }} />
-                    Time shown for upcoming session
+                    {hasMultipleRounds ? "Time shown for upcoming session" : "One-time interview session"}
                 </Typography>
-            )}
+            </Box>
             <Stack
                 direction={{ xs: "column", sm: "row" }}
                 alignItems={{ xs: "flex-start", sm: "stretch" }}
                 spacing={0}
                 sx={{
-                    p: 1.5,
+                    p: 1.25,
                     borderRadius: "12px",
                     bgcolor: "var(--mui-palette-action-hover)",
-                    mb: 3,
+                    mb: 2.25,
                 }}
             >
                 <Stack direction="row" spacing={0.85} alignItems="center" sx={{ flex: 1, minHeight: 38 }}>
                     <Calendar size={18} strokeWidth={1.8} color="var(--mui-palette-text-secondary)" />
-                    <Box>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                fontSize: "0.68rem",
-                                fontWeight: 700,
-                                letterSpacing: 0.9,
-                                textTransform: "uppercase",
-                                color: "var(--mui-palette-text-secondary)",
-                            }}
-                        >
-                            Date
-                        </Typography>
-                        <Typography variant="subtitle1" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
-                            {getDisplayDate(room.scheduledTime)}
-                        </Typography>
-                    </Box>
+                    <Typography variant="subtitle1" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
+                        {getDisplayDate(room.scheduledTime)}
+                    </Typography>
                 </Stack>
 
                 <Divider
@@ -883,23 +868,9 @@ function InterviewCard({
 
                 <Stack direction="row" spacing={0.85} alignItems="center" sx={{ flex: 1, minHeight: 38 }}>
                     <Clock size={18} strokeWidth={1.8} color="var(--mui-palette-text-secondary)" />
-                    <Box>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                fontSize: "0.68rem",
-                                fontWeight: 700,
-                                letterSpacing: 0.9,
-                                textTransform: "uppercase",
-                                color: "var(--mui-palette-text-secondary)",
-                            }}
-                        >
-                            Time
-                        </Typography>
-                        <Typography variant="subtitle1" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
-                            {getDisplayTime(room.scheduledTime)}
-                        </Typography>
-                    </Box>
+                    <Typography variant="subtitle1" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
+                        {getDisplayTime(room.scheduledTime)}
+                    </Typography>
                 </Stack>
             </Stack>
 

@@ -4,8 +4,8 @@ import {
     Typography,
     Stack,
     Pagination,
-    CircularProgress,
 } from "@mui/material";
+import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
 import RecentInterviewItem from "./RecentInterviewItem";
 import { useNavigate } from "react-router-dom";
 
@@ -41,7 +41,7 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
+                <CommonLoader />
             </Box>
         );
     }

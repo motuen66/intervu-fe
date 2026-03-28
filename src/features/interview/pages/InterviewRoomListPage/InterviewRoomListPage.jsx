@@ -1,4 +1,5 @@
-import { Box, Typography, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
+import { Box, Typography, Stack, Tabs, Tab, Container } from "@mui/material";
+import CommonLoader from "../../../../common/components/loaders/CommonLoader";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -127,10 +128,10 @@ function InterviewRoomListPage() {
             }
 
             const activeRoom = group[activeRoundIndex];
-            
+
             return {
                 ...activeRoom,
-                id: activeRoom.id, 
+                id: activeRoom.id,
                 rounds: group,
                 currentRound: activeRoundIndex + 1,
                 // Status of the grouped card is the status of the active round
@@ -152,7 +153,7 @@ function InterviewRoomListPage() {
                 endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
             });
             const allRoomsData = allRoomsRes?.data || [];
-            
+
             // Group rooms
             const groupedRooms = groupRoomsByBooking(allRoomsData);
 
@@ -166,14 +167,14 @@ function InterviewRoomListPage() {
             if (statuses === null || statuses.includes(0)) {
                 setUpcomingRooms(upcomingRoomsList);
             }
-            
+
             setPastRooms(pastRoomsList); // Always set past rooms so UpcomingTab can display Recent History
 
             // Calculate stats
             if (statuses === null || statuses.includes(0)) {
                 const upcomingCount = upcomingRoomsList.length;
                 const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
-                
+
                 let avgScore = null;
                 // Calculate average score across ALL individual completed rooms, not just grouped ones
                 const allCompletedIndividualRooms = allRoomsData.filter(r => r.status === INTERVIEW_ROOM_STATUS.COMPLETED && typeof r.score === 'number');
@@ -194,7 +195,7 @@ function InterviewRoomListPage() {
                     const diffMs = upcomingFutureRooms[0].dateObj - now;
                     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                     const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    
+
                     if (diffDays > 0) {
                         nextSession = `${diffDays}d ${diffHours}h`;
                     } else if (diffHours > 0) {
@@ -333,7 +334,7 @@ function InterviewRoomListPage() {
         try {
             // Multi-round bookings (rounds.length > 1) use CANCEL_BOOKING_REQUEST
             // Single-round or standalone sessions use CANCEL_INTERVIEW
-            const endpoint = (room.rounds?.length > 1) 
+            const endpoint = (room.rounds?.length > 1)
                 ? interviewEndPoints.CANCEL_BOOKING_REQUEST(room.bookingRequestId)
                 : interviewEndPoints.CANCEL_INTERVIEW(room.id);
 
@@ -409,15 +410,15 @@ function InterviewRoomListPage() {
 
     if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <CircularProgress />
+            <Box sx={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CommonLoader />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ minHeight: "100vh" }}>
-            <Box>
+        <Box sx={{ minHeight: "100vh", py: 4 }}>
+            <Container maxWidth="lg">
                 {/* Header */}
                 <Stack
                     direction={{ xs: "column", sm: "row" }}
@@ -427,17 +428,12 @@ function InterviewRoomListPage() {
                     sx={{ mb: 4 }}
                 >
                     <Box>
-                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
+                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5, color: "text.primary" }}>
                             My Interviews
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             Track your upcoming practice sessions and review past performance feedback.
                         </Typography>
-                    </Box>
-                    <Box>
-                        <SecondaryButton onClick={() => handleOpenFeedbackModal("all")}>
-                            View All Feedbacks
-                        </SecondaryButton>
                     </Box>
                 </Stack>
 
@@ -488,16 +484,15 @@ function InterviewRoomListPage() {
                 </TabPanel>
 
                 <TabPanel value={activeTab} index={1}>
-                    <PastHistoryTab 
-                        rooms={pastRooms} 
-                        user={user} 
-                        loading={loading} 
+                    <PastHistoryTab
+                        rooms={pastRooms}
+                        user={user}
+                        loading={loading}
                         onViewFeedback={handleViewFeedback}
                     />
                 </TabPanel>
 
-                {/* Feedback Modal */}
-
+                {/* Modals outside Container flow for better management if needed, but here kept for logic */}
                 <FeedbackListModal
                     open={feedbackModalState.open}
                     onClose={handleCloseFeedbackModal}
@@ -516,9 +511,9 @@ function InterviewRoomListPage() {
                     open={viewFeedbackState.open}
                     onClose={handleCloseViewFeedback}
                     interviewRoomId={viewFeedbackState.interviewRoomId}
+                    user={user}
                 />
 
-                {/* Reschedule Request Modal */}
                 <RescheduleRequestModal
                     open={rescheduleModalState.open}
                     onClose={handleCloseRescheduleModal}
@@ -529,17 +524,16 @@ function InterviewRoomListPage() {
                 <ConfirmModal
                     show={cancelConfirmState.open}
                     title="Cancel Interview"
-                    message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${
-                        cancelConfirmState.previewRefundPercent === null
+                    message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${cancelConfirmState.previewRefundPercent === null
                             ? "Unable to calculate refund preview."
                             : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
-                    }`}
+                        }`}
                     onConfirm={handleConfirmCancelInterview}
                     onCancel={handleCloseCancelConfirm}
                     confirmText="Cancel Interview"
                     cancelText="Keep Interview"
                 />
-            </Box>
+            </Container>
         </Box>
     );
 }

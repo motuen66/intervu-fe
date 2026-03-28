@@ -221,24 +221,38 @@ function QuestionPanel({
                             <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1 }}>PROBLEM STATEMENT</Typography>
                         </Stack>
                         <Typography variant="h5" sx={{ fontWeight: 700, color: "#111827", mb: 2 }}>
-                            {problemData?.shortName || "Problem Title"}
+                            {problemData?.shortName || "No Problem Assigned Yet"}
                         </Typography>
-                        {problemData && (
-                            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                                <Chip label="MEDIUM" size="small" sx={{ bgcolor: "#DCFCE7", color: "#166534", fontWeight: 600, fontSize: "0.75rem", height: 24 }} />
-                                <Chip label="STRINGS" size="small" sx={{ bgcolor: "#F3F4F6", color: "#4B5563", fontWeight: 600, fontSize: "0.75rem", height: 24 }} />
-                            </Stack>
+                        {!problemData && (
+                            <Typography variant="body2" sx={{ color: "#64748B", fontStyle: 'italic' }}>
+                                Wait for the coach to post a question for you...
+                            </Typography>
                         )}
-                        <Typography variant="body2" sx={{ color: "#4B5563", mb: 2 }}>
-                            Given a string <code style={{ color: "#3B82F6", fontWeight: 'bold' }}> s</code>, return the longest palindromic substring in <code style={{ color: "#3B82F6", fontWeight: 'bold' }}> s</code>.
-                        </Typography>
                     </Box>
-                    <Tabs value={problemTab} onChange={(e, newValue) => setProblemTab(newValue)} sx={{ borderBottom: "1px solid #F3F4F6", px: 2, '& .MuiTab-root': { minWidth: 'auto', px: 2, textTransform: 'none', fontWeight: 600 } }}>
+                    <Tabs
+                        value={problemTab}
+                        onChange={(e, newValue) => setProblemTab(newValue)}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        allowScrollButtonsMobile
+                        sx={{
+                            borderBottom: "1px solid #F3F4F6",
+                            px: 1,
+                            '& .MuiTabs-scrollButtons': { width: 28 },
+                            '& .MuiTab-root': {
+                                minWidth: 'auto',
+                                px: 2,
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                minHeight: 48
+                            }
+                        }}
+                    >
                         <Tab label="Description" />
                         <Tab label={
                             <Stack direction="row" alignItems="center" spacing={1}>
                                 <TuneIcon fontSize="small" />
-                                <span>TEST CASES</span>
+                                <span>Test cases</span>
                             </Stack>
                         } disabled={!problemData} />
                     </Tabs>
@@ -253,7 +267,7 @@ function QuestionPanel({
                                             }}
                                         />
                                     ) : (
-                                        "The problem description will appear here."
+                                        "No problem description provided yet."
                                     )}
                                 </Box>
                             </Box>

@@ -1,11 +1,12 @@
 import { Box, Button, CircularProgress, IconButton, MenuItem, Paper, Select, Stack, Tooltip, Typography, Divider, ButtonGroup } from "@mui/material";
+import { PrimaryButton } from "../../../../common/components/buttons";
 import CodeIcon from "@mui/icons-material/Code";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ClearIcon from "@mui/icons-material/Clear";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import Editor from "@monaco-editor/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ROLES } from "../../../../common/constants/common.js";
 import HistoryIcon from "@mui/icons-material/History";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
@@ -32,6 +33,30 @@ function CodeEditorPanel({
     // Keep a stable ref to editor and its container to drive layout
     const editorRef = useRef(null);
     const editorContainerRef = useRef(null);
+    const [consoleHeight, setConsoleHeight] = useState(250);
+    const isDragging = useRef(false);
+
+    const startResizing = (e) => {
+        isDragging.current = true;
+        document.addEventListener("mousemove", handleResizing);
+        document.addEventListener("mouseup", stopResizing);
+    };
+
+    const handleResizing = (e) => {
+        if (!isDragging.current || !editorContainerRef.current) return;
+        const containerRect = editorContainerRef.current.parentElement.getBoundingClientRect();
+        const newHeight = containerRect.bottom - e.clientY;
+        if (newHeight > 100 && newHeight < containerRect.height - 100) {
+            setConsoleHeight(newHeight);
+            editorRef.current?.layout();
+        }
+    };
+
+    const stopResizing = () => {
+        isDragging.current = false;
+        document.removeEventListener("mousemove", handleResizing);
+        document.removeEventListener("mouseup", stopResizing);
+    };
 
     useEffect(() => {
         if (!editorContainerRef.current) return;
@@ -154,15 +179,29 @@ function CodeEditorPanel({
                 />
             </Box>
 
-            {/* Console (co giãn – có thể đổi sang collapsible nếu muốn) */}
+            {/* Resizable Divider */}
+            <Box
+                onMouseDown={startResizing}
+                sx={{
+                    height: "4px",
+                    width: "100%",
+                    cursor: "row-resize",
+                    background: "#E5E7EB",
+                    "&:hover": { background: "#3B82F6" },
+                    transition: "background 0.2s",
+                    flexShrink: 0,
+                    zIndex: 10
+                }}
+            />
+
+            {/* Console */}
             <Box
                 sx={{
-                    flexBasis: { xs: 140, sm: 180, md: 220 }, // responsive base height
+                    height: `${consoleHeight}px`,
                     flexShrink: 0,
                     display: "flex",
                     flexDirection: "column",
                     minHeight: 120,
-                    borderTop: "1px solid #ccc",
                     background: "#fafafa",
                 }}
             >
@@ -307,27 +346,17 @@ function CodeEditorPanel({
                 }}
             >
                 <Stack direction="row" spacing={3}>
-                    <Button startIcon={<FolderOpenIcon />} sx={{ color: "#6B7280", fontWeight: 600, textTransform: "none" }}>Files</Button>
-                    <Button startIcon={<HistoryIcon />} sx={{ color: "#6B7280", fontWeight: 600, textTransform: "none" }}>History</Button>
                 </Stack>
                 {user?.role === ROLES.CANDIDATE && (
                     <Stack direction="row" spacing={2}>
-                        <Button
-                            variant="outlined"
+                        <PrimaryButton
                             onClick={runCode}
                             startIcon={isRunning ? <CircularProgress size={16} color="inherit" /> : <PlayArrowIcon />}
                             disabled={isRunning}
-                            sx={{ textTransform: "none", fontWeight: 600, color: "#374151", borderColor: "#D1D5DB", bgcolor: "#F9FAFB" }}
+                            sx={{ textTransform: "none", py: 1, px: 3 }}
                         >
                             {isRunning ? "Running..." : "Run Code"}
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={<CloudUploadIcon />}
-                            sx={{ textTransform: "none", fontWeight: 600, bgcolor: "#A3E635", color: "#166534", '&:hover': { bgcolor: "#84CC16" } }}
-                        >
-                            Submit Solution
-                        </Button>
+                        </PrimaryButton>
                     </Stack>
                 )}
             </Stack>

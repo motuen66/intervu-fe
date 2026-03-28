@@ -268,8 +268,13 @@ function InterviewPrecheckPage() {
     const handleJoinRoom = useCallback(() => {
         stopCameraPreview();
         stopMicCapture();
-        navigate(`/interview/room/${roomId}`);
-    }, [navigate, roomId, stopCameraPreview, stopMicCapture]);
+        navigate(`/interview/room/${roomId}`, {
+            state: {
+                initialCameraOn: isCameraPreviewOn,
+                initialMicOn: isMicOn
+            }
+        });
+    }, [navigate, roomId, stopCameraPreview, stopMicCapture, isCameraPreviewOn, isMicOn]);
 
     useEffect(() => {
         fetchRoomAndValidate({ showPageLoading: true });
@@ -313,8 +318,12 @@ function InterviewPrecheckPage() {
             sx={{
                 minHeight: "100vh",
                 px: { xs: 1.25, md: 2.5 },
-                py: { xs: 1.25, md: 1.75 },
+                py: { xs: 4, md: 2 },
                 bgcolor: "#f2f4f8",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center"
             }}
         >
             <Box sx={{ width: "100%", maxWidth: 1260, mx: "auto" }}>

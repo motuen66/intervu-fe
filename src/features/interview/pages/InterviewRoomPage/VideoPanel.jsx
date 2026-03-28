@@ -11,7 +11,8 @@ import {
     IconButton,
     TextField,
     Fab,
-    Badge
+    Badge,
+    Avatar
 } from "@mui/material";
 import { DangerButton, PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Videocam, VideocamOff, Mic, MicOff, ExpandMore, PresentToAll } from "@mui/icons-material";
@@ -20,6 +21,9 @@ import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import CreateIcon from "@mui/icons-material/Create";
 import { ROLES } from "../../../../common/constants/common.js";
+import { useEffect, useState } from "react";
+import { callApi } from "../../../../common/utils/apiConnector.js";
+import { METHOD } from "../../../../common/constants/api.js";
 
 function VideoPanel({
     myId,
@@ -29,6 +33,8 @@ function VideoPanel({
     remoteVideoRef,
     isCameraOn,
     isMicOn,
+    isLocalSpeaking,
+    isRemoteSpeaking,
     onToggleCamera,
     onToggleMic,
     onLeaveRoom,
@@ -37,10 +43,35 @@ function VideoPanel({
     endMeeting,
 }) {
     const isCandidate = user?.role === ROLES.CANDIDATE;
-    const remotePeerName = roomInfo ? (isCandidate ? roomInfo.coachName || "Interviewer" : roomInfo.candidateName || "Candidate") : "Peer";
-    const remotePeerRole = isCandidate ? "Interviewer" : "Candidate";
-    const localPeerName = user?.name || user?.firstName || "You";
+    const remotePeerName = roomInfo ? (isCandidate ? roomInfo.coachName || "Coach" : roomInfo.candidateName || "Candidate") : "Peer";
+    const remotePeerRole = isCandidate ? "Coach" : "Candidate";
+    
+    const [fetchedRemoteAvatar, setFetchedRemoteAvatar] = useState(null);
+    const participantId = roomInfo ? (isCandidate ? roomInfo.coachId : roomInfo.candidateId) : null;
+
+    useEffect(() => {
+        if (!participantId) return;
+        callApi({ method: METHOD.GET, endpoint: `/userprofile/${participantId}` })
+            .then((res) => {
+                const profile = res?.data;
+                const url = profile?.profilePicture || profile?.avatarUrl || profile?.imageUrl || profile?.avatar || null;
+                if (url) setFetchedRemoteAvatar(url);
+            })
+            .catch(() => { /* ignore */ });
+    }, [participantId]);
+
+    // Robust check for remote avatar
+    const remoteAvatar = fetchedRemoteAvatar || (roomInfo ? (isCandidate 
+        ? (roomInfo.coachAvatar || roomInfo.coachProfilePicture || roomInfo.coach?.profilePicture || roomInfo.coach?.avatarUrl || roomInfo.coach?.avatar || roomInfo.interviewer?.profilePicture || roomInfo.interviewer?.avatar || roomInfo.interviewer?.avatarUrl || roomInfo.interviewerAvatar)
+        : (roomInfo.candidateAvatar || roomInfo.candidateProfilePicture || roomInfo.candidate?.profilePicture || roomInfo.candidate?.avatarUrl || roomInfo.candidate?.avatar)
+    ) : null);
+
+    const localRoleNameInRoom = isCandidate ? roomInfo?.candidateName : roomInfo?.coachName;
+    const localPeerName = user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
     const localPeerRole = "You";
+    
+    // Robust check for local avatar
+    const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imageUrl || user?.imagePath || user?.avatar;
     return (
         <Box
             sx={{
@@ -54,7 +85,17 @@ function VideoPanel({
         >
             {/* Videos Container */}
             <Stack spacing={2} sx={{ mb: 3 }}>
-                <Box sx={{ position: "relative", width: "100%", borderRadius: 3, overflow: "hidden", aspectRatio: "16/9", bgcolor: "#E5E7EB", border: "2px solid transparent" }}>
+                <Box sx={{ 
+                    position: "relative", 
+                    width: "100%", 
+                    borderRadius: 3, 
+                    overflow: "hidden", 
+                    aspectRatio: "16/9", 
+                    bgcolor: "#E5E7EB", 
+                    border: isRemoteSpeaking ? "4px solid #A3E635" : "2px solid #E5E7EB",
+                    boxShadow: isRemoteSpeaking ? "0 0 15px rgba(163, 230, 53, 0.6)" : "none",
+                    transition: "all 0.2s ease"
+                }}>
                     <video
                         ref={remoteVideoRef}
                         autoPlay
@@ -65,13 +106,23 @@ function VideoPanel({
                             objectFit: "cover",
                         }}
                     />
-                    <Box sx={{ position: "absolute", bottom: 8, left: 8, bgcolor: "#FFFFFF", px: 1.5, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ position: "absolute", bottom: 8, left: 8, bgcolor: "#FFFFFF", px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar src={remoteAvatar} sx={{ width: 20, height: 20 }} />
                         <Typography variant="caption" sx={{ fontWeight: 700, color: "#111827" }}>{`${remotePeerName} (${remotePeerRole})`}</Typography>
                     </Box>
-                    <Box sx={{ position: "absolute", top: 12, right: 12, width: 10, height: 10, bgcolor: "#EF4444", borderRadius: "50%" }} />
                 </Box>
 
-                <Box sx={{ position: "relative", width: "100%", borderRadius: 3, overflow: "hidden", aspectRatio: "16/9", bgcolor: "#E5E7EB", border: "4px solid #A3E635" }}>
+                <Box sx={{ 
+                    position: "relative", 
+                    width: "100%", 
+                    borderRadius: 3, 
+                    overflow: "hidden", 
+                    aspectRatio: "16/9", 
+                    bgcolor: "#E5E7EB", 
+                    border: isLocalSpeaking ? "4px solid #3B82F6" : "2px solid #E5E7EB",
+                    boxShadow: isLocalSpeaking ? "0 0 15px rgba(59, 130, 246, 0.6)" : "none",
+                    transition: "all 0.2s ease"
+                }}>
                     <video
                         ref={localVideoRef}
                         autoPlay
@@ -83,15 +134,31 @@ function VideoPanel({
                             objectFit: "cover",
                         }}
                     />
-                    <Box sx={{ position: "absolute", bottom: 8, left: 8, bgcolor: "#A3E635", px: 1.5, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "#166534" }}>{`${localPeerName} (${localPeerRole})`}</Typography>
+                    <Box sx={{ position: "absolute", bottom: 8, left: 8, bgcolor: "#A3E635", px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar src={localAvatar} sx={{ width: 20, height: 20 }} />
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "#166534" }}>
+                            {localPeerName !== "You" 
+                                ? `You (${localPeerName})`
+                                : "You"}
+                        </Typography>
                     </Box>
-                    <Mic sx={{ position: "absolute", top: 10, right: 10, color: "#10B981", fontSize: 20 }} />
                 </Box>
             </Stack>
 
             {/* Controls */}
-            <Stack direction="row" display={"flex"} justifyContent={"center"} spacing={3} sx={{ mb: 4 }}>
+            <Stack 
+                direction="row" 
+                justifyContent="center" 
+                alignItems="center"
+                spacing={{ xs: 1, sm: 1.5, md: 2 }} 
+                sx={{ 
+                    mb: 4, 
+                    width: "100%",
+                    flexWrap: "nowrap",
+                    overflow: "hidden", // Prevent breaking layout
+                    "& > *": { flexShrink: 0 } // Prevent buttons from shrinking
+                }}
+            >
                 <Fab
                     size="medium"
                     onClick={onToggleMic}
@@ -133,10 +200,12 @@ function VideoPanel({
                 <Fab
                     size="medium"
                     onClick={onLeaveRoom}
-                    sx={{
-                        bgcolor: "#EF4444",
+                    sx={{ 
+                        bgcolor: "#EF4444", 
                         color: "#FFFFFF",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                        minWidth: 48,
+                        height: 48,
+                        boxShadow: "0 4px 6px -1px rgba(239, 68, 68, 0.2)",
                         "&:hover": { bgcolor: "#DC2626" }
                     }}
                 >

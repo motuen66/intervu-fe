@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Avatar, Stack, Button } from "@mui/material";
+import { Box, Typography, Avatar, Stack, Button, Tooltip, IconButton } from "@mui/material";
+import { MessageSquare } from "lucide-react";
 import { ROLES } from "../../../../../common/constants/common";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { callApi } from "../../../../../common/utils/apiConnector";
@@ -69,7 +70,7 @@ function RecentInterviewItem({ room, user, onClick }) {
 
     const statusColor = isCompleted ? "success.main" : isCancelled ? "error.main" : "text.secondary";
     const statusText = isCompleted ? "Completed" : isCancelled ? "Cancelled" : "Past Session";
-    const buttonText = isCompleted ? "View Feedback" : "Details";
+    const buttonText = isCompleted ? "View Feedback" : "View Details";
 
     const name = getParticipantName();
     const avatar = participantAvatarUrl || getParticipantAvatar();
@@ -130,30 +131,37 @@ function RecentInterviewItem({ room, user, onClick }) {
             </Stack>
 
             <Box sx={{ width: { xs: "100%", md: "15%" }, display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
-                <Button
-                    variant="contained"
-                    fullWidth
-                    sx={{
-                        bgcolor: "#f4f6f8",
-                        color: "text.primary",
-                        borderRadius: "10px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        boxShadow: "none",
-                        py: 0.8,
-                        maxWidth: { xs: "100%", md: "140px" },
-                        "&:hover": {
-                            bgcolor: "#e9ecef",
-                            boxShadow: "none",
-                        },
-                    }}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (onClick) onClick(room);
-                    }}
-                >
-                    {buttonText}
-                </Button>
+                {isCompleted && (
+                    <Tooltip title="View Feedback" arrow>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<MessageSquare size={16} />}
+                            sx={{
+                                color: "primary.main",
+                                borderColor: "rgba(15, 23, 42, 0.12)",
+                                borderRadius: "10px",
+                                textTransform: "none",
+                                fontWeight: 700,
+                                px: 1.5,
+                                py: 0.6,
+                                fontSize: "0.85rem",
+                                whiteSpace: "nowrap",
+                                "&:hover": {
+                                    bgcolor: "primary.light",
+                                    color: "primary.contrastText",
+                                    borderColor: "primary.main",
+                                },
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onClick) onClick(room);
+                            }}
+                        >
+                            Feedback
+                        </Button>
+                    </Tooltip>
+                )}
             </Box>
         </Box>
     );
