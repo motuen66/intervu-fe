@@ -2,7 +2,6 @@ import { Box, Typography, Stack, Tabs, Tab, Container } from "@mui/material";
 import CommonLoader from "../../../../common/components/loaders/CommonLoader";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -533,7 +532,7 @@ function InterviewRoomListPage() {
                         onRequestReschedule={handleRequestReschedule}
                         onCancelInterview={handleCancelInterview}
                         onViewFeedback={handleViewFeedback}
-                        onJoin={handleJoinRoom}
+                        // onJoin={handleJoinRoom}
                         onReviewQuestions={handleReviewQuestions}
                         rescheduleRequests={rescheduleRequests}
                     />

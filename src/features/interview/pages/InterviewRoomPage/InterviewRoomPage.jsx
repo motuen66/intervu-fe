@@ -34,6 +34,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi.js";
+import { useLocation } from "react-router-dom";
 
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
 
@@ -569,41 +570,18 @@ function InterviewRoomPage() {
         initMedia();
     }, [loading, location.state]);
 
-    useEffect(() => {
-        if (loading || error) return;
-        if (roomType !== INTERVIEW_ROOM_TYPE.NORMAL) return;
-        if (!user?.role) return;
-        if (micPromptedRef.current) return;
-        micPromptedRef.current = true;
-        startMicPermissionFlow();
-    }, [loading, error, roomType, user?.role]);
-
-    async function startMicPermissionFlow() {
-        try {
-            const stream = await startLocalStream({ video: false, audio: true });
-            setIsMicOn(true);
-            if (user?.role === ROLES.INTERVIEWER) {
-                startTranscriptRecording(stream);
-                setIsTranscriptModalOpen(true);
-            }
-        } catch (err) {
-            console.error("Failed to initialize microphone:", err);
-            if (user?.role === ROLES.INTERVIEWER) {
-                setTranscriptError("Microphone permission denied. Please enable it to record.");
-                setIsTranscriptModalOpen(true);
-            }
-        }
-    }
-
     function arrayBufferToByteArray(buffer) {
         return Array.from(new Uint8Array(buffer));
     }
 
     function startTranscriptRecording(stream) {
-        if (transcriptRecorderRef.current || isTranscriptRecording || !stream) return;
-        transcriptChunkSeqRef.current = 0;
-        transcriptPendingUploadsRef.current = [];
-        finalChunkUploadedRef.current = false;
+        if (transcriptRecorderRef.current || !stream) return;
+        
+        // Only show recording session dialog once
+        if (!micPromptedRef.current) {
+            micPromptedRef.current = true;
+            setIsTranscriptModalOpen(true);
+        }
 
         // Create AudioContext for WAV encoding
         if (!transcriptAudioContextRef.current) {
@@ -648,7 +626,6 @@ function InterviewRoomPage() {
                         try {
                             if (!transcriptAudioContextRef.current || transcriptAudioContextRef.current.state === 'closed') return;
 
-                            // Now blob has headers, decodeAudioData will work
                             const wavArrayBuffer = await encodeMediaBlobToWav(blob, transcriptAudioContextRef.current);
                             const audioData = wavArrayBufferToByteArray(wavArrayBuffer);
                             await callApi({
@@ -835,7 +812,7 @@ function InterviewRoomPage() {
     async function toggleMic() {
         try {
             if (isMicOn) {
-                // Turn off mic: stop and remove track
+                // Turn off mic
                 if (localStreamRef.current) {
                     const audioTrack = localStreamRef.current.getAudioTracks()[0];
                     if (audioTrack) {
@@ -851,9 +828,14 @@ function InterviewRoomPage() {
                     }
                 }
 
+                // If Interviewer, stop recording but ensure current chunk is sent
+                if (user?.role === ROLES.INTERVIEWER) {
+                    await stopTranscriptRecording();
+                }
+
                 setIsMicOn(false);
             } else {
-                // Turn on mic: get track, add, and renegotiate
+                // Turn on mic
                 const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const audioTrack = audioStream.getAudioTracks()[0];
                 if (!localStreamRef.current) localStreamRef.current = new MediaStream();
@@ -881,6 +863,11 @@ function InterviewRoomPage() {
                         } else {
                             console.warn("Cannot renegotiate, signaling state is:", pcRef.current.signalingState);
                         }
+                    }
+
+                    // If Interviewer, start recording
+                    if (user?.role === ROLES.INTERVIEWER) {
+                        startTranscriptRecording(localStreamRef.current);
                     }
                 }
 
