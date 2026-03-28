@@ -74,6 +74,8 @@ function DualRangeSlider({
 }
 
 function FilterBar({ onOpenSmartMatch }) {
+  const COMPACT_BAR_HEIGHT = 72;
+  const FILTER_TOGGLE_WIDTH = 142;
   const dispatch = useDispatch();
   const { filters, companies, skills, industries } = useSelector((state) => state.home);
   
@@ -90,6 +92,15 @@ function FilterBar({ onOpenSmartMatch }) {
   });
 
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
 
   const EXP_MIN = 0;
   const EXP_MAX = 30;
@@ -198,6 +209,7 @@ function FilterBar({ onOpenSmartMatch }) {
         variant="outlined"
         sx={{
           flex: 1,
+          minHeight: COMPACT_BAR_HEIGHT,
           borderRadius: '12px',
           p: 2,
           backgroundColor: 'background.paper'
@@ -294,7 +306,16 @@ function FilterBar({ onOpenSmartMatch }) {
             <SecondaryButton
               size="small"
               onClick={() => setShowAdvanced((prev) => !prev)}
-              sx={{ height: 40, gap: 1, whiteSpace: 'nowrap', flexShrink: 0 }}
+              sx={{
+                height: 40,
+                width: FILTER_TOGGLE_WIDTH,
+                minWidth: FILTER_TOGGLE_WIDTH,
+                maxWidth: FILTER_TOGGLE_WIDTH,
+                gap: 1,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                justifyContent: 'center'
+              }}
             >
               {showAdvanced ? <ChevronUp size={16} /> : <Filter size={16} />}
               {showAdvanced ? 'Hide Filters' : 'More Filters'}
@@ -457,20 +478,26 @@ function FilterBar({ onOpenSmartMatch }) {
         </Stack>
       </Paper>
 
-      <PrimaryButton
-        onClick={onOpenSmartMatch}
-        sx={(theme) => ({
-          ...buttonStyles.accentCta(theme),
-          height: 72,
-          width: 260,
-          minWidth: 260,
-          borderRadius: '12px',
-          gap: 1
-        })}
-      >
-        <Sparkles size={18} />
-        Smart Match
-      </PrimaryButton>
+      <Box className="ai-glow-container">
+        <PrimaryButton
+          onClick={onOpenSmartMatch}
+          onMouseMove={handleMouseMove}
+          className="ai-glow-button"
+          sx={(theme) => ({
+            height: 70, 
+            width: 256,
+            minWidth: 256,
+            borderRadius: '12px',
+            gap: 1.5,
+            fontSize: '1rem',
+            '--mouse-x': `${mousePos.x}px`,
+            '--mouse-y': `${mousePos.y}px`,
+          })}
+        >
+          <Sparkles size={22} className="ai-sparkle-icon" />
+          <span>Smart Match</span>
+        </PrimaryButton>
+      </Box>
     </Stack>
   );
 }
