@@ -42,7 +42,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { addMonths, addMinutes, format } from "date-fns";
+import { addDays, addMonths, addMinutes, format, startOfDay } from "date-fns";
 import { AIM_LEVEL_LABELS } from "../../../../../common/constants/status";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import { createJDBookingRequest, payBookingRequest } from "../../../../interview/services/bookingRequestApi";
@@ -52,9 +52,15 @@ import { validateJDBookingRounds } from "./jdBookingValidation";
 import toast from "react-hot-toast";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import "./JDBookingDialog.css";
+import { SecondaryButton } from "../../../../../common/components/buttons";
 
 const STEPS = ["Job Details & Rounds", "Schedule Rounds"];
 const ROUND_COLORS = ["#4f46e5", "#0891b2", "#7c3aed", "#db2777", "#ea580c", "#059669"];
+const getTodayStart = () => startOfDay(new Date());
+const getRollingSevenDayRange = (currentDate) => {
+    const start = startOfDay(currentDate);
+    return { start, end: addDays(start, 7) };
+};
 
 let nextRoundId = 1;
 const createRound = () => ({ id: `round-${nextRoundId++}`, coachInterviewServiceId: "", startTime: null });
@@ -295,6 +301,13 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (!open || activeStep !== 1 || !calendarRef.current) return;
+
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.changeView("rollingSevenDay", getTodayStart());
+    }, [open, activeStep]);
 
     // ─── Data Fetching ─────────────────────────────────
     useEffect(() => {
@@ -772,8 +785,6 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 if (oldIndex > prevIdx && newIndex <= prevIdx) return prevIdx + 1;
                 return prevIdx;
             });
-
-            toast.success("Round order updated");
         },
         [rounds],
     );
@@ -990,13 +1001,23 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                 <FullCalendar
                                     ref={calendarRef}
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                    initialView="timeGridWeek"
-                                    headerToolbar={{
-                                        left: "prev,next today",
-                                        center: "title",
-                                        right: "timeGridWeek,timeGridDay",
+                                    initialDate={getTodayStart()}
+                                    initialView="rollingSevenDay"
+                                    views={{
+                                        rollingSevenDay: {
+                                            type: "timeGrid",
+                                            duration: { days: 7 },
+                                            dateAlignment: "day",
+                                            buttonText: "7 Days",
+                                            visibleRange: getRollingSevenDayRange,
+                                        },
                                     }}
-                                    buttonText={{ today: "Today", week: "Week", day: "Day" }}
+                                    headerToolbar={{
+                                        left: "today",
+                                        center: "title",
+                                        right: "rollingSevenDay,timeGridDay",
+                                    }}
+                                    buttonText={{ today: "Today", day: "Day" }}
                                     events={calendarEvents}
                                     dateClick={handleCalendarDateClick}
                                     selectable={false}
@@ -1145,14 +1166,13 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             <DialogActions sx={{ p: 2, gap: 1, justifyContent: "space-between" }}>
                 <Box>
                     {activeStep === 1 && (
-                        <Button
+                        <SecondaryButton
                             onClick={handleBackStep}
-                            variant="text"
                             startIcon={<ArrowBackIcon />}
-                            sx={{ color: "#4f46e5" }}
+                            sx={{ border: "none", "&:hover": { border: "none", bgcolor: "action.hover" } }}
                         >
                             Back
-                        </Button>
+                        </SecondaryButton>
                     )}
                 </Box>
                 <Stack direction="row" spacing={1}>
@@ -1178,12 +1198,12 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                             onClick={handleSubmit}
                             variant="contained"
                             disabled={!allRoundsConfigured || saving}
-                            sx={{
-                                backgroundColor: "#4F46E5",
-                                fontWeight: 600,
-                                "&:hover": { backgroundColor: "#4338CA" },
-                                "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
-                            }}
+                            // sx={{
+                            //     backgroundColor: "#4F46E5",
+                            //     fontWeight: 600,
+                            //     "&:hover": { backgroundColor: "#4338CA" },
+                            //     "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
+                            // }}
                         >
                             {saving ? "Confirming..." : "Confirm & Pay"}
                         </Button>

@@ -27,7 +27,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { addMonths, addMinutes, format } from "date-fns";
+import { addDays, addMonths, addMinutes, format, startOfDay } from "date-fns";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
@@ -37,6 +37,11 @@ import "./BookingSlotDialog.css";
 import StatusChip from "../../../../../common/components/StatusChip";
 
 const STEPS = ["Select Service", "Pick Time on Calendar"];
+const getTodayStart = () => startOfDay(new Date());
+const getRollingSevenDayRange = (currentDate) => {
+    const start = startOfDay(currentDate);
+    return { start, end: addDays(start, 7) };
+};
 
 const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initialService = null }) => {
     // Step management
@@ -77,6 +82,13 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
             setError(null);
         }
     }, [open, interviewerId, initialService]);
+
+    useEffect(() => {
+        if (!open || activeStep !== 1 || !calendarRef.current) return;
+
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.changeView("rollingSevenDay", getTodayStart());
+    }, [open, activeStep]);
 
     const loadServices = async () => {
         setLoadingServices(true);
@@ -401,7 +413,12 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                                     </Stack>
 
                                                     {isSelected && (
-                                                        <CheckCircleIcon sx={{ color: "var(--mui-palette-primary-main)", fontSize: 28 }} />
+                                                        <CheckCircleIcon
+                                                            sx={{
+                                                                color: "var(--mui-palette-primary-main)",
+                                                                fontSize: 28,
+                                                            }}
+                                                        />
                                                     )}
                                                 </Stack>
                                             </Box>
@@ -436,15 +453,24 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                 <FullCalendar
                                     ref={calendarRef}
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                    initialView="timeGridWeek"
+                                    initialDate={getTodayStart()}
+                                    initialView="rollingSevenDay"
+                                    views={{
+                                        rollingSevenDay: {
+                                            type: "timeGrid",
+                                            duration: { days: 7 },
+                                            dateAlignment: "day",
+                                            buttonText: "7 Days",
+                                            visibleRange: getRollingSevenDayRange,
+                                        },
+                                    }}
                                     headerToolbar={{
-                                        left: "prev,next today",
+                                        left: "today",
                                         center: "title",
-                                        right: "timeGridWeek,timeGridDay",
+                                        right: "rollingSevenDay,timeGridDay",
                                     }}
                                     buttonText={{
                                         today: "Today",
-                                        week: "Week",
                                         day: "Day",
                                     }}
                                     events={calendarEvents}
@@ -598,7 +624,11 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                                 <Typography variant="body2" fontWeight={600}>
                                                     Total
                                                 </Typography>
-                                                <Typography variant="subtitle1" fontWeight={700} color="var(--mui-palette-primary-main)">
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    fontWeight={700}
+                                                    color="var(--mui-palette-primary-main)"
+                                                >
                                                     {selectedService?.price?.toLocaleString()} VND
                                                 </Typography>
                                             </Box>
@@ -624,14 +654,9 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                     )}
                 </Box>
                 <Stack direction="row" spacing={1.5}>
-                    <SecondaryButton onClick={onClose}>
-                        Cancel
-                    </SecondaryButton>
+                    <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
                     {activeStep === 0 ? (
-                        <PrimaryButton
-                            onClick={handleNextStep}
-                            disabled={!selectedService}
-                        >
+                        <PrimaryButton onClick={handleNextStep} disabled={!selectedService}>
                             Next
                         </PrimaryButton>
                     ) : (
