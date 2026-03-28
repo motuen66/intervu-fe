@@ -1,10 +1,13 @@
-import { Box, Typography, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
+import { Box, Typography, Stack, Tabs, Tab, Container } from "@mui/material";
+import CommonLoader from "../../../../common/components/loaders/CommonLoader";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
+import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 import { ROLES } from "../../../../common/constants/common.js";
@@ -15,6 +18,8 @@ import ConfirmModal from "../../../../common/components/ConfirmModal.jsx";
 // import AICVSelectionModal from "./components/AICVSelectionModal.jsx";
 import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
+import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
+import CoachEvaluationModal from "./CoachEvaluationModal.jsx";
 
 // Import sub-components
 import InterviewStats from "./components/InterviewStats.jsx";
@@ -62,9 +67,11 @@ function InterviewRoomListPage() {
         previewRefundPercent: null,
     });
     const [activeTab, setActiveTab] = useState(0);
-    const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null });
+    const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
+    const [viewFeedbackState, setViewFeedbackState] = useState({ open: false, interviewRoomId: null });
+    const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null, nextSessionIn: "—" });
     // const [aiCvModalState, setAiCvModalState] = useState({ open: false, room: null });
-    
+
     // New state for Generated Questions Modal
     const [genQuestionsModalState, setGenQuestionsModalState] = useState({ open: false, roomId: null });
 
@@ -97,6 +104,9 @@ function InterviewRoomListPage() {
         if (user.role === ROLES.CANDIDATE) {
             checkPendingFeedbacks();
         }
+        if (user.role === ROLES.INTERVIEWER) {
+            checkPendingCoachEvaluations();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Only run once on mount
 
@@ -110,64 +120,125 @@ function InterviewRoomListPage() {
         } else if (activeTab === 1) {
             // Past History: Fetch COMPLETED (2) and CANCELLED (3)
             fetchRooms([2, 3]);
-        } else if (activeTab === 2) {
-            fetchRescheduleRequests();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]); // Refetch when tab changes
 
+    const groupRoomsByBooking = (roomsList) => {
+        const grouped = {};
+        const standalone = [];
+
+        roomsList.forEach(room => {
+            if (room.bookingRequestId) {
+                if (!grouped[room.bookingRequestId]) {
+                    grouped[room.bookingRequestId] = [];
+                }
+                grouped[room.bookingRequestId].push(room);
+            } else {
+                standalone.push(room);
+            }
+        });
+
+        const combinedRooms = Object.values(grouped).map(group => {
+            if (group.length === 1) return group[0];
+
+            // Sort by roundNumber (or scheduledTime)
+            group.sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
+
+            // Find current/next round
+            let activeRoundIndex = group.findIndex(r => r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
+            if (activeRoundIndex === -1) {
+                activeRoundIndex = group.findIndex(r => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED);
+            }
+            if (activeRoundIndex === -1) {
+                // All done or cancelled, pick the last one or last completed
+                activeRoundIndex = group.length - 1;
+            }
+
+            const activeRoom = group[activeRoundIndex];
+
+            return {
+                ...activeRoom,
+                id: activeRoom.id,
+                rounds: group,
+                currentRound: activeRoundIndex + 1,
+                // Status of the grouped card is the status of the active round
+            };
+        });
+
+        const all = [...standalone, ...combinedRooms];
+        // Sort newest first based on scheduled time
+        all.sort((a, b) => new Date(b.scheduledTime) - new Date(a.scheduledTime));
+        return all;
+    };
+
     const fetchRooms = async (statuses = null) => {
         setLoading(true);
         try {
-            // Build query params
-            let endpoint = interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=100";
-            if (statuses && statuses.length > 0) {
-                statuses.forEach((status) => {
-                    endpoint += `&Statuses=${status}`;
-                });
-            }
-
-            const res = await callApi({
+            // Fetch ALL rooms to properly group multi-round bookings
+            const allRoomsRes = await callApi({
                 method: METHOD.GET,
-                endpoint: endpoint,
+                endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
             });
-            const interviewRooms = res?.data || [];
+            const allRoomsData = allRoomsRes?.data || [];
 
-            console.log("Fetched rooms with statuses:", statuses, "Data:", interviewRooms);
+            // Group rooms
+            const groupedRooms = groupRoomsByBooking(allRoomsData);
 
-            // Update state based on which statuses were fetched
-            if (statuses && statuses.includes(0)) {
-                // Upcoming tab: statuses [0, 1]
-                console.log("Setting upcoming rooms:", interviewRooms);
-                setUpcomingRooms(interviewRooms);
-            } else if (statuses && statuses.includes(2)) {
-                // Past history tab: statuses [2, 3]
-                console.log("Setting past rooms:", interviewRooms);
-                setPastRooms(interviewRooms);
+            console.log("Grouped Rooms:", groupedRooms);
+
+            // Filter into Upcoming (0, 1) and Past (2, 3)
+            const upcomingRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED || r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
+            const pastRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED || r.status === INTERVIEW_ROOM_STATUS.CANCELLED);
+
+            // Update state
+            if (statuses === null || statuses.includes(0)) {
+                setUpcomingRooms(upcomingRoomsList);
             }
 
-            // Calculate stats on initial load (fetch all data for stats)
-            if (statuses && statuses.includes(0)) {
-                // Only calculate stats when fetching upcoming data (initial load or upcoming tab)
-                const allRooms = await callApi({
-                    method: METHOD.GET,
-                    endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
-                });
-                const allRoomsData = allRooms?.data || [];
-                const upcomingCount = allRoomsData.filter((r) => r.status === 0 || r.status === 1).length;
-                const completedRooms = allRoomsData.filter((r) => r.status === 2);
-                const avgScore =
-                    completedRooms.length > 0
-                        ? (
-                            completedRooms.reduce((acc, room) => acc + (room.score || 0), 0) /
-                            completedRooms.filter((r) => r.score).length
-                        ).toFixed(1)
-                        : null;
+            setPastRooms(pastRoomsList); // Always set past rooms so UpcomingTab can display Recent History
+
+            // Calculate stats
+            if (statuses === null || statuses.includes(0)) {
+                const upcomingCount = upcomingRoomsList.length;
+                const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
+
+                let avgScore = null;
+                // Calculate average score across ALL individual completed rooms, not just grouped ones
+                const allCompletedIndividualRooms = allRoomsData.filter(r => r.status === INTERVIEW_ROOM_STATUS.COMPLETED && typeof r.score === 'number');
+                if (allCompletedIndividualRooms.length > 0) {
+                    const totalScore = allCompletedIndividualRooms.reduce((acc, room) => acc + room.score, 0);
+                    avgScore = (totalScore / allCompletedIndividualRooms.length).toFixed(1);
+                }
+
+                // Next session calculation
+                const now = new Date();
+                let nextSession = "—";
+                const upcomingFutureRooms = upcomingRoomsList
+                    .map(r => ({ ...r, dateObj: new Date(r.scheduledTime) }))
+                    .filter(r => !isNaN(r.dateObj.getTime()) && r.dateObj >= now)
+                    .sort((a, b) => a.dateObj - b.dateObj);
+
+                if (upcomingFutureRooms.length > 0) {
+                    const diffMs = upcomingFutureRooms[0].dateObj - now;
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+                    if (diffDays > 0) {
+                        nextSession = `${diffDays}d ${diffHours}h`;
+                    } else if (diffHours > 0) {
+                        nextSession = `${diffHours}h`;
+                    } else {
+                        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                        nextSession = `${diffMins}m`;
+                    }
+                }
 
                 setStats({
                     upcoming: upcomingCount,
                     completed: completedRooms.length,
                     avgScore: avgScore && !isNaN(avgScore) ? parseFloat(avgScore) : null,
+                    nextSessionIn: nextSession,
                 });
             }
         } catch (error) {
@@ -207,6 +278,25 @@ function InterviewRoomListPage() {
             }
         } catch (error) {
             console.error("Failed to check pending feedbacks:", error);
+        }
+    };
+
+    const checkPendingCoachEvaluations = async () => {
+        try {
+            const res = await callApi({
+                method: METHOD.GET,
+                endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=100&Statuses=${INTERVIEW_ROOM_STATUS.COMPLETED}`,
+            });
+            const rooms = res?.data || [];
+            const pendingRoom = rooms.find(
+                (room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED && room.isEvaluationCompleted === false,
+            );
+            console.log("Checked pending coach evaluations. Rooms:", rooms, "Pending evaluation room:", pendingRoom);
+            if (pendingRoom) {
+                setCoachEvaluationState({ open: true, room: pendingRoom });
+            }
+        } catch (error) {
+            console.error("Failed to check pending coach evaluations:", error);
         }
     };
 
@@ -270,16 +360,25 @@ function InterviewRoomListPage() {
         }
 
         try {
-            await callApi({
+            // Multi-round bookings (rounds.length > 1) use CANCEL_BOOKING_REQUEST
+            // Single-round or standalone sessions use CANCEL_INTERVIEW
+            const endpoint = (room.rounds?.length > 1)
+                ? interviewEndPoints.CANCEL_BOOKING_REQUEST(room.bookingRequestId)
+                : interviewEndPoints.CANCEL_INTERVIEW(room.id);
+
+            const response = await callApi({
                 method: METHOD.POST,
-                endpoint: interviewEndPoints.CANCEL_INTERVIEW(room.id),
-                displaySuccessMessage: true,
+                endpoint: endpoint,
+                displaySuccessMessage: false,
                 alertErrorMessage: true,
             });
 
-            await fetchRooms([0, 1]);
-            await fetchRooms([2, 3]);
-            await fetchRescheduleRequests();
+            if (response?.success) {
+                toast.success(response.message || "Interview cancelled successfully");
+                await fetchRooms([0, 1]);
+                await fetchRooms([2, 3]);
+                await fetchRescheduleRequests();
+            }
         } catch (error) {
             console.error("Failed to cancel interview:", error);
         } finally {
@@ -320,6 +419,23 @@ function InterviewRoomListPage() {
     const handleOpenFeedbackModal = (mode) => setFeedbackModalState({ open: true, mode });
     const handleCloseFeedbackModal = () => setFeedbackModalState({ open: false, mode: "pending" });
 
+    const handleCloseCoachEvaluation = () => setCoachEvaluationState({ open: false, room: null });
+
+    const handleCoachEvaluationSubmitted = async () => {
+        setCoachEvaluationState({ open: false, room: null });
+        await fetchRooms([2, 3]);
+        await checkPendingCoachEvaluations();
+    };
+
+    const handleViewFeedback = (room) => {
+        if (!room?.id) return;
+        setViewFeedbackState({ open: true, interviewRoomId: room.id });
+    };
+
+    const handleCloseViewFeedback = () => {
+        setViewFeedbackState({ open: false, interviewRoomId: null });
+    };
+
     const handleJoinRoom = (room) => {
         if (!room?.id) return;
         // if (user?.role === ROLES.CANDIDATE && room?.type === INTERVIEW_ROOM_TYPE.WITH_AI) {
@@ -348,15 +464,15 @@ function InterviewRoomListPage() {
 
     if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <CircularProgress />
+            <Box sx={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CommonLoader />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: "background.default", minHeight: "100vh" }}>
-            <Box sx={{ maxWidth: 1200, mx: "auto" }}>
+        <Box sx={{ minHeight: "100vh", py: 4 }}>
+            <Container maxWidth="lg">
                 {/* Header */}
                 <Stack
                     direction={{ xs: "column", sm: "row" }}
@@ -366,38 +482,22 @@ function InterviewRoomListPage() {
                     sx={{ mb: 4 }}
                 >
                     <Box>
-                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
+                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5, color: "text.primary" }}>
                             My Interviews
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             Track your upcoming practice sessions and review past performance feedback.
                         </Typography>
                     </Box>
-                    <Stack direction="row" spacing={2}>
-                        {user?.role === ROLES.CANDIDATE && (
-                            <SecondaryButton
-                                variant="outlined"
-                                onClick={() => handleOpenFeedbackModal("all")}
-                                sx={{ borderRadius: 2, fontWeight: 600 }}
-                            >
-                                View All Feedbacks
-                            </SecondaryButton>
-                        )}
-                        <PrimaryButton
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            sx={{ borderRadius: 2, fontWeight: 600, boxShadow: "none" }}
-                        >
-                            Book New Session
-                        </PrimaryButton>
-                    </Stack>
                 </Stack>
 
                 {/* Stats Section */}
                 <InterviewStats
+                    totalCount={stats.completed}
                     upcomingCount={stats.upcoming}
                     completedCount={stats.completed}
                     avgScore={stats.avgScore}
+                    nextSessionIn={stats.nextSessionIn}
                 />
 
                 {/* Tabs Navigation */}
@@ -420,10 +520,6 @@ function InterviewRoomListPage() {
                     >
                         <Tab label="Upcoming" {...a11yProps(0)} />
                         <Tab label="Past History" {...a11yProps(1)} />
-                        <Tab
-                            label={`Reschedule Request${rescheduleRequests.length > 0 ? ` (${rescheduleRequests.length})` : ""}`}
-                            {...a11yProps(2)}
-                        />
                     </Tabs>
                 </Box>
 
@@ -431,10 +527,12 @@ function InterviewRoomListPage() {
                 <TabPanel value={activeTab} index={0}>
                     <UpcomingTab
                         rooms={upcomingRooms}
+                        recentRooms={pastRooms}
                         user={user}
                         loading={loading}
                         onRequestReschedule={handleRequestReschedule}
                         onCancelInterview={handleCancelInterview}
+                        onViewFeedback={handleViewFeedback}
                         onJoin={handleJoinRoom}
                         onReviewQuestions={handleReviewQuestions}
                         rescheduleRequests={rescheduleRequests}
@@ -446,26 +544,31 @@ function InterviewRoomListPage() {
                         rooms={pastRooms}
                         user={user}
                         loading={loading}
+                        onViewFeedback={handleViewFeedback}
                         onReviewQuestions={handleReviewQuestions}
                     />
                 </TabPanel>
 
-                <TabPanel value={activeTab} index={2}>
-                    <RescheduleRequestsTab
-                        requests={rescheduleRequests}
-                        user={user}
-                        loading={rescheduleLoading}
-                        onApprove={handleApproveReschedule}
-                        onReject={handleRejectReschedule}
-                    />
-                </TabPanel>
-
-                {/* Feedback Modal */}
+                {/* Modals outside Container flow for better management if needed, but here kept for logic */}
                 <FeedbackListModal
                     open={feedbackModalState.open}
                     onClose={handleCloseFeedbackModal}
                     mode={feedbackModalState.mode}
                     onFeedbackSubmitted={checkPendingFeedbacks}
+                />
+
+                <CoachEvaluationModal
+                    open={coachEvaluationState.open}
+                    room={coachEvaluationState.room}
+                    onClose={handleCloseCoachEvaluation}
+                    onSubmitted={handleCoachEvaluationSubmitted}
+                />
+
+                <ViewFeedbackModal
+                    open={viewFeedbackState.open}
+                    onClose={handleCloseViewFeedback}
+                    interviewRoomId={viewFeedbackState.interviewRoomId}
+                    user={user}
                 />
 
                 {/* Reschedule Request Modal */}
@@ -480,28 +583,20 @@ function InterviewRoomListPage() {
                     show={cancelConfirmState.open}
                     title="Cancel Interview"
                     message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${cancelConfirmState.previewRefundPercent === null
-                        ? "Unable to calculate refund preview."
-                        : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
+                            ? "Unable to calculate refund preview."
+                            : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
                         }`}
                     onConfirm={handleConfirmCancelInterview}
                     onCancel={handleCloseCancelConfirm}
                     confirmText="Cancel Interview"
                     cancelText="Keep Interview"
                 />
-
-                {/* <AICVSelectionModal
-                    open={aiCvModalState.open}
-                    onClose={handleCloseAiCvModal}
-                    onJoin={handleConfirmAiCvJoin}
-                    room={aiCvModalState.room}
-                /> */}
-
-                <GeneratedQuestionsModal
-                    open={genQuestionsModalState.open}
-                    onClose={handleCloseGenQuestionsModal}
-                    roomId={genQuestionsModalState.roomId}
-                />
-            </Box>
+            </Container>
+            <GeneratedQuestionsModal
+                open={genQuestionsModalState.open}
+                onClose={handleCloseGenQuestionsModal}
+                roomId={genQuestionsModalState.roomId}
+            />
         </Box>
     );
 }

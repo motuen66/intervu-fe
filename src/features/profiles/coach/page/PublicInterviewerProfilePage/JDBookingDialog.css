@@ -27,6 +27,72 @@
     border-color: #6366f1 !important;
 }
 
+.jd-order-badge {
+    min-width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.jd-round-sequence-hint {
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.jd-sequence-panel {
+    border-radius: 12px !important;
+    border-color: #dbeafe !important;
+    background: #f8fbff !important;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.jd-sequence-title {
+    margin: 0;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.jd-sequence-desc {
+    margin: 4px 0 10px;
+    font-size: 0.76rem;
+    color: #475569;
+}
+
+.jd-sequence-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    margin-bottom: 4px;
+}
+
+.jd-sequence-chip-order {
+    color: #4f46e5;
+    font-weight: 700;
+}
+
+.jd-sequence-arrow {
+    font-size: 0.74rem;
+    color: #94a3b8;
+    margin: 0 2px 4px;
+}
+
 /* ───── Round Events in Calendar ───── */
 
 .jd-calendar-container .fc .jd-round-event {
@@ -36,4 +102,171 @@
     cursor: default !important;
     font-size: 0.75rem;
     font-weight: 600;
+}
+
+/* ───── Schedule Timeline Panel ───── */
+
+.jd-schedule-panel {
+    background: #f8fafc;
+    border-radius: 20px;
+    padding: 18px;
+}
+
+.jd-schedule-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-radius: 10px;
+    padding: 6px 4px;
+    transition: background-color 0.2s ease;
+}
+
+.jd-schedule-item:hover {
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.jd-schedule-item.pending {
+    opacity: 0.72;
+}
+
+.jd-schedule-marker-wrap {
+    width: 30px;
+    min-width: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.jd-schedule-marker {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.jd-schedule-marker p {
+    margin: 0;
+    line-height: 1;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.jd-schedule-item.done .jd-schedule-marker {
+    background: #d9f99d;
+    border-color: #bef264;
+    color: #1f2937;
+}
+
+.jd-schedule-item.current .jd-schedule-marker {
+    background: #1e293b;
+    border-color: #1e293b;
+    color: #ffffff;
+}
+
+.jd-schedule-item.pending .jd-schedule-marker {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #cbd5e1;
+}
+
+.jd-schedule-line {
+    width: 2px;
+    min-height: 52px;
+    background: #e2e8f0;
+    margin-top: 4px;
+    border-radius: 99px;
+}
+
+.jd-schedule-content {
+    padding-top: 1px;
+}
+
+.jd-schedule-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.25;
+}
+
+.jd-schedule-subtitle {
+    margin: 2px 0 0;
+    font-size: 0.92rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.jd-schedule-item.pending .jd-schedule-title,
+.jd-schedule-item.pending .jd-schedule-subtitle {
+    color: #9ca3af;
+}
+
+.jd-schedule-item.active {
+    background: rgba(30, 41, 59, 0.06);
+}
+
+.jd-next-round-btn {
+    background: #1e293b !important;
+    color: #ffffff !important;
+    border-radius: 14px !important;
+    text-transform: none !important;
+    font-weight: 700 !important;
+    padding: 10px 14px !important;
+}
+
+.jd-next-round-btn:hover {
+    background: #0f172a !important;
+}
+
+.jd-schedule-summary {
+    border-radius: 12px !important;
+    border-color: #e2e8f0 !important;
+    background: #ffffff !important;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ───── Step Transition Animation ───── */
+
+.jd-step-transition {
+    will-change: transform, opacity;
+}
+
+.jd-step-enter-forward {
+    animation: jd-step-slide-in-forward 300ms ease-out;
+}
+
+.jd-step-enter-backward {
+    animation: jd-step-slide-in-backward 300ms ease-out;
+}
+
+@keyframes jd-step-slide-in-forward {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes jd-step-slide-in-backward {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }

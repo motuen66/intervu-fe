@@ -1,7 +1,12 @@
 import { Outlet } from "react-router-dom";
+import SuspendedGate from "../../common/components/SuspendedGate";
 
 function EmptyLayout() {
-    return <Outlet />;
+    return (
+        <SuspendedGate>
+            <Outlet />
+        </SuspendedGate>
+    );
 }
 
 export default EmptyLayout;

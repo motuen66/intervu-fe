@@ -12,6 +12,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
 import { Box, Typography, Stack, CircularProgress, CardContent } from "@mui/material";
+import { addDays, startOfDay } from "date-fns";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
@@ -23,6 +24,12 @@ import { AVAILABILITY_SLOTS_STATUS, getAvailabilityColors } from "../../../../co
 import StatusLegend from "./StatusLegend";
 import UpcomingSessionBlog from "./UpcomingSessionBlog";
 import "./ScheduleManagement.css";
+
+const getTodayStart = () => startOfDay(new Date());
+const getRollingSevenDayRange = () => {
+    const start = getTodayStart();
+    return { start, end: addDays(start, 7) };
+};
 
 const ScheduleManagement = () => {
     const dispatch = useDispatch();
@@ -549,16 +556,24 @@ const ScheduleManagement = () => {
                                 <FullCalendar
                                     ref={calendarRef}
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                    initialView="timeGridWeek"
+                                    initialDate={getTodayStart()}
+                                    initialView="rollingSevenDay"
+                                    views={{
+                                        rollingSevenDay: {
+                                            type: "timeGrid",
+                                            duration: { days: 7 },
+                                            dateAlignment: "day",
+                                            buttonText: "7 Days",
+                                            visibleRange: getRollingSevenDayRange,
+                                        },
+                                    }}
                                     headerToolbar={{
-                                        left: "prev,next today",
+                                        left: "today",
                                         center: "title",
-                                        right: "dayGridMonth,timeGridWeek,timeGridDay",
+                                        right: "rollingSevenDay,timeGridDay",
                                     }}
                                     buttonText={{
                                         today: "Today",
-                                        month: "Month",
-                                        week: "Week",
                                         day: "Day",
                                     }}
                                     events={calendarEvents}

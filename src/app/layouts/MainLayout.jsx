@@ -11,6 +11,7 @@ import { setUserData } from "../../common/store/authSlice";
 import { userEndPoints } from "../../common/services/userApi";
 import NotificationDropdown from "../../features/notification/components/NotificationDropdown";
 import useNotificationHub from "../../features/notification/hooks/useNotificationHub";
+import SuspendedGate from "../../common/components/SuspendedGate";
 import {
     LayoutDashboard,
     Calendar,
@@ -340,6 +341,8 @@ const MainLayout = () => {
                         <Outlet />
                     </main>
                 </div>
+
+                <SuspendedGate />
             </div>
         );
     }
@@ -473,10 +476,12 @@ const MainLayout = () => {
                 </Container>
             </main>
 
+            <SuspendedGate />
+
             {/* Footer */}
             <footer className="footer">
                 <div className="footer-container">
-                    <p>&copy; 2024 Intervu. All rights reserved.</p>
+                    <p>&copy; 2026 Intervu. All rights reserved.</p>
                 </div>
             </footer>
         </div>

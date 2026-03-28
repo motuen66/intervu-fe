@@ -4,32 +4,30 @@ import {
     Typography,
     Stack,
     Pagination,
-    CircularProgress,
 } from "@mui/material";
+import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
+import toast from "react-hot-toast";
 import InterviewCard from "./InterviewCard";
-import InterviewFilterBar from "./InterviewFilterBar";
+import RecentInterviewItem from "./RecentInterviewItem";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 6;
 
-function UpcomingTab({
-    rooms,
+function UpcomingTab({ 
+    rooms, 
+    recentRooms = [],
     user,
     loading,
     onRequestReschedule,
     onCancelInterview,
     onJoin,
     onReviewQuestions,
+    onViewFeedback,
     rescheduleRequests = []
 }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [filterValue, setFilterValue] = useState("");
     const [page, setPage] = useState(1);
-
-    const filterOptions = [
-        { value: "scheduled", label: "Scheduled" },
-        { value: "ongoing", label: "Ongoing" },
-    ];
 
     // Helper to check if room has pending reschedule request
     const hasPendingRescheduleRequest = (roomId) => {
@@ -38,32 +36,10 @@ function UpcomingTab({
         );
     };
 
-    // Filter and search logic
+    // Filter and search logic (Simplified: removed search/filter bar)
     const filteredRooms = useMemo(() => {
-        let result = [...rooms];
-
-        // Apply search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (room) =>
-                    room.problemShortName?.toLowerCase().includes(query) ||
-                    room.coachName?.toLowerCase().includes(query) ||
-                    room.candidateName?.toLowerCase().includes(query)
-            );
-        }
-
-        // Apply status filter
-        if (filterValue) {
-            if (filterValue === "scheduled") {
-                result = result.filter((room) => room.status === INTERVIEW_ROOM_STATUS.SCHEDULED);
-            } else if (filterValue === "ongoing") {
-                result = result.filter((room) => room.status === INTERVIEW_ROOM_STATUS.ON_GOING);
-            }
-        }
-
-        return result;
-    }, [rooms, searchQuery, filterValue]);
+        return [...rooms];
+    }, [rooms]);
 
     // Pagination logic
     const totalPages = Math.ceil(filteredRooms.length / ITEMS_PER_PAGE);
@@ -82,40 +58,42 @@ function UpcomingTab({
         if (room.status === INTERVIEW_ROOM_STATUS.ON_GOING) {
             return;
         }
-        // For other statuses, can add navigation logic if needed
-    };
 
-    const handleExport = () => {
-        // TODO: Implement export functionality
-        console.log("Export upcoming interviews");
+        if (room.status === INTERVIEW_ROOM_STATUS.COMPLETED) {
+            if (onViewFeedback) {
+                onViewFeedback(room);
+                return;
+            }
+            if (!room.score) {
+                toast("No feedback available yet.", {
+                    style: {
+                        borderRadius: "10px",
+                        background: "#333",
+                        color: "#fff",
+                    },
+                });
+                return;
+            }
+        }
     };
 
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
+                <CommonLoader />
             </Box>
         );
     }
 
     return (
         <Box>
-            <InterviewFilterBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                filterValue={filterValue}
-                onFilterChange={setFilterValue}
-                onExport={handleExport}
-                filterOptions={filterOptions}
-            />
-
             {paginatedRooms.length === 0 ? (
                 <Box
                     sx={{
-                        py: 8,
+                        py: 6,
                         textAlign: "center",
                         bgcolor: "background.paper",
-                        borderRadius: 2,
+                        borderRadius: 2.5,
                         border: "1px dashed",
                         borderColor: "divider",
                     }}
@@ -128,22 +106,34 @@ function UpcomingTab({
                     </Typography>
                 </Box>
             ) : (
-                <Stack spacing={2}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            sm: "repeat(2, minmax(0, 1fr))",
+                            md: "repeat(3, minmax(0, 1fr))",
+                        },
+                        gap: 1.75,
+                        width: "100%",
+                    }}
+                >
                     {paginatedRooms.map((room) => (
-                        <InterviewCard
-                            key={room.id}
-                            room={room}
-                            user={user}
-                            onClick={handleCardClick}
-                            onRequestReschedule={onRequestReschedule}
-                            onCancel={onCancelInterview}
-                            onJoin={onJoin}
-                            onReviewQuestions={onReviewQuestions}
-                            showActions={true}
-                            hasPendingReschedule={hasPendingRescheduleRequest(room.id)}
-                        />
+                        <Box key={room.id} sx={{ display: "flex", width: "100%" }}>
+                            <InterviewCard
+                                room={room}
+                                user={user}
+                                onClick={handleCardClick}
+                                onRequestReschedule={onRequestReschedule}
+                                onCancel={onCancelInterview}
+                                onJoin={onJoin}
+                                onReviewQuestions={onReviewQuestions}
+                                showActions={true}
+                                hasPendingReschedule={hasPendingRescheduleRequest(room.id)}
+                            />
+                        </Box>
                     ))}
-                </Stack>
+                </Box>
             )}
 
             {/* Pagination */}
@@ -152,7 +142,7 @@ function UpcomingTab({
                     direction="row"
                     justifyContent="space-between"
                     alignItems="center"
-                    sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}
+                    sx={{ mt: 2.25, pt: 2, borderTop: "1px solid", borderColor: "divider" }}
                 >
                     <Typography variant="body2" color="text.secondary">
                         Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{" "}
@@ -169,6 +159,25 @@ function UpcomingTab({
                         showLastButton
                     />
                 </Stack>
+            )}
+
+            {/* Recent Section */}
+            {recentRooms && recentRooms.length > 0 && (
+                <Box sx={{ mt: 6 }}>
+                    <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                        Recent History
+                    </Typography>
+                    <Box sx={{ width: "100%" }}>
+                        {recentRooms.slice(0, 3).map((room) => (
+                            <RecentInterviewItem
+                                key={room.id}
+                                room={room}
+                                user={user}
+                                onClick={handleCardClick}
+                            />
+                        ))}
+                    </Box>
+                </Box>
             )}
         </Box>
     );
