@@ -35,6 +35,7 @@ const SessionExpiredGate = () => {
                     padding: '12px',
                     maxWidth: '420px',
                     boxShadow: '0 24px 48px rgba(15, 23, 42, 0.12)',
+                    zIndex: 2147483647,
                 }
             }}
             slotProps={{
@@ -42,11 +43,11 @@ const SessionExpiredGate = () => {
                     sx: {
                         backgroundColor: 'rgba(0, 0, 0, 0.75)',
                         backdropFilter: 'blur(3px)',
-                        zIndex: 1100000
+                        zIndex: 2147483646
                     }
                 }
             }}
-            sx={{ zIndex: 1100000 }}
+            sx={{ zIndex: 2147483645 }}
         >
             <DialogTitle id="session-expired-title" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#0F172A', fontWeight: 700 }}>
                 <Box sx={{ p: 1, borderRadius: '10px', backgroundColor: 'rgba(79, 70, 229, 0.1)', display: 'flex' }}>

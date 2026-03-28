@@ -62,6 +62,7 @@ function InterviewRoomListPage() {
     });
     const [activeTab, setActiveTab] = useState(0);
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
+    const [viewFeedbackState, setViewFeedbackState] = useState({ open: false, interviewRoomId: null });
     const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null, nextSessionIn: "—" });
 
     // Fetch initial data once on mount
@@ -90,8 +91,6 @@ function InterviewRoomListPage() {
         } else if (activeTab === 1) {
             // Past History: Fetch COMPLETED (2) and CANCELLED (3)
             fetchRooms([2, 3]);
-        } else if (activeTab === 2) {
-            fetchRescheduleRequests();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]); // Refetch when tab changes
@@ -399,6 +398,15 @@ function InterviewRoomListPage() {
         await checkPendingCoachEvaluations();
     };
 
+    const handleViewFeedback = (room) => {
+        if (!room?.id) return;
+        setViewFeedbackState({ open: true, interviewRoomId: room.id });
+    };
+
+    const handleCloseViewFeedback = () => {
+        setViewFeedbackState({ open: false, interviewRoomId: null });
+    };
+
     if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
@@ -426,19 +434,11 @@ function InterviewRoomListPage() {
                             Track your upcoming practice sessions and review past performance feedback.
                         </Typography>
                     </Box>
-                    <Stack direction="row" spacing={2}>
-                        {user?.role === ROLES.CANDIDATE && (
-                            <SecondaryButton onClick={() => handleOpenFeedbackModal("all")}>
-                                View All Feedbacks
-                            </SecondaryButton>
-                        )}
-                        <PrimaryButton 
-                            startIcon={<AddIcon />}
-                            onClick={() => navigate("/")}
-                        >
-                            Book New Session
-                        </PrimaryButton>
-                    </Stack>
+                    <Box>
+                        <SecondaryButton onClick={() => handleOpenFeedbackModal("all")}>
+                            View All Feedbacks
+                        </SecondaryButton>
+                    </Box>
                 </Stack>
 
                 {/* Stats Section */}
@@ -470,10 +470,6 @@ function InterviewRoomListPage() {
                     >
                         <Tab label="Upcoming" {...a11yProps(0)} />
                         <Tab label="Past History" {...a11yProps(1)} />
-                        <Tab
-                            label={`Reschedule Request${rescheduleRequests.length > 0 ? ` (${rescheduleRequests.length})` : ""}`}
-                            {...a11yProps(2)}
-                        />
                     </Tabs>
                 </Box>
 
@@ -486,21 +482,17 @@ function InterviewRoomListPage() {
                         loading={loading}
                         onRequestReschedule={handleRequestReschedule}
                         onCancelInterview={handleCancelInterview}
+                        onViewFeedback={handleViewFeedback}
                         rescheduleRequests={rescheduleRequests}
                     />
                 </TabPanel>
 
                 <TabPanel value={activeTab} index={1}>
-                    <PastHistoryTab rooms={pastRooms} user={user} loading={loading} />
-                </TabPanel>
-
-                <TabPanel value={activeTab} index={2}>
-                    <RescheduleRequestsTab
-                        requests={rescheduleRequests}
-                        user={user}
-                        loading={rescheduleLoading}
-                        onApprove={handleApproveReschedule}
-                        onReject={handleRejectReschedule}
+                    <PastHistoryTab 
+                        rooms={pastRooms} 
+                        user={user} 
+                        loading={loading} 
+                        onViewFeedback={handleViewFeedback}
                     />
                 </TabPanel>
 
@@ -520,11 +512,11 @@ function InterviewRoomListPage() {
                     onSubmitted={handleCoachEvaluationSubmitted}
                 />
 
-                {/*<ViewFeedbackModal
-                    open={feedbackModalState.open}
-                    onClose={handleCloseFeedbackModal}
-                    interviewRoomId={pastRooms?.[0]?.id || null}
-                />*/}
+                <ViewFeedbackModal
+                    open={viewFeedbackState.open}
+                    onClose={handleCloseViewFeedback}
+                    interviewRoomId={viewFeedbackState.interviewRoomId}
+                />
 
                 {/* Reschedule Request Modal */}
                 <RescheduleRequestModal

@@ -49,7 +49,7 @@ const SuspendedGate = ({ children }) => {
                         maxWidth: '450px',
                         boxShadow: '0 24px 48px rgba(0,0,0,0.3)',
                         position: 'relative',
-                        zIndex: 1000001,
+                        zIndex: 2147483647,
                         pointerEvents: 'auto'
                     }
                 }}
@@ -58,11 +58,11 @@ const SuspendedGate = ({ children }) => {
                         sx: {
                             backgroundColor: 'rgba(0, 0, 0, 0.75)',
                             backdropFilter: 'blur(3px)',
-                            zIndex: 1000000
+                            zIndex: 2147483646
                         }
                     }
                 }}
-                sx={{ zIndex: 1000000 }}
+                sx={{ zIndex: 2147483645 }}
             >
                 <DialogTitle id="suspended-dialog-title" sx={{ fontWeight: 700, pb: 1, color: '#ef4444' }}>
                     Account Suspended

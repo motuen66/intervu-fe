@@ -9,7 +9,7 @@ import {
     Menu,
     MenuItem,
 } from "@mui/material";
-import { Calendar, Clock, Star, Video, CheckCircle2, CircleDot, Circle } from "lucide-react";
+import { Calendar, Clock, Star, Video, CheckCircle2, CircleDot, Circle, XCircle } from "lucide-react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
@@ -33,7 +33,7 @@ function InterviewCard({
     showActions = true,
     hasPendingReschedule = false
 }) {
-    const FIXED_CARD_HEIGHT = 346;
+    const FIXED_CARD_HEIGHT = 400;
 
     const navigate = useNavigate();
     const isOngoing = room.status === INTERVIEW_ROOM_STATUS.ON_GOING;
@@ -390,7 +390,7 @@ function InterviewCard({
                 }
             }}
             sx={{
-                p: { xs: 1, md: 1.25 },
+                p: { xs: 2.5, md: 3 },
                 borderRadius: "18px",
                 border: "1px solid var(--mui-palette-divider)",
                 width: "100%",
@@ -618,84 +618,129 @@ function InterviewCard({
                             const roundDisplayName = formatTypeName(round.interviewTypeName || round.name || `Round ${index + 1}`);
 
                             return (
-                                <Box key={index} sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                                    {/* Progress Bar Segment */}
-                                    <Box
-                                        sx={{
-                                            height: 8,
-                                            borderRadius: index === 0
-                                                ? "999px 0 0 999px"
-                                                : (index === room.rounds.length - 1 ? "0 999px 999px 0" : "0"),
-                                            bgcolor: isCompleted
-                                                ? "success.main"
-                                                : isCurrent
-                                                    ? "secondary.main"
-                                                    : "action.disabledBackground",
-                                            mb: 1.25,
-                                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            position: 'relative',
-                                            ...(isCurrent && {
-                                                boxShadow: (theme) => `0 0 10px ${alpha(theme.palette.secondary.main, 0.5)}`,
-                                                animation: 'pulse-lime 2s infinite ease-in-out',
-                                                '@keyframes pulse-lime': {
-                                                    '0%': { opacity: 1 },
-                                                    '50%': { opacity: 0.75 },
-                                                    '100%': { opacity: 1 },
+                                <Box key={index} sx={{ flex: 1, minWidth: 0 }}>
+                                    <Tooltip
+                                        title={
+                                            <Box sx={{ p: 0.5 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.75, color: '#1E293B' }}>{roundDisplayName}</Typography>
+                                                <Stack spacing={0.5}>
+                                                    <Stack direction="row" spacing={1} alignItems="center">
+                                                        <Calendar size={14} color="#4F46E5" strokeWidth={2} />
+                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#475569' }}>
+                                                            {getDisplayDate(round.scheduledTime)}
+                                                        </Typography>
+                                                    </Stack>
+                                                    <Stack direction="row" spacing={1} alignItems="center">
+                                                        <Clock size={14} color="#4F46E5" strokeWidth={2} />
+                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#475569' }}>
+                                                            {getDisplayTime(round.scheduledTime)}
+                                                        </Typography>
+                                                    </Stack>
+                                                </Stack>
+                                            </Box>
+                                        }
+                                        arrow
+                                        placement="top"
+                                        slotProps={{
+                                            tooltip: {
+                                                sx: {
+                                                    bgcolor: 'rgba(255, 255, 255, 0.95)',
+                                                    backdropFilter: 'blur(8px)',
+                                                    color: 'text.primary',
+                                                    boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                                                    border: '1px solid rgba(0, 0, 0, 0.04)',
+                                                    borderRadius: '12px',
+                                                    p: 1.25,
+                                                    '& .MuiTooltip-arrow': {
+                                                        color: 'rgba(255, 255, 255, 0.95)',
+                                                    }
                                                 }
-                                            })
+                                            }
                                         }}
-                                    />
-
-                                    {/* Icon & Label */}
-                                    <Stack direction="row" spacing={0.75} alignItems="center" sx={{ px: 0.2, overflow: 'hidden' }}>
-                                        {isCompleted && (
-                                            <CheckCircle2
-                                                size={14}
-                                                color="var(--mui-palette-success-main)"
-                                                fill={isEntirelyCompleted ? "var(--mui-palette-success-main)" : "none"}
-                                                strokeWidth={2.5}
-                                                style={{ flexShrink: 0 }}
-                                            />
-                                        )}
-                                        {isCurrent && (
-                                            <CircleDot
-                                                size={14}
-                                                color="var(--mui-palette-secondary-dark)"
-                                                strokeWidth={3}
-                                                style={{ flexShrink: 0 }}
-                                            />
-                                        )}
-                                        {isUpcoming && (
-                                            <Circle
-                                                size={14}
-                                                color="var(--mui-palette-text-disabled)"
-                                                strokeWidth={2}
-                                                style={{ flexShrink: 0 }}
-                                            />
-                                        )}
-
-                                        <Tooltip
-                                            title={roundDisplayName}
-                                            arrow
-                                            placement="top"
-                                        >
-                                            <Typography
-                                                variant="caption"
+                                    >
+                                        <Box sx={{ width: '100%', cursor: 'pointer', transition: 'opacity 0.2s', '&:hover': { opacity: 0.85 } }}>
+                                            {/* Progress Bar Segment */}
+                                            <Box
                                                 sx={{
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: isCurrent || isCompleted ? 750 : 600,
-                                                    color: isCompleted ? "success.dark" : (isUpcoming ? "text.disabled" : "text.primary"),
-                                                    whiteSpace: 'nowrap',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    letterSpacing: 0.1,
-                                                    minWidth: 0
+                                                    height: 8,
+                                                    borderRadius: index === 0
+                                                        ? "999px 0 0 999px"
+                                                        : (index === room.rounds.length - 1 ? "0 999px 999px 0" : "0"),
+                                                    bgcolor: room.status === INTERVIEW_ROOM_STATUS.CANCELLED
+                                                        ? "error.main" 
+                                                        : isCompleted
+                                                            ? "success.main"
+                                                            : isCurrent
+                                                                ? "secondary.main"
+                                                                : "action.disabledBackground",
+                                                    mb: 1.25,
+                                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    position: 'relative',
+                                                    ...(isCurrent && room.status !== INTERVIEW_ROOM_STATUS.CANCELLED && {
+                                                        boxShadow: (theme) => `0 0 10px ${alpha(theme.palette.secondary.main, 0.5)}`,
+                                                        animation: 'pulse-lime 2s infinite ease-in-out',
+                                                        '@keyframes pulse-lime': {
+                                                            '0%': { opacity: 1 },
+                                                            '50%': { opacity: 0.75 },
+                                                            '100%': { opacity: 1 },
+                                                        }
+                                                    })
                                                 }}
-                                            >
-                                                {roundDisplayName}
-                                            </Typography>
-                                        </Tooltip>
-                                    </Stack>
+                                            />
+
+                                            {/* Icon & Label */}
+                                            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ px: 0.2, overflow: 'hidden' }}>
+                                                {room.status === INTERVIEW_ROOM_STATUS.CANCELLED ? (
+                                                    <XCircle
+                                                        size={14}
+                                                        color="var(--mui-palette-error-main)"
+                                                        strokeWidth={2.5}
+                                                        style={{ flexShrink: 0 }}
+                                                    />
+                                                ) : isCompleted && (
+                                                    <CheckCircle2
+                                                        size={14}
+                                                        color="var(--mui-palette-success-main)"
+                                                        fill={isEntirelyCompleted ? "var(--mui-palette-success-main)" : "none"}
+                                                        strokeWidth={2.5}
+                                                        style={{ flexShrink: 0 }}
+                                                    />
+                                                )}
+                                                {isCurrent && room.status !== INTERVIEW_ROOM_STATUS.CANCELLED && (
+                                                    <CircleDot
+                                                        size={14}
+                                                        color="var(--mui-palette-secondary-dark)"
+                                                        strokeWidth={3}
+                                                        style={{ flexShrink: 0 }}
+                                                    />
+                                                )}
+                                                {isUpcoming && (
+                                                    <Circle
+                                                        size={14}
+                                                        color="var(--mui-palette-text-disabled)"
+                                                        strokeWidth={2}
+                                                        style={{ flexShrink: 0 }}
+                                                    />
+                                                )}
+
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: isCurrent || isCompleted || room.status === INTERVIEW_ROOM_STATUS.CANCELLED ? 750 : 600,
+                                                        color: room.status === INTERVIEW_ROOM_STATUS.CANCELLED ? "error.dark" : (isCompleted ? "success.dark" : (isUpcoming ? "text.disabled" : "text.primary")),
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        letterSpacing: 0.1,
+                                                        minWidth: 0
+                                                    }}
+                                                >
+                                                    {roundDisplayName}
+                                                </Typography>
+                                            </Stack>
+                                        </Box>
+                                    </Tooltip>
                                 </Box>
                             );
                         })}
@@ -708,9 +753,11 @@ function InterviewCard({
                                     flex: 1,
                                     height: 8,
                                     borderRadius: "999px",
-                                    bgcolor: room.status === INTERVIEW_ROOM_STATUS.COMPLETED
-                                        ? "success.main"
-                                        : "secondary.main",
+                                    bgcolor: room.status === INTERVIEW_ROOM_STATUS.CANCELLED
+                                        ? "error.main"
+                                        : room.status === INTERVIEW_ROOM_STATUS.COMPLETED
+                                            ? "success.main"
+                                            : "secondary.main",
                                     transition: 'all 0.3s ease',
                                     ...(room.status === INTERVIEW_ROOM_STATUS.ON_GOING && {
                                         animation: 'pulse-lime 2s infinite ease-in-out',
@@ -720,6 +767,14 @@ function InterviewCard({
                             />
                         </Stack>
                         <Stack direction="row" spacing={0.75} alignItems="center" sx={{ px: 0.2 }}>
+                            {room.status === INTERVIEW_ROOM_STATUS.CANCELLED && (
+                                <XCircle
+                                    size={14}
+                                    color="var(--mui-palette-error-main)"
+                                    fill="none"
+                                    strokeWidth={2.5}
+                                />
+                            )}
                             {room.status === INTERVIEW_ROOM_STATUS.COMPLETED && (
                                 <CheckCircle2
                                     size={14}
@@ -747,14 +802,14 @@ function InterviewCard({
                                 sx={{
                                     fontSize: '0.7rem',
                                     fontWeight: 750,
-                                    color: room.status === INTERVIEW_ROOM_STATUS.COMPLETED ? "success.dark" : "text.primary",
+                                    color: room.status === INTERVIEW_ROOM_STATUS.CANCELLED ? "error.dark" : (room.status === INTERVIEW_ROOM_STATUS.COMPLETED ? "success.dark" : "text.primary"),
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     letterSpacing: 0.1,
                                 }}
                             >
-                                {formatTypeName(room.interviewTypeName || "Session")}
+                                {formatTypeName(room.interviewTypeName || room.problemShortName || "Interview Session")}
                             </Typography>
                         </Stack>
                     </Stack>
@@ -762,6 +817,26 @@ function InterviewCard({
             </Stack>
 
             {/* Date-Time Panel */}
+            {hasMultipleRounds && (
+                <Typography 
+                    variant="caption" 
+                    sx={{ 
+                        color: '#475569', 
+                        fontWeight: 800, 
+                        fontSize: '0.68rem', 
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                        mb: 0.75,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        opacity: 0.8
+                    }}
+                >
+                    <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: 'currentColor' }} />
+                    Time shown for upcoming session
+                </Typography>
+            )}
             <Stack
                 direction={{ xs: "column", sm: "row" }}
                 alignItems={{ xs: "flex-start", sm: "stretch" }}

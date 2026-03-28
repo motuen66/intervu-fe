@@ -147,7 +147,8 @@ function RecentInterviewItem({ room, user, onClick }) {
                             boxShadow: "none",
                         },
                     }}
-                    onClick={() => {
+                    onClick={(e) => {
+                        e.stopPropagation();
                         if (onClick) onClick(room);
                     }}
                 >

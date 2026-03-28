@@ -9,7 +9,6 @@ import {
 import toast from "react-hot-toast";
 import InterviewCard from "./InterviewCard";
 import RecentInterviewItem from "./RecentInterviewItem";
-import InterviewFilterBar from "./InterviewFilterBar";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
 const ITEMS_PER_PAGE = 6;
@@ -21,16 +20,10 @@ function UpcomingTab({
     loading,
     onRequestReschedule,
     onCancelInterview,
+    onViewFeedback,
     rescheduleRequests = []
 }) {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [filterValue, setFilterValue] = useState("");
     const [page, setPage] = useState(1);
-
-    const filterOptions = [
-        { value: "scheduled", label: "Scheduled" },
-        { value: "ongoing", label: "Ongoing" },
-    ];
 
     // Helper to check if room has pending reschedule request
     const hasPendingRescheduleRequest = (roomId) => {
@@ -39,32 +32,10 @@ function UpcomingTab({
         );
     };
 
-    // Filter and search logic
+    // Filter and search logic (Simplified: removed search/filter bar)
     const filteredRooms = useMemo(() => {
-        let result = [...rooms];
-
-        // Apply search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (room) =>
-                    room.problemShortName?.toLowerCase().includes(query) ||
-                    room.coachName?.toLowerCase().includes(query) ||
-                    room.candidateName?.toLowerCase().includes(query)
-            );
-        }
-
-        // Apply status filter
-        if (filterValue) {
-            if (filterValue === "scheduled") {
-                result = result.filter((room) => room.status === INTERVIEW_ROOM_STATUS.SCHEDULED);
-            } else if (filterValue === "ongoing") {
-                result = result.filter((room) => room.status === INTERVIEW_ROOM_STATUS.ON_GOING);
-            }
-        }
-
-        return result;
-    }, [rooms, searchQuery, filterValue]);
+        return [...rooms];
+    }, [rooms]);
 
     // Pagination logic
     const totalPages = Math.ceil(filteredRooms.length / ITEMS_PER_PAGE);
@@ -85,6 +56,10 @@ function UpcomingTab({
         }
         
         if (room.status === INTERVIEW_ROOM_STATUS.COMPLETED) {
+            if (onViewFeedback) {
+                onViewFeedback(room);
+                return;
+            }
             if (!room.score) {
                 toast("No feedback available yet.", {
                     style: {
@@ -96,12 +71,6 @@ function UpcomingTab({
                 return;
             }
         }
-        // For other statuses, can add navigation logic if needed
-    };
-
-    const handleExport = () => {
-        // TODO: Implement export functionality
-        console.log("Export upcoming interviews");
     };
 
     if (loading) {
@@ -114,15 +83,6 @@ function UpcomingTab({
 
     return (
         <Box>
-            <InterviewFilterBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                filterValue={filterValue}
-                onFilterChange={setFilterValue}
-                onExport={handleExport}
-                filterOptions={filterOptions}
-            />
-
             {paginatedRooms.length === 0 ? (
                 <Box
                     sx={{
