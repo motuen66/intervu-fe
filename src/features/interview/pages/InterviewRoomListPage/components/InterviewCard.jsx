@@ -3,16 +3,18 @@ import {
     Typography,
     Avatar,
     Stack,
+    Chip,
     Divider,
     Tooltip,
     IconButton,
     Menu,
     MenuItem,
 } from "@mui/material";
-import { Calendar, Clock, Star, Video, CheckCircle2, CircleDot, Circle, XCircle } from "lucide-react";
+import { Calendar, Clock, Star, Video, CheckCircle2, CircleDot, Circle, XCircle, Code, ClipboardList } from "lucide-react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
+import { INTERVIEW_ROOM_TYPE } from "../../../../../common/constants/types";
 import { ROLES } from "../../../../../common/constants/common";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -30,6 +32,8 @@ function InterviewCard({
     onRequestReschedule,
     onCancel,
     onClick,
+    onJoin,
+    onReviewQuestions,
     showActions = true,
     hasPendingReschedule = false
 }) {
@@ -94,7 +98,7 @@ function InterviewCard({
 
     const getParticipantName = () => {
         if (user?.role === ROLES.CANDIDATE) {
-            return room.coachName || "Coach";
+            return room.coachName || "AI Coach";
         }
         if (user?.role === ROLES.INTERVIEWER) {
             return room.candidateName || "Candidate";
@@ -267,8 +271,66 @@ function InterviewCard({
         return <StatusChip label={config.label} color={config.color} />;
     };
 
+    const getTypeChip = () => {
+        const typeConfig = {
+            [INTERVIEW_ROOM_TYPE.NORMAL]: {
+                label: "Normal",
+                color: "default",
+                sx: { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#616161" }
+            },
+            [INTERVIEW_ROOM_TYPE.WITH_AI]: {
+                label: "With AI",
+                color: "secondary",
+                sx: { bgcolor: "rgba(156, 39, 176, 0.12)", color: "#7b1fa2" }
+            },
+            [INTERVIEW_ROOM_TYPE.PEER]: {
+                label: "Peer",
+                color: "info",
+                sx: { bgcolor: "rgba(2, 136, 209, 0.12)", color: "#0277bd" }
+            },
+        };
+
+        const config = typeConfig[room.type] || typeConfig[INTERVIEW_ROOM_TYPE.NORMAL];
+
+        return (
+            <Chip
+                label={config.label}
+                size="small"
+                sx={{
+                    ...config.sx,
+                    fontWeight: 600,
+                    fontSize: "0.7rem",
+                    height: 24,
+                    borderRadius: 1.5,
+                }}
+            />
+        );
+    };
+
     const getActionButton = () => {
-        if (!showActions) return null;
+        // Questions button should only be visible for COMPLETED interviews
+        // (as they are generated after the interview ends)
+        const isCompleted = room.status === INTERVIEW_ROOM_STATUS.COMPLETED;
+        const showQuestions = user?.role === ROLES.INTERVIEWER && isCompleted;
+
+        if (!showActions && !showQuestions) return null;
+
+        // For non-actions (like Past History Tab), we still might show the Questions button
+        if (!showActions) {
+            return showQuestions ? (
+                <SecondaryButton
+                    size="small"
+                    startIcon={<ClipboardList size={14} />}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onReviewQuestions?.(room);
+                    }}
+                    sx={{ fontSize: "0.8rem", px: 2 }}
+                >
+                    Questions
+                </SecondaryButton>
+            ) : null;
+        }
 
         // SCHEDULED: Show Reschedule + Cancel buttons (future interviews)
         if (room.status === INTERVIEW_ROOM_STATUS.SCHEDULED) {
@@ -315,7 +377,11 @@ function InterviewCard({
                         startIcon={<Video size={16} strokeWidth={2} />}
                         onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/interview/precheck/${room.id}`);
+                            if (onJoin) {
+                                onJoin(room);
+                            } else {
+                                navigate(`/interview/precheck/${room.id}`);
+                            }
                         }}
                     >
                         Join Session
@@ -359,6 +425,23 @@ function InterviewCard({
                         Cancelled
                     </DangerButton>
                 </Stack>
+            );
+        }
+
+        // For COMPLETED (when showActions is true, though typically false in Past History Tab)
+        if (showQuestions) {
+            return (
+                <SecondaryButton
+                    size="small"
+                    startIcon={<ClipboardList size={14} />}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onReviewQuestions?.(room);
+                    }}
+                    sx={{ fontSize: "0.8rem", px: 2 }}
+                >
+                    Questions
+                </SecondaryButton>
             );
         }
 

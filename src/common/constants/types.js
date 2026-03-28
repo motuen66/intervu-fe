@@ -108,3 +108,10 @@ export const COMPANY_DOMAINS = {
     Stripe: "stripe.com",
     Shopee: "shopee.com",
 };
+
+// ── Interview Room Type ───────────────────────
+export const INTERVIEW_ROOM_TYPE = {
+    NORMAL: 0,
+    WITH_AI: 1,
+    PEER: 2,
+};
