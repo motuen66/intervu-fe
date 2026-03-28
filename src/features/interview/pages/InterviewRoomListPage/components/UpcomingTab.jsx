@@ -8,20 +8,20 @@ import {
 } from "@mui/material";
 import InterviewCard from "./InterviewCard";
 import InterviewFilterBar from "./InterviewFilterBar";
-import { useNavigate } from "react-router-dom";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
 const ITEMS_PER_PAGE = 5;
 
-function UpcomingTab({ 
-    rooms, 
-    user, 
+function UpcomingTab({
+    rooms,
+    user,
     loading,
     onRequestReschedule,
     onCancelInterview,
+    onJoin,
+    onReviewQuestions,
     rescheduleRequests = []
 }) {
-    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
     const [filterValue, setFilterValue] = useState("");
     const [page, setPage] = useState(1);
@@ -137,6 +137,8 @@ function UpcomingTab({
                             onClick={handleCardClick}
                             onRequestReschedule={onRequestReschedule}
                             onCancel={onCancelInterview}
+                            onJoin={onJoin}
+                            onReviewQuestions={onReviewQuestions}
                             showActions={true}
                             hasPendingReschedule={hasPendingRescheduleRequest(room.id)}
                         />

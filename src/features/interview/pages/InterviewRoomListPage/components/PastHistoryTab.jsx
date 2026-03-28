@@ -8,12 +8,11 @@ import {
 } from "@mui/material";
 import InterviewCard from "./InterviewCard";
 import InterviewFilterBar from "./InterviewFilterBar";
-import { useNavigate } from "react-router-dom";
+import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
 const ITEMS_PER_PAGE = 5;
 
-function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
-    const navigate = useNavigate();
+function PastHistoryTab({ rooms, user, loading, onReviewQuestions }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [filterValue, setFilterValue] = useState("");
     const [page, setPage] = useState(1);
@@ -41,9 +40,9 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
         // Apply status filter
         if (filterValue) {
             if (filterValue === "completed") {
-                result = result.filter((room) => room.status === 2);
+                result = result.filter((room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED);
             } else if (filterValue === "cancelled") {
-                result = result.filter((room) => room.status === 3);
+                result = result.filter((room) => room.status === INTERVIEW_ROOM_STATUS.CANCELLED);
             }
         }
 
@@ -117,6 +116,7 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
                             room={room}
                             user={user}
                             onClick={handleCardClick}
+                            onReviewQuestions={onReviewQuestions}
                             showActions={false}
                         />
                     ))}

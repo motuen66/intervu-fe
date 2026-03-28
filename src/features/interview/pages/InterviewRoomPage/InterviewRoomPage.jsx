@@ -3,16 +3,34 @@ import { BE_BASE_URL } from "../../../../common/constants/env";
 import * as signalR from "@microsoft/signalr";
 import { useEffect, useRef, useState, useCallback } from "react";
 import useUser from '../../../../common/hooks/useUser';
-import { Box, CircularProgress, Typography } from "@mui/material";
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    List,
+    ListItem,
+    ListItemText,
+    Typography,
+} from "@mui/material";
 import QuestionPanel from "./QuestionPanel";
 import VideoPanel from "./VideoPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
+// import AiInterviewPanel from "./AiInterviewPanel";
 import { ROLES } from "../../../../common/constants/common.js";
 import { callApi } from "../../../../common/utils/apiConnector.js";
+import { audioBufferToWavArrayBuffer, encodeMediaBlobToWav, wavArrayBufferToByteArray } from "../../../../common/utils/wavEncode.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
+import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
+import { interviewEndPoints } from "../../services/interviewRoomApi.js";
 
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+
+const TRANSCRIPT_CHUNK_INTERVAL_MS = 15_000;
 
 const languages = {
     // python: {
@@ -79,6 +97,26 @@ function InterviewRoomPage() {
     const iceCandidatesQueue = useRef([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [roomType, setRoomType] = useState(null);
+    const transcriptRecorderRef = useRef(null);
+    const transcriptChunkSeqRef = useRef(0);
+    const transcriptPendingUploadsRef = useRef([]);
+    const transcriptAudioContextRef = useRef(null);
+    const finalChunkUploadedRef = useRef(false);
+    const micPromptedRef = useRef(false);
+    const hasSentTranscriptRef = useRef(false);
+    const [isTranscriptRecording, setIsTranscriptRecording] = useState(false);
+    const [isTranscriptSending, setIsTranscriptSending] = useState(false);
+    const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false);
+    const [transcriptQuestions, setTranscriptQuestions] = useState([]);
+    const [transcriptError, setTranscriptError] = useState(null);
+
+    // Mounted check for background processes
+    const mountedRef = useRef(true);
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
 
     // --- Resizable layout state ---
     const containerRef = useRef(null);
@@ -162,6 +200,7 @@ function InterviewRoomPage() {
                 setError("This interview is not in progress. You will be redirected.");
                 setTimeout(() => navigate("/interview"), 3000);
             } else {
+                setRoomType(room.type);
                 setLoading(false);
             }
         } catch (err) {
@@ -414,8 +453,194 @@ function InterviewRoomPage() {
                 connRef.current.stop();
             }
             if (pcRef.current) pcRef.current.close();
+            releaseLocalMediaTracks({ updateUi: false });
+            // Close AudioContext for WAV encoding
+            if (transcriptAudioContextRef.current) {
+                transcriptAudioContextRef.current.close();
+                transcriptAudioContextRef.current = null;
+            }
         };
     }, [roomId, user?.id, user?.role, loading, error]);
+
+    useEffect(() => {
+        if (loading || error) return;
+        if (roomType !== INTERVIEW_ROOM_TYPE.NORMAL) return;
+        if (!user?.role) return;
+        if (micPromptedRef.current) return;
+        micPromptedRef.current = true;
+        startMicPermissionFlow();
+    }, [loading, error, roomType, user?.role]);
+
+    async function startMicPermissionFlow() {
+        try {
+            const stream = await startLocalStream({ video: false, audio: true });
+            setIsMicOn(true);
+            if (user?.role === ROLES.INTERVIEWER) {
+                startTranscriptRecording(stream);
+                setIsTranscriptModalOpen(true);
+            }
+        } catch (err) {
+            console.error("Failed to initialize microphone:", err);
+            if (user?.role === ROLES.INTERVIEWER) {
+                setTranscriptError("Microphone permission denied. Please enable it to record.");
+                setIsTranscriptModalOpen(true);
+            }
+        }
+    }
+
+    function arrayBufferToByteArray(buffer) {
+        return Array.from(new Uint8Array(buffer));
+    }
+
+    function startTranscriptRecording(stream) {
+        if (transcriptRecorderRef.current || isTranscriptRecording || !stream) return;
+        transcriptChunkSeqRef.current = 0;
+        transcriptPendingUploadsRef.current = [];
+        finalChunkUploadedRef.current = false;
+
+        // Create AudioContext for WAV encoding
+        if (!transcriptAudioContextRef.current) {
+            transcriptAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000,
+            });
+        }
+
+        const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg"];
+        const supportedMimeType = mimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
+        
+        let isRunning = true;
+        let currentRecorder = null;
+        let chunkTimeout = null;
+        let loopExitResolve = null;
+        const loopExitPromise = new Promise(r => loopExitResolve = r);
+
+        // Recursive function to record independent valid media files
+        const recordNextChunk = () => {
+            if (!isRunning) {
+                if (loopExitResolve) loopExitResolve();
+                return;
+            }
+
+            const recorder = new MediaRecorder(stream, supportedMimeType ? { mimeType: supportedMimeType } : undefined);
+            currentRecorder = recorder;
+            let chunks = [];
+
+            recorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    chunks.push(event.data);
+                }
+            };
+
+            recorder.onstop = async () => {
+                const blob = new Blob(chunks, { type: supportedMimeType });
+                chunks = [];
+
+                if (blob.size > 0) {
+                    const sequenceNumber = transcriptChunkSeqRef.current++;
+                    const upload = (async () => {
+                        try {
+                            if (!transcriptAudioContextRef.current || transcriptAudioContextRef.current.state === 'closed') return;
+                            
+                            // Now blob has headers, decodeAudioData will work
+                            const wavArrayBuffer = await encodeMediaBlobToWav(blob, transcriptAudioContextRef.current);
+                            const audioData = wavArrayBufferToByteArray(wavArrayBuffer);
+                            await callApi({
+                                method: METHOD.POST,
+                                endpoint: interviewEndPoints.STORE_AUDIO_CHUNK,
+                                arg: { audioData, recordingSessionId: roomId, sequenceNumber },
+                                displaySuccessMessage: false,
+                                alertErrorMessage: false,
+                            });
+                        } catch (err) {
+                            console.error(`Failed to store transcript audio chunk ${sequenceNumber}:`, err);
+                        }
+                    })();
+                    transcriptPendingUploadsRef.current.push(upload);
+                }
+
+                if (isRunning) {
+                    recordNextChunk();
+                } else {
+                    if (loopExitResolve) loopExitResolve();
+                }
+            };
+
+            recorder.start(); // No timeslice, we stop manually
+
+            chunkTimeout = setTimeout(() => {
+                if (recorder.state === "recording") {
+                    recorder.stop();
+                }
+            }, TRANSCRIPT_CHUNK_INTERVAL_MS);
+        };
+
+        recordNextChunk();
+        
+        transcriptRecorderRef.current = {
+            get recorder() { return currentRecorder; },
+            stop: async () => {
+                isRunning = false;
+                if (chunkTimeout) clearTimeout(chunkTimeout);
+                if (currentRecorder && currentRecorder.state === "recording") {
+                    currentRecorder.stop();
+                }
+                await loopExitPromise;
+            }
+        };
+        setIsTranscriptRecording(true);
+    }
+
+    async function stopTranscriptRecording() {
+        const capture = transcriptRecorderRef.current;
+        if (!capture) return;
+
+        // Clear the ref first to prevent double-calling
+        transcriptRecorderRef.current = null;
+
+        // Stop the loop and current recorder
+        const stopPromise = capture.stop();
+
+        // Safety race
+        const timeout = new Promise(resolve => setTimeout(resolve, 2000));
+        await Promise.race([stopPromise, timeout]);
+        
+        // Wait for all pending uploads
+        await Promise.allSettled(transcriptPendingUploadsRef.current);
+        
+        transcriptPendingUploadsRef.current = [];
+        if (mountedRef.current) setIsTranscriptRecording(false);
+        console.log("Transcript recording stopped, all chunks uploaded");
+    }
+
+    async function generateQuestionsFromTranscript() {
+        if (hasSentTranscriptRef.current) return;
+        if (mountedRef.current) setTranscriptError(null);
+        // Stop recording if still active (may already be stopped by leaveRoom)
+        await stopTranscriptRecording();
+        
+        // Wait a bit to ensure all uploads are complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        try {
+            if (mountedRef.current) setIsTranscriptSending(true);
+            const response = await callApi({
+                method: METHOD.POST,
+                endpoint: interviewEndPoints.TRANSCRIPT_QUESTIONS,
+                arg: { recordingSessionId: roomId },
+                displaySuccessMessage: false,
+                alertErrorMessage: mountedRef.current, // Only alert if user hasn't left
+            });
+            if (mountedRef.current) {
+                setTranscriptQuestions(response?.data || []);
+            }
+            hasSentTranscriptRef.current = true;
+        } catch (err) {
+            console.error("Failed to generate questions from transcript:", err);
+            if (mountedRef.current) setTranscriptError("Failed to generate questions. Please try again.");
+        } finally {
+            if (mountedRef.current) setIsTranscriptSending(false);
+        }
+    }
 
     async function startLocalStream({ video = true, audio = true } = {}) {
         if (localStreamRef.current) return localStreamRef.current;
@@ -635,15 +860,69 @@ function InterviewRoomPage() {
         await createPeerConnection(targetId, true);
     };
 
-    const leaveRoom = () => {
+    function releaseLocalMediaTracks({ updateUi = true } = {}) {
+        if (transcriptRecorderRef.current) {
+            const { recorder } = transcriptRecorderRef.current;
+            if (recorder && recorder.state !== "inactive") {
+                recorder.stop();
+            }
+            // If we're updating UI, we assume we want to clear everything.
+            // If updateUi is false (e.g. unmount), we might have a background process.
+            if (updateUi) {
+                transcriptRecorderRef.current = null;
+                transcriptPendingUploadsRef.current = [];
+            }
+        }
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach((t) => t.stop());
+            localStreamRef.current = null;
+        }
+        if (localVideoRef.current) {
+            localVideoRef.current.srcObject = null;
+        }
+        if (pcRef.current) {
+            pcRef.current.getSenders().forEach((sender) => {
+                if (sender.track) sender.track.stop();
+            });
+        }
+        if (updateUi && mountedRef.current) {
+            setIsTranscriptRecording(false);
+            setIsMicOn(false);
+            setIsCameraOn(false);
+        }
+    }
+
+    const leaveRoom = async () => {
+        console.log("Leaving room, triggering background processes...");
+        
+        // Fire and forget transcript processing
+        if (user?.role === ROLES.INTERVIEWER) {
+            generateQuestionsFromTranscript().catch(console.error);
+        } else if (transcriptRecorderRef.current) {
+            stopTranscriptRecording().catch(console.error);
+        }
+        
+        // Cleanup other media tracks immediately
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach((t) => t.stop());
+            localStreamRef.current = null;
+        }
+        if (localVideoRef.current) {
+            localVideoRef.current.srcObject = null;
+        }
+        if (pcRef.current) {
+            pcRef.current.getSenders().forEach((sender) => {
+                if (sender.track) sender.track.stop();
+            });
+        }
+        
         if (connRef.current) {
             connRef.current
                 .invoke("LeaveRoom", roomId)
-                .then(() => {
-                    navigate("/interview");
-                })
                 .catch(console.error);
         }
+        
+        navigate("/interview");
     };
 
     const handleCodeChange = (value, event) => {
@@ -664,7 +943,7 @@ function InterviewRoomPage() {
                 connRef.current.invoke("SendCode", roomId, value, language).catch(console.error);
             }, 300); // Send after 300ms of inactivity
         }
-   };
+    };
 
     const handleLanguageChange = async (e) => {
         const newLang = e.target.value;
@@ -944,6 +1223,8 @@ function InterviewRoomPage() {
         );
     }
 
+    // const isAiRoom = roomType === INTERVIEW_ROOM_TYPE.WITH_AI;
+
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
             {/* Header */}
@@ -966,72 +1247,92 @@ function InterviewRoomPage() {
                     overflow: "hidden",
                 }}
             >
-                <Box
-                    sx={{
-                        width: `${cols[0]}%`,
-                        minWidth: 0,
-                        overflow: "auto",
-                        padding: 1.5,
-                        borderRight: "1px solid #eee",
-                    }}
-                >
-                    <QuestionPanel
-                        user={user}
-                        isEditingProblem={isEditingProblem}
-                        setIsEditingProblem={setIsEditingProblem}
-                        problemDescription={problemDescription}
-                        setProblemDescription={setProblemDescription}
-                        problemShortName={problemShortName}
-                        setProblemShortName={setProblemShortName}
-                        testCases={testCases}
-                        setTestCases={setTestCases}
-                        sendProblem={sendProblem}
-                        problemTab={problemTab}
-                        problemData={problemData}
-                        setProblemTab={setProblemTab}
-                        activeTestCaseTab={activeTestCaseTab}
-                        setActiveTestCaseTab={setActiveTestCaseTab}
-                        addTestCase={addTestCase}
-                        handleTestCaseInputChange={handleTestCaseInputChange}
-                        handleTestCaseOutputChange={handleTestCaseOutputChange}
-                        addInputToTestCase={addInputToTestCase}
-                        removeInputFromTestCase={removeInputFromTestCase}
-                        removeTestCase={removeTestCase}
-                        addExpectedOutput={addExpectedOutput}
-                        removeExpectedOutput={removeExpectedOutput}
-                    />
-                </Box>
+                {/* {isAiRoom ? (
+                    <>
+                        <Box
+                            sx={{
+                                width: `${cols[0] + cols[1]}%`,
+                                minWidth: 0,
+                                overflow: "auto",
+                                padding: 1.5,
+                                borderRight: "1px solid #eee",
+                            }}
+                        >
+                            <AiInterviewPanel roomId={roomId} />
+                        </Box>
 
-                <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 0)} />
+                        <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 1)} />
+                    </>
+                ) : ( */}
+                    <>
+                        <Box
+                            sx={{
+                                width: `${cols[0]}%`,
+                                minWidth: 0,
+                                overflow: "auto",
+                                padding: 1.5,
+                                borderRight: "1px solid #eee",
+                            }}
+                        >
+                            <QuestionPanel
+                                user={user}
+                                isEditingProblem={isEditingProblem}
+                                setIsEditingProblem={setIsEditingProblem}
+                                problemDescription={problemDescription}
+                                setProblemDescription={setProblemDescription}
+                                problemShortName={problemShortName}
+                                setProblemShortName={setProblemShortName}
+                                testCases={testCases}
+                                setTestCases={setTestCases}
+                                sendProblem={sendProblem}
+                                problemTab={problemTab}
+                                problemData={problemData}
+                                setProblemTab={setProblemTab}
+                                activeTestCaseTab={activeTestCaseTab}
+                                setActiveTestCaseTab={setActiveTestCaseTab}
+                                addTestCase={addTestCase}
+                                handleTestCaseInputChange={handleTestCaseInputChange}
+                                handleTestCaseOutputChange={handleTestCaseOutputChange}
+                                addInputToTestCase={addInputToTestCase}
+                                removeInputFromTestCase={removeInputFromTestCase}
+                                removeTestCase={removeTestCase}
+                                addExpectedOutput={addExpectedOutput}
+                                removeExpectedOutput={removeExpectedOutput}
+                            />
+                        </Box>
 
-                <Box
-                    sx={{
-                        width: `${cols[1]}%`,
-                        minWidth: 0,
-                        overflow: "auto",
-                        padding: 1.5,
-                        borderRight: "1px solid #eee",
-                    }}
-                >
-                    <CodeEditorPanel
-                        language={language}
-                        handleLanguageChange={handleLanguageChange}
-                        code={roomLanguageCodeMap[language] || languages[language]?.example || ""}
-                        handleCodeChange={handleCodeChange}
-                        formatCode={formatCode}
-                        runCode={runCode}
-                        isRunning={isRunning}
-                        consoleOutput={consoleOutput}
-                        setConsoleOutput={setConsoleOutput}
-                        testResults={testResults}
-                        setTestResults={setTestResults}
-                        user={user}
-                        languages={languages}
-                        handleEditorMount={handleEditorMount}
-                    />
-                </Box>
+                        <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 0)} />
 
-                <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 1)} />
+                        <Box
+                            sx={{
+                                width: `${cols[1]}%`,
+                                minWidth: 0,
+                                overflow: "auto",
+                                padding: 1.5,
+                                borderRight: "1px solid #eee",
+                            }}
+                        >
+                            <CodeEditorPanel
+                                language={language}
+                                handleLanguageChange={handleLanguageChange}
+                                code={roomLanguageCodeMap[language] || languages[language]?.example || ""}
+                                handleCodeChange={handleCodeChange}
+                                formatCode={formatCode}
+                                runCode={runCode}
+                                isRunning={isRunning}
+                                consoleOutput={consoleOutput}
+                                setConsoleOutput={setConsoleOutput}
+                                testResults={testResults}
+                                setTestResults={setTestResults}
+                                user={user}
+                                languages={languages}
+                                handleEditorMount={handleEditorMount}
+                            />
+                        </Box>
+
+                        <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 1)} />
+                    </>
+                {/* )} */}
 
                 <Box
                     sx={{
@@ -1056,6 +1357,53 @@ function InterviewRoomPage() {
                     />
                 </Box>
             </Box>
+
+            <Dialog
+                open={isTranscriptModalOpen}
+                onClose={() => {
+                    if (isTranscriptRecording || isTranscriptSending) return;
+                    setIsTranscriptModalOpen(false);
+                }}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Transcript Questions</DialogTitle>
+                <DialogContent dividers>
+                    {transcriptError && (
+                        <Typography color="error" sx={{ mb: 2 }}>
+                            {transcriptError}
+                        </Typography>
+                    )}
+                    {isTranscriptRecording ? (
+                        <Typography variant="body2" color="text.secondary">
+                            Recording your microphone for the full session. Questions will be generated when you leave the room.
+                        </Typography>
+                    ) : transcriptQuestions.length > 0 ? (
+                        <List dense>
+                            {transcriptQuestions.map((q, idx) => (
+                                <ListItem key={`${q.title || "q"}-${idx}`} alignItems="flex-start">
+                                    <ListItemText
+                                        primary={q.title || `Question ${idx + 1}`}
+                                        secondary={q.content || ""}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    ) : (
+                        <Typography variant="body2" color="text.secondary">
+                            No questions generated yet.
+                        </Typography>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() => setIsTranscriptModalOpen(false)}
+                        variant="contained"
+                    >
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
