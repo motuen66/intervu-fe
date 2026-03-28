@@ -12,6 +12,8 @@ import SplitText from "./SplitText";
 import { TextField, Typography } from '@mui/material';
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
+
+const getCandidateFirstLoginAssessmentKey = (userId) => `candidate-assessment-seen:${userId}`;
 function LoginPage() {
     const isLoading = useLoading();
     const dispatch = useDispatch();
@@ -54,7 +56,12 @@ function LoginPage() {
             } else if (responseData.user.role === ROLES.ADMIN) {
                 navigate("/admin/dashboard");
             } else {
-                navigate("/home");
+                const assessmentSeenKey = getCandidateFirstLoginAssessmentKey(responseData.user.id);
+                const hasSeenAssessment = localStorage.getItem(assessmentSeenKey) === "true";
+                if (!hasSeenAssessment) {
+                    localStorage.setItem(assessmentSeenKey, "true");
+                }
+                navigate(hasSeenAssessment ? "/home" : "/assessment");
             }
         }
         resetForm();

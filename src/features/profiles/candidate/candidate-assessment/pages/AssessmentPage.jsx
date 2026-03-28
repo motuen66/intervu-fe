@@ -1,0 +1,31 @@
+import React from "react";
+import { AssessmentProvider, useAssessment } from "../context/AssessmentContext";
+import StepperHeader from "../components/StepperHeader";
+import ChatSurvey from "../components/ChatSurvey";
+import ProcessingState from "../components/ProcessingState";
+import ResultDashboard from "../components/ResultDashboard";
+import RoadmapView from "../components/RoadmapView";
+
+const steps = ["Survey", "Analysis", "Results", "Roadmap"];
+
+function AssessmentFlow() {
+    const { currentStep } = useAssessment();
+
+    return (
+        <div className="space-y-8">
+            <StepperHeader currentStep={currentStep} steps={steps} />
+            {currentStep === 1 && <ChatSurvey />}
+            {currentStep === 2 && <ProcessingState />}
+            {currentStep === 3 && <ResultDashboard />}
+            {currentStep === 4 && <RoadmapView />}
+        </div>
+    );
+}
+
+export default function AssessmentPage() {
+    return (
+        <AssessmentProvider>
+            <AssessmentFlow />
+        </AssessmentProvider>
+    );
+}

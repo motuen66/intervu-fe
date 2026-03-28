@@ -16,18 +16,10 @@ function App() {
                     Fetch your profile
                 </PrimaryButton>
             )}
-            <SecondaryButton
-                LinkComponent={Link}
-                to={"/interview"}
-                sx={{ ml: 2 }}
-            >
+            <SecondaryButton LinkComponent={Link} to={"/interview"} sx={{ ml: 2 }}>
                 Interview Rooms
             </SecondaryButton>
-            <SecondaryButton
-                LinkComponent={Link}
-                to={"/signup"}
-                sx={{ ml: 2 }}
-            >
+            <SecondaryButton LinkComponent={Link} to={"/signup"} sx={{ ml: 2 }}>
                 Signup
             </SecondaryButton>
             <SecondaryButton LinkComponent={Link} to={"/login"} sx={{ ml: 2 }}>
