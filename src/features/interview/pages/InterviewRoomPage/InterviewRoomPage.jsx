@@ -1,9 +1,9 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { BE_BASE_URL } from "../../../../common/constants/env";
 import * as signalR from "@microsoft/signalr";
 import { useEffect, useRef, useState, useCallback } from "react";
 import useUser from '../../../../common/hooks/useUser';
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography, Stack, IconButton } from "@mui/material";
 import QuestionPanel from "./QuestionPanel";
 import VideoPanel from "./VideoPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
@@ -11,6 +11,12 @@ import { ROLES } from "../../../../common/constants/common.js";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
+import SettingsIcon from "@mui/icons-material/Settings";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
 
@@ -71,18 +77,26 @@ function InterviewRoomPage() {
     const [problemTab, setProblemTab] = useState(0);
 
     // Media and signaling related state/refs (missing earlier)
+    const location = useLocation();
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [isMicOn, setIsMicOn] = useState(false);
+    const hasAutoStartedMedia = useRef(false);
     const [isRemoteAudioOn, setIsRemoteAudioOn] = useState(false);
     const localStreamRef = useRef(null);
     const remotePeerIdRef = useRef(null);
     const iceCandidatesQueue = useRef([]);
+    const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
+    const [isRemoteSpeaking, setIsRemoteSpeaking] = useState(false);
+    const audioAnalysers = useRef({ local: null, remote: null });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [roomInfo, setRoomInfo] = useState(null);
+    const [elapsedTime, setElapsedTime] = useState("00:00");
+    const startTimeRef = useRef(null);
 
     // --- Resizable layout state ---
     const containerRef = useRef(null);
-    const [cols, setCols] = useState([25, 35, 40]); // left, middle, right in %
+    const [cols, setCols] = useState([20, 60, 20]); // [left, middle, right] in %
     const [dragging, setDragging] = useState(null); // { index, startX, startCols, containerWidth }
 
     const startDrag = (e, index) => {
@@ -157,6 +171,7 @@ function InterviewRoomPage() {
             });
 
             const room = res.data.find(item => item.id === roomId);
+            setRoomInfo(room || null);
             if (room.status !== INTERVIEW_ROOM_STATUS.ON_GOING &&
                 room.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
                 setError("This interview is not in progress. You will be redirected.");
@@ -170,6 +185,76 @@ function InterviewRoomPage() {
             setTimeout(() => navigate("/interview"), 3000);
         }
     }, [roomId, navigate, user]);
+
+    useEffect(() => {
+        if (!roomInfo) return;
+        if (!startTimeRef.current) {
+            startTimeRef.current = new Date();
+        }
+
+        const interval = setInterval(() => {
+            const now = new Date();
+            const diff = now - startTimeRef.current;
+
+            const totalSeconds = Math.floor(diff / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            const secs = totalSeconds % 60;
+
+            if (hours > 0) {
+                setElapsedTime(`${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+            } else {
+                setElapsedTime(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [roomInfo]);
+
+    const monitorAudio = useCallback((stream, type) => {
+        if (!stream || stream.getAudioTracks().length === 0) return;
+
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioContext = new AudioContext();
+            const analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+            analyser.fftSize = 256;
+            
+            audioAnalysers.current[type] = { context: audioContext, analyser };
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const checkVolume = () => {
+                if (!audioAnalysers.current[type]) return;
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                const average = sum / dataArray.length;
+                
+                // Sensitivity threshold (5 is more sensitive)
+                const isSpeaking = average > 5;
+                if (type === 'local') setIsLocalSpeaking(isSpeaking);
+                else setIsRemoteSpeaking(isSpeaking);
+
+                requestAnimationFrame(checkVolume);
+            };
+            checkVolume();
+        } catch (e) {
+            console.warn("Audio analysis failed:", e);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isMicOn && localStreamRef.current) {
+            monitorAudio(localStreamRef.current, 'local');
+        } else {
+            if (audioAnalysers.current.local) {
+                audioAnalysers.current.local.context.close();
+                audioAnalysers.current.local = null;
+                setIsLocalSpeaking(false);
+            }
+        }
+    }, [isMicOn, monitorAudio]);
 
     useEffect(() => {
         if (user) {
@@ -410,12 +495,33 @@ function InterviewRoomPage() {
 
         return () => {
             if (connRef.current) {
-                connRef.current.invoke("LeaveRoom", roomId).catch(() => {});
+                connRef.current.invoke("LeaveRoom", roomId).catch(() => { });
                 connRef.current.stop();
             }
             if (pcRef.current) pcRef.current.close();
+            
+            // Cleanup local media tracks
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
+            }
         };
     }, [roomId, user?.id, user?.role, loading, error]);
+
+    // Handle initial device state from Pre-check
+    useEffect(() => {
+        if (loading || hasAutoStartedMedia.current) return;
+        
+        const initMedia = async () => {
+            hasAutoStartedMedia.current = true;
+            if (location.state?.initialCameraOn) {
+                await toggleCamera();
+            }
+            if (location.state?.initialMicOn) {
+                await toggleMic();
+            }
+        };
+        initMedia();
+    }, [loading, location.state]);
 
     async function startLocalStream({ video = true, audio = true } = {}) {
         if (localStreamRef.current) return localStreamRef.current;
@@ -592,6 +698,7 @@ function InterviewRoomPage() {
             console.log("✅ Received remote track:", e.track.kind, "enabled:", e.track.enabled);
             if (remoteVideoRef.current && e.streams[0]) {
                 remoteVideoRef.current.srcObject = e.streams[0];
+                monitorAudio(e.streams[0], 'remote');
                 console.log("Set remote video srcObject");
                 // Force play in case browser pauses autoplay with audio
                 remoteVideoRef.current.play().catch((err) => console.warn("Remote video play blocked", err));
@@ -664,7 +771,7 @@ function InterviewRoomPage() {
                 connRef.current.invoke("SendCode", roomId, value, language).catch(console.error);
             }, 300); // Send after 300ms of inactivity
         }
-   };
+    };
 
     const handleLanguageChange = async (e) => {
         const newLang = e.target.value;
@@ -945,16 +1052,55 @@ function InterviewRoomPage() {
     }
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "#FAFAFA" }}>
             {/* Header */}
-            {/* <AppBar position="static" color="default" elevation={1}>
-                <Toolbar>
-                    <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                        Interview Room: <strong>{roomId}</strong>
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 3,
+                    py: 1.5,
+                    borderBottom: "1px solid #E5E7EB",
+                    background: "#FFFFFF",
+                }}
+            >
+                <Stack direction="row" alignItems="center" spacing={3}>
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        startIcon={<ExitToAppIcon />}
+                        onClick={leaveRoom}
+                        sx={{ fontWeight: "bold", textTransform: "none", borderRadius: 2 }}
+                    >
+                        Leave Room
+                    </Button>
+                    {roomInfo?.interviewTypeName && (
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1F2937", borderLeft: "1px solid #E5E7EB", pl: 3 }}>
+                            {roomInfo.interviewTypeName}
+                        </Typography>
+                    )}
+                    <Typography variant="body2" sx={{ color: "#6B7280", fontWeight: 600, bgcolor: "#F3F4F6", px: 1.5, py: 0.5, borderRadius: 2 }}>
+                        SESSION ID: {roomId || 'TR-992-XQ'}
                     </Typography>
-                    
-                </Toolbar>
-            </AppBar> */}
+                </Stack>
+                <Stack direction="row" alignItems="center" spacing={3}>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "#6B7280", bgcolor: "#F3F4F6", px: 2, py: 0.5, borderRadius: 2 }}>
+                        <AccessTimeIcon fontSize="small" sx={{ color: "#3B82F6" }} />
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "#111827" }}>
+                            {elapsedTime}
+                        </Typography>
+                    </Stack>
+                    <IconButton size="small" sx={{ color: "#6B7280" }}><SettingsIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" sx={{ color: "#6B7280" }}><HelpOutlineIcon fontSize="small" /></IconButton>
+                    <Avatar 
+                        src={user?.profilePicture || user?.avatarUrl || user?.imageUrl || user?.imagePath || user?.avatar} 
+                        alt={user?.name || 'User'} 
+                        sx={{ width: 35, height: 35, border: "2px solid #3B82F6" }} 
+                    />
+                </Stack>
+            </Box>
 
             {/* Resizable 3-column layout */}
             <Box
@@ -1049,10 +1195,13 @@ function InterviewRoomPage() {
                         remoteVideoRef={remoteVideoRef}
                         isCameraOn={isCameraOn}
                         isMicOn={isMicOn}
+                        isLocalSpeaking={isLocalSpeaking}
+                        isRemoteSpeaking={isRemoteSpeaking}
                         onToggleCamera={toggleCamera}
                         onToggleMic={toggleMic}
                         onLeaveRoom={leaveRoom}
                         user={user}
+                        roomInfo={roomInfo}
                     />
                 </Box>
             </Box>

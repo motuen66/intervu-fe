@@ -393,7 +393,12 @@ export default function QuestionDetailPage() {
             icon: <FlagOutlinedIcon sx={{ fontSize: 15 }} />,
             label: "Flag",
             tooltip: "",
-            onClick: () => setReportTarget({ questionTitle: data.title, questionAuthor: data.authorName }),
+            onClick: () =>
+                setReportTarget({
+                    questionId: id ?? data?.id,
+                    questionTitle: data.title,
+                    questionAuthor: data.authorName,
+                }),
         },
     ];
 
@@ -750,6 +755,7 @@ export default function QuestionDetailPage() {
                                         onVote={a.id ? handleVoteComment : undefined}
                                         onReport={() =>
                                             setReportTarget({
+                                                questionId: id ?? data?.id,
                                                 questionTitle: data.content,
                                                 questionAuthor: a.authorName,
                                             })
@@ -868,6 +874,7 @@ export default function QuestionDetailPage() {
             <ReportDialog
                 open={!!reportTarget}
                 onClose={() => setReportTarget(null)}
+                questionId={reportTarget?.questionId}
                 questionTitle={reportTarget?.questionTitle}
                 questionAuthor={reportTarget?.questionAuthor}
                 currentUserName={currentUser?.fullName ?? currentUser?.name ?? ""}

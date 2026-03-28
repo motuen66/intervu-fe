@@ -9,8 +9,16 @@ import {
     FormControl,
     Select,
     MenuItem,
+    IconButton,
+    Menu,
+    ListItemIcon,
+    ListItemText,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
@@ -20,6 +28,50 @@ import DataTable from '../components/DataTable';
 import ConfirmModal from '../../../common/components/ConfirmModal';
 import { PrimaryButton } from '../../../common/components/buttons';
 import './AdminDashboard.css';
+
+function RowActionsMenu({ user, onEdit, onDeactivate, onActivate }) {
+    const [anchorEl, setAnchorEl] = useState(null);
+    const open = Boolean(anchorEl);
+
+    const handleClick = (event) => setAnchorEl(event.currentTarget);
+    const handleClose = () => setAnchorEl(null);
+
+    const isDeactivated = user.status === 1 || user.status === 'Inactive';
+
+    return (
+        <div>
+            <IconButton onClick={handleClick} size="small">
+                <MoreVertIcon fontSize="small" />
+            </IconButton>
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                PaperProps={{
+                    sx: { minWidth: 140, borderRadius: '8px', boxShadow: '0 8px 24px rgba(17,24,39,0.1)' }
+                }}
+            >
+                <MenuItem onClick={() => { handleClose(); onEdit(user); }}>
+                    <ListItemIcon><EditIcon fontSize="small" sx={{ color: 'primary.main' }} /></ListItemIcon>
+                    <ListItemText primaryTypographyProps={{ fontSize: '13px', fontWeight: 500 }}>Edit</ListItemText>
+                </MenuItem>
+                {isDeactivated ? (
+                    <MenuItem onClick={() => { handleClose(); onActivate(user); }}>
+                        <ListItemIcon><CheckCircleOutlineIcon fontSize="small" color="success" /></ListItemIcon>
+                        <ListItemText primaryTypographyProps={{ fontSize: '13px', fontWeight: 500 }}>Activate</ListItemText>
+                    </MenuItem>
+                ) : (
+                    <MenuItem onClick={() => { handleClose(); onDeactivate(user); }}>
+                        <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+                        <ListItemText primaryTypographyProps={{ fontSize: '13px', fontWeight: 500 }}>Deactivate</ListItemText>
+                    </MenuItem>
+                )}
+            </Menu>
+        </div>
+    );
+}
 
 export default function UserManagementPage() {
     const [users, setUsers] = useState([]);
@@ -34,6 +86,7 @@ export default function UserManagementPage() {
     // Modal states
     const [openFormModal, setOpenFormModal] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [openActivateDialog, setOpenActivateDialog] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [formMode, setFormMode] = useState('create');
     useEffect(() => {
@@ -117,6 +170,10 @@ export default function UserManagementPage() {
     };
 
     const handleDeleteClick = (user) => {
+        if (user.status === 1 || user.status === 'Inactive') {
+            toast.error('User is already suspended');
+            return;
+        }
         setSelectedUser(user);
         setOpenDeleteDialog(true);
     };
@@ -131,15 +188,47 @@ export default function UserManagementPage() {
             });
 
             if (response?.success) {
-                toast.success('Delete user successfully!');
+                toast.success('User deactivated successfully!');
                 fetchUsers();
             } else {
-                toast.error('Cannot delete user');
+                toast.error('Cannot deactivate user');
             }
         } catch (error) {
-            toast.error('Error deleting user');
+            toast.error('Error deactivating user');
         } finally {
             setOpenDeleteDialog(false);
+            setSelectedUser(null);
+        }
+    };
+
+    const handleActivateClick = (user) => {
+        if (user.status !== 1 && user.status !== 'Inactive') {
+            toast.error('User is not suspended');
+            return;
+        }
+        setSelectedUser(user);
+        setOpenActivateDialog(true);
+    };
+
+    const handleActivateConfirm = async () => {
+        if (!selectedUser) return;
+
+        try {
+            const response = await callApi({
+                method: METHOD.PUT,
+                endpoint: adminEndPoints.ACTIVATE_USER(selectedUser.id),
+            });
+
+            if (response?.success) {
+                toast.success('User activated successfully!');
+                fetchUsers();
+            } else {
+                toast.error('Cannot activate user');
+            }
+        } catch (error) {
+            toast.error('Error activating user');
+        } finally {
+            setOpenActivateDialog(false);
             setSelectedUser(null);
         }
     };
@@ -200,6 +289,16 @@ export default function UserManagementPage() {
         }
     };
 
+    const getStatusLabel = (status) => {
+        if (status === 1 || status === 'Inactive') return 'Suspended';
+        return 'Active';
+    };
+
+    const getStatusColor = (status) => {
+        if (status === 1 || status === 'Inactive') return 'error';
+        return 'success';
+    };
+
     const usersColumns = [
         { field: 'id', headerName: 'ID', width: 70 },
         { field: 'fullName', headerName: 'Full Name', width: 200 },
@@ -212,6 +311,25 @@ export default function UserManagementPage() {
             render: (val) => getRoleLabel(val),
             chipColor: (val) => getRoleColor(val)
         },
+        {
+            field: 'status',
+            headerName: 'Status',
+            type: 'chip',
+            render: (val) => getStatusLabel(val),
+            chipColor: (val) => getStatusColor(val)
+        },
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            render: (_, row) => (
+                <RowActionsMenu 
+                    user={row} 
+                    onEdit={handleEditUser} 
+                    onDeactivate={handleDeleteClick} 
+                    onActivate={handleActivateClick} 
+                />
+            )
+        }
     ];
 
     return (
@@ -310,8 +428,7 @@ export default function UserManagementPage() {
                         setPage(0);
                     }}
                     loading={loading}
-                    onEdit={handleEditUser}
-                    onDelete={handleDeleteClick}
+                    actions={false}
                 />
             </div>
 
@@ -327,15 +444,31 @@ export default function UserManagementPage() {
             {/* Delete Confirmation Dialog */}
             <ConfirmModal
                 show={openDeleteDialog}
-                title="Delete user"
-                confirmText="Delete"
+                title="Deactivate user"
+                confirmText="Deactivate"
                 cancelText="Cancel"
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setOpenDeleteDialog(false)}
                 message={
                     <>
-                        Are you sure you want to delete <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{"\n\n"}
-                        <span style={{ color: '#d32f2f', fontSize: '0.875rem' }}>This action cannot be undone.</span>
+                        Are you sure you want to deactivate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{"\n\n"}
+                        <span style={{ color: '#d32f2f', fontSize: '0.875rem' }}>This action will set the user's status to Inactive.</span>
+                    </>
+                }
+            />
+
+            {/* Activate Confirmation Dialog */}
+            <ConfirmModal
+                show={openActivateDialog}
+                title="Activate user"
+                confirmText="Activate"
+                cancelText="Cancel"
+                onConfirm={handleActivateConfirm}
+                onCancel={() => setOpenActivateDialog(false)}
+                message={
+                    <>
+                        Are you sure you want to activate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{"\n\n"}
+                        <span style={{ color: '#2e7d32', fontSize: '0.875rem' }}>This action will grant the user access to the system again.</span>
                     </>
                 }
             />

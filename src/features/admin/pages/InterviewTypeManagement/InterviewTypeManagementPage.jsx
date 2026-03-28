@@ -104,6 +104,19 @@ export default function InterviewTypeManagementPage() {
     //     setPage(0);
     // };
 
+    const getEvaluationItems = (item) => {
+        if (Array.isArray(item?.evaluationStructure)) return item.evaluationStructure;
+        if (typeof item?.evaluationStructureJson === "string") {
+            try {
+                const parsed = JSON.parse(item.evaluationStructureJson);
+                if (Array.isArray(parsed)) return parsed;
+            } catch (e) {
+                console.warn("Failed to parse evaluation structure", e);
+            }
+        }
+        return [];
+    };
+
     const getStatusLabel = (value) => {
         if (value === 1 || value === "1" || value === true) return "Active";
         return "Inactive";

@@ -1,6 +1,7 @@
 import { BE_BASE_URL } from "../../../common/constants/env";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
+import { AVAILABILITY_SLOTS_STATUS } from "../../../common/constants/status";
 
 export const availabilityEndPoints = {
     GET_AVAILABILITIES: BE_BASE_URL + "/availabilities",
@@ -14,19 +15,35 @@ export const getAvailabilitiesByMonth = async (interviewerId, month, year) => {
         method: METHOD.GET,
         endpoint: `${availabilityEndPoints.GET_AVAILABILITIES}/${interviewerId}?month=${month}&year=${year}`,
     });
-    console.log("API Response:", result);
-    if (result.data) {
-        // Ensure ISO strings have Z suffix (UTC indicator)
-        // This prevents JavaScript from interpreting them as local time
-        const normalizedData = result.data.map((item) => ({
-            ...item,
-            startTime: item.startTime && !item.startTime.endsWith("Z") ? item.startTime + "Z" : item.startTime,
-            endTime: item.endTime && !item.endTime.endsWith("Z") ? item.endTime + "Z" : item.endTime,
-        }));
-        console.log("Normalized availabilities (with Z suffix):", normalizedData);
-        return normalizedData;
-    }
-    return [];
+
+    const normalizeTime = (t) => (t && !t.endsWith("Z") ? `${t}Z` : t);
+
+    const schedule = result?.data ?? {};
+    const freeSlots = Array.isArray(schedule?.freeSlots) ? schedule.freeSlots : Array.isArray(schedule) ? schedule : [];
+    const bookedSlots = Array.isArray(schedule?.bookedSlots) ? schedule.bookedSlots : [];
+
+    const normalizedFree = freeSlots.map((item) => ({
+        ...item,
+        id: item.id,
+        coachId: item.coachId ?? interviewerId,
+        startTime: normalizeTime(item.startTime),
+        endTime: normalizeTime(item.endTime),
+        status: AVAILABILITY_SLOTS_STATUS.AVAILABLE,
+    }));
+
+    const normalizedBooked = bookedSlots.map((item, idx) => ({
+        ...item,
+        id: item.bookingId ?? item.id ?? `booked-${idx}-${item.startTime}`,
+        coachId: interviewerId,
+        startTime: normalizeTime(item.startTime),
+        endTime: normalizeTime(item.endTime),
+        status: AVAILABILITY_SLOTS_STATUS.UNAVAILABLE,
+        isBooked: true,
+    }));
+
+    const merged = [...normalizedFree, ...normalizedBooked];
+    console.log("Normalized schedule (free + booked):", merged);
+    return merged;
 };
 
 export const createAvailability = async (payload) => {

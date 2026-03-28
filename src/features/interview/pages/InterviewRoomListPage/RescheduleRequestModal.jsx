@@ -28,16 +28,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { formattedDateTime } from "../../../../common/utils/dateFormatter";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
-import {
-    format,
-    startOfMonth,
-    endOfMonth,
-    eachDayOfInterval,
-    isSameDay,
-    addMonths,
-    subMonths,
-    getDay,
-} from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 
 // Days of the week header
@@ -54,7 +45,8 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Get coach ID from currentSession (handle both camelCase and PascalCase)
-    const coachId = currentSession?.coachId || currentSession?.CoachId || currentSession?.coach?.id || currentSession?.Coach?.Id;
+    const coachId =
+        currentSession?.coachId || currentSession?.CoachId || currentSession?.coach?.id || currentSession?.Coach?.Id;
 
     // Debug: log currentSession to see available fields
     useEffect(() => {
@@ -111,15 +103,22 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                 console.log(`Slots for ${month}/${year}:`, response);
 
                 if (response.success && response.data) {
-                    // Filter only available (not booked) slots
-                    // Handle both isBooked and IsBooked (PascalCase)
-                    const availableData = response.data.filter(
-                        (slot) => {
-                            const isBooked = slot.isBooked ?? slot.IsBooked ?? false;
-                            const status = slot.status ?? slot.Status ?? 0;
-                            return !isBooked && (status === 0 || status === undefined);
-                        }
-                    );
+                    const schedule = response.data;
+                    const freeSlots = Array.isArray(schedule?.freeSlots)
+                        ? schedule.freeSlots
+                        : Array.isArray(schedule)
+                          ? schedule
+                          : [];
+
+                    const normalizeTime = (t) => (t && !t.endsWith("Z") ? `${t}Z` : t);
+
+                    const availableData = freeSlots.map((slot) => ({
+                        ...slot,
+                        startTime: normalizeTime(slot.startTime ?? slot.StartTime),
+                        endTime: normalizeTime(slot.endTime ?? slot.EndTime),
+                        status: 0,
+                    }));
+
                     console.log(`Available slots for ${month}/${year}:`, availableData);
                     allSlots.push(...availableData);
                 }
@@ -314,7 +313,12 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                 </Typography>
 
                                 {/* Month Header */}
-                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    justifyContent="space-between"
+                                    sx={{ mb: 2 }}
+                                >
                                     <IconButton size="small" onClick={handlePrevMonth}>
                                         <ChevronLeftIcon />
                                     </IconButton>
@@ -349,58 +353,71 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                         </TableRow>
 
                                         {/* Calendar Days */}
-                                        {Array.from({ length: Math.ceil(calendarDays.length / 7) }).map((_, weekIdx) => (
-                                            <TableRow key={weekIdx}>
-                                                {calendarDays.slice(weekIdx * 7, weekIdx * 7 + 7).map((day, dayIdx) => {
-                                                    const hasSlot = day && availableDates.some((d) => isSameDay(d, day));
-                                                    const isSelected = day && selectedDate && isSameDay(day, selectedDate);
-                                                    const isPast = day && isPastDate(day);
+                                        {Array.from({ length: Math.ceil(calendarDays.length / 7) }).map(
+                                            (_, weekIdx) => (
+                                                <TableRow key={weekIdx}>
+                                                    {calendarDays
+                                                        .slice(weekIdx * 7, weekIdx * 7 + 7)
+                                                        .map((day, dayIdx) => {
+                                                            const hasSlot =
+                                                                day && availableDates.some((d) => isSameDay(d, day));
+                                                            const isSelected =
+                                                                day && selectedDate && isSameDay(day, selectedDate);
+                                                            const isPast = day && isPastDate(day);
 
-                                                    return (
-                                                        <TableCell
-                                                            key={dayIdx}
-                                                            align="center"
-                                                            sx={{
-                                                                p: 0.5,
-                                                                cursor: hasSlot && !isPast ? "pointer" : "default",
-                                                                border: "none",
-                                                                opacity: hasSlot && !isPast ? 1 : 0.4,
-                                                            }}
-                                                            onClick={() => hasSlot && !isPast && handleDateClick(day)}
-                                                        >
-                                                            {day ? (
-                                                                <Box
+                                                            return (
+                                                                <TableCell
+                                                                    key={dayIdx}
+                                                                    align="center"
                                                                     sx={{
-                                                                        width: 32,
-                                                                        height: 32,
-                                                                        display: "flex",
-                                                                        alignItems: "center",
-                                                                        justifyContent: "center",
-                                                                        bgcolor: isSelected ? "primary.main" : "transparent",
-                                                                        color: isSelected ? "white" : "text.primary",
-                                                                        fontWeight: isSelected ? 600 : 500,
-                                                                        borderRadius: "8px",
-                                                                        fontSize: "0.875rem",
-                                                                        transition: "all 0.2s",
-                                                                        mx: "auto",
-                                                                        "&:hover":
-                                                                            hasSlot && !isPast
-                                                                                ? {
-                                                                                    bgcolor: isSelected
-                                                                                        ? "primary.main"
-                                                                                        : "primary.lighter",
-                                                                                }
-                                                                                : {},
+                                                                        p: 0.5,
+                                                                        cursor:
+                                                                            hasSlot && !isPast ? "pointer" : "default",
+                                                                        border: "none",
+                                                                        opacity: hasSlot && !isPast ? 1 : 0.4,
                                                                     }}
+                                                                    onClick={() =>
+                                                                        hasSlot && !isPast && handleDateClick(day)
+                                                                    }
                                                                 >
-                                                                    {format(day, "d")}
-                                                                </Box>
-                                                            ) : null}
-                                                        </TableCell>
-                                                    );
-                                                })}
-                                            </TableRow>
-                                        ))}
+                                                                    {day ? (
+                                                                        <Box
+                                                                            sx={{
+                                                                                width: 32,
+                                                                                height: 32,
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                justifyContent: "center",
+                                                                                bgcolor: isSelected
+                                                                                    ? "primary.main"
+                                                                                    : "transparent",
+                                                                                color: isSelected
+                                                                                    ? "white"
+                                                                                    : "text.primary",
+                                                                                fontWeight: isSelected ? 600 : 500,
+                                                                                borderRadius: "8px",
+                                                                                fontSize: "0.875rem",
+                                                                                transition: "all 0.2s",
+                                                                                mx: "auto",
+                                                                                "&:hover":
+                                                                                    hasSlot && !isPast
+                                                                                        ? {
+                                                                                              bgcolor: isSelected
+                                                                                                  ? "primary.main"
+                                                                                                  : "primary.lighter",
+                                                                                          }
+                                                                                        : {},
+                                                                            }}
+                                                                        >
+                                                                            {format(day, "d")}
+                                                                        </Box>
+                                                                    ) : null}
+                                                                </TableCell>
+                                                            );
+                                                        })}
+                                                </TableRow>
+                                            ),
+                                        )}
                                     </TableBody>
                                 </Table>
 
@@ -448,7 +465,9 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                                                 cursor: "pointer",
                                                                 border: "1px solid",
                                                                 borderColor: isSelected ? "primary.main" : "divider",
-                                                                bgcolor: isSelected ? "primary.main" : "background.paper",
+                                                                bgcolor: isSelected
+                                                                    ? "primary.main"
+                                                                    : "background.paper",
                                                                 transition: "all 0.2s ease-in-out",
                                                                 "&:hover": {
                                                                     borderColor: "primary.main",
@@ -465,7 +484,9 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                                                     <AccessTimeIcon
                                                                         fontSize="small"
                                                                         sx={{
-                                                                            color: isSelected ? "white" : "primary.main",
+                                                                            color: isSelected
+                                                                                ? "white"
+                                                                                : "primary.main",
                                                                         }}
                                                                     />
                                                                     <Typography
@@ -473,7 +494,8 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                                                         fontWeight={600}
                                                                         color={isSelected ? "white" : "primary.main"}
                                                                     >
-                                                                        {parseTime(getSlotStartTime(slot))} - {parseTime(getSlotEndTime(slot))}
+                                                                        {parseTime(getSlotStartTime(slot))} -{" "}
+                                                                        {parseTime(getSlotEndTime(slot))}
                                                                     </Typography>
                                                                 </Stack>
                                                                 {isSelected && (
@@ -541,11 +563,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
 
             {/* Actions */}
             <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                <SecondaryButton
-                    onClick={handleClose}
-                >
-                    Cancel
-                </SecondaryButton>
+                <SecondaryButton onClick={handleClose}>Cancel</SecondaryButton>
                 <PrimaryButton
                     onClick={handleSubmit}
                     disabled={!isFormValid || isSubmitting || loading}
