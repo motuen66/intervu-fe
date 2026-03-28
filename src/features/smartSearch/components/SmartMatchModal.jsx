@@ -150,7 +150,7 @@ function StepSidebar({ currentStep }) {
                     variant="overline"
                     sx={{ color: "secondary.main", fontSize: "0.625rem", letterSpacing: "0.12em" }}
                 >
-                    Neural Match Engine v2.0
+                    Smart Match Engine v1.0
                 </Typography>
             </Box>
 
@@ -185,7 +185,7 @@ function StepSidebar({ currentStep }) {
                 </motion.div>
             </Box>
             <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)", mb: 2, lineHeight: 1.6 }}>
-                Our advanced neural network analyzes your career DNA to find the perfect mentor.
+                Our advanced AI service analyzes your needs to find the best coach for you.
             </Typography>
 
             {/* Step Indicators */}
@@ -589,177 +589,177 @@ function StepResults({ results, onRefine, onClose }) {
 
             <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: 0.5, pb: 0.5 }}>
 
-            {/* Coach Cards */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                {topResults.map((result, i) => {
-                    const coach = result.coach || {};
-                    const user = coach.user || {};
-                    const displayName = user.fullName || user.email?.split("@")[0] || "Coach";
-                    const profilePicture = user.profilePicture;
-                    const slugProfileUrl = user.slugProfileUrl;
-                    const companies = coach.companies || [];
-                    const skills = coach.skills || [];
-                    const bio = coach.bio || "";
-                    const matchPercent = Math.round((result.rerankScore ?? result.matchScore) * 100);
-                    const reasoning = result.reasoning;
+                {/* Coach Cards */}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    {topResults.map((result, i) => {
+                        const coach = result.coach || {};
+                        const user = coach.user || {};
+                        const displayName = user.fullName || user.email?.split("@")[0] || "Coach";
+                        const profilePicture = user.profilePicture;
+                        const slugProfileUrl = user.slugProfileUrl;
+                        const companies = coach.companies || [];
+                        const skills = coach.skills || [];
+                        const bio = coach.bio || "";
+                        const matchPercent = Math.round((result.rerankScore ?? result.matchScore) * 100);
+                        const reasoning = result.reasoning;
 
-                    return (
-                        <motion.div
-                            key={result.coachId}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ ...springTransition, delay: i * 0.1 }}
-                            style={{ borderRadius: "10px" }}
-                        >
-                            <Paper
-                                variant="outlined"
-                                sx={{
-                                    p: 2,
-                                    borderRadius: "10px",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 1,
-                                    transition: "all 0.2s ease",
-                                    "&:hover": {
-                                        borderColor: "primary.main",
-                                        boxShadow: "0 4px 16px rgba(15,23,42,0.08)",
-                                    },
-                                }}
+                        return (
+                            <motion.div
+                                key={result.coachId}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ ...springTransition, delay: i * 0.1 }}
+                                style={{ borderRadius: "10px" }}
                             >
-                                {/* Top row: avatar + info + button */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                    <Avatar
-                                        src={profilePicture || ""}
-                                        alt={displayName}
-                                        sx={{
-                                            width: 48,
-                                            height: 48,
-                                            flexShrink: 0,
-                                            bgcolor: profilePicture ? "transparent" : "secondary.main",
-                                            color: "primary.main",
-                                            fontWeight: 700,
-                                            fontSize: "1.1rem",
-                                        }}
-                                    >
-                                        {!profilePicture ? displayName.charAt(0).toUpperCase() : null}
-                                    </Avatar>
+                                <Paper
+                                    variant="outlined"
+                                    sx={{
+                                        p: 2,
+                                        borderRadius: "10px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 1,
+                                        transition: "all 0.2s ease",
+                                        "&:hover": {
+                                            borderColor: "primary.main",
+                                            boxShadow: "0 4px 16px rgba(15,23,42,0.08)",
+                                        },
+                                    }}
+                                >
+                                    {/* Top row: avatar + info + button */}
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                        <Avatar
+                                            src={profilePicture || ""}
+                                            alt={displayName}
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                flexShrink: 0,
+                                                bgcolor: profilePicture ? "transparent" : "secondary.main",
+                                                color: "primary.main",
+                                                fontWeight: 700,
+                                                fontSize: "1.1rem",
+                                            }}
+                                        >
+                                            {!profilePicture ? displayName.charAt(0).toUpperCase() : null}
+                                        </Avatar>
 
-                                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                                            <Typography variant="body1" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-                                                {displayName}
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                                                <Typography variant="body1" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
+                                                    {displayName}
+                                                </Typography>
+                                                <Chip
+                                                    label={`${matchPercent}%`}
+                                                    size="small"
+                                                    sx={{
+                                                        height: 20,
+                                                        fontSize: "0.6rem",
+                                                        fontWeight: 800,
+                                                        bgcolor: "primary.main",
+                                                        color: "secondary.main",
+                                                        border: "none",
+                                                        minWidth: 38,
+                                                    }}
+                                                />
+                                                <Chip
+                                                    label="TOP MATCH"
+                                                    size="small"
+                                                    sx={{
+                                                        height: 20,
+                                                        fontSize: "0.55rem",
+                                                        fontWeight: 800,
+                                                        bgcolor: "secondary.main",
+                                                        color: "primary.main",
+                                                        border: "none",
+                                                    }}
+                                                />
+                                            </Box>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: "text.secondary",
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: "0.05em",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                {companies.length > 0
+                                                    ? companies.map((c) => c.name).join(" · ")
+                                                    : "Interview Coach"}
                                             </Typography>
-                                            <Chip
-                                                label={`${matchPercent}%`}
-                                                size="small"
-                                                sx={{
-                                                    height: 20,
-                                                    fontSize: "0.6rem",
-                                                    fontWeight: 800,
-                                                    bgcolor: "primary.main",
-                                                    color: "secondary.main",
-                                                    border: "none",
-                                                    minWidth: 38,
-                                                }}
-                                            />
-                                            <Chip
-                                                label="TOP MATCH"
-                                                size="small"
-                                                sx={{
-                                                    height: 20,
-                                                    fontSize: "0.55rem",
-                                                    fontWeight: 800,
-                                                    bgcolor: "secondary.main",
-                                                    color: "primary.main",
-                                                    border: "none",
-                                                }}
-                                            />
                                         </Box>
-                                        <Typography
-                                            variant="caption"
+
+                                        {/* Book Now */}
+                                        <PrimaryButton
+                                            onClick={() => handleBookNow(slugProfileUrl)}
+                                            sx={{ whiteSpace: "nowrap", gap: 0.75, flexShrink: 0 }}
+                                        >
+                                            Book Now <ArrowRight size={16} />
+                                        </PrimaryButton>
+                                    </Box>
+
+                                    {/* Skills */}
+                                    {skills.length > 0 && (
+                                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                                            {skills.slice(0, 5).map((skill, idx) => (
+                                                <Chip
+                                                    key={idx}
+                                                    label={typeof skill === "string" ? skill : skill.name}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{ fontSize: "0.65rem", height: 22 }}
+                                                />
+                                            ))}
+                                            {skills.length > 5 && (
+                                                <Chip label={`+${skills.length - 5}`} size="small" sx={{ fontSize: "0.65rem", height: 22 }} />
+                                            )}
+                                        </Box>
+                                    )}
+
+                                    {/* AI Reasoning */}
+                                    {reasoning && (
+                                        <Box
                                             sx={{
-                                                color: "text.secondary",
-                                                textTransform: "uppercase",
-                                                letterSpacing: "0.05em",
-                                                fontWeight: 600,
+                                                borderLeft: "3px solid",
+                                                borderColor: "secondary.dark",
+                                                bgcolor: "action.selected",
+                                                borderRadius: "0 6px 6px 0",
+                                                pl: 1.5,
+                                                pr: 1,
+                                                py: 0.75,
                                             }}
                                         >
-                                            {companies.length > 0
-                                                ? companies.map((c) => c.name).join(" · ")
-                                                : "Interview Coach"}
-                                        </Typography>
-                                    </Box>
-
-                                    {/* Book Now */}
-                                    <PrimaryButton
-                                        onClick={() => handleBookNow(slugProfileUrl)}
-                                        sx={{ whiteSpace: "nowrap", gap: 0.75, flexShrink: 0 }}
-                                    >
-                                        Book Now <ArrowRight size={16} />
-                                    </PrimaryButton>
-                                </Box>
-
-                                {/* Skills */}
-                                {skills.length > 0 && (
-                                    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                                        {skills.slice(0, 5).map((skill, idx) => (
-                                            <Chip
-                                                key={idx}
-                                                label={typeof skill === "string" ? skill : skill.name}
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{ fontSize: "0.65rem", height: 22 }}
-                                            />
-                                        ))}
-                                        {skills.length > 5 && (
-                                            <Chip label={`+${skills.length - 5}`} size="small" sx={{ fontSize: "0.65rem", height: 22 }} />
-                                        )}
-                                    </Box>
-                                )}
-
-                                {/* AI Reasoning */}
-                                {reasoning && (
-                                    <Box
-                                        sx={{
-                                            borderLeft: "3px solid",
-                                            borderColor: "secondary.dark",
-                                            bgcolor: "action.selected",
-                                            borderRadius: "0 6px 6px 0",
-                                            pl: 1.5,
-                                            pr: 1,
-                                            py: 0.75,
-                                        }}
-                                    >
-                                        <Typography
-                                            variant="overline"
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 0.5,
-                                                color: "text.secondary",
-                                                mb: 0.25,
-                                                fontSize: "0.55rem",
-                                            }}
-                                        >
-                                            <BrainCircuit size={12} /> AI Analysis
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic" }}>
-                                            &ldquo;{reasoning}&rdquo;
-                                        </Typography>
-                                    </Box>
-                                )}
-                            </Paper>
-                        </motion.div>
-                    );
-                })}
-            </Box>
-
-            {topResults.length === 0 && (
-                <Box sx={{ textAlign: "center", py: 6, color: "text.disabled" }}>
-                    <BrainCircuit size={48} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.4 }} />
-                    <Typography>No matches found. Try refining your query.</Typography>
+                                            <Typography
+                                                variant="overline"
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 0.5,
+                                                    color: "text.secondary",
+                                                    mb: 0.25,
+                                                    fontSize: "0.55rem",
+                                                }}
+                                            >
+                                                <BrainCircuit size={12} /> AI Analysis
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic" }}>
+                                                &ldquo;{reasoning}&rdquo;
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Paper>
+                            </motion.div>
+                        );
+                    })}
                 </Box>
-            )}
+
+                {topResults.length === 0 && (
+                    <Box sx={{ textAlign: "center", py: 6, color: "text.disabled" }}>
+                        <BrainCircuit size={48} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.4 }} />
+                        <Typography>No matches found. Try refining your query.</Typography>
+                    </Box>
+                )}
             </Box>{/* end scrollable */}
         </motion.div>
     );
