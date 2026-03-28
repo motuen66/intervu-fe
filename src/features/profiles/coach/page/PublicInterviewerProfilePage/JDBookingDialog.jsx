@@ -52,13 +52,12 @@ import { validateJDBookingRounds } from "./jdBookingValidation";
 import toast from "react-hot-toast";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import "./JDBookingDialog.css";
-import { SecondaryButton } from "../../../../../common/components/buttons";
 
 const STEPS = ["Job Details & Rounds", "Schedule Rounds"];
 const ROUND_COLORS = ["#4f46e5", "#0891b2", "#7c3aed", "#db2777", "#ea580c", "#059669"];
 const getTodayStart = () => startOfDay(new Date());
-const getRollingSevenDayRange = (currentDate) => {
-    const start = startOfDay(currentDate);
+const getRollingSevenDayRange = () => {
+    const start = getTodayStart();
     return { start, end: addDays(start, 7) };
 };
 
@@ -785,6 +784,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 if (oldIndex > prevIdx && newIndex <= prevIdx) return prevIdx + 1;
                 return prevIdx;
             });
+
+            toast.success("Round order updated");
         },
         [rounds],
     );
@@ -802,7 +803,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                         Submit your JD & CV, then pick times for each round on the calendar.
                     </Typography>
                 </Box>
-                <IconButton onClick={handleClose} size="small" sx={{ color: "#6b7280" }}>
+                <IconButton onClick={handleClose} size="small">
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
@@ -810,7 +811,30 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
                     {STEPS.map((label) => (
                         <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
+                            <StepLabel
+                                sx={(theme) => ({
+                                    "& .MuiStepLabel-label": {
+                                        color: theme.palette.text.secondary,
+                                    },
+                                    "& .MuiStepLabel-label.Mui-active": {
+                                        color: theme.palette.primary.main,
+                                    },
+                                    "& .MuiStepLabel-label.Mui-completed": {
+                                        color: theme.palette.success.main,
+                                    },
+                                    "& .MuiStepIcon-root": {
+                                        color: theme.palette.grey[400],
+                                    },
+                                    "& .MuiStepIcon-root.Mui-active": {
+                                        color: theme.palette.primary.main,
+                                    },
+                                    "& .MuiStepIcon-root.Mui-completed": {
+                                        color: theme.palette.success.main,
+                                    },
+                                })}
+                            >
+                                {label}
+                            </StepLabel>
                         </Step>
                     ))}
                 </Stepper>
@@ -1166,13 +1190,14 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             <DialogActions sx={{ p: 2, gap: 1, justifyContent: "space-between" }}>
                 <Box>
                     {activeStep === 1 && (
-                        <SecondaryButton
+                        <Button
                             onClick={handleBackStep}
+                            variant="text"
                             startIcon={<ArrowBackIcon />}
-                            sx={{ border: "none", "&:hover": { border: "none", bgcolor: "action.hover" } }}
+                            sx={{ color: "#4f46e5" }}
                         >
                             Back
-                        </SecondaryButton>
+                        </Button>
                     )}
                 </Box>
                 <Stack direction="row" spacing={1}>
@@ -1198,12 +1223,6 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                             onClick={handleSubmit}
                             variant="contained"
                             disabled={!allRoundsConfigured || saving}
-                            // sx={{
-                            //     backgroundColor: "#4F46E5",
-                            //     fontWeight: 600,
-                            //     "&:hover": { backgroundColor: "#4338CA" },
-                            //     "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
-                            // }}
                         >
                             {saving ? "Confirming..." : "Confirm & Pay"}
                         </Button>

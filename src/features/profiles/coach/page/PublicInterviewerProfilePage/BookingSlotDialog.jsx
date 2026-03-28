@@ -38,8 +38,8 @@ import StatusChip from "../../../../../common/components/StatusChip";
 
 const STEPS = ["Select Service", "Pick Time on Calendar"];
 const getTodayStart = () => startOfDay(new Date());
-const getRollingSevenDayRange = (currentDate) => {
-    const start = startOfDay(currentDate);
+const getRollingSevenDayRange = () => {
+    const start = getTodayStart();
     return { start, end: addDays(start, 7) };
 };
 
@@ -67,7 +67,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
         if (open && interviewerId) {
             loadServices();
             fetchAvailableSlots();
-            
+
             if (initialService) {
                 setSelectedService(initialService);
                 setActiveStep(1);
@@ -333,7 +333,30 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                 <Stepper activeStep={activeStep} sx={{ mt: 2 }}>
                     {STEPS.map((label) => (
                         <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
+                            <StepLabel
+                                sx={(theme) => ({
+                                    "& .MuiStepLabel-label": {
+                                        color: theme.palette.text.secondary,
+                                    },
+                                    "& .MuiStepLabel-label.Mui-active": {
+                                        color: theme.palette.primary.main,
+                                    },
+                                    "& .MuiStepLabel-label.Mui-completed": {
+                                        color: theme.palette.success.main,
+                                    },
+                                    "& .MuiStepIcon-root": {
+                                        color: theme.palette.grey[400],
+                                    },
+                                    "& .MuiStepIcon-root.Mui-active": {
+                                        color: theme.palette.primary.main,
+                                    },
+                                    "& .MuiStepIcon-root.Mui-completed": {
+                                        color: theme.palette.success.main,
+                                    },
+                                })}
+                            >
+                                {label}
+                            </StepLabel>
                         </Step>
                     ))}
                 </Stepper>
