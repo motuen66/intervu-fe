@@ -11,6 +11,10 @@ import Paper from "@mui/material/Paper";
 import LinearProgress from "@mui/material/LinearProgress";
 import IconButton from "@mui/material/IconButton";
 import Chip from "@mui/material/Chip";
+import Autocomplete from "@mui/material/Autocomplete";
+import Badge from "@mui/material/Badge";
+import Divider from "@mui/material/Divider";
+import BaseCard from "../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import {
     BrainCircuit,
@@ -24,8 +28,9 @@ import {
     RefreshCw,
     Upload,
     Cpu,
+    Check,
 } from "lucide-react";
-import { searchCoaches, clearResults } from "../store/smartSearchSlice";
+import { searchCoaches, clearResults, extractDocument, updateExtractedData } from "../store/smartSearchSlice";
 
 // ── Constants ──
 const PROCESSING_STEPS = [
@@ -36,11 +41,36 @@ const PROCESSING_STEPS = [
     "Generating AI insights…",
 ];
 
+const EXTRACTION_STEPS = [
+    "Initializing neural OCR…",
+    "Scanning document structure…",
+    "Extracting text layers…",
+    "Normalizing career entities…",
+    "Mapping profile metadata…",
+];
+
 const springTransition = { type: "spring", damping: 25, stiffness: 200 };
 const RAIN_CHARS = "01";
 
+const getMeaningfulPlaceholder = (key, isLongText) => {
+    const k = key.toLowerCase();
+    if (k.includes("title") || k.includes("role") || k.includes("position") || k.includes("job")) return "E.g. Senior Software Engineer";
+    if (k.includes("company") || k.includes("organization") || k.includes("employer")) return "E.g. Google, Inc.";
+    if (k.includes("date") || k.includes("year") || k.includes("time") || k.includes("duration") || k.includes("period")) return "E.g. Sep 2020 - Present";
+    if (k.includes("location") || k.includes("city") || k.includes("address")) return "E.g. San Francisco, CA";
+    if (k.includes("degree") || k.includes("major") || k.includes("certification")) return "E.g. B.S. in Computer Science";
+    if (k.includes("school") || k.includes("university") || k.includes("institution")) return "E.g. Stanford University";
+    if (k.includes("skill") || k.includes("tech") || k.includes("language")) return "Type and press Enter...";
+    if (k.includes("email")) return "E.g. john.doe@example.com";
+    if (k.includes("phone")) return "E.g. +1 234 567 890";
+    if (isLongText || k.includes("description") || k.includes("summary") || k.includes("responsibilities") || k.includes("achievement")) {
+        return "Briefly describe the key details, responsibilities and achievements...";
+    }
+    return `Enter ${key.replace(/_/g, " ")}...`;
+};
+
 // ── Matrix Digital Rain Column ──
-function RainColumn({ delay, duration }) {
+function RainColumn({ delay, duration, color = "var(--mui-palette-primary-light)" }) {
     const [chars, setChars] = useState("");
 
     useEffect(() => {
@@ -81,17 +111,63 @@ function RainColumn({ delay, duration }) {
                             opacity: isHead ? 1 : (i / chars.length) * 0.7,
                             color: isHead
                                 ? "var(--mui-palette-primary-main)"
-                                : "var(--mui-palette-primary-light)",
+                                : color,
                             fontWeight: isHead ? 900 : 600,
                             textShadow: isHead
                                 ? "0 0 6px var(--mui-palette-secondary-dark), 0 0 14px var(--mui-palette-secondary-dark)"
-                                : "0 0 5px var(--mui-palette-secondary-main)",
+                                : `0 0 5px ${color}`,
                         }}
                     >
                         {char}
                     </Box>
                 );
             })}
+        </Box>
+    );
+}
+
+// ── Scanning Laser Effect ──
+function ScanningEffect() {
+    return (
+        <Box sx={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit", pointerEvents: "none" }}>
+            {/* Grid Pattern */}
+            <Box
+                sx={{
+                    position: "absolute",
+                    inset: 0,
+                    opacity: 0.15,
+                    backgroundImage: `
+                        linear-gradient(to right, var(--mui-palette-secondary-main) 1px, transparent 1px),
+                        linear-gradient(to bottom, var(--mui-palette-secondary-main) 1px, transparent 1px)
+                    `,
+                    backgroundSize: "20px 20px",
+                }}
+            />
+            
+            {/* Moving Laser Line */}
+            <motion.div
+                animate={{ top: ["-10%", "110%", "-10%"] }}
+                transition={{ duration: 3, ease: "linear", repeat: Infinity }}
+                style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    height: "1px",
+                    background: "rgba(190, 242, 100, 0.6)",
+                    boxShadow: "0 0 15px 1px rgba(190, 242, 100, 0.4)",
+                    zIndex: 2,
+                }}
+            >
+                {/* Gradient Trail following the laser */}
+                <Box sx={{
+                    position: "absolute",
+                    bottom: "100%", // Kéo ngược lên trên thanh laser
+                    left: 0,
+                    right: 0,
+                    height: "100px", // Bóng đổ vuốt ngược lên dài và mờ ảo
+                    background: "linear-gradient(to top, rgba(190, 242, 100, 0.12), transparent)",
+                }} />
+            </motion.div>
         </Box>
     );
 }
@@ -110,12 +186,15 @@ function PulsingSparkles() {
 }
 
 // ── Step Sidebar ──
-function StepSidebar({ currentStep }) {
-    const steps = [
+function StepSidebar({ activeSidebarIndex, isTextOnly }) {
+    const allSteps = [
         { label: "Define Goals", icon: Target },
+        { label: "Verify Profile", icon: FileText, hideOnText: true },
         { label: "AI Analysis", icon: Cpu },
         { label: "Matched Selection", icon: CheckCircle2 },
     ];
+
+    const steps = allSteps.filter((s) => !(isTextOnly && s.hideOnText));
 
     return (
         <Box
@@ -136,8 +215,8 @@ function StepSidebar({ currentStep }) {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 0.75,
-                    bgcolor: "rgba(var(--mui-palette-secondary-mainChannel) / 0.15)",
-                    border: "1px solid rgba(var(--mui-palette-secondary-mainChannel) / 0.3)",
+                    bgcolor: "rgba(190, 242, 100, 0.15)", // Brand Lime Tint
+                    border: "1px solid rgba(190, 242, 100, 0.3)",
                     borderRadius: "20px",
                     px: 1.5,
                     py: 0.5,
@@ -148,13 +227,13 @@ function StepSidebar({ currentStep }) {
                 <PulsingSparkles />
                 <Typography
                     variant="overline"
-                    sx={{ color: "secondary.main", fontSize: "0.625rem", letterSpacing: "0.12em" }}
+                    sx={{ color: "secondary.main", fontSize: "0.625rem", letterSpacing: "0.12em", fontWeight: 800 }} // Brand Lime
                 >
-                    Smart Match Engine v1.0
+                    NEURAL MATCH ENGINE v2.0
                 </Typography>
             </Box>
 
-            {/* Title with animated glow on "Coach" */}
+            {/* Title with animated glow */}
             <Box>
                 <Typography variant="h4" sx={{ color: "primary.contrastText", fontWeight: 800, lineHeight: 1.2 }}>
                     Smart AI{" "}
@@ -162,9 +241,9 @@ function StepSidebar({ currentStep }) {
                 <motion.div
                     animate={{
                         textShadow: [
-                            "0 0 8px rgba(217, 249, 157, 0.3)",
-                            "0 0 20px rgba(217, 249, 157, 0.6)",
-                            "0 0 8px rgba(217, 249, 157, 0.3)",
+                            "0 0 8px rgba(190, 242, 100, 0.2)",
+                            "0 0 20px rgba(190, 242, 100, 0.45)", // Soft lime glow
+                            "0 0 8px rgba(190, 242, 100, 0.2)",
                         ],
                     }}
                     transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
@@ -185,19 +264,19 @@ function StepSidebar({ currentStep }) {
                 </motion.div>
             </Box>
             <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)", mb: 2, lineHeight: 1.6 }}>
-                Our advanced AI service analyzes your needs to find the best coach for you.
+                Our advanced neural network analyzes your career DNA to find the perfect mentor.
             </Typography>
 
             {/* Step Indicators */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: "auto" }}>
                 {steps.map((step, i) => {
                     const StepIcon = step.icon;
-                    const isActive = i === currentStep;
-                    const isCompleted = i < currentStep;
+                    const isActive = i === activeSidebarIndex;
+                    const isCompleted = i < activeSidebarIndex;
 
                     return (
                         <motion.div
-                            key={i}
+                            key={step.label}
                             animate={isActive ? { x: [0, 4, 0] } : {}}
                             transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
                         >
@@ -209,7 +288,7 @@ function StepSidebar({ currentStep }) {
                                     py: 1.25,
                                     px: 1.5,
                                     borderRadius: "12px",
-                                    bgcolor: isActive ? "action.selected" : "transparent",
+                                    bgcolor: isActive ? "rgba(190, 242, 100, 0.1)" : "transparent",
                                     transition: "all 0.4s ease",
                                 }}
                             >
@@ -224,11 +303,13 @@ function StepSidebar({ currentStep }) {
                                         bgcolor: isActive
                                             ? "secondary.main"
                                             : isCompleted
-                                                ? "action.selected"
+                                                ? "transparent"
                                                 : "rgba(255,255,255,0.08)",
+                                        border: isCompleted ? "1px solid" : "none",
+                                        borderColor: isCompleted ? "secondary.dark" : "transparent",
                                         transition: "all 0.4s ease",
                                         boxShadow: isActive
-                                            ? "0 0 16px rgba(217, 249, 157, 0.4)"
+                                            ? "0 0 16px rgba(190, 242, 100, 0.4)"
                                             : "none",
                                     }}
                                 >
@@ -243,6 +324,7 @@ function StepSidebar({ currentStep }) {
                                         sx={{
                                             color: isActive ? "secondary.main" : "rgba(255,255,255,0.35)",
                                             fontSize: "0.6rem",
+                                            fontWeight: 700,
                                         }}
                                     >
                                         Step {String(i + 1).padStart(2, "0")}
@@ -251,7 +333,7 @@ function StepSidebar({ currentStep }) {
                                         variant="body2"
                                         sx={{
                                             color: isActive || isCompleted ? "primary.contrastText" : "rgba(255,255,255,0.35)",
-                                            fontWeight: 700,
+                                            fontWeight: isActive ? 800 : 700,
                                         }}
                                     >
                                         {step.label}
@@ -267,7 +349,14 @@ function StepSidebar({ currentStep }) {
 }
 
 // ── Step 1: Input ──
-function StepInput({ query, setQuery, onSubmit, loading }) {
+function StepInput({ query, setQuery, cvFile, setCvFile, jdFile, setJdFile, onSubmit, extracting, error }) {
+    const handleFileChange = (e, type) => {
+        if (e.target.files && e.target.files.length > 0) {
+            if (type === "cv") setCvFile(e.target.files[0]);
+            if (type === "jd") setJdFile(e.target.files[0]);
+        }
+    };
+
     return (
         <motion.div
             key="step-input"
@@ -281,91 +370,655 @@ function StepInput({ query, setQuery, onSubmit, loading }) {
                 Step 1: Input Details
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
-                Provide context for the best precision match.
+                Provide text context and optionally upload a CV or JD for precision matching.
             </Typography>
 
-            {/* Query Input */}
-            <Typography
-                variant="overline"
-                sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}
-            >
-                <Sparkles size={14} color="var(--mui-palette-secondary-dark)" /> What&apos;s your primary goal?
+            <Typography variant="overline" sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
+                <Sparkles size={14} color="var(--mui-palette-secondary-dark)" /> What's your primary goal?
             </Typography>
             <TextField
                 multiline
-                minRows={4}
-                maxRows={6}
-                placeholder="Tell us about your goal in natural language (e.g., 'I want to practice system design for a Senior role at Meta')."
+                minRows={3}
+                maxRows={4}
+                placeholder="E.g., 'I want to practice system design for a Senior role at Meta'"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 fullWidth
                 sx={{ mb: 3 }}
             />
 
-            {/* CV / JD Placeholders */}
             <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
                 {[
-                    { label: "YOUR RESUME", sub: "PDF, DOCX up to 10MB", icon: FileText },
-                    { label: "JOB DESCRIPTION", sub: "Paste or Upload File", icon: Upload },
-                ].map((item) => (
-                    <Box
-                        key={item.label}
-                        sx={{
-                            flex: 1,
-                            border: "2px dashed",
-                            borderColor: "divider",
-                            borderRadius: "12px",
-                            p: 3,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: 1,
-                            opacity: 0.45,
-                            cursor: "not-allowed",
-                        }}
-                    >
-                        <Typography
-                            variant="overline"
-                            sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    { label: "YOUR RESUME", sub: "PDF up to 10MB", icon: FileText, type: "cv", currentFile: cvFile },
+                    { label: "JOB DESCRIPTION", sub: "PDF up to 10MB", icon: Upload, type: "jd", currentFile: jdFile },
+                ].map((item) => {
+                    const isSelected = !!item.currentFile;
+                    return (
+                        <Box
+                            key={item.label}
+                            component="label"
+                            sx={{
+                                flex: 1,
+                                border: "2px dashed",
+                                borderColor: isSelected ? "primary.main" : "divider",
+                                bgcolor: isSelected ? "rgba(15, 23, 42, 0.04)" : "transparent",
+                                borderRadius: "12px",
+                                p: 3,
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: 1,
+                                cursor: "pointer",
+                                position: "relative",
+                                transition: "all 0.2s ease",
+                                "&:hover": { borderColor: "primary.main", bgcolor: "rgba(15, 23, 42, 0.03)" }
+                            }}
                         >
-                            <Sparkles size={12} color="var(--mui-palette-secondary-main)" /> {item.label}
-                        </Typography>
-                        <item.icon size={28} color="var(--mui-palette-text-disabled)" />
-                        <Typography variant="caption" sx={{ color: "text.disabled" }}>
-                            {item.sub}
-                        </Typography>
-                        <Chip
-                            label="Coming soon"
-                            size="small"
-                            sx={{ fontSize: "0.625rem", height: 20 }}
-                        />
-                    </Box>
-                ))}
+                            {isSelected && (
+                                <IconButton
+                                    size="small"
+                                    aria-label={`Remove ${item.type} file`}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (item.type === "cv") setCvFile(null);
+                                        if (item.type === "jd") setJdFile(null);
+                                    }}
+                                    sx={{
+                                        position: "absolute",
+                                        top: 10,
+                                        right: 10,
+                                        width: 30,
+                                        height: 30,
+                                        bgcolor: "background.paper",
+                                        border: "1px solid",
+                                        borderColor: "divider",
+                                        color: "text.secondary",
+                                        "&:hover": {
+                                            bgcolor: "grey.100",
+                                            color: "text.primary",
+                                        },
+                                    }}
+                                >
+                                    <X size={16} />
+                                </IconButton>
+                            )}
+
+                            <input
+                                type="file"
+                                accept=".pdf"
+                                hidden
+                                onClick={(e) => { e.target.value = null; }} // Force trigger onChange even for same file
+                                onChange={(e) => handleFileChange(e, item.type)}
+                            />
+                            <Typography variant="overline" sx={{ display: "flex", alignItems: "center", gap: 0.5, color: isSelected ? "primary.main" : "text.primary", fontWeight: 800 }}>
+                                {isSelected && <Check size={14} />} {item.label}
+                            </Typography>
+                            <Box
+                                sx={{
+                                    width: 72,
+                                    height: 72,
+                                    borderRadius: "20px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    bgcolor: isSelected ? "primary.main" : "rgba(15, 23, 42, 0.06)",
+                                }}
+                            >
+                                <item.icon size={32} color={isSelected ? "var(--mui-palette-secondary-main)" : "var(--mui-palette-primary-main)"} />
+                            </Box>
+                            <Typography variant="caption" sx={{ color: isSelected ? "text.primary" : "text.disabled", textAlign: "center", fontWeight: isSelected ? 700 : 500, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {isSelected ? item.currentFile.name : item.sub}
+                            </Typography>
+                        </Box>
+                    );
+                })}
             </Box>
 
-            {/* Submit */}
-            <Box sx={{ mt: "auto", display: "flex", justifyContent: "flex-end" }}>
+            <Box sx={{ mt: "auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+                <Box>
+                    <Typography variant="caption" sx={{ color: "text.disabled", display: 'block' }}>
+                        {(cvFile || jdFile) ? "File(s) attached. Step 2 will verify data." : "No file attached. Skipping Step 2."}
+                    </Typography>
+                    {error && (
+                        <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5, maxWidth: 350, lineHeight: 1.2 }}>
+                            {typeof error === 'string' ? error : "An error occurred during extraction."}
+                        </Typography>
+                    )}
+                </Box>
                 <PrimaryButton
-                    disabled={!query.trim() || loading}
-                    loading={loading}
+                    disabled={(!query.trim() && !cvFile && !jdFile) || extracting}
+                    loading={extracting}
                     onClick={onSubmit}
                     sx={(theme) => ({
-                        background: query.trim()
+                        background: query.trim() || cvFile || jdFile
                             ? `linear-gradient(135deg, ${theme.palette.secondary.dark} 0%, ${theme.palette.secondary.main} 100%)`
                             : undefined,
-                        color: query.trim() ? theme.palette.primary.main : undefined,
-                        px: 4,
-                        py: 1.5,
-                        fontSize: "0.9375rem",
-                        "&:hover": query.trim()
-                            ? {
-                                boxShadow: "0 0 24px rgba(217, 249, 157, 0.5)",
-                            }
-                            : {},
+                        color: query.trim() || cvFile || jdFile ? theme.palette.primary.main : undefined,
+                        px: 4, py: 1.5, fontSize: "0.9375rem",
                     })}
                 >
                     <Zap size={18} style={{ marginRight: 6 }} />
-                    Run Neural Match
+                    {(cvFile || jdFile) ? "Extract Document(s)" : "Run Neural Match"}
+                </PrimaryButton>
+            </Box>
+        </motion.div>
+    );
+}
+
+// ── Step 1.5: Extraction (Loading OCR) ──
+function StepExtraction() {
+    const [progress, setProgress] = useState(0);
+    const [textIndex, setTextIndex] = useState(0);
+
+    useEffect(() => {
+        const textTimer = setInterval(() => {
+            setTextIndex((prev) => (prev + 1) % EXTRACTION_STEPS.length);
+        }, 2000);
+        const progressTimer = setInterval(() => {
+            setProgress((prev) => Math.min(prev + (Math.random() * 5), 98));
+        }, 300);
+        return () => {
+            clearInterval(textTimer);
+            clearInterval(progressTimer);
+        };
+    }, []);
+
+    return (
+        <motion.div
+            key="step-extraction"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={springTransition}
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                position: "relative",
+                overflow: "hidden",
+                isolation: "isolate",
+            }}
+        >
+            {/* Matrix Digital Rain background (BEHIND) */}
+            <Box
+                sx={{
+                    position: "absolute",
+                    inset: 0,
+                    overflow: "hidden",
+                    pointerEvents: "none",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    opacity: 0.25,
+                    zIndex: 0,
+                }}
+            >
+                <Box sx={{ width: "28%", display: "flex", justifyContent: "space-around" }}>
+                    {[...Array(7)].map((_, i) => (
+                        <RainColumn
+                            key={`left-${i}`}
+                            delay={Math.random() * 3}
+                            duration={4 + Math.random() * 5}
+                        />
+                    ))}
+                </Box>
+
+                <Box sx={{ width: "28%", display: "flex", justifyContent: "space-around" }}>
+                    {[...Array(7)].map((_, i) => (
+                        <RainColumn
+                            key={`right-${i}`}
+                            delay={Math.random() * 3}
+                            duration={4 + Math.random() * 5}
+                        />
+                    ))}
+                </Box>
+            </Box>
+
+            {/* Foreground Content Container - Explicitly above the matrix */}
+            <Box
+                sx={{
+                    position: "relative",
+                    zIndex: 1,
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center"
+                }}
+            >
+                {/* Document Scanner Area */}
+                <Box sx={{ position: "relative", mb: 5 }}>
+                    {/* Underglow glow like Reasoning */}
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            bottom: -10,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 120,
+                            height: 20,
+                            borderRadius: "50%",
+                            background: "radial-gradient(ellipse at center, rgba(190, 242, 100, 0.35) 0%, transparent 70%)",
+                            filter: "blur(10px)",
+                        }}
+                    />
+
+                    <Box
+                        sx={{
+                            width: 140,
+                            height: 180,
+                            bgcolor: "rgba(15, 23, 42, 0.4)", // Mờ và xám
+                            borderRadius: "24px",
+                            border: "1px solid rgba(190, 242, 100, 0.15)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            position: "relative",
+                            overflow: "hidden",
+                            boxShadow: "0 20px 40px -10px rgba(0,0,0,0.3)",
+                        }}
+                    >
+                        <ScanningEffect />
+                        
+                        {/* File Icon - No Background, just floating inside */}
+                        <FileText 
+                            size={64} 
+                            color="var(--mui-palette-secondary-main)" 
+                            strokeWidth={1}
+                            style={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 0 10px rgba(190, 242, 100, 0.3))', opacity: 0.8 }}
+                        />
+                    </Box>
+                </Box>
+
+                {/* Cycling Status Text like Reasoning */}
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={textIndex}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                color: "text.primary",
+                                fontWeight: 700,
+                                textAlign: "center",
+                                mb: 1,
+                            }}
+                        >
+                            {EXTRACTION_STEPS[textIndex]}
+                        </Typography>
+                    </motion.div>
+                </AnimatePresence>
+                
+                <Typography variant="body2" sx={{ color: "text.secondary", mb: 5, textAlign: 'center' }}>
+                    Our neural network is parsing your career DNA...
+                </Typography>
+
+                {/* Progress Bar aligned with Reasoning style */}
+                <Box sx={{ width: "65%", maxWidth: 360 }}>
+                    <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        sx={{
+                            height: 6,
+                            borderRadius: 3,
+                            bgcolor: "action.hover",
+                            "& .MuiLinearProgress-bar": {
+                                borderRadius: 3,
+                                background: "linear-gradient(90deg, var(--mui-palette-secondary-dark), var(--mui-palette-secondary-main), var(--mui-palette-secondary-dark))",
+                                backgroundSize: "200% 100%",
+                                animation: "shimmer 1.5s ease-in-out infinite",
+                            },
+                        }}
+                    />
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1.5 }}>
+                        <Typography
+                            variant="caption"
+                            sx={{ color: "text.secondary", display: "flex", alignItems: "center", gap: 0.5 }}
+                        >
+                            <RefreshCw size={12} color="var(--mui-palette-secondary-main)" style={{ animation: "spin 2s linear infinite" }} />
+                            OCR Intelligence Active
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                            {Math.round(progress)}%
+                        </Typography>
+                    </Box>
+                </Box>
+            </Box>
+        </motion.div>
+    );
+}
+
+// ── Dynamic Form Elements ──
+function ArrayOfObjectsSection({ title, items, onUpdate }) {
+    const [isAdding, setIsAdding] = useState(false);
+    const [newObj, setNewObj] = useState({});
+
+    // Infer keys from the first object
+    const templateKeys = items.length > 0 ? Object.keys(items[0]) : ["title", "company", "description"];
+
+    const handleRemove = (idx) => {
+        const copy = [...items];
+        copy.splice(idx, 1);
+        onUpdate(copy);
+    };
+
+    const handleSaveNew = () => {
+        if (Object.keys(newObj).length > 0) {
+            onUpdate([...items, newObj]);
+        }
+        setNewObj({});
+        setIsAdding(false);
+    };
+
+    return (
+        <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'transparent' }}>
+            <Typography variant="overline" sx={{ display: 'block', mb: 1.5, color: 'text.secondary', fontWeight: 800 }}>
+                {title.replace(/_/g, " ").toUpperCase()}
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {items.map((item, idx) => (
+                    <BaseCard
+                        key={idx}
+                        sx={{
+                            p: 2,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                            borderRadius: '12px',
+                            position: 'relative',
+                            "&:hover .delete-btn": { opacity: 1, transform: 'scale(1)' },
+                        }}
+                    >
+                        <IconButton
+                            className="delete-btn"
+                            size="small"
+                            onClick={() => handleRemove(idx)}
+                            sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                opacity: 0,
+                                transform: 'scale(0.8)',
+                                transition: 'all 0.2s ease',
+                                bgcolor: 'rgba(239, 68, 68, 0.1)',
+                                color: 'error.main',
+                                "&:hover": { bgcolor: 'error.main', color: '#fff' }
+                            }}
+                        >
+                            <X size={14} />
+                        </IconButton>
+                        {Object.entries(item).map(([k, v]) => {
+                            if (v === null || v === undefined || v === "null" || v === "undefined") return null;
+                            const isTitleOrRole = k.toLowerCase().includes("title") || k.toLowerCase().includes("name") || k.toLowerCase().includes("role");
+                            return (
+                                <Typography key={k} variant={isTitleOrRole ? "subtitle2" : "body2"} sx={{ lineHeight: 1.5, pr: 3, fontWeight: isTitleOrRole ? 700 : 400, color: isTitleOrRole ? 'text.primary' : 'text.secondary' }}>
+                                    {!isTitleOrRole && <Typography component="span" sx={{ fontWeight: 600, color: 'text.primary', textTransform: 'capitalize' }}>
+                                        {k.replace(/_/g, " ")}:
+                                    </Typography>}
+                                    {' '} {String(v)}
+                                </Typography>
+                            );
+                        })}
+                    </BaseCard>
+                ))}
+
+                {/* Inline Add Form */}
+                {isAdding ? (
+                    <BaseCard sx={{ p: 2, borderRadius: '12px', borderStyle: 'dashed', borderColor: 'secondary.main', bgcolor: 'rgba(190, 242, 100, 0.02)' }}>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 1.5, fontWeight: 700, color: 'secondary.main' }}>
+                            NEW {title.replace(/_/g, " ").toUpperCase()}
+                        </Typography>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 1.5 }}>
+                            {templateKeys.map(k => {
+                                const isDesc = k.toLowerCase().includes("description") || k.toLowerCase().includes("summary") || k.toLowerCase().includes("responsibilities");
+                                const ph = getMeaningfulPlaceholder(k, isDesc);
+
+                                return (
+                                    <Box key={k} sx={{ gridColumn: 'span 12' }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            label={k.replace(/_/g, " ").toUpperCase()}
+                                            placeholder={ph}
+                                            value={newObj[k] || ""}
+                                            onChange={(e) => setNewObj({ ...newObj, [k]: e.target.value })}
+                                            multiline={isDesc}
+                                            minRows={isDesc ? 3 : 1}
+                                            inputProps={{
+                                                maxLength: isDesc ? 2000 : 150
+                                            }}
+                                        />
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                            <SecondaryButton size="small" onClick={() => setIsAdding(false)}>Cancel</SecondaryButton>
+                            <PrimaryButton size="small" onClick={handleSaveNew}>Save</PrimaryButton>
+                        </Box>
+                    </BaseCard>
+                ) : (
+                    <SecondaryButton onClick={() => setIsAdding(true)} sx={{ mt: 0.5, py: 1, borderStyle: 'dashed' }}>
+                        + Add {title.replace(/_/g, " ")}
+                    </SecondaryButton>
+                )}
+            </Box>
+        </Box>
+    );
+}
+
+// ── Dynamic Visual Form ──
+function DynamicSection({ data, onUpdate }) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+
+    const keys = Object.keys(data);
+
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            {keys.map((key) => {
+                const val = data[key];
+                
+                // Skip ONLY if value is NULL or UNDEFINED (don't skip empty strings as they are editable)
+                if (val === null || val === undefined || val === "null" || val === "undefined") return null;
+
+                // 1. Array of Strings (e.g. Skills, Languages) -> NAVY TAGS
+                if (Array.isArray(val) && (val.length === 0 || typeof val[0] === 'string')) {
+                    const MAX_TAGS = 15;
+                    return (
+                        <Autocomplete
+                            key={key}
+                            multiple
+                            freeSolo
+                            options={[]}
+                            value={val}
+                            onChange={(e, newValue) => {
+                                if (newValue.length <= MAX_TAGS) {
+                                    onUpdate({ ...data, [key]: newValue });
+                                }
+                            }}
+                            renderTags={(value, getTagProps) =>
+                                value.map((option, index) => (
+                                    <Chip 
+                                        label={option} 
+                                        {...getTagProps({ index })} 
+                                        deleteIcon={<X size={14} />}
+                                        sx={{ 
+                                            bgcolor: "rgba(15, 23, 42, 0.08)", // Navy background
+                                            border: "1px solid rgba(15, 23, 42, 0.15)", // Navy border
+                                            backdropFilter: "blur(4px)",
+                                            color: "primary.main", // Navy text
+                                            fontWeight: 600,
+                                            borderRadius: "8px",
+                                            "& .MuiChip-deleteIcon": {
+                                                color: "primary.main",
+                                                opacity: 0.6,
+                                                "&:hover": { opacity: 1, color: "error.main" }
+                                            }
+                                        }} 
+                                    />
+                                ))
+                            }
+                            renderInput={(params) => {
+                                // Add max length to the inner input element
+                                if (params.inputProps) {
+                                    params.inputProps.maxLength = 50; 
+                                }
+                                return (
+                                    <TextField 
+                                        {...params} 
+                                        variant="outlined" 
+                                        label={key.replace(/_/g, " ").toUpperCase()} 
+                                        placeholder={val.length >= 15 ? "Maximum reached" : (val.length > 0 ? `Add ${key.replace(/_/g, " ")}...` : `Type and press Enter to add ${key}...`)}
+                                        disabled={val.length >= 15}
+                                    />
+                                );
+                            }}
+                            sx={{
+                                "& .MuiAutocomplete-inputRoot .MuiAutocomplete-input": {
+                                    minWidth: "100% !important", // Forces the input placeholder field to drop to the next line
+                                    minHeight: "24px",
+                                    mt: val.length > 0 ? 0.5 : 0
+                                }
+                            }}
+                        />
+                    );
+                }
+
+                // 2. String or Number (e.g. Job Title, Experience Text)
+                if (typeof val === 'string' || typeof val === 'number') {
+                    const isLongText = typeof val === 'string' && val.length > 60;
+                    return (
+                        <TextField
+                            key={key}
+                            label={key.replace(/_/g, " ").toUpperCase()}
+                            placeholder={getMeaningfulPlaceholder(key, isLongText)}
+                            value={val}
+                            onChange={(e) => onUpdate({ ...data, [key]: e.target.value })}
+                            fullWidth
+                            multiline={isLongText}
+                            minRows={1}
+                            maxRows={6}
+                            inputProps={{
+                                maxLength: isLongText ? 3000 : 200
+                            }}
+                            sx={{
+                                "& .MuiOutlinedInput-root": {
+                                    borderRadius: "12px",
+                                    bgcolor: "background.paper",
+                                }
+                            }}
+                        />
+                    );
+                }
+
+                // 3. Array of Objects (e.g. Experiences array)
+                if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
+                    return (
+                        <ArrayOfObjectsSection 
+                            key={key} 
+                            title={key} 
+                            items={val} 
+                            onUpdate={(newArr) => onUpdate({ ...data, [key]: newArr })} 
+                        />
+                    );
+                }
+
+                // 4. Object (e.g. apply_for dict)
+                if (typeof val === 'object' && !Array.isArray(val)) {
+                    return (
+                        <Box key={key} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(15,23,42,0.02)' }}>
+                            <Typography variant="overline" sx={{ display: 'block', mb: 1.5, color: 'text.secondary', fontWeight: 800 }}>
+                                {key.replace(/_/g, " ").toUpperCase()}
+                            </Typography>
+                            <DynamicSection 
+                                data={val} 
+                                onUpdate={(newSubVal) => onUpdate({ ...data, [key]: newSubVal })} 
+                            />
+                        </Box>
+                    );
+                }
+
+                return null;
+            })}
+        </Box>
+    );
+}
+
+// ── Step 2: Verification (Visual Form) ──
+function StepVerification({ extractedJsonStr, setExtractedJsonStr, onConfirm, loading }) {
+    let parsed = {};
+    let isParseError = false;
+    try {
+        parsed = JSON.parse(extractedJsonStr);
+    } catch {
+        isParseError = true;
+    }
+
+    return (
+        <motion.div
+            key="step-verification"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={springTransition}
+            style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}
+        >
+            <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+                Step 2: Verify Profile Data
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
+                Review and dynamically edit the extracted context before continuing.
+            </Typography>
+
+            <Box sx={{ flex: 1, overflowY: "auto", pr: 1.5, mb: 2, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                {isParseError ? (
+                    <Typography color="error" sx={{ m: 'auto' }}>
+                        Invalid internal data structure. Extraction could not be visualized.
+                    </Typography>
+                ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, pb: 2 }}>
+                        {parsed.cv && (
+                            <Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <FileText size={18} color="var(--mui-palette-secondary-main)" /> Resume Details
+                                </Typography>
+                                <DynamicSection 
+                                    data={parsed.cv} 
+                                    onUpdate={(newCv) => setExtractedJsonStr(JSON.stringify({ ...parsed, cv: newCv }, null, 2))} 
+                                />
+                            </Box>
+                        )}
+                        {parsed.cv && parsed.jd && <Divider sx={{ my: 1 }} />}
+                        {parsed.jd && (
+                            <Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Upload size={18} color="var(--mui-palette-secondary-main)" /> Job Description Details
+                                </Typography>
+                                <DynamicSection 
+                                    data={parsed.jd} 
+                                    onUpdate={(newJd) => setExtractedJsonStr(JSON.stringify({ ...parsed, jd: newJd }, null, 2))} 
+                                />
+                            </Box>
+                        )}
+                        {!parsed.cv && !parsed.jd && (
+                            <DynamicSection 
+                                data={parsed} 
+                                onUpdate={(newData) => setExtractedJsonStr(JSON.stringify(newData, null, 2))} 
+                            />
+                        )}
+                    </Box>
+                )}
+            </Box>
+
+            <Box sx={{ mt: "auto", display: "flex", justifyContent: "flex-end", pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                <PrimaryButton disabled={isParseError || loading} loading={loading} onClick={onConfirm} sx={{ px: 4, py: 1.5, mt: 2 }}>
+                    Confirm & Find Coaches
                 </PrimaryButton>
             </Box>
         </motion.div>
@@ -551,11 +1204,10 @@ function StepProcessing() {
 }
 
 // ── Step 3: Results ──
-function StepResults({ results, onRefine, onClose }) {
+function StepResults({ results, onRefine }) {
     const navigate = useNavigate();
 
     const handleBookNow = (slugProfileUrl) => {
-        onClose();
         if (slugProfileUrl) {
             navigate(`/profile/${slugProfileUrl}`);
         }
@@ -592,127 +1244,128 @@ function StepResults({ results, onRefine, onClose }) {
                 {/* Coach Cards */}
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                     {topResults.map((result, i) => {
-                        const coach = result.coach || {};
-                        const user = coach.user || {};
-                        const displayName = user.fullName || user.email?.split("@")[0] || "Coach";
-                        const profilePicture = user.profilePicture;
-                        const slugProfileUrl = user.slugProfileUrl;
-                        const companies = coach.companies || [];
-                        const skills = coach.skills || [];
-                        const bio = coach.bio || "";
+                        const displayName = result.fullName || "Coach";
+                        const profilePicture = result.profilePicture;
+                        const slugProfileUrl = result.slugProfileUrl;
+                        const companies = result.companies || [];
+                        const skills = result.topSkills || [];
                         const matchPercent = Math.round((result.rerankScore ?? result.matchScore) * 100);
                         const reasoning = result.reasoning;
 
                         return (
                             <motion.div
                                 key={result.coachId}
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 15 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ ...springTransition, delay: i * 0.1 }}
-                                style={{ borderRadius: "10px" }}
                             >
-                                <Paper
-                                    variant="outlined"
+                                <BaseCard
                                     sx={{
-                                        p: 2,
-                                        borderRadius: "10px",
+                                        p: 2.5,
                                         display: "flex",
                                         flexDirection: "column",
-                                        gap: 1,
-                                        transition: "all 0.2s ease",
+                                        gap: 1.5,
+                                        borderRadius: "16px",
+                                        transition: "border-color 0.2s ease",
                                         "&:hover": {
-                                            borderColor: "primary.main",
-                                            boxShadow: "0 4px 16px rgba(15,23,42,0.08)",
+                                            borderColor: "secondary.main"
                                         },
                                     }}
                                 >
-                                    {/* Top row: avatar + info + button */}
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                        <Avatar
-                                            src={profilePicture || ""}
-                                            alt={displayName}
-                                            sx={{
-                                                width: 48,
-                                                height: 48,
-                                                flexShrink: 0,
-                                                bgcolor: profilePicture ? "transparent" : "secondary.main",
-                                                color: "primary.main",
-                                                fontWeight: 700,
-                                                fontSize: "1.1rem",
-                                            }}
-                                        >
-                                            {!profilePicture ? displayName.charAt(0).toUpperCase() : null}
-                                        </Avatar>
-
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                                                <Typography variant="body1" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-                                                    {displayName}
-                                                </Typography>
-                                                <Chip
-                                                    label={`${matchPercent}%`}
-                                                    size="small"
+                                        {/* Top row: avatar + info + button */}
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                            <Badge
+                                                overlap="circular"
+                                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                                badgeContent={
+                                                    <Box sx={{
+                                                        bgcolor: 'secondary.main',
+                                                        color: 'primary.main',
+                                                        borderRadius: '10px',
+                                                        px: 0.75,
+                                                        py: 0.25,
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 900,
+                                                        boxShadow: '0 0 10px rgba(190, 242, 100, 0.5)',
+                                                    }}>
+                                                        {matchPercent}%
+                                                    </Box>
+                                                }
+                                            >
+                                                <Avatar
+                                                    src={profilePicture || ""}
+                                                    alt={displayName}
                                                     sx={{
-                                                        height: 20,
-                                                        fontSize: "0.6rem",
-                                                        fontWeight: 800,
-                                                        bgcolor: "primary.main",
+                                                        width: 52,
+                                                        height: 52,
+                                                        flexShrink: 0,
+                                                        bgcolor: profilePicture ? "transparent" : "rgba(15, 23, 42, 0.8)", // Navy brand dark
                                                         color: "secondary.main",
-                                                        border: "none",
-                                                        minWidth: 38,
+                                                        fontWeight: 700,
+                                                        fontSize: "1.2rem",
                                                     }}
-                                                />
-                                                <Chip
-                                                    label="TOP MATCH"
-                                                    size="small"
+                                                >
+                                                    {!profilePicture ? displayName.charAt(0).toUpperCase() : null}
+                                                </Avatar>
+                                            </Badge>
+
+                                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }} noWrap>
+                                                        {displayName}
+                                                    </Typography>
+                                                    <Chip
+                                                        label="TOP MATCH"
+                                                        size="small"
+                                                        sx={{
+                                                            height: 18,
+                                                            fontSize: "0.55rem",
+                                                            fontWeight: 800,
+                                                            bgcolor: "secondary.main",
+                                                            color: "primary.main",
+                                                            border: "none",
+                                                        }}
+                                                    />
+                                                </Box>
+                                                <Typography
+                                                    variant="body2"
                                                     sx={{
-                                                        height: 20,
-                                                        fontSize: "0.55rem",
-                                                        fontWeight: 800,
-                                                        bgcolor: "secondary.main",
-                                                        color: "primary.main",
-                                                        border: "none",
+                                                        color: "text.secondary",
+                                                        mt: 0.25,
+                                                        fontWeight: 600,
                                                     }}
-                                                />
+                                                >
+                                                    {companies.length > 0
+                                                        ? companies.map((c) => c.name).join(" · ")
+                                                        : "Interview Coach"}
+                                                </Typography>
                                             </Box>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    color: "text.secondary",
-                                                    textTransform: "uppercase",
-                                                    letterSpacing: "0.05em",
-                                                    fontWeight: 600,
+
+                                            {/* Book Now */}
+                                            <PrimaryButton
+                                                onClick={() => handleBookNow(slugProfileUrl)}
+                                                sx={{ 
+                                                    whiteSpace: "nowrap", gap: 0.75, flexShrink: 0,
+                                                    px: 3
                                                 }}
                                             >
-                                                {companies.length > 0
-                                                    ? companies.map((c) => c.name).join(" · ")
-                                                    : "Interview Coach"}
-                                            </Typography>
+                                                Book Now <ArrowRight size={16} />
+                                            </PrimaryButton>
                                         </Box>
 
-                                        {/* Book Now */}
-                                        <PrimaryButton
-                                            onClick={() => handleBookNow(slugProfileUrl)}
-                                            sx={{ whiteSpace: "nowrap", gap: 0.75, flexShrink: 0 }}
-                                        >
-                                            Book Now <ArrowRight size={16} />
-                                        </PrimaryButton>
-                                    </Box>
-
-                                    {/* Skills */}
                                     {skills.length > 0 && (
-                                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                                        <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", mt: 0.5 }}>
                                             {skills.slice(0, 5).map((skill, idx) => (
                                                 <Chip
                                                     key={idx}
                                                     label={typeof skill === "string" ? skill : skill.name}
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ fontSize: "0.65rem", height: 22 }}
+                                                    sx={{ fontSize: "0.65rem", height: 22, borderColor: 'rgba(15, 23, 42, 0.15)', color: 'text.secondary' }}
                                                 />
                                             ))}
                                             {skills.length > 5 && (
-                                                <Chip label={`+${skills.length - 5}`} size="small" sx={{ fontSize: "0.65rem", height: 22 }} />
+                                                <Chip label={`+${skills.length - 5}`} size="small" variant="outlined" sx={{ fontSize: "0.65rem", height: 22, borderColor: 'rgba(15, 23, 42, 0.15)' }} />
                                             )}
                                         </Box>
                                     )}
@@ -722,12 +1375,13 @@ function StepResults({ results, onRefine, onClose }) {
                                         <Box
                                             sx={{
                                                 borderLeft: "3px solid",
-                                                borderColor: "secondary.dark",
-                                                bgcolor: "action.selected",
-                                                borderRadius: "0 6px 6px 0",
+                                                borderColor: "secondary.main", // Lime accent
+                                                bgcolor: "rgba(190, 242, 100, 0.05)", // Soft lime tint
+                                                borderRadius: "0 8px 8px 0",
                                                 pl: 1.5,
-                                                pr: 1,
-                                                py: 0.75,
+                                                pr: 1.5,
+                                                py: 1,
+                                                mt: 0.5
                                             }}
                                         >
                                             <Typography
@@ -736,19 +1390,20 @@ function StepResults({ results, onRefine, onClose }) {
                                                     display: "flex",
                                                     alignItems: "center",
                                                     gap: 0.5,
-                                                    color: "text.secondary",
+                                                    color: "secondary.dark", // Rich lime text
                                                     mb: 0.25,
-                                                    fontSize: "0.55rem",
+                                                    fontSize: "0.6rem",
+                                                    fontWeight: 800
                                                 }}
                                             >
-                                                <BrainCircuit size={12} /> AI Analysis
+                                                <BrainCircuit size={14} /> AI Analysis
                                             </Typography>
-                                            <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic" }}>
+                                            <Typography variant="body2" sx={{ color: "text.primary", fontStyle: "italic", lineHeight: 1.5 }}>
                                                 &ldquo;{reasoning}&rdquo;
                                             </Typography>
                                         </Box>
                                     )}
-                                </Paper>
+                                </BaseCard>
                             </motion.div>
                         );
                     })}
@@ -770,35 +1425,104 @@ function StepResults({ results, onRefine, onClose }) {
 // ── Main Modal ──
 export default function SmartMatchModal({ open, onClose }) {
     const dispatch = useDispatch();
-    const { results, loading, error } = useSelector((state) => state.smartSearch);
+    const { results, loading, extracting, extractedData, error } = useSelector((state) => state.smartSearch);
     const [query, setQuery] = useState("");
-    const [step, setStep] = useState(0); // 0=input, 1=processing, 2=results
+    const [cvFile, setCvFile] = useState(null);
+    const [jdFile, setJdFile] = useState(null);
+    const [extractedJsonStr, setExtractedJsonStr] = useState("");
+    
+    // 0=Input, 1=ExtractionVisual, 2=Verify, 3=ProcessingAI, 4=Results
+    const [step, setStep] = useState(0); 
+    const isTextOnly = !cvFile && !jdFile;
+    
+    // Sidebar Map
+    const activeSidebarIndex = isTextOnly
+        ? (step === 0 ? 0 : step === 3 ? 1 : step === 4 ? 2 : 0) // No verify
+        : (step <= 1 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3);   // With verify
 
-    const handleSubmit = useCallback(() => {
-        if (!query.trim()) return;
-        setStep(1);
-        dispatch(searchCoaches(query.trim()));
-    }, [dispatch, query]);
-
-    // When results arrive → go to step 2
+    // Sync extracted data to local string for editing
     useEffect(() => {
-        if (step === 1 && !loading && results.length > 0) {
-            const timer = setTimeout(() => setStep(2), 600);
+        if (extractedData) {
+            const cleanData = { ...extractedData };
+            delete cleanData.error;
+            setExtractedJsonStr(JSON.stringify(cleanData, null, 2));
+        }
+    }, [extractedData]);
+
+    const handleInitialSubmit = useCallback(async () => {
+        try {
+            if (cvFile || jdFile) {
+                setStep(1); // Show extraction OCR scanning screen
+                let combinedExtraction = {};
+                let hasError = false;
+
+                // Document Extraction Track (Process sequentially if both)
+                if (cvFile) {
+                    const res = await dispatch(extractDocument({ file: cvFile, docType: "cv" })).unwrap();
+                    if (res?.data) combinedExtraction.cv = res.data;
+                }
+                
+                if (jdFile) {
+                    const res = await dispatch(extractDocument({ file: jdFile, docType: "jd" })).unwrap();
+                    if (res?.data) combinedExtraction.jd = res.data;
+                }
+
+                if (Object.keys(combinedExtraction).length > 0) {
+                    dispatch(updateExtractedData(combinedExtraction));
+                    setStep(2); // Go to verification
+                } else {
+                    setStep(0); // Fallback
+                }
+            } else if (query.trim()) {
+                // Direct Query Track (No File)
+                setStep(3); // Go directly to AI Processing Rain
+                dispatch(searchCoaches({ query: query.trim() }));
+            }
+        } catch (e) {
+            console.error("Extraction failed", e);
+            setStep(0);
+        }
+    }, [dispatch, query, cvFile, jdFile]);
+
+    const handleVerifyConfirm = useCallback(() => {
+        setStep(3); // Show processing Digital Rain screen
+        dispatch(searchCoaches({
+            query: query.trim(),
+            extractedProfileContext: extractedJsonStr
+        }));
+    }, [dispatch, query, extractedJsonStr]);
+
+    // When search results arrive → go to final step
+    useEffect(() => {
+        if (step === 3 && !loading && results.length > 0) {
+            const timer = setTimeout(() => setStep(4), 600);
             return () => clearTimeout(timer);
         }
-        if (step === 1 && !loading && error) {
-            setStep(0);
+        if (step === 3 && !loading && error) {
+            setStep(0); // Fallback on failure
         }
     }, [step, loading, results, error]);
 
+    useEffect(() => {
+        if (!open) return;
+
+        if (results.length > 0 && !loading) {
+            setStep(4);
+        }
+    }, [open, results, loading]);
+
     const handleRefine = () => {
         dispatch(clearResults());
+        setCvFile(null);
+        setJdFile(null);
         setStep(0);
     };
 
     const handleClose = () => {
         dispatch(clearResults());
         setQuery("");
+        setCvFile(null);
+        setJdFile(null);
         setStep(0);
         onClose();
     };
@@ -820,11 +1544,16 @@ export default function SmartMatchModal({ open, onClose }) {
                     border: "1px solid",
                     borderColor: "divider",
                     boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
+                    "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active": {
+                        WebkitBoxShadow: "0 0 0 1000px transparent inset !important",
+                        WebkitTextFillColor: "var(--mui-palette-text-primary) !important",
+                        transition: "background-color 5000s ease-in-out 0s"
+                    }
                 },
             }}
         >
             {/* Left Sidebar */}
-            <StepSidebar currentStep={step} />
+            <StepSidebar activeSidebarIndex={activeSidebarIndex} isTextOnly={isTextOnly} />
 
             {/* Right Content Area */}
             <Box
@@ -871,16 +1600,29 @@ export default function SmartMatchModal({ open, onClose }) {
                             <StepInput
                                 query={query}
                                 setQuery={setQuery}
-                                onSubmit={handleSubmit}
+                                cvFile={cvFile}
+                                setCvFile={setCvFile}
+                                jdFile={jdFile}
+                                setJdFile={setJdFile}
+                                onSubmit={handleInitialSubmit}
+                                extracting={extracting}
+                                error={error}
+                            />
+                        )}
+                        {step === 1 && <StepExtraction />}
+                        {step === 2 && (
+                            <StepVerification
+                                extractedJsonStr={extractedJsonStr}
+                                setExtractedJsonStr={setExtractedJsonStr}
+                                onConfirm={handleVerifyConfirm}
                                 loading={loading}
                             />
                         )}
-                        {step === 1 && <StepProcessing />}
-                        {step === 2 && (
+                        {step === 3 && <StepProcessing />}
+                        {step === 4 && (
                             <StepResults
                                 results={results}
                                 onRefine={handleRefine}
-                                onClose={handleClose}
                             />
                         )}
                     </AnimatePresence>

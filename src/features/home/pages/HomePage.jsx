@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 import {
   fetchInterviewers,
   fetchCompanies,
@@ -16,6 +17,7 @@ function HomePage() {
   const dispatch = useDispatch();
   const browseSectionRef = useRef(null);
   const [smartMatchOpen, setSmartMatchOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     interviewers,
     loading,
@@ -26,6 +28,22 @@ function HomePage() {
 
   // Get user info from auth state
   const { userData } = useSelector((state) => state.auth || {});
+
+  useEffect(() => {
+    setSmartMatchOpen(searchParams.get('smartMatch') === '1');
+  }, [searchParams]);
+
+  const openSmartMatch = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('smartMatch', '1');
+    setSearchParams(nextParams);
+  };
+
+  const closeSmartMatch = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('smartMatch');
+    setSearchParams(nextParams);
+  };
 
   // Initial load
   useEffect(() => {
@@ -183,7 +201,7 @@ function HomePage() {
           <h2 style={{ margin: 0 }}>Browse all coaches</h2>
           <button
             className="hero-cta"
-            onClick={() => setSmartMatchOpen(true)}
+            onClick={openSmartMatch}
             style={{
               background: 'linear-gradient(135deg, #BEF264 0%, #D9F99D 100%)',
               color: '#0F172A',
@@ -248,7 +266,7 @@ function HomePage() {
       </section>
 
       {/* Smart Match Modal */}
-      <SmartMatchModal open={smartMatchOpen} onClose={() => setSmartMatchOpen(false)} />
+      <SmartMatchModal open={smartMatchOpen} onClose={closeSmartMatch} />
     </div>
   );
 }
