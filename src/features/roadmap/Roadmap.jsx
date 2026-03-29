@@ -8,10 +8,27 @@ const NODE_WIDTH = 280;
 const NODE_HEIGHT = 165;
 const NODE_GAP_X = 36;
 const PHASE_PADDING_X = 24;
-const PHASE_HEADER_HEIGHT = 64;
-const PHASE_HEIGHT = PHASE_HEADER_HEIGHT + NODE_HEIGHT + 28;
+const PHASE_HEADER_HEIGHT = 85;
+const PHASE_BOTTOM_PADDING = 0;
+const PHASE_HEIGHT = PHASE_HEADER_HEIGHT + NODE_HEIGHT + PHASE_BOTTOM_PADDING;
 const PHASE_GAP_Y = 84;
 const MIN_PHASE_WIDTH = 520;
+
+const getChildSkillNames = (childSkills = []) => {
+    return childSkills
+        .map((childSkill) => {
+            if (typeof childSkill === "string") {
+                return childSkill;
+            }
+
+            if (childSkill && typeof childSkill === "object") {
+                return childSkill.name ?? "";
+            }
+
+            return "";
+        })
+        .filter(Boolean);
+};
 
 function PhaseNode({ data }) {
     return (
@@ -31,7 +48,6 @@ function PhaseNode({ data }) {
                 Phase {data.phaseNumber}
             </div>
             <div style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a" }}>{data.label}</div>
-            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "6px" }}>{data.totalSkills} skill domains</div>
         </div>
     );
 }
@@ -91,8 +107,7 @@ function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
         let currentY = 0;
 
         roadmapData.phases.forEach((phase, pIndex) => {
-            const totalNodeWidth =
-                phase.nodes.length * NODE_WIDTH + Math.max(0, phase.nodes.length - 1) * NODE_GAP_X;
+            const totalNodeWidth = phase.nodes.length * NODE_WIDTH + Math.max(0, phase.nodes.length - 1) * NODE_GAP_X;
             const nodeStartX = (roadmapWidth - totalNodeWidth) / 2;
 
             nodes.push({
@@ -100,7 +115,6 @@ function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
                 type: "phaseNode",
                 position: { x: phaseX, y: currentY },
                 style: { width: roadmapWidth, height: PHASE_HEIGHT },
-                selectable: false,
                 draggable: false,
                 data: {
                     label: phase.phase_name,
@@ -111,6 +125,7 @@ function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
 
             phase.nodes.forEach((skill, sIndex) => {
                 const skillId = skill.skill_id;
+                const childSkillNames = getChildSkillNames(skill.child_skills ?? []);
 
                 nodes.push({
                     id: skillId,
@@ -121,13 +136,14 @@ function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
                         label: skill.skill_name,
                         progress: skill.assessment.progress || 0,
                         status: skill.assessment.status,
-                        childSkills: skill.child_skills ?? [],
+                        childSkills: childSkillNames,
                     },
                     position: { x: nodeStartX + sIndex * (NODE_WIDTH + NODE_GAP_X), y: PHASE_HEADER_HEIGHT },
                 });
 
                 nodeDetailsById[skillId] = {
                     ...skill,
+                    child_skills: childSkillNames,
                     phase_id: phase.phase_id,
                     phase_name: phase.phase_name,
                 };
@@ -165,10 +181,29 @@ function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
 
     const handleNodeClick = useCallback(
         (_, node) => {
-            if (!onSelectNode || node.type !== "roadmapNode") {
+            if (!onSelectNode) {
                 return;
             }
-            onSelectNode(nodeDetailsById[node.id] ?? null);
+
+            if (node.type === "phaseNode") {
+                onSelectNode({
+                    phase_id: node.id,
+                    skill_id: null,
+                });
+                return;
+            }
+
+            if (node.type === "roadmapNode") {
+                const selectedSkill = nodeDetailsById[node.id];
+                if (!selectedSkill) {
+                    return;
+                }
+
+                onSelectNode({
+                    phase_id: selectedSkill.phase_id,
+                    skill_id: selectedSkill.skill_id,
+                });
+            }
         },
         [nodeDetailsById, onSelectNode],
     );
