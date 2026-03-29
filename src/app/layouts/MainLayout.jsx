@@ -12,6 +12,7 @@ import { userEndPoints } from "../../common/services/userApi";
 import NotificationDropdown from "../../features/notification/components/NotificationDropdown";
 import useNotificationHub from "../../features/notification/hooks/useNotificationHub";
 import SuspendedGate from "../../common/components/SuspendedGate";
+import CandidateAssessmentGate from "../../common/components/CandidateAssessmentGate";
 import {
     LayoutDashboard,
     Calendar,
@@ -80,7 +81,7 @@ const MainLayout = () => {
             { label: "Home", path: "/home" },
             { label: "Questions", path: "/questions" },
             { label: "Interview", path: "/interview" },
-            { label: "Roadmap", path: "/assessment" },
+            { label: "Roadmap", path: "/assessment?step=roadmap" },
             { label: "Booking Requests", path: "/booking-requests" },
             { label: "Messages", path: "#" },
             { label: "Settings", path: "/settings" },
@@ -349,143 +350,146 @@ const MainLayout = () => {
     }
 
     return (
-        <div className="main-layout">
-            {/* Navbar */}
-            <nav className="navbar">
-                <div className="navbar-container">
-                    {/* Logo */}
-                    <div className="navbar-logo">
-                        <div className="navbar-logo-icon">V</div>
-                        <h1>INTERVU</h1>
-                    </div>
+        <>
+            <CandidateAssessmentGate />
+            <div className="main-layout">
+                {/* Navbar */}
+                <nav className="navbar">
+                    <div className="navbar-container">
+                        {/* Logo */}
+                        <div className="navbar-logo">
+                            <div className="navbar-logo-icon">V</div>
+                            <h1>INTERVU</h1>
+                        </div>
 
-                    {/* Navigation Menu */}
-                    <div className="navbar-menu">
-                        {currentMenuItems.map((item) => (
-                            <button
-                                key={item.label}
-                                className={`nav-item ${isMenuItemActive(item.path) ? "active" : ""}`}
-                                onClick={() => navigate(item.path)}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Right Section */}
-                    <div className="navbar-right">
-                        {/* Upgrade Button */}
-                        {userData?.role === ROLES.CANDIDATE && <button className="app-btn">Upgrade Pro</button>}
-
-                        {/* Notification Dropdown */}
-                        <NotificationDropdown />
-
-                        {/* User Avatar Dropdown */}
-                        <div className="user-dropdown">
-                            <button
-                                className="navbar-avatar-btn"
-                                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                                title="Account"
-                            >
-                                <Avatar
-                                    src={remoteAvatar ?? userData?.profilePicture}
-                                    alt={userData?.fullName || "User"}
-                                    sx={{ width: 40, height: 40 }}
-                                    imgProps={{
-                                        onError: (e) => {
-                                            e.currentTarget.style.display = "none";
-                                        },
-                                    }}
+                        {/* Navigation Menu */}
+                        <div className="navbar-menu">
+                            {currentMenuItems.map((item) => (
+                                <button
+                                    key={item.label}
+                                    className={`nav-item ${isMenuItemActive(item.path) ? "active" : ""}`}
+                                    onClick={() => navigate(item.path)}
                                 >
-                                    {!(remoteAvatar ?? userData?.profilePicture) &&
-                                        (userData?.fullName
-                                            ?.split(" ")
-                                            .map((n) => n[0])
-                                            .join("")
-                                            .toUpperCase()
-                                            .slice(0, 2) ||
-                                            "U")}
-                                </Avatar>
-                            </button>
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
 
-                            {isUserDropdownOpen && (
-                                <div className="dropdown-menu">
-                                    <div className="dropdown-header">
-                                        <p className="dropdown-name">{userData?.fullName}</p>
-                                        <p className="dropdown-email">{userData?.email}</p>
+                        {/* Right Section */}
+                        <div className="navbar-right">
+                            {/* Upgrade Button */}
+                            {userData?.role === ROLES.CANDIDATE && <button className="app-btn">Upgrade Pro</button>}
+
+                            {/* Notification Dropdown */}
+                            <NotificationDropdown />
+
+                            {/* User Avatar Dropdown */}
+                            <div className="user-dropdown">
+                                <button
+                                    className="navbar-avatar-btn"
+                                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                                    title="Account"
+                                >
+                                    <Avatar
+                                        src={remoteAvatar ?? userData?.profilePicture}
+                                        alt={userData?.fullName || "User"}
+                                        sx={{ width: 40, height: 40 }}
+                                        imgProps={{
+                                            onError: (e) => {
+                                                e.currentTarget.style.display = "none";
+                                            },
+                                        }}
+                                    >
+                                        {!(remoteAvatar ?? userData?.profilePicture) &&
+                                            (userData?.fullName
+                                                ?.split(" ")
+                                                .map((n) => n[0])
+                                                .join("")
+                                                .toUpperCase()
+                                                .slice(0, 2) ||
+                                                "U")}
+                                    </Avatar>
+                                </button>
+
+                                {isUserDropdownOpen && (
+                                    <div className="dropdown-menu">
+                                        <div className="dropdown-header">
+                                            <p className="dropdown-name">{userData?.fullName}</p>
+                                            <p className="dropdown-email">{userData?.email}</p>
+                                        </div>
+                                        <hr className="dropdown-divider" />
+                                        <button
+                                            className="dropdown-item"
+                                            onClick={() => {
+                                                const role = userData?.role;
+                                                const path =
+                                                    role === ROLES.INTERVIEWER
+                                                        ? "/interviewer/profile"
+                                                        : role === ROLES.CANDIDATE
+                                                          ? "/candidate/profile"
+                                                          : "/user/profile";
+                                                navigate(path);
+                                                setIsUserDropdownOpen(false);
+                                            }}
+                                        >
+                                            View Profile
+                                        </button>
+                                        <button
+                                            className="dropdown-item"
+                                            onClick={() => {
+                                                navigate("/payment-history");
+                                                setIsUserDropdownOpen(false);
+                                            }}
+                                        >
+                                            View Payment History
+                                        </button>
+                                        <button
+                                            className="dropdown-item"
+                                            onClick={() => {
+                                                navigate("/questions/saved");
+                                                setIsUserDropdownOpen(false);
+                                            }}
+                                        >
+                                            Saved Questions
+                                        </button>
+                                        <button
+                                            className="dropdown-item"
+                                            onClick={() => {
+                                                navigate("/settings");
+                                                setIsUserDropdownOpen(false);
+                                            }}
+                                        >
+                                            Settings
+                                        </button>
+                                        <button className="dropdown-item">Help & Support</button>
+                                        <hr className="dropdown-divider" />
+                                        <button className="dropdown-item logout-item" onClick={handleLogout}>
+                                            Logout
+                                        </button>
                                     </div>
-                                    <hr className="dropdown-divider" />
-                                    <button
-                                        className="dropdown-item"
-                                        onClick={() => {
-                                            const role = userData?.role;
-                                            const path =
-                                                role === ROLES.INTERVIEWER
-                                                    ? "/interviewer/profile"
-                                                    : role === ROLES.CANDIDATE
-                                                      ? "/candidate/profile"
-                                                      : "/user/profile";
-                                            navigate(path);
-                                            setIsUserDropdownOpen(false);
-                                        }}
-                                    >
-                                        View Profile
-                                    </button>
-                                    <button
-                                        className="dropdown-item"
-                                        onClick={() => {
-                                            navigate("/payment-history");
-                                            setIsUserDropdownOpen(false);
-                                        }}
-                                    >
-                                        View Payment History
-                                    </button>
-                                    <button
-                                        className="dropdown-item"
-                                        onClick={() => {
-                                            navigate("/questions/saved");
-                                            setIsUserDropdownOpen(false);
-                                        }}
-                                    >
-                                        Saved Questions
-                                    </button>
-                                    <button
-                                        className="dropdown-item"
-                                        onClick={() => {
-                                            navigate("/settings");
-                                            setIsUserDropdownOpen(false);
-                                        }}
-                                    >
-                                        Settings
-                                    </button>
-                                    <button className="dropdown-item">Help & Support</button>
-                                    <hr className="dropdown-divider" />
-                                    <button className="dropdown-item logout-item" onClick={handleLogout}>
-                                        Logout
-                                    </button>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </nav>
+                </nav>
 
-            {/* Main Content */}
-            <main className="main-content">
-                <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
-                    <Outlet />
-                </Container>
-            </main>
+                {/* Main Content */}
+                <main className="main-content">
+                    <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
+                        <Outlet />
+                    </Container>
+                </main>
 
-            <SuspendedGate />
+                <SuspendedGate />
 
-            {/* Footer */}
-            <footer className="footer">
-                <div className="footer-container">
-                    <p>&copy; 2026 Intervu. All rights reserved.</p>
-                </div>
-            </footer>
-        </div>
+                {/* Footer */}
+                <footer className="footer">
+                    <div className="footer-container">
+                        <p>&copy; 2026 Intervu. All rights reserved.</p>
+                    </div>
+                </footer>
+            </div>
+        </>
     );
 };
 

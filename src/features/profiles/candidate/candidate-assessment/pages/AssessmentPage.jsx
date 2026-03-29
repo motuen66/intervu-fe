@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AssessmentProvider, useAssessment } from "../context/AssessmentContext";
 import StepperHeader from "../components/StepperHeader";
 import ChatSurvey from "../components/ChatSurvey";
@@ -9,7 +10,14 @@ import RoadmapView from "../components/RoadmapView";
 const steps = ["Survey", "Analysis", "Results", "Roadmap"];
 
 function AssessmentFlow() {
-    const { currentStep } = useAssessment();
+    const { currentStep, setCurrentStep, skillScores } = useAssessment();
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        if (searchParams.get("step") === "roadmap" && skillScores.length > 0) {
+            setCurrentStep(4);
+        }
+    }, [searchParams, skillScores.length, setCurrentStep]);
 
     return (
         <div className="space-y-8">
