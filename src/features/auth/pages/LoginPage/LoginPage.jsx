@@ -10,11 +10,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import toast from "react-hot-toast";
 import SplitText from "./SplitText";
-import { TextField, Typography, Box } from '@mui/material';
+import { TextField, Typography, Box } from "@mui/material";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
+import { assessmentApi } from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
 
-const getCandidateFirstLoginAssessmentKey = (userId) => `candidate-assessment-seen:${userId}`;
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 
 function LoginPage() {
@@ -28,18 +28,50 @@ function LoginPage() {
     const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
     const handleAuthSuccess = useCallback(
-        (responseData) => {
-            localStorage.setItem("user", JSON.stringify(responseData.user));
+        async (responseData) => {
+            const user = responseData.user;
+            localStorage.setItem("user", JSON.stringify(user));
             localStorage.setItem("token", JSON.stringify(responseData.token));
-            dispatch(setUserData(responseData.user));
+            dispatch(setUserData(user));
             dispatch(setToken(responseData.token));
 
-            if (responseData.user.role === ROLES.INTERVIEWER) {
+            if (user.role === ROLES.INTERVIEWER) {
                 navigate("/schedule");
-            } else if (responseData.user.role === ROLES.ADMIN) {
+                return;
+            }
+
+            if (user.role === ROLES.ADMIN) {
                 navigate("/admin/dashboard");
-            } else {
-                navigate("/home");
+                return;
+            }
+
+            // Candidate: check whether we already have an assessment/skill-gap
+            try {
+                const assessmentSeenKey = getCandidateFirstLoginAssessmentKey(user.id);
+                const res = await assessmentApi.getSkillGaps(user.id);
+
+                const hasData =
+                    res?.success &&
+                    res?.data &&
+                    (Array.isArray(res.data) ? res.data.length > 0 : Object.keys(res.data).length > 0);
+                if (hasData) {
+                    // mark as seen and go to home where Roadmap tab can show data
+                    localStorage.setItem(assessmentSeenKey, "true");
+                    navigate("/home");
+                } else {
+                    // first time: redirect to assessment chat/survey flow
+                    localStorage.setItem(assessmentSeenKey, "false");
+                    navigate("/assessment");
+                }
+            } catch (err) {
+                // if the check fails treat as no assessment and send to survey
+                try {
+                    const assessmentSeenKey = getCandidateFirstLoginAssessmentKey(user.id);
+                    localStorage.setItem(assessmentSeenKey, "false");
+                } catch (e) {
+                    /* ignore */
+                }
+                navigate("/assessment");
             }
         },
         [dispatch, navigate],
@@ -81,7 +113,7 @@ function LoginPage() {
 
                 const { success, data: responseData } = response;
                 if (success) {
-                    handleAuthSuccess(responseData);
+                    await handleAuthSuccess(responseData);
                 }
             } finally {
                 setGoogleSubmitting(false);
@@ -151,83 +183,102 @@ function LoginPage() {
         });
 
         if (!response) return;
-            if (responseData.user.role === ROLES.INTERVIEWER) {
-                navigate("/schedule");
-            } else if (responseData.user.role === ROLES.ADMIN) {
-                navigate("/admin/dashboard");
-            } else {
-                const assessmentSeenKey = getCandidateFirstLoginAssessmentKey(responseData.user.id);
-                const hasSeenAssessment = localStorage.getItem(assessmentSeenKey) === "true";
-                if (!hasSeenAssessment) {
-                    localStorage.setItem(assessmentSeenKey, "true");
-                }
-                navigate(hasSeenAssessment ? "/home" : "/assessment");
-            }
         const { success, data: responseData } = response;
 
-        if (success) {
-            handleAuthSuccess(responseData);
+        if (success && responseData) {
+            await handleAuthSuccess(responseData);
         }
+
         resetForm();
     };
 
     return (
-        <div style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', overflow: 'hidden', background: '#ffffff' }}>
+        <div
+            style={{
+                position: "fixed",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+                background: "#ffffff",
+            }}
+        >
             {/* overlay container centers the login card */}
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, padding: '24px' }}>
+            <div
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 2,
+                    padding: "24px",
+                }}
+            >
                 {/* main two-column card */}
-                <div style={{ width: '960px', maxWidth: 'calc(100% - 48px)', display: 'flex', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.08)', border: 'none', minHeight: '560px', alignItems: 'stretch', background: '#fff' }}>
-
+                <div
+                    style={{
+                        width: "960px",
+                        maxWidth: "calc(100% - 48px)",
+                        display: "flex",
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+                        border: "none",
+                        minHeight: "560px",
+                        alignItems: "stretch",
+                        background: "#fff",
+                    }}
+                >
                     {/* left: login column */}
                     <div
                         style={{
                             flex: 1,
-                            padding: '40px 36px',
+                            padding: "40px 36px",
                             background: theme.palette.background.paper,
                             color: theme.palette.text.primary,
                             fontFamily: theme.typography.fontFamily,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '20px',
-                            justifyContent: 'center',
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "20px",
+                            justifyContent: "center",
                             borderRight: `1px solid ${theme.palette.divider}`,
-                            position: 'relative',
+                            position: "relative",
                         }}
                     >
-
                         {/* decorative corner accent - top left */}
                         <div
                             style={{
-                                position: 'absolute',
+                                position: "absolute",
                                 top: 0,
                                 left: 0,
-                                width: '60px',
-                                height: '60px',
-                                background: 'linear-gradient(135deg, rgba(15,23,42,0.08) 0%, transparent 100%)',
-                                borderTopLeftRadius: '16px',
+                                width: "60px",
+                                height: "60px",
+                                background: "linear-gradient(135deg, rgba(15,23,42,0.08) 0%, transparent 100%)",
+                                borderTopLeftRadius: "16px",
                             }}
                         ></div>
 
                         {/* decorative corner accent - bottom right */}
                         <div
                             style={{
-                                position: 'absolute',
+                                position: "absolute",
                                 bottom: 0,
                                 right: 0,
-                                width: '80px',
-                                height: '80px',
-                                background: 'linear-gradient(315deg, rgba(15,23,42,0.05) 0%, transparent 100%)',
+                                width: "80px",
+                                height: "80px",
+                                background: "linear-gradient(315deg, rgba(15,23,42,0.05) 0%, transparent 100%)",
                             }}
                         ></div>
 
-                        <div style={{ textAlign: 'center', marginBottom: '12px', position: 'relative', zIndex: 1 }}>
+                        <div style={{ textAlign: "center", marginBottom: "12px", position: "relative", zIndex: 1 }}>
                             <Typography
                                 variant="h4"
                                 style={{
-                                    fontSize: '32px',
+                                    fontSize: "32px",
                                     fontWeight: 700,
                                     color: theme.palette.text.primary,
-                                    letterSpacing: '-0.5px',
+                                    letterSpacing: "-0.5px",
                                     fontFamily: theme.typography.fontFamily,
                                 }}
                             >
@@ -235,82 +286,82 @@ function LoginPage() {
                             </Typography>
                             <div
                                 style={{
-                                    width: '60px',
-                                    height: '3px',
-                                    background: 'linear-gradient(90deg, transparent, #0F172A, transparent)',
-                                    margin: '12px auto 0',
-                                    borderRadius: '2px',
+                                    width: "60px",
+                                    height: "3px",
+                                    background: "linear-gradient(90deg, transparent, #0F172A, transparent)",
+                                    margin: "12px auto 0",
+                                    borderRadius: "2px",
                                 }}
                             ></div>
                         </div>
 
-                        <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ position: 'relative', zIndex: 1 }}>
-                            <div style={{ marginBottom: '16px' }}>
+                        <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ position: "relative", zIndex: 1 }}>
+                            <div style={{ marginBottom: "16px" }}>
                                 <TextField
                                     label="Email"
                                     type="email"
                                     variant="outlined"
                                     fullWidth
                                     sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: '8px',
-                                            '& fieldset': { borderColor: theme.palette.divider },
-                                            '&:hover fieldset': { borderColor: theme.palette.text.secondary },
-                                            '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main }
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: "8px",
+                                            "& fieldset": { borderColor: theme.palette.divider },
+                                            "&:hover fieldset": { borderColor: theme.palette.text.secondary },
+                                            "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
                                         },
-                                        '& .MuiInputLabel-root': { color: theme.palette.text.secondary },
-                                        '& .MuiInputLabel-root.Mui-focused': { color: theme.palette.primary.main }
+                                        "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
+                                        "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
                                     }}
-                                    {...register('email', { required: 'Email is required' })}
+                                    {...register("email", { required: "Email is required" })}
                                     error={!!errors.email}
                                     helperText={errors.email?.message}
                                 />
                             </div>
 
-                            <div style={{ marginBottom: '8px' }}>
+                            <div style={{ marginBottom: "8px" }}>
                                 <TextField
                                     label="Password"
                                     type="password"
                                     variant="outlined"
                                     fullWidth
                                     sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: '8px',
-                                            '& fieldset': { borderColor: theme.palette.divider },
-                                            '&:hover fieldset': { borderColor: theme.palette.text.secondary },
-                                            '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main }
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: "8px",
+                                            "& fieldset": { borderColor: theme.palette.divider },
+                                            "&:hover fieldset": { borderColor: theme.palette.text.secondary },
+                                            "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
                                         },
-                                        '& .MuiInputLabel-root': { color: theme.palette.text.secondary },
-                                        '& .MuiInputLabel-root.Mui-focused': { color: theme.palette.primary.main }
+                                        "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
+                                        "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
                                     }}
-                                    {...register('password', { required: 'Password is required' })}
+                                    {...register("password", { required: "Password is required" })}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
                                 />
                             </div>
 
-                            <div style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
-                                <div style={{ textAlign: 'right', marginTop: '0px', marginBottom: '12px' }}>
+                            <div style={{ maxWidth: "360px", width: "100%", margin: "0 auto" }}>
+                                <div style={{ textAlign: "right", marginTop: "0px", marginBottom: "12px" }}>
                                     <Typography
-                                        onClick={() => navigate('/forgot-password')}
+                                        onClick={() => navigate("/forgot-password")}
                                         style={{
-                                            fontSize: '14px',
+                                            fontSize: "14px",
                                             color: theme.palette.primary.main,
-                                            cursor: 'pointer',
+                                            cursor: "pointer",
                                             fontWeight: 500,
-                                            textDecoration: 'none',
+                                            textDecoration: "none",
                                         }}
                                         sx={{
-                                            '&:hover': {
-                                                textDecoration: 'underline'
-                                            }
+                                            "&:hover": {
+                                                textDecoration: "underline",
+                                            },
                                         }}
                                     >
                                         Forgot password?
                                     </Typography>
                                 </div>
 
-                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                <div style={{ display: "flex", justifyContent: "center" }}>
                                     {isLoading ? (
                                         <Typography color="#666">...Loading</Typography>
                                     ) : (
@@ -319,12 +370,12 @@ function LoginPage() {
                                             loading={isLoading}
                                             fullWidth
                                             sx={{
-                                                padding: '14px 28px',
-                                                borderRadius: '10px',
-                                                fontSize: '17px',
+                                                padding: "14px 28px",
+                                                borderRadius: "10px",
+                                                fontSize: "17px",
                                                 backgroundColor: theme.palette.secondary.main,
                                                 color: theme.palette.secondary.contrastText,
-                                                '&:hover': {
+                                                "&:hover": {
                                                     backgroundColor: theme.palette.secondary.dark,
                                                 },
                                             }}
@@ -334,24 +385,39 @@ function LoginPage() {
                                     )}
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0 12px', gap: '10px' }}>
-                                    <div style={{ flex: 1, height: '1px', background: theme.palette.divider }}></div>
-                                    <Typography style={{ fontSize: '12px', color: theme.palette.text.secondary, letterSpacing: '0.8px' }}>OR</Typography>
-                                    <div style={{ flex: 1, height: '1px', background: theme.palette.divider }}></div>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        margin: "16px 0 12px",
+                                        gap: "10px",
+                                    }}
+                                >
+                                    <div style={{ flex: 1, height: "1px", background: theme.palette.divider }}></div>
+                                    <Typography
+                                        style={{
+                                            fontSize: "12px",
+                                            color: theme.palette.text.secondary,
+                                            letterSpacing: "0.8px",
+                                        }}
+                                    >
+                                        OR
+                                    </Typography>
+                                    <div style={{ flex: 1, height: "1px", background: theme.palette.divider }}></div>
                                 </div>
 
                                 {!GOOGLE_CLIENT_ID ? (
-                                    <Typography style={{ fontSize: '12px', color: '#B91C1C', textAlign: 'center' }}>
+                                    <Typography style={{ fontSize: "12px", color: "#B91C1C", textAlign: "center" }}>
                                         Google sign-in is not configured (missing VITE_APP_GOOGLE_CLIENT_ID).
                                     </Typography>
                                 ) : (
                                     <div
                                         style={{
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            minHeight: '44px',
-                                            width: '100%',
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            minHeight: "44px",
+                                            width: "100%",
                                             opacity: googleSubmitting ? 0.7 : 1,
                                         }}
                                     >
@@ -361,18 +427,28 @@ function LoginPage() {
 
                                 {!!GOOGLE_CLIENT_ID && !googleReady && !googleSubmitting && (
                                     <Typography
-                                        style={{ fontSize: '12px', color: theme.palette.text.secondary, textAlign: 'center', marginTop: '6px' }}
+                                        style={{
+                                            fontSize: "12px",
+                                            color: theme.palette.text.secondary,
+                                            textAlign: "center",
+                                            marginTop: "6px",
+                                        }}
                                     >
                                         Loading Google sign-in...
                                     </Typography>
                                 )}
 
-                                <div style={{ textAlign: 'center', marginTop: '14px' }}>
-                                        <Typography style={{ fontSize: '14px', color: theme.palette.text.secondary }}>
-                                        Don't have an account?{' '}
+                                <div style={{ textAlign: "center", marginTop: "14px" }}>
+                                    <Typography style={{ fontSize: "14px", color: theme.palette.text.secondary }}>
+                                        Don't have an account?{" "}
                                         <span
-                                            onClick={() => navigate('/signup')}
-                                                style={{ color: theme.palette.primary.main, cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
+                                            onClick={() => navigate("/signup")}
+                                            style={{
+                                                color: theme.palette.primary.main,
+                                                cursor: "pointer",
+                                                fontWeight: 600,
+                                                textDecoration: "underline",
+                                            }}
                                         >
                                             Sign up
                                         </span>
@@ -383,17 +459,60 @@ function LoginPage() {
                     </div>
 
                     {/* right: info / promo column */}
-                    <div style={{ flex: 1, minHeight: '100%', padding: '40px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f8f9fc 0%, #e8eef5 30%, #dfe7f5 60%, #f5f7fa 100%)', position: 'relative', overflow: 'hidden' }}>
-
+                    <div
+                        style={{
+                            flex: 1,
+                            minHeight: "100%",
+                            padding: "40px 36px",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "linear-gradient(135deg, #f8f9fc 0%, #e8eef5 30%, #dfe7f5 60%, #f5f7fa 100%)",
+                            position: "relative",
+                            overflow: "hidden",
+                        }}
+                    >
                         {/* decorative floating circles */}
-                        <div style={{ position: 'absolute', top: '10%', right: '15%', width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(79,70,229,0.12) 0%, transparent 70%)', filter: 'blur(20px)' }}></div>
-                        <div style={{ position: 'absolute', bottom: '15%', left: '10%', width: '150px', height: '150px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%)', filter: 'blur(25px)' }}></div>
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: "10%",
+                                right: "15%",
+                                width: "120px",
+                                height: "120px",
+                                borderRadius: "50%",
+                                background: "radial-gradient(circle, rgba(79,70,229,0.12) 0%, transparent 70%)",
+                                filter: "blur(20px)",
+                            }}
+                        ></div>
+                        <div
+                            style={{
+                                position: "absolute",
+                                bottom: "15%",
+                                left: "10%",
+                                width: "150px",
+                                height: "150px",
+                                borderRadius: "50%",
+                                background: "radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%)",
+                                filter: "blur(25px)",
+                            }}
+                        ></div>
 
                         {/* decorative grid pattern overlay */}
-                        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(79,70,229,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.3 }}></div>
+                        <div
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                backgroundImage:
+                                    "linear-gradient(rgba(79,70,229,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.06) 1px, transparent 1px)",
+                                backgroundSize: "40px 40px",
+                                opacity: 0.3,
+                            }}
+                        ></div>
 
-                        <div style={{ textAlign: 'center', pointerEvents: 'none', position: 'relative', zIndex: 1 }}>
-                            <div style={{ marginBottom: '16px' }}>
+                        <div style={{ textAlign: "center", pointerEvents: "none", position: "relative", zIndex: 1 }}>
+                            <div style={{ marginBottom: "16px" }}>
                                 <SplitText
                                     text="Intervu"
                                     tag="h1"
@@ -415,7 +534,15 @@ function LoginPage() {
                                 />
                             </div>
 
-                            <div style={{ width: '80px', height: '2px', background: 'linear-gradient(90deg, transparent, rgba(79,70,229,0.8), transparent)', margin: '16px auto', borderRadius: '2px' }}></div>
+                            <div
+                                style={{
+                                    width: "80px",
+                                    height: "2px",
+                                    background: "linear-gradient(90deg, transparent, rgba(79,70,229,0.8), transparent)",
+                                    margin: "16px auto",
+                                    borderRadius: "2px",
+                                }}
+                            ></div>
 
                             <div>
                                 <SplitText
@@ -440,15 +567,21 @@ function LoginPage() {
                             </div>
 
                             {/* decorative subtitle */}
-                            <div style={{ marginTop: '24px', fontSize: '13px', color: 'rgba(0,0,0,0.4)', letterSpacing: '0.5px', lineHeight: '1.6' }}>
+                            <div
+                                style={{
+                                    marginTop: "24px",
+                                    fontSize: "13px",
+                                    color: "rgba(0,0,0,0.4)",
+                                    letterSpacing: "0.5px",
+                                    lineHeight: "1.6",
+                                }}
+                            >
                                 Created and operated by TheSuperTeam
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
-
         </div>
     );
 }
