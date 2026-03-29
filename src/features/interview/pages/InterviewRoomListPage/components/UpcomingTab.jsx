@@ -16,13 +16,17 @@ const ITEMS_PER_PAGE = 6;
 function UpcomingTab({ 
     rooms, 
     recentRooms = [],
-    user, 
+    user,
     loading,
     onRequestReschedule,
     onCancelInterview,
+    onJoin,
+    onReviewQuestions,
     onViewFeedback,
     rescheduleRequests = []
 }) {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filterValue, setFilterValue] = useState("");
     const [page, setPage] = useState(1);
 
     // Helper to check if room has pending reschedule request
@@ -54,7 +58,7 @@ function UpcomingTab({
         if (room.status === INTERVIEW_ROOM_STATUS.ON_GOING) {
             return;
         }
-        
+
         if (room.status === INTERVIEW_ROOM_STATUS.COMPLETED) {
             if (onViewFeedback) {
                 onViewFeedback(room);
@@ -122,6 +126,8 @@ function UpcomingTab({
                                 onClick={handleCardClick}
                                 onRequestReschedule={onRequestReschedule}
                                 onCancel={onCancelInterview}
+                                onJoin={onJoin}
+                                onReviewQuestions={onReviewQuestions}
                                 showActions={true}
                                 hasPendingReschedule={hasPendingRescheduleRequest(room.id)}
                             />

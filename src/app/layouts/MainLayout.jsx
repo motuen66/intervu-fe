@@ -80,6 +80,7 @@ const MainLayout = () => {
             { label: "Home", path: "/home" },
             { label: "Questions", path: "/questions" },
             { label: "Interview", path: "/interview" },
+            { label: "Roadmap", path: "/assessment" },
             { label: "Booking Requests", path: "/booking-requests" },
             { label: "Messages", path: "#" },
             { label: "Settings", path: "/settings" },
@@ -357,7 +358,7 @@ const MainLayout = () => {
                         <div className="navbar-logo-icon">V</div>
                         <h1>INTERVU</h1>
                     </div>
-                    
+
                     {/* Navigation Menu */}
                     <div className="navbar-menu">
                         {currentMenuItems.map((item) => (
@@ -373,7 +374,6 @@ const MainLayout = () => {
 
                     {/* Right Section */}
                     <div className="navbar-right">
-
                         {/* Upgrade Button */}
                         {userData?.role === ROLES.CANDIDATE && <button className="app-btn">Upgrade Pro</button>}
 
@@ -403,7 +403,8 @@ const MainLayout = () => {
                                             .map((n) => n[0])
                                             .join("")
                                             .toUpperCase()
-                                            .slice(0, 2) || "U")}
+                                            .slice(0, 2) ||
+                                            "U")}
                                 </Avatar>
                             </button>
 
@@ -422,8 +423,8 @@ const MainLayout = () => {
                                                 role === ROLES.INTERVIEWER
                                                     ? "/interviewer/profile"
                                                     : role === ROLES.CANDIDATE
-                                                        ? "/candidate/profile"
-                                                        : "/user/profile";
+                                                      ? "/candidate/profile"
+                                                      : "/user/profile";
                                             navigate(path);
                                             setIsUserDropdownOpen(false);
                                         }}
@@ -433,8 +434,8 @@ const MainLayout = () => {
                                     <button
                                         className="dropdown-item"
                                         onClick={() => {
-                                          navigate('/payment-history');
-                                          setIsUserDropdownOpen(false);
+                                            navigate("/payment-history");
+                                            setIsUserDropdownOpen(false);
                                         }}
                                     >
                                         View Payment History

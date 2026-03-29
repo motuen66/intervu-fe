@@ -154,8 +154,8 @@ function InterviewerProfilePage() {
                     const skills = Array.isArray(skillsRes.data)
                         ? skillsRes.data
                         : Array.isArray(skillsRes.data?.items)
-                            ? skillsRes.data.items
-                            : [];
+                          ? skillsRes.data.items
+                          : [];
                     setAllSkills(skills);
                 }
 
@@ -163,8 +163,8 @@ function InterviewerProfilePage() {
                     const companies = Array.isArray(companiesRes.data)
                         ? companiesRes.data
                         : Array.isArray(companiesRes.data?.items)
-                            ? companiesRes.data.items
-                            : [];
+                          ? companiesRes.data.items
+                          : [];
                     setAllCompanies(companies);
                 }
             } catch (err) {
@@ -211,15 +211,26 @@ function InterviewerProfilePage() {
             console.log("Uploaded avatar data:", data);
             if (data?.profilePictureUrl) {
                 const updatedUser = { ...user, profilePicture: data.profilePictureUrl };
-                try { localStorage.setItem("user", JSON.stringify(updatedUser)); } catch (e) { console.warn(e); }
+                try {
+                    localStorage.setItem("user", JSON.stringify(updatedUser));
+                } catch (e) {
+                    console.warn(e);
+                }
                 dispatch(setUserData(updatedUser));
-                setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl }, profilePicture: data.profilePictureUrl }));
+                setProfile((prev) => ({
+                    ...prev,
+                    user: { ...(prev?.user || {}), profilePicture: data.profilePictureUrl },
+                    profilePicture: data.profilePictureUrl,
+                }));
                 setAvatarKey(Date.now());
             }
-
         } catch (err) {
             console.error(err);
-            setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
+            setProfile((prev) => ({
+                ...prev,
+                user: { ...(prev?.user || {}), profilePicture: prevAvatar },
+                profilePicture: prevAvatar,
+            }));
         } finally {
             setPendingAvatarFile(null);
             setPendingAvatarLocalUrl(null);
@@ -229,7 +240,11 @@ function InterviewerProfilePage() {
 
     const handleCancelAvatar = () => {
         // revert preview
-        setProfile((prev) => ({ ...prev, user: { ...(prev?.user || {}), profilePicture: prevAvatar }, profilePicture: prevAvatar }));
+        setProfile((prev) => ({
+            ...prev,
+            user: { ...(prev?.user || {}), profilePicture: prevAvatar },
+            profilePicture: prevAvatar,
+        }));
         setPendingAvatarFile(null);
         setPendingAvatarLocalUrl(null);
         setPrevAvatar(null);
@@ -324,12 +339,6 @@ function InterviewerProfilePage() {
 
     return (
         <Box sx={{ minHeight: "100vh" }}>
-            <Fade in={saveSuccess}>
-                <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSaveSuccess(false)}>
-                    Profile updated successfully!
-                </Alert>
-            </Fade>
-
             <BaseCard
                 elevation={0}
                 sx={{
@@ -361,7 +370,11 @@ function InterviewerProfilePage() {
                                         "&:hover": { bgcolor: "white" },
                                     }}
                                 >
-                                    {editMode ? <CloseIcon size={20} strokeWidth={2} /> : <EditIcon size={20} strokeWidth={2} />}
+                                    {editMode ? (
+                                        <CloseIcon size={20} strokeWidth={2} />
+                                    ) : (
+                                        <EditIcon size={20} strokeWidth={2} />
+                                    )}
                                 </IconButton>
                             )
                         );
@@ -651,11 +664,7 @@ function InterviewerProfilePage() {
                                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
                                             {skillsDisplay.length > 0 ? (
                                                 skillsDisplay.map((s, i) => (
-                                                    <StatusChip
-                                                        key={`skill-${i}`}
-                                                        label={s}
-                                                        color="primary"
-                                                    />
+                                                    <StatusChip key={`skill-${i}`} label={s} color="primary" />
                                                 ))
                                             ) : (
                                                 <Typography color="text.secondary" variant="body2">
@@ -698,11 +707,7 @@ function InterviewerProfilePage() {
                                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
                                             {companiesDisplay.length > 0 ? (
                                                 companiesDisplay.map((c, i) => (
-                                                    <StatusChip
-                                                        key={`company-${i}`}
-                                                        label={c}
-                                                        color="secondary"
-                                                    />
+                                                    <StatusChip key={`company-${i}`} label={c} color="secondary" />
                                                 ))
                                             ) : (
                                                 <Typography color="text.secondary" variant="body2">

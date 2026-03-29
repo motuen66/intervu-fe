@@ -7,12 +7,11 @@ import {
 } from "@mui/material";
 import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
 import RecentInterviewItem from "./RecentInterviewItem";
-import { useNavigate } from "react-router-dom";
+import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 5;
 
-function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
-    const navigate = useNavigate();
+function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestions }) {
     const [page, setPage] = useState(1);
 
     // Simplified list: removed internal search/filter bars
@@ -74,6 +73,7 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
                             room={room}
                             user={user}
                             onClick={handleCardClick}
+                            onReviewQuestions={onReviewQuestions}
                         />
                     ))}
                 </Stack>

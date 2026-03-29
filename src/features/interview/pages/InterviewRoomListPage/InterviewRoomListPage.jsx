@@ -2,7 +2,6 @@ import { Box, Typography, Stack, Tabs, Tab, Container } from "@mui/material";
 import CommonLoader from "../../../../common/components/loaders/CommonLoader";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -11,9 +10,13 @@ import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 import { ROLES } from "../../../../common/constants/common.js";
+import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
 import FeedbackListModal from "./FeedbackListModal.jsx";
 import RescheduleRequestModal from "./RescheduleRequestModal.jsx";
 import ConfirmModal from "../../../../common/components/ConfirmModal.jsx";
+// import AICVSelectionModal from "./components/AICVSelectionModal.jsx";
+import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
+import { useNavigate, useLocation } from "react-router-dom";
 import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
 import CoachEvaluationModal from "./CoachEvaluationModal.jsx";
 
@@ -46,8 +49,9 @@ function a11yProps(index) {
 }
 
 function InterviewRoomListPage() {
-    const user = useUser();
     const navigate = useNavigate();
+    const location = useLocation();
+    const user = useUser();
     const [upcomingRooms, setUpcomingRooms] = useState([]);
     const [pastRooms, setPastRooms] = useState([]);
     const [rescheduleRequests, setRescheduleRequests] = useState([]);
@@ -65,6 +69,29 @@ function InterviewRoomListPage() {
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
     const [viewFeedbackState, setViewFeedbackState] = useState({ open: false, interviewRoomId: null });
     const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null, nextSessionIn: "—" });
+    // const [aiCvModalState, setAiCvModalState] = useState({ open: false, room: null });
+
+    // New state for Generated Questions Modal
+    const [genQuestionsModalState, setGenQuestionsModalState] = useState({ open: false, roomId: null });
+
+    // Helper function to get the label from the type value
+    const getRoomTypeLabel = (typeValue) => {
+        const roomType = INTERVIEW_ROOM_TYPE.find((t) => t.value === typeValue);
+        return roomType ? roomType.label : "Normal"; // Default to "Normal" if type is not specified
+    };
+
+    // Handle deep linking from notifications
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const roomId = params.get("roomId");
+        const action = params.get("action");
+
+        if (roomId && action === "review-questions") {
+            setGenQuestionsModalState({ open: true, roomId });
+            // Clean up URL without reload
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location, navigate]);
 
     // Fetch initial data once on mount
     useEffect(() => {
@@ -408,6 +435,32 @@ function InterviewRoomListPage() {
         setViewFeedbackState({ open: false, interviewRoomId: null });
     };
 
+    const handleJoinRoom = (room) => {
+        if (!room?.id) return;
+        // if (user?.role === ROLES.CANDIDATE && room?.type === INTERVIEW_ROOM_TYPE.WITH_AI) {
+        //     setAiCvModalState({ open: true, room });
+        //     return;
+        // }
+        navigate(`/interview/room/${room.id}`);
+    };
+
+    // const handleCloseAiCvModal = () => {
+    //     setAiCvModalState({ open: false, room: null });
+    // };
+
+    // const handleConfirmAiCvJoin = (room) => {
+    //     if (!room?.id) return;
+    //     navigate(`/interview/room/${room.id}`);
+    // };
+
+    const handleReviewQuestions = (room) => {
+        setGenQuestionsModalState({ open: true, roomId: room.id });
+    };
+
+    const handleCloseGenQuestionsModal = () => {
+        setGenQuestionsModalState({ open: false, roomId: null });
+    };
+
     if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
         return (
             <Box sx={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -479,6 +532,8 @@ function InterviewRoomListPage() {
                         onRequestReschedule={handleRequestReschedule}
                         onCancelInterview={handleCancelInterview}
                         onViewFeedback={handleViewFeedback}
+                        // onJoin={handleJoinRoom}
+                        onReviewQuestions={handleReviewQuestions}
                         rescheduleRequests={rescheduleRequests}
                     />
                 </TabPanel>
@@ -489,6 +544,7 @@ function InterviewRoomListPage() {
                         user={user}
                         loading={loading}
                         onViewFeedback={handleViewFeedback}
+                        onReviewQuestions={handleReviewQuestions}
                     />
                 </TabPanel>
 
@@ -514,6 +570,7 @@ function InterviewRoomListPage() {
                     user={user}
                 />
 
+                {/* Reschedule Request Modal */}
                 <RescheduleRequestModal
                     open={rescheduleModalState.open}
                     onClose={handleCloseRescheduleModal}
@@ -534,6 +591,11 @@ function InterviewRoomListPage() {
                     cancelText="Keep Interview"
                 />
             </Container>
+            <GeneratedQuestionsModal
+                open={genQuestionsModalState.open}
+                onClose={handleCloseGenQuestionsModal}
+                roomId={genQuestionsModalState.roomId}
+            />
         </Box>
     );
 }
