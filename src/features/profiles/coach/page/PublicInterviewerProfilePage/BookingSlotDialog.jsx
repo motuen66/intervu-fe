@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -16,13 +16,29 @@ import {
     Step,
     StepLabel,
     Divider,
+    IconButton,
+    Grow
 } from "@mui/material";
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Grow ref={ref} {...props} timeout={500} />;
+});
+import CloseIcon from "@mui/icons-material/Close";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CodeIcon from "@mui/icons-material/Code";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import DescriptionIcon from '@mui/icons-material/Description';
+import GroupsIcon from '@mui/icons-material/Groups';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import TimelineIcon from "@mui/icons-material/Timeline";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
+import VerifiedIcon from "@mui/icons-material/Verified";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import NavigationIcon from '@mui/icons-material/Navigation';
+import { CheckCircle } from "lucide-react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -154,7 +170,9 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                 start: slot.startTime,
                 end: slot.endTime,
                 display: "background",
-                backgroundColor: "#6366f1",
+                backgroundColor: "rgba(190, 242, 100, 0.15)", // Liquid Glass - Translucent and premium
+                borderColor: "#bef264",
+                classNames: ["liquid-slot"],
                 groupId: "availability",
                 editable: false,
                 extendedProps: { slotId: slot.id, type: "availability" },
@@ -169,9 +187,9 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                 title: `${selectedService.interviewType?.name || selectedService.name || "Interview"} (${selectedService.durationMinutes}m)`,
                 start: selectedStartTime.toISOString(),
                 end: endTime.toISOString(),
-                backgroundColor: "var(--mui-palette-primary-main)",
-                borderColor: "var(--mui-palette-primary-main)",
-                textColor: "#fff",
+                backgroundColor: "#d4ff3d", // Electric Lime for selection
+                borderColor: "#d4ff3d",
+                textColor: "#0f172a",
                 classNames: ["booking-preview"],
                 editable: true,
                 durationEditable: false,
@@ -325,125 +343,126 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
 
     const canConfirm = selectedService && selectedStartTime && containingSlot;
 
+    const getServiceIcon = (name) => {
+        const lower = name?.toLowerCase() || "";
+        if (lower.includes("soft skill")) return <PsychologyIcon />;
+        if (lower.includes("cv") || lower.includes("resume")) return <DescriptionIcon />;
+        if (lower.includes("technical") || lower.includes("coding")) return <CodeIcon />;
+        return <GroupsIcon />;
+    };
+
     // ─── Render ────────────────────────────────────────
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-            <DialogTitle sx={{ fontWeight: 600, fontSize: "1.25rem", pb: 1 }}>
-                Book an Interview Session
-                <Stepper activeStep={activeStep} sx={{ mt: 2 }}>
-                    {STEPS.map((label) => (
-                        <Step key={label}>
-                            <StepLabel
-                                sx={(theme) => ({
-                                    "& .MuiStepLabel-label": {
-                                        color: theme.palette.text.secondary,
-                                    },
-                                    "& .MuiStepLabel-label.Mui-active": {
-                                        color: theme.palette.primary.main,
-                                    },
-                                    "& .MuiStepLabel-label.Mui-completed": {
-                                        color: theme.palette.success.main,
-                                    },
-                                    "& .MuiStepIcon-root": {
-                                        color: theme.palette.grey[400],
-                                    },
-                                    "& .MuiStepIcon-root.Mui-active": {
-                                        color: theme.palette.primary.main,
-                                    },
-                                    "& .MuiStepIcon-root.Mui-completed": {
-                                        color: theme.palette.success.main,
-                                    },
-                                })}
-                            >
-                                {label}
-                            </StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-            </DialogTitle>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="xl"
+            fullWidth
+            TransitionComponent={Transition}
+            PaperProps={{ className: "booking-dialog-paper" }}
+        >
+            <Box className="booking-header">
+                <IconButton
+                    onClick={onClose}
+                    sx={{
+                        position: 'absolute',
+                        right: 32,
+                        top: 32,
+                        color: '#64748b',
+                        bgcolor: 'rgba(0,0,0,0.03)',
+                        '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
+                        zIndex: 10
+                    }}
+                >
+                    <CloseIcon />
+                </IconButton>
 
-            <DialogContent>
-                <Box sx={{ mt: 2, minHeight: 400 }}>
+                <span className="booking-header-tag">Single-Focus Interview</span>
+                <Typography className="booking-header-title">
+                    Book an Interview Session
+                </Typography>
+
+                {activeStep === 0 ? (
+                    <Typography className="booking-header-subtitle">
+                        Select your session type to proceed with the laboratory booking.
+                    </Typography>
+                ) : (
+                    <Typography className="booking-header-subtitle">
+                        Select an available time slot on the calendar for your session.
+                    </Typography>
+                )}
+            </Box>
+
+            <DialogContent sx={{ overflowY: 'auto' }}>
+                <Box sx={{ minHeight: activeStep === 0 ? 300 : 500 }}>
                     {error && (
-                        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                            {error}
-                        </Alert>
+                        <Box sx={{ px: 5, mb: 2 }}>
+                            <Alert severity="error" onClose={() => setError(null)}>
+                                {error}
+                            </Alert>
+                        </Box>
                     )}
 
                     {/* ──── STEP 1: Service Selection ──── */}
                     {activeStep === 0 && (
-                        <Box>
-                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                Choose an interview service
-                            </Typography>
-
+                        <Box className="booking-service-list">
                             {loadingServices ? (
-                                <Box display="flex" justifyContent="center" py={6}>
-                                    <CircularProgress />
+                                <Box display="flex" justifyContent="center" py={10}>
+                                    <CircularProgress sx={{ color: '#d4ff3d' }} />
                                 </Box>
                             ) : services.length === 0 ? (
-                                <Paper sx={{ p: 3, textAlign: "center", bgcolor: "#f9fafb" }}>
+                                <Paper sx={{ p: 6, textAlign: "center", bgcolor: "#f8fafc", borderRadius: '16px', border: 'none' }}>
                                     <Typography color="text.secondary">
                                         This coach hasn't set up any interview services yet.
                                     </Typography>
                                 </Paper>
                             ) : (
-                                <Stack spacing={1.5}>
+                                <Stack spacing={0}>
                                     {services.map((service) => {
                                         const isSelected = selectedService?.id === service.id;
                                         return (
                                             <Box
                                                 key={service.id}
-                                                className={`service-card ${isSelected ? "selected" : ""}`}
+                                                className={`service-card-premium ${isSelected ? "selected" : ""}`}
                                                 onClick={() => handleServiceSelect(service)}
                                             >
-                                                <Stack
-                                                    direction="row"
-                                                    alignItems="center"
-                                                    justifyContent="space-between"
-                                                >
-                                                    <Stack spacing={0.5}>
-                                                        <Stack direction="row" spacing={1} alignItems="center">
-                                                            <Typography variant="subtitle1" fontWeight={600}>
-                                                                {service.interviewTypeName || "Interview"}
-                                                            </Typography>
-                                                            {service.isCoding && (
-                                                                <StatusChip
-                                                                    icon={<CodeIcon sx={{ fontSize: 14 }} />}
-                                                                    label="Coding"
-                                                                    color="primary"
-                                                                />
-                                                            )}
-                                                        </Stack>
-                                                        <Stack direction="row" spacing={2} alignItems="center">
-                                                            <Stack direction="row" spacing={0.5} alignItems="center">
-                                                                <AccessTimeIcon
-                                                                    sx={{ fontSize: 16, color: "text.secondary" }}
-                                                                />
-                                                                <Typography variant="body2" color="text.secondary">
-                                                                    {service.durationMinutes} minutes
-                                                                </Typography>
-                                                            </Stack>
-                                                            <Stack direction="row" spacing={0.5} alignItems="center">
-                                                                <AttachMoneyIcon
-                                                                    sx={{ fontSize: 16, color: "text.secondary" }}
-                                                                />
-                                                                <Typography variant="body2" color="text.secondary">
-                                                                    {service.price?.toLocaleString()} VND
-                                                                </Typography>
-                                                            </Stack>
-                                                        </Stack>
-                                                    </Stack>
+                                                <Box className="service-icon-box">
+                                                    {getServiceIcon(service.interviewTypeName || service.name)}
+                                                </Box>
 
-                                                    {isSelected && (
-                                                        <CheckCircleIcon
-                                                            sx={{
-                                                                color: "var(--mui-palette-primary-main)",
-                                                                fontSize: 28,
-                                                            }}
-                                                        />
-                                                    )}
-                                                </Stack>
+                                                <Box className="service-info-main">
+                                                    <Typography className="service-title">
+                                                        {service.interviewTypeName || "Interview"}
+                                                        {service.isCoding && (
+                                                            <Chip
+                                                                label="CODING"
+                                                                size="small"
+                                                                sx={{
+                                                                    height: 18,
+                                                                    fontSize: '9px',
+                                                                    fontWeight: 800,
+                                                                    bgcolor: '#0f172a',
+                                                                    color: '#fff',
+                                                                    ml: 1.5
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </Typography>
+                                                    <Box className="service-meta-row">
+                                                        <Box className="service-meta-item">
+                                                            <AccessTimeIcon sx={{ fontSize: 16 }} />
+                                                            {service.durationMinutes} min
+                                                        </Box>
+                                                        <Box className="service-meta-dot" />
+                                                        <Box className="service-meta-item">
+                                                            {service.isCoding ? "Technical Focus" : "Standard Prep"}
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
+
+                                                <Typography className="service-price-tag">
+                                                    {(service.price || 0).toLocaleString()} <span style={{ fontSize: '14px', fontWeight: 600 }}>VND</span>
+                                                </Typography>
                                             </Box>
                                         );
                                     })}
@@ -454,9 +473,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
 
                     {/* ──── STEP 2: Calendar Time Picking ──── */}
                     {activeStep === 1 && (
-                        <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                            {/* Calendar */}
-                            <Box sx={{ flex: 1, position: "relative" }} className="booking-calendar-container">
+                        <Stack direction={{ xs: "column", md: "row" }} spacing={4} className="booking-calendar-layout">
+                            <Box sx={{ flex: 1, position: "relative", height: '750px', overflow: 'hidden' }} className="booking-calendar-main-container">
                                 {loadingSlots && (
                                     <Box
                                         sx={{
@@ -470,7 +488,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                             borderRadius: "12px",
                                         }}
                                     >
-                                        <CircularProgress />
+                                        <CircularProgress sx={{ color: '#d4ff3d' }} />
                                     </Box>
                                 )}
                                 <FullCalendar
@@ -488,13 +506,9 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                         },
                                     }}
                                     headerToolbar={{
-                                        left: "today",
+                                        left: "prev,next today",
                                         center: "title",
                                         right: "rollingSevenDay,timeGridDay",
-                                    }}
-                                    buttonText={{
-                                        today: "Today",
-                                        day: "Day",
                                     }}
                                     events={calendarEvents}
                                     dateClick={handleCalendarDateClick}
@@ -507,156 +521,67 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                     now={new Date()}
                                     nowIndicator={true}
                                     snapDuration="00:15:00"
-                                    height="auto"
+                                    height="600px"
                                     timeZone="local"
-                                    slotLabelFormat={{
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                    }}
-                                    eventTimeFormat={{
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                    }}
                                     allDaySlot={false}
-                                    slotMinTime="06:00:00"
-                                    slotMaxTime="23:00:00"
-                                    expandRows={false}
-                                    dayMaxEvents={true}
+                                    slotMinTime="07:00:00"
+                                    slotMaxTime="22:00:00"
                                 />
 
-                                <Stack direction="row" spacing={3} sx={{ mt: 1.5, px: 1 }}>
-                                    <Stack direction="row" spacing={0.5} alignItems="center">
-                                        <Box
-                                            sx={{
-                                                width: 14,
-                                                height: 14,
-                                                borderRadius: "3px",
-                                                bgcolor: "rgba(99, 102, 241, 0.25)",
-                                                border: "1px solid #6366f1",
-                                            }}
-                                        />
-                                        <Typography variant="caption" color="text.secondary">
-                                            Available
-                                        </Typography>
+                                <Stack direction="row" spacing={3} sx={{ mt: 2, px: 2 }}>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <Box sx={{ width: 14, height: 14, borderRadius: "4px", bgcolor: "rgba(190, 242, 100, 0.15)", borderLeft: "3px solid #bef264", border: "1px solid #d9f99d" }} />
+                                        <Typography variant="caption" fontWeight={700} color="#64748b">Available Time</Typography>
                                     </Stack>
-                                    <Stack direction="row" spacing={0.5} alignItems="center">
-                                        <Box
-                                            sx={{
-                                                width: 14,
-                                                height: 14,
-                                                borderRadius: "3px",
-                                                bgcolor: "var(--mui-palette-primary-main)",
-                                            }}
-                                        />
-                                        <Typography variant="caption" color="text.secondary">
-                                            Your Booking
-                                        </Typography>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <Box sx={{ width: 14, height: 14, borderRadius: "4px", bgcolor: "#d4ff3d", border: '1px solid #afe34a' }} />
+                                        <Typography variant="caption" fontWeight={700} color="#64748b">Your Selection</Typography>
                                     </Stack>
                                 </Stack>
+
+                
                             </Box>
 
-                            {/* Right Panel — Summary */}
-                            <Box sx={{ width: { xs: "100%", md: 280 }, flexShrink: 0 }}>
-                                <Stack spacing={2}>
-                                    {/* Selected service recap */}
-                                    <Paper variant="outlined" sx={{ p: 2, borderRadius: "10px" }}>
-                                        <Typography variant="caption" fontWeight={600} color="text.secondary">
-                                            SELECTED SERVICE
-                                        </Typography>
-                                        <Typography variant="subtitle2" fontWeight={600} sx={{ mt: 0.5 }}>
-                                            {selectedService?.interviewType?.name || "Interview"}
-                                        </Typography>
-                                        <Stack direction="row" spacing={1.5} sx={{ mt: 0.5 }}>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {selectedService?.durationMinutes}m
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {selectedService?.price?.toLocaleString()} VND
-                                            </Typography>
+                            <Box sx={{ width: { xs: "100%", md: 360 }, flexShrink: 0 }} className="booking-summary-sidebar">
+                                <Stack spacing={3} sx={{ height: '100%' }}>
+                                    <Box className="jd-summary-card-stitch">
+                                        <Typography variant="overline" color="#64748b" fontWeight={800} sx={{ letterSpacing: '0.1em' }}>Booking Overview</Typography>
+                                        <Divider sx={{ my: 1.5, borderColor: 'rgba(0,0,0,0.06)' }} />
+
+                                        <Stack spacing={2.5}>
+                                            <Box sx={{ p: 2.5, borderRadius: '16px', border: '1px dashed #cbd5e1', bgcolor: 'rgba(0,0,0,0.02)' }}>
+                                                <Typography variant="overline" color="#94a3b8" fontWeight={800} sx={{ mb: 1.5, display: 'block', fontSize: '0.65rem' }}>Pipeline Summary</Typography>
+                                                <Stack spacing={2}>
+                                                    <Box>
+                                                        <Typography variant="caption" fontWeight={800} color="#1e293b" sx={{ display: 'block', fontSize: '0.85rem' }}>
+                                                            1. {selectedService?.interviewTypeName || selectedService?.name || "Service not selected"}
+                                                        </Typography>
+                                                        <Typography variant="caption" color={selectedStartTime ? "#10b981" : "#94a3b8"} fontWeight={selectedStartTime ? 700 : 500}>
+                                                            {selectedStartTime ? `  ${format(selectedStartTime, "HH:mm")} on ${format(selectedStartTime, "dd MMM")}` : "Time not set"}
+                                                        </Typography>
+                                                    </Box>
+                                                </Stack>
+                                            </Box>
+
+                                            <Box className="jd-price-dashboard-stitch">
+                                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                                    <Box>
+                                                        <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.6)', fontWeight: 800, fontSize: '0.65rem' }}>Total Price</Typography>
+                                                        <Typography variant="caption" className="duration-badge">
+                                                            {selectedService?.durationMinutes || 0} mins total
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ textAlign: 'right' }}>
+                                                        <Typography variant="h4" className="price-vibrant" sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                                            {(selectedService?.price || 0).toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#d4ff3d' }}>VND</span>
+                                                        </Typography>
+                                                    </Box>
+                                                </Stack>
+                                            </Box>
                                         </Stack>
-                                    </Paper>
+                                    </Box>
 
-                                    {/* Instructions or Summary */}
-                                    {!selectedStartTime ? (
-                                        <Paper
-                                            sx={{
-                                                p: 2.5,
-                                                textAlign: "center",
-                                                bgcolor: "#f9fafb",
-                                                borderRadius: "10px",
-                                            }}
-                                        >
-                                            <EventAvailableIcon sx={{ fontSize: 40, color: "#9ca3af", mb: 1 }} />
-                                            <Typography variant="body2" color="text.secondary">
-                                                Click on a time within the{" "}
-                                                <strong style={{ color: "#6366f1" }}>highlighted areas</strong> to
-                                                select your preferred start time.
-                                            </Typography>
-                                        </Paper>
-                                    ) : (
-                                        <Box className="booking-summary">
-                                            <Typography
-                                                variant="subtitle2"
-                                                fontWeight={700}
-                                                sx={{ mb: 1.5, color: "var(--mui-palette-primary-main)" }}
-                                            >
-                                                Booking Summary
-                                            </Typography>
 
-                                            <Box className="summary-row">
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Service
-                                                </Typography>
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    {selectedService?.interviewType?.name || "Interview"}
-                                                </Typography>
-                                            </Box>
-
-                                            <Box className="summary-row">
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Date
-                                                </Typography>
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    {format(selectedStartTime, "dd/MM/yyyy")}
-                                                </Typography>
-                                            </Box>
-
-                                            <Box className="summary-row">
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Time
-                                                </Typography>
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    {format(selectedStartTime, "HH:mm")} – {format(endTime, "HH:mm")}
-                                                </Typography>
-                                            </Box>
-
-                                            <Box className="summary-row">
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Duration
-                                                </Typography>
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    {selectedService?.durationMinutes} minutes
-                                                </Typography>
-                                            </Box>
-
-                                            <hr className="summary-divider" />
-
-                                            <Box className="summary-row">
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    Total
-                                                </Typography>
-                                                <Typography
-                                                    variant="subtitle1"
-                                                    fontWeight={700}
-                                                    color="var(--mui-palette-primary-main)"
-                                                >
-                                                    {selectedService?.price?.toLocaleString()} VND
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    )}
                                 </Stack>
                             </Box>
                         </Stack>
@@ -664,35 +589,59 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                 </Box>
             </DialogContent>
 
-            <DialogActions sx={{ p: 2, gap: 1, justifyContent: "space-between" }}>
+            <Box className="booking-footer-premium">
                 <Box>
-                    {activeStep === 1 && (
+                    {activeStep === 1 ? (
                         <SecondaryButton
+                            className="back-btn-premium"
                             onClick={handleBackStep}
-                            startIcon={<ArrowBackIcon />}
-                            sx={{ border: "none", "&:hover": { border: "none", bgcolor: "action.hover" } }}
+                            startIcon={<ArrowBackIosNewIcon sx={{ fontSize: 14 }} />}
                         >
                             Back
                         </SecondaryButton>
+                    ) : (
+                        <SecondaryButton
+                            className="back-btn-premium"
+                            onClick={onClose}
+                        >
+                            Cancel
+                        </SecondaryButton>
                     )}
                 </Box>
-                <Stack direction="row" spacing={1.5}>
-                    <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+
+                <Stack direction="row" alignItems="center">
+                    {/* Only show bottom price if not in Step 2, as Step 2 has its own sidebar summary */}
+                    {activeStep === 0 && (
+                        <Box className="price-summary-box">
+                            <span className="price-label">Total Price</span>
+                            <span className="price-amount">
+                                {(selectedService?.price || 0).toLocaleString()} VND
+                            </span>
+                        </Box>
+                    )}
+
                     {activeStep === 0 ? (
-                        <PrimaryButton onClick={handleNextStep} disabled={!selectedService}>
-                            Next
+                        <PrimaryButton
+                            color="secondary"
+                            disabled={!selectedService}
+                            onClick={handleNextStep}
+                            sx={{ px: 5 }}
+                        >
+                            Next Step
                         </PrimaryButton>
                     ) : (
                         <PrimaryButton
-                            onClick={handleConfirmBooking}
+                            color="secondary"
                             disabled={!canConfirm || submitting}
+                            onClick={handleConfirmBooking}
                             loading={submitting}
+                            sx={{ px: 5 }}
                         >
                             Confirm & Pay
                         </PrimaryButton>
                     )}
                 </Stack>
-            </DialogActions>
+            </Box>
         </Dialog>
     );
 };

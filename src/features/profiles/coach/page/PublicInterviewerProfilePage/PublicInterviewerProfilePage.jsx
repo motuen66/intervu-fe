@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { Box } from "@mui/material";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
@@ -17,20 +18,21 @@ import toast from "react-hot-toast";
 import { PAYOS_TRANSACTION_STATUS, TRANSACTION_STATUS } from "../../../../../common/constants/status";
 import BookingSlotDialog from "./BookingSlotDialog";
 import JDBookingDialog from "./JDBookingDialog";
+import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
 import "./EliteCoachProfile.css";
 
 const PublicInterviewerProfilePage = () => {
     const navigate = useNavigate();
     const { slugProfileUrl } = useParams();
     const [searchParams] = useSearchParams();
-    
+
     // State
     const [profile, setProfile] = useState(null);
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [availableDates, setAvailableDates] = useState([]);
-    
+
     // UI State
     const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
     const [jdBookingOpen, setJdBookingOpen] = useState(false);
@@ -88,17 +90,17 @@ const PublicInterviewerProfilePage = () => {
             if (res.success && res.data) {
                 const uniqueDates = [];
                 const dateSet = new Set();
-                
+
                 // Filter slots that are in the future
                 res.data.forEach(slot => {
                     const d = new Date(slot.startTime);
                     if (d >= now) {
                         let dateStr = d.toLocaleDateString('en-US', { weekday: 'long' });
-                        
+
                         const today = new Date();
                         const tomorrow = new Date();
                         tomorrow.setDate(today.getDate() + 1);
-                        
+
                         if (d.toDateString() === today.toDateString()) {
                             dateStr = "Today";
                         } else if (d.toDateString() === tomorrow.toDateString()) {
@@ -111,7 +113,7 @@ const PublicInterviewerProfilePage = () => {
                         }
                     }
                 });
-                
+
                 setAvailableDates(uniqueDates.slice(0, 4));
             }
         } catch (err) {
@@ -165,14 +167,14 @@ const PublicInterviewerProfilePage = () => {
         return user.profilePicture || profile.profilePicture || "";
     }, [profile]);
 
+    const [expandedBio, setExpandedBio] = useState(false);
+    const bioLimit = 400;
+
     if (loading) {
         return (
-            <div className="elite-profile-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                <div style={{ textAlign: 'center' }}>
-                    <Rocket className="animate-float" size={48} color="var(--ns-primary)" style={{ marginBottom: '1rem' }} />
-                    <p style={{ fontWeight: 700, color: 'var(--ep-text-muted)' }}>Loading coach profile...</p>
-                </div>
-            </div>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+                <CommonLoader text="Loading Profile" subtext="Preparing the coach's details for you..." />
+            </Box>
         );
     }
 
@@ -196,10 +198,10 @@ const PublicInterviewerProfilePage = () => {
                 {/* Hero Profile Section */}
                 <section className="ep-hero">
                     <div className="ep-hero-avatar-wrap">
-                        <img 
-                            src={avatarUrl || "https://ui-avatars.com/api/?name=" + profile.user.fullName} 
-                            alt={profile.user.fullName} 
-                            className="ep-hero-avatar" 
+                        <img
+                            src={avatarUrl || "https://ui-avatars.com/api/?name=" + profile.user.fullName}
+                            alt={profile.user.fullName}
+                            className="ep-hero-avatar"
                         />
                     </div>
                     <div className="ep-hero-content">
@@ -207,7 +209,7 @@ const PublicInterviewerProfilePage = () => {
                         <p className="ep-hero-title">
                             {currentTitle} {currentCompany && <>@ <strong>{currentCompany}</strong></>}
                         </p>
-                        
+
                         <div className="ep-stats-grid">
                             <div className="ep-stat-item">
                                 <span className="ep-stat-value">{profile.experienceYears}+</span>
@@ -218,14 +220,24 @@ const PublicInterviewerProfilePage = () => {
                                 <span className="ep-stat-label">Candidate Rating</span>
                             </div>
                             <div className="ep-stat-item">
-                                <span className="ep-stat-value">{profile.sessionsCount || 0}+</span>
+                                <span className="ep-stat-value">{profile.sessionsCount || 0}</span>
                                 <span className="ep-stat-label">Mock Interviews</span>
                             </div>
                         </div>
 
                         <div className="ep-about">
                             <h3 className="ep-about-title">About</h3>
-                            <p className="ep-about-text">{profile.bio}</p>
+                            <p className="ep-about-text">
+                                {expandedBio ? profile.bio : `${profile.bio?.slice(0, bioLimit)}${profile.bio?.length > bioLimit ? '...' : ''}`}
+                                {profile.bio?.length > bioLimit && (
+                                    <button 
+                                        onClick={() => setExpandedBio(!expandedBio)}
+                                        className="ep-view-more-btn"
+                                    >
+                                        {expandedBio ? 'View Less' : 'View More'}
+                                    </button>
+                                )}
+                            </p>
                         </div>
                     </div>
                 </section>
@@ -235,7 +247,7 @@ const PublicInterviewerProfilePage = () => {
                         {/* Expertise & Experience */}
                         <section className="ep-expertise">
                             <h2 className="ep-section-title">Expertise & Experience</h2>
-                            
+
                             <h4 className="ep-sub-title">Core Skills</h4>
                             <div className="ep-skills-wrap">
                                 {profile.skills?.map(skill => (
@@ -244,7 +256,7 @@ const PublicInterviewerProfilePage = () => {
                                 {(!profile.skills || profile.skills.length === 0) && <p className="ep-text-muted">No skills listed.</p>}
                             </div>
 
-                            <h4 className="ep-sub-title">Proven Track Record</h4>
+                            <h4 className="ep-sub-title">Working Experience</h4>
                             <div className="ep-track-grid">
                                 {profile.companies?.map(c => (
                                     <div key={c.id} className="ep-track-card">
@@ -258,12 +270,12 @@ const PublicInterviewerProfilePage = () => {
 
                         {/* Services */}
                         <section className="ep-services">
-                            <h2 className="ep-section-title">Interview Services</h2>
+                            <h2 className="ep-section-title">Interview Services Provided</h2>
                             <div className="ep-services-grid">
                                 {services.map(svc => (
-                                    <div 
-                                        key={svc.id} 
-                                        className="ep-service-card" 
+                                    <div
+                                        key={svc.id}
+                                        className="ep-service-card"
                                         onClick={() => handleServiceSelect(svc)}
                                     >
                                         <div className="ep-service-top">
@@ -295,7 +307,7 @@ const PublicInterviewerProfilePage = () => {
                             <span className="ep-slot-tag">{availableDates.length > 0 ? "Limited Slots" : "Check Schedule"}</span>
                             <h5>Availability</h5>
                             <h2 className="ep-side-status">{availableDates.length > 0 ? "Open for Bookings" : "View Free Time"}</h2>
-                            
+
                             <p className="ep-about-title" style={{ fontSize: '0.65rem' }}>Next Available Dates</p>
                             <div className="ep-date-grid">
                                 {availableDates.length > 0 ? (
@@ -315,10 +327,6 @@ const PublicInterviewerProfilePage = () => {
                                 <li className="ep-benefit-item">
                                     <div className="ep-benefit-check"><Check size={12} strokeWidth={3} /></div>
                                     Personalized Feedback Report
-                                </li>
-                                <li className="ep-benefit-item">
-                                    <div className="ep-benefit-check"><Check size={12} strokeWidth={3} /></div>
-                                    Career Roadmap Planning
                                 </li>
                             </ul>
 
@@ -345,25 +353,6 @@ const PublicInterviewerProfilePage = () => {
                     </aside>
                 </div>
             </main>
-
-            {/* Footer */}
-            <footer className="ep-footer">
-                <div className="ep-shell">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ fontSize: '1.2rem', fontWeight: 800, opacity: 0.5 }}>Intervu</div>
-                        <nav className="ep-footer-links">
-                            <a href="#">Terms</a>
-                            <a href="#">Privacy</a>
-                            <a href="#">Careers</a>
-                            <a href="#">Support</a>
-                        </nav>
-                    </div>
-                    <p style={{ marginTop: '2rem', fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
-                        © {new Date().getFullYear()} Intervu Coaching. All rights reserved.
-                    </p>
-                </div>
-            </footer>
-
             {/* Existing Dialogs */}
             <BookingSlotDialog
                 open={bookingDialogOpen}

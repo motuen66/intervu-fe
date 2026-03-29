@@ -114,15 +114,20 @@ export const callApi = async ({
             headers: headers ?? {},
         });
 
-        if (!response.data.success) {
+        const isSuccess = response.data?.success === true || response.data?.status === "success";
+
+        if (!isSuccess) {
             throw new Error(response.data.message);
         }
         if (displaySuccessMessage && response.data.message) {
             toast.success(response.data.message);
         }
+
+        const hasDataField = Object.prototype.hasOwnProperty.call(response.data ?? {}, "data");
+
         return {
-            success: response.data?.success,
-            data: response.data?.data,
+            success: true,
+            data: hasDataField ? response.data.data : response.data,
             message: response.data?.message,
         };
     } catch (error) {

@@ -22,7 +22,7 @@
     border-radius: 50%;
     overflow: hidden;
     border: 4px solid rgba(190, 242, 100, 0.4);
-    box-shadow: 
+    box-shadow:
         0 15px 35px rgba(0, 0, 0, 0.15),
         0 0 20px rgba(190, 242, 100, 0.3);
     background: transparent;
@@ -80,16 +80,35 @@
 }
 
 @keyframes tech-spin {
-    0% { transform: rotateX(70deg) rotateZ(0deg); }
-    100% { transform: rotateX(70deg) rotateZ(360deg); }
+    0% {
+        transform: rotateX(70deg) rotateZ(0deg);
+    }
+
+    100% {
+        transform: rotateX(70deg) rotateZ(360deg);
+    }
 }
 
 @keyframes tech-spin-reverse {
-    0% { transform: rotateX(70deg) rotateZ(360deg); }
-    100% { transform: rotateX(70deg) rotateZ(0deg); }
+    0% {
+        transform: rotateX(70deg) rotateZ(360deg);
+    }
+
+    100% {
+        transform: rotateX(70deg) rotateZ(0deg);
+    }
 }
 
 @keyframes avatar-pulse {
-    0%, 100% { transform: translateZ(40px) scale(1); border-color: rgba(190, 242, 100, 0.4); }
-    50% { transform: translateZ(60px) scale(1.05); border-color: rgba(190, 242, 100, 0.8); }
+
+    0%,
+    100% {
+        transform: translateZ(40px) scale(1);
+        border-color: rgba(190, 242, 100, 0.4);
+    }
+
+    50% {
+        transform: translateZ(60px) scale(1.05);
+        border-color: rgba(190, 242, 100, 0.8);
+    }
 }

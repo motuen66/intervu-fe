@@ -8,9 +8,9 @@ import loaderImg from '../../../assets/illustrations/interviewer-loader-3d.png';
  * @param {string} text - Main message
  * @param {string} subtext - Supporting message
  */
-const CommonLoader = ({ 
-  text = "Preparing your session...", 
-  subtext = "Finding the right coaching data for you",
+const CommonLoader = ({
+  text = "Loading",
+  subtext = "Getting things ready for you...",
 }) => {
   return (
     <Box className="common-loader-container">
@@ -18,13 +18,13 @@ const CommonLoader = ({
         {/* Orbital Rings */}
         <Box className="loader-orbit-ring" />
         <Box className="loader-orbit-ring-inner" />
-        
+
         {/* Circular Avatar */}
         <Box className="loader-avatar-circle">
-          <img 
-            src={loaderImg} 
-            alt="Interviewer Loading" 
-            className="loader-image" 
+          <img
+            src={loaderImg}
+            alt="Interviewer Loading"
+            className="loader-image"
           />
         </Box>
       </Box>
@@ -32,7 +32,7 @@ const CommonLoader = ({
       <Typography variant="h6" className="loader-text">
         {text}
       </Typography>
-      
+
       <Typography variant="body2" className="loader-subtext">
         {subtext}
       </Typography>

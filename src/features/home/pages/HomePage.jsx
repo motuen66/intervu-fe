@@ -5,6 +5,7 @@ import { fetchInterviewers, fetchCompanies, fetchSkills, setPage } from "../stor
 import FilterBar from "../components/FilterBar";
 import CoachCar from "../components/CoachCard";
 import SmartMatchModal from "../../smartSearch/components/SmartMatchModal";
+import { useNavigate } from "react-router-dom";
 import {
     Star,
     ArrowRight,
@@ -20,6 +21,7 @@ import {
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./HomePage.css";
+import { hasAssessmentData } from "../../profiles/candidate/candidate-assessment/services/assessmentApi";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -57,6 +59,7 @@ function HomePage() {
     const browseSectionRef = useRef(null);
     const [smartMatchOpen, setSmartMatchOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
     const { interviewers, loading, error, filters, pagination } = useSelector((state) => state.home);
 
     // Get user info from auth state
@@ -149,10 +152,7 @@ function HomePage() {
                 maxPrice: filters.maxPrice || undefined,
             }),
         );
-    }, [
-        dispatch,
-        pagination.currentPage,
-    ]);
+    }, [dispatch, pagination.currentPage]);
 
     // Ensure interviewers is an array
     const interviewersList = Array.isArray(interviewers) ? interviewers : [];
