@@ -1,7 +1,8 @@
 .elite-profile-container {
     --ep-bg: #f8fafb;
     --ep-surface: #ffffff;
-    --ep-accent: #c6f56f; /* Electric Lime from elite coach */
+    --ep-accent: #c6f56f;
+    /* Electric Lime from elite coach */
     --ep-accent-dark: #afe34a;
     --ep-text-main: #1a1a1c;
     --ep-text-muted: #64748b;
@@ -10,7 +11,7 @@
     --ep-radius-md: 16px;
     --ep-radius-sm: 8px;
     --ep-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.04);
-    
+
     background-color: var(--ep-bg);
     min-height: 100vh;
     color: var(--ep-text-main);
@@ -24,7 +25,8 @@
 
 /* Hero Section */
 .ep-hero {
-    background: #fdfdf5; /* Subtle lime tint from screenshot */
+    background: #fdfdf5;
+    /* Subtle lime tint from screenshot */
     border-radius: var(--ep-radius-lg);
     padding: 3.5rem;
     display: flex;
@@ -120,6 +122,25 @@
     max-width: 800px;
 }
 
+.ep-view-more-btn {
+    background: transparent;
+    border: none;
+    color: var(--ep-accent-dark);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: all 0.2s ease;
+}
+
+.ep-view-more-btn:hover {
+    color: var(--ep-text-main);
+}
+
 /* Two Column Layout */
 .ep-main-grid {
     display: grid;
@@ -144,21 +165,58 @@
     margin-bottom: 1.25rem;
 }
 
+@keyframes bubble-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
 .ep-skills-wrap {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.85rem;
     margin-bottom: 3rem;
 }
 
 .ep-skill-tag {
-    background: #fff;
-    border: 1px solid var(--ep-border);
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(175, 227, 74, 0.3);
+    padding: 0.6rem 1.4rem;
+    border-radius: 99px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    color: var(--ep-text-main);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: bubble-float 5s ease-in-out infinite;
+    cursor: pointer;
+}
+
+.ep-skill-tag:nth-child(2n) {
+    animation-delay: 0.7s;
+}
+
+.ep-skill-tag:nth-child(3n) {
+    animation-delay: 1.4s;
+}
+
+.ep-skill-tag:nth-child(4n) {
+    animation-delay: 2.1s;
+}
+
+.ep-skill-tag:hover {
+    background: var(--ep-accent);
+    border-color: var(--ep-accent-dark);
+    transform: scale(1.15) translateY(-8px);
+    box-shadow: 0 12px 24px rgba(198, 245, 111, 0.3);
+    animation-play-state: paused;
 }
 
 /* Track Record Grid */
@@ -170,13 +228,47 @@
 }
 
 .ep-track-card {
-    background: #fff;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(4px);
     border: 1px solid var(--ep-border);
-    border-radius: var(--ep-radius-md);
+    border-radius: 20px;
     padding: 1.75rem;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    animation: bubble-float 7s ease-in-out infinite;
+    animation-delay: 0.5s;
+    position: relative;
+    overflow: hidden;
+}
+
+.ep-track-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--ep-accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.ep-track-card:nth-child(even) {
+    animation-delay: 1.5s;
+}
+
+.ep-track-card:hover {
+    background: #fff;
+    transform: scale(1.03) translateY(-8px);
+    border-color: var(--ep-accent);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+    animation-play-state: paused;
+}
+
+.ep-track-card:hover::before {
+    opacity: 1;
 }
 
 .ep-track-card h4 {
@@ -456,8 +548,20 @@
 }
 
 @media (max-width: 1024px) {
-    .ep-main-grid { grid-template-columns: 1fr; }
-    .ep-hero { flex-direction: column; padding: 2rem; }
-    .ep-services-grid { grid-template-columns: 1fr; }
-    .ep-track-grid { grid-template-columns: 1fr; }
+    .ep-main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ep-hero {
+        flex-direction: column;
+        padding: 2rem;
+    }
+
+    .ep-services-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ep-track-grid {
+        grid-template-columns: 1fr;
+    }
 }
