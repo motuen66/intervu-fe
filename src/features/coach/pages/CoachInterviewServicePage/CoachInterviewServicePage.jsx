@@ -75,7 +75,6 @@ export default function CoachInterviewServicePage() {
         setOpenUpdate(false);
         setActiveItem(null);
         fetchItems();
-        toast.success("Service updated successfully!");
     };
 
     const handleDeleteClick = (id) => {
