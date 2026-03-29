@@ -1,4 +1,5 @@
 import { createTheme } from "@mui/material/styles";
+import Grow from "@mui/material/Grow";
 
 const headingFont = '"Outfit", "Plus Jakarta Sans", "Inter", sans-serif';
 const bodyFont = '"Inter", "Roboto", "Helvetica", "Arial", sans-serif';
@@ -307,6 +308,24 @@ export const theme = createTheme({
                 root: {
                     backdropFilter: "blur(8px)",
                     backgroundColor: "rgba(255, 255, 255, 0.2)",
+                },
+            },
+        },
+        MuiDialog: {
+            defaultProps: {
+                TransitionComponent: Grow,
+                transitionDuration: { enter: 340, exit: 240 },
+                keepMounted: true,
+                slotProps: {
+                    backdrop: {
+                        transitionDuration: { enter: 340, exit: 240 }
+                    },
+                },
+            },
+            styleOverrides: {
+                paper: {
+                    willChange: "opacity, transform",
+                    transformOrigin: "50% 46%",
                 },
             },
         },

@@ -1541,9 +1541,9 @@ export default function SmartMatchModal({ open, onClose }) {
                     display: "flex",
                     flexDirection: "row",
                     bgcolor: "background.paper",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
+                    border: "none",
+                    outline: "none",
+                    boxShadow: "0 28px 70px -20px rgba(2, 6, 23, 0.55), 0 12px 28px rgba(15, 23, 42, 0.22)",
                     "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active": {
                         WebkitBoxShadow: "0 0 0 1000px transparent inset !important",
                         WebkitTextFillColor: "var(--mui-palette-text-primary) !important",

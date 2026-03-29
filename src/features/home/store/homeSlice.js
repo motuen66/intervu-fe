@@ -57,12 +57,31 @@ export const fetchSkills = createAsyncThunk(
     }
 );
 
+export const fetchIndustries = createAsyncThunk(
+    'home/fetchIndustries',
+    async (_, {rejectWithValue}) => {
+        try{
+            const response = await axios.get(homeEndPoints.GET_ALL_INDUSTRIES, {
+                params: {
+                    page: 1,
+                    pageSize: 100
+                }
+            });
+            return response.data;
+        }
+        catch (error) {
+            return rejectWithValue(error.response?.data || 'Failed to fetch industries');
+        }
+    }
+);
+
 const homeSlice = createSlice({
     name: 'home',
     initialState: {
         interviewers: [],
         companies: [],
         skills: [],
+        industries: [],
         // UI states
         loading: false,
         error: null,
@@ -78,7 +97,14 @@ const homeSlice = createSlice({
         // Filters
         filters: {
             company: null,
+            industry: null,
             skill: null,
+            skillIds: [],
+            levels: [],
+            minExperienceYears: '',
+            maxExperienceYears: '',
+            minPrice: '',
+            maxPrice: '',
             searchTerm: ''
         },
     },
@@ -91,7 +117,14 @@ const homeSlice = createSlice({
         clearFilters(state) {
             state.filters = {
                 company: null,
+                industry: null,
                 skill: null,
+                skillIds: [],
+                levels: [],
+                minExperienceYears: '',
+                maxExperienceYears: '',
+                minPrice: '',
+                maxPrice: '',
                 searchTerm: ''
             };
             state.pagination.currentPage = 1;
@@ -153,9 +186,23 @@ const homeSlice = createSlice({
             .addCase(fetchSkills.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            //slice for industries
+            .addCase(fetchIndustries.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchIndustries.fulfilled, (state, action) => {
+                state.loading = false;
+                state.industries = action.payload?.data?.items || [];
+            })
+            .addCase(fetchIndustries.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
     }
 });
 
 export const { setFilters, clearFilters, setPage, clearError } = homeSlice.actions;
+
 export default homeSlice.reducer;
