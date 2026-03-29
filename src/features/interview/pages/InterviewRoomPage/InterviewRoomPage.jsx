@@ -17,7 +17,9 @@ import {
     Typography,
     Stack,
     IconButton,
-    Avatar
+    Avatar,
+    Tabs,
+    Tab
 } from "@mui/material";
 import QuestionPanel from "./QuestionPanel";
 import VideoPanel from "./VideoPanel";
@@ -32,9 +34,12 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+import CodeIcon from "@mui/icons-material/Code";
 import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi.js";
 import { useLocation } from "react-router-dom";
+import EvaluationForm from "./EvaluationForm";
 
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
 
@@ -95,6 +100,9 @@ function InterviewRoomPage() {
     const [activeTestCaseTab, setActiveTestCaseTab] = useState(0);
     const [isEditingProblem, setIsEditingProblem] = useState(false);
     const [problemTab, setProblemTab] = useState(0);
+
+    // Main side-panel tab (Problem vs Evaluation)
+    const [mainPanelTab, setMainPanelTab] = useState(0);
 
     // Media and signaling related state/refs (missing earlier)
     const location = useLocation();
@@ -1403,36 +1411,61 @@ function InterviewRoomPage() {
                             sx={{
                                 width: `${cols[0]}%`,
                                 minWidth: 0,
-                                overflow: "auto",
-                                padding: 1.5,
+                                overflow: "hidden", // Changed to hidden to manage scrolls in panels
+                                display: 'flex',
+                                flexDirection: 'column',
                                 borderRight: "1px solid #eee",
+                                bgcolor: 'white'
                             }}
                         >
-                            <QuestionPanel
-                                user={user}
-                                isEditingProblem={isEditingProblem}
-                                setIsEditingProblem={setIsEditingProblem}
-                                problemDescription={problemDescription}
-                                setProblemDescription={setProblemDescription}
-                                problemShortName={problemShortName}
-                                setProblemShortName={setProblemShortName}
-                                testCases={testCases}
-                                setTestCases={setTestCases}
-                                sendProblem={sendProblem}
-                                problemTab={problemTab}
-                                problemData={problemData}
-                                setProblemTab={setProblemTab}
-                                activeTestCaseTab={activeTestCaseTab}
-                                setActiveTestCaseTab={setActiveTestCaseTab}
-                                addTestCase={addTestCase}
-                                handleTestCaseInputChange={handleTestCaseInputChange}
-                                handleTestCaseOutputChange={handleTestCaseOutputChange}
-                                addInputToTestCase={addInputToTestCase}
-                                removeInputFromTestCase={removeInputFromTestCase}
-                                removeTestCase={removeTestCase}
-                                addExpectedOutput={addExpectedOutput}
-                                removeExpectedOutput={removeExpectedOutput}
-                            />
+                            {user?.role === ROLES.INTERVIEWER && (
+                                <Tabs
+                                    value={mainPanelTab}
+                                    onChange={(_, v) => setMainPanelTab(v)}
+                                    variant="fullWidth"
+                                    sx={{ 
+                                        minHeight: 40,
+                                        borderBottom: 1,
+                                        borderColor: 'divider',
+                                        '& .MuiTab-root': { py: 1, minHeight: 40, textTransform: 'none', fontWeight: 700 }
+                                    }}
+                                >
+                                    <Tab icon={<CodeIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Problem" />
+                                    <Tab icon={<AssignmentTurnedInIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Evaluation" />
+                                </Tabs>
+                            )}
+                            
+                            <Box sx={{ flex: 1, overflow: 'auto', p: 1.5 }}>
+                                {mainPanelTab === 0 ? (
+                                    <QuestionPanel
+                                        user={user}
+                                        isEditingProblem={isEditingProblem}
+                                        setIsEditingProblem={setIsEditingProblem}
+                                        problemDescription={problemDescription}
+                                        setProblemDescription={setProblemDescription}
+                                        problemShortName={problemShortName}
+                                        setProblemShortName={setProblemShortName}
+                                        testCases={testCases}
+                                        setTestCases={setTestCases}
+                                        sendProblem={sendProblem}
+                                        problemTab={problemTab}
+                                        problemData={problemData}
+                                        setProblemTab={setProblemTab}
+                                        activeTestCaseTab={activeTestCaseTab}
+                                        setActiveTestCaseTab={setActiveTestCaseTab}
+                                        addTestCase={addTestCase}
+                                        handleTestCaseInputChange={handleTestCaseInputChange}
+                                        handleTestCaseOutputChange={handleTestCaseOutputChange}
+                                        addInputToTestCase={addInputToTestCase}
+                                        removeInputFromTestCase={removeInputFromTestCase}
+                                        removeTestCase={removeTestCase}
+                                        addExpectedOutput={addExpectedOutput}
+                                        removeExpectedOutput={removeExpectedOutput}
+                                    />
+                                ) : (
+                                    <EvaluationForm roomId={roomId} onSubmitted={() => setMainPanelTab(0)} />
+                                )}
+                            </Box>
                         </Box>
 
                         <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 0)} />

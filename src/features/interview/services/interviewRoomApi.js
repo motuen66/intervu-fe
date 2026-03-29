@@ -5,6 +5,7 @@ export const interviewEndPoints = {
 
     GET_COACH_EVALUATION: (interviewRoomId) => `/interviewroom/${interviewRoomId}/coach-evaluation`,
     SUBMIT_COACH_EVALUATION: (interviewRoomId) => `/interviewroom/${interviewRoomId}/coach-evaluation`,
+    DRAFT_COACH_EVALUATION: (interviewRoomId) => `/interviewroom/${interviewRoomId}/coach-evaluation/draft`,
 
     CANCEL_INTERVIEW: (interviewRoomId) => `/interview-booking/cancel/${interviewRoomId}`,
     CANCEL_BOOKING_REQUEST: (bookingRequestId) => `/booking-requests/${bookingRequestId}/cancel`,

@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Dialog from "@mui/material/Dialog";
+import Grow from "@mui/material/Grow";
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Grow ref={ref} {...props} timeout={500} />;
+});
+
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
@@ -100,6 +106,7 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
             onClose={handleClose}
             maxWidth="sm"
             fullWidth
+            TransitionComponent={Transition}
             PaperProps={{ sx: dialogStyles.paper }}
         >
             <DialogTitle

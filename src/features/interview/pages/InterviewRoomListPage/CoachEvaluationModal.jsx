@@ -40,7 +40,16 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                     alertErrorMessage: true,
                 });
                 const data = res?.data;
-                setItems(data?.evaluationResults || []);
+                
+                // Normalize keys to ensure consistency (handles both lowercase and PascalCase from API)
+                const normalizedResults = (data?.evaluationResults || []).map(item => ({
+                    type: item.type || item.Type || "",
+                    question: item.question || item.Question || "",
+                    score: item.score ?? item.Score ?? 0,
+                    answer: item.answer ?? item.Answer ?? ""
+                }));
+
+                setItems(normalizedResults);
                 setIsCompleted(Boolean(data?.isEvaluationCompleted));
             } catch (err) {
                 setError(err?.response?.data?.message || "Failed to load evaluation form.");
@@ -108,6 +117,22 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
         }
     };
 
+    const getScoreLabel = (score) => {
+        if (score <= 2) return "Very Bad";
+        if (score <= 4) return "Bad";
+        if (score <= 6) return "Average";
+        if (score <= 8) return "Good";
+        return "Very Good";
+    };
+
+    const getScoreColor = (score) => {
+        if (score <= 2) return "error.main";
+        if (score <= 4) return "warning.main";
+        if (score <= 6) return "info.main";
+        if (score <= 8) return "primary.main";
+        return "success.main";
+    };
+
     return (
         <Modal open={open} onClose={handleClose} aria-labelledby="coach-evaluation-modal">
             <Box
@@ -166,19 +191,30 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                         {item.question}
                                     </Typography>
                                     <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 0.5 }}>
-                                        <Slider
-                                            value={item.score}
-                                            min={0}
-                                            max={10}
-                                            step={1}
-                                            marks
-                                            valueLabelDisplay="auto"
-                                            onChange={(_, val) => handleItemChange(index, "score", val)}
-                                            sx={{ flex: 1 }}
-                                        />
-                                        <Typography variant="body2" sx={{ width: 32, textAlign: "right" }}>
-                                            {item.score}
-                                        </Typography>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Slider
+                                                value={item.score}
+                                                min={0}
+                                                max={10}
+                                                step={1}
+                                                marks
+                                                valueLabelDisplay="auto"
+                                                onChange={(_, val) => handleItemChange(index, "score", val)}
+                                            />
+                                            <Stack direction="row" justifyContent="space-between" sx={{ mt: -1 }}>
+                                                <Typography variant="caption" color="text.secondary">Very Bad</Typography>
+                                                <Typography variant="caption" color="text.secondary">Average</Typography>
+                                                <Typography variant="caption" color="text.secondary">Very Good</Typography>
+                                            </Stack>
+                                        </Box>
+                                        <Box sx={{ width: 80, textAlign: "right" }}>
+                                            <Typography variant="h6" color={getScoreColor(item.score)} sx={{ fontWeight: 700, lineHeight: 1 }}>
+                                                {item.score}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {getScoreLabel(item.score)}
+                                            </Typography>
+                                        </Box>
                                     </Stack>
                                     <TextField
                                         label="Feedback"
