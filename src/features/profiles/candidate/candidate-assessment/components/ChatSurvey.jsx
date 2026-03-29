@@ -664,6 +664,7 @@ const ChatSurvey = () => {
         };
 
         setAnswers({
+            userId,
             profile: { role, level, techstack, domain, freeText: setupForm.free_text || "" },
             responses: finalResponses,
             derivedSkills,
@@ -701,7 +702,7 @@ const ChatSurvey = () => {
         setAnswers({ profile: { role: "", level: "", techstack: [], domain: [], freeText: "" }, responses: [] });
         setSurveyResult(null);
         setSkillScores([]);
-        setRoadmap({ today: [], weeks: [] });
+        setRoadmap(null);
         updateMatchPercentage(0);
         navigate("/home");
     };

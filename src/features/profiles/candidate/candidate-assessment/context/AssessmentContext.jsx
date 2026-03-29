@@ -10,7 +10,7 @@ export function AssessmentProvider({ children }) {
     const [answers, setAnswers] = useState(null);
     const [surveyResult, setSurveyResult] = useState(null);
     const [skillScores, setSkillScores] = useState([]);
-    const [roadmap, setRoadmap] = useState({ today: [], weeks: [] });
+    const [roadmap, setRoadmap] = useState(null);
     const [matchPercentage, setMatchPercentage] = useState(0);
     const [lastMatchPercentage, setLastMatchPercentage] = useState(0);
 

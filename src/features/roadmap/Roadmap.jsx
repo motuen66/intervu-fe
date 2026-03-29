@@ -22,7 +22,7 @@ const getChildSkillNames = (childSkills = []) => {
             }
 
             if (childSkill && typeof childSkill === "object") {
-                return childSkill.name ?? "";
+                return childSkill.name ?? childSkill.Name ?? "";
             }
 
             return "";
@@ -89,13 +89,14 @@ const nodeTypes = {
     phaseNode: PhaseNode,
 };
 
-function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
+function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, height = "100vh" }) {
     const { nodes, edges, nodeDetailsById } = useMemo(() => {
         const nodes = [];
         const edges = [];
         const nodeDetailsById = {};
+        const sourceRoadmap = roadmapInput?.phases?.length ? roadmapInput : roadmapData;
 
-        const maxNodesPerPhase = roadmapData.phases.reduce((maxCount, phase) => {
+        const maxNodesPerPhase = sourceRoadmap.phases.reduce((maxCount, phase) => {
             return Math.max(maxCount, phase.nodes.length);
         }, 1);
         const roadmapWidth = Math.max(
@@ -106,7 +107,7 @@ function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
 
         let currentY = 0;
 
-        roadmapData.phases.forEach((phase, pIndex) => {
+        sourceRoadmap.phases.forEach((phase, pIndex) => {
             const totalNodeWidth = phase.nodes.length * NODE_WIDTH + Math.max(0, phase.nodes.length - 1) * NODE_GAP_X;
             const nodeStartX = (roadmapWidth - totalNodeWidth) / 2;
 
@@ -152,9 +153,9 @@ function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
             currentY += PHASE_HEIGHT + PHASE_GAP_Y;
         });
 
-        for (let phaseIndex = 1; phaseIndex < roadmapData.phases.length; phaseIndex += 1) {
-            const previousPhase = roadmapData.phases[phaseIndex - 1];
-            const currentPhase = roadmapData.phases[phaseIndex];
+        for (let phaseIndex = 1; phaseIndex < sourceRoadmap.phases.length; phaseIndex += 1) {
+            const previousPhase = sourceRoadmap.phases[phaseIndex - 1];
+            const currentPhase = sourceRoadmap.phases[phaseIndex];
             const connections = buildPhaseConnections(previousPhase.nodes, currentPhase.nodes);
 
             connections.forEach(([sourceSkill, targetSkill], connectionIndex) => {
@@ -177,7 +178,7 @@ function Roadmap({ onSelectNode, showHeader = true, height = "100vh" }) {
         }
 
         return { nodes, edges, nodeDetailsById };
-    }, []);
+    }, [roadmapInput]);
 
     const handleNodeClick = useCallback(
         (_, node) => {
