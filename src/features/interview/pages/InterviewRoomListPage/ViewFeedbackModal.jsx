@@ -105,8 +105,8 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                 }
             }}
         >
-            <DialogTitle sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: "-0.01em" }}>
+            <DialogTitle sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }} component="div">
+                <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: "-0.01em" }} component="span">
                     Performance Feedback
                 </Typography>
                 <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>

@@ -280,13 +280,17 @@ function InterviewRoomListPage() {
         try {
             const res = await callApi({
                 method: METHOD.GET,
-                endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=100&Statuses=${INTERVIEW_ROOM_STATUS.COMPLETED}`,
+                endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=1000`, // Increased limit to find rounds
             });
             const rooms = res?.data || [];
+            
+            // For multi-round interviews, we need to check ALL individual rooms,
+            // not just the ones currently marked as 'COMPLETED' in the top-level grouping.
             const pendingRoom = rooms.find(
                 (room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED && room.isEvaluationCompleted === false,
             );
-            console.log("Checked pending coach evaluations. Rooms:", rooms, "Pending evaluation room:", pendingRoom);
+            
+            console.log("Checked pending coach evaluations. Total rooms:", rooms.length, "Pending evaluation room:", pendingRoom);
             if (pendingRoom) {
                 setCoachEvaluationState({ open: true, room: pendingRoom });
             }
