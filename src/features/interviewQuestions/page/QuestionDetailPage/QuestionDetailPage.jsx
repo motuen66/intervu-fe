@@ -549,7 +549,7 @@ export default function QuestionDetailPage() {
                             sx={{ width: 24, height: 24, cursor: data.authorSlug ? "pointer" : "default" }}
                             onClick={() => data.authorSlug && navigate(`/profile/${data.authorSlug}`)}
                         >
-                            {data.authorName?.[0] ?? "?"}
+                            {data.authorName?.charAt(0) ?? "?"}
                         </Avatar>
                     )}
                     {data.authorName && (
