@@ -5,12 +5,18 @@ import StepperHeader from "../components/StepperHeader";
 import ChatSurvey from "../components/ChatSurvey";
 import ProcessingState from "../components/ProcessingState";
 import ResultDashboard from "../components/ResultDashboard";
-import RoadmapView from "../components/RoadmapView";
+import RoadmapDashboard from "../../../../roadmap/RoadmapDashboard";
 
 const steps = ["Survey", "Analysis", "Results", "Roadmap"];
 
 function AssessmentFlow() {
-    const { currentStep, setCurrentStep, skillScores } = useAssessment();
+    const {
+        currentStep,
+        setCurrentStep,
+        skillScores,
+        roadmap,
+        answers,
+    } = useAssessment();
     const [searchParams] = useSearchParams();
 
     useEffect(() => {
@@ -25,7 +31,7 @@ function AssessmentFlow() {
             {currentStep === 1 && <ChatSurvey />}
             {currentStep === 2 && <ProcessingState />}
             {currentStep === 3 && <ResultDashboard />}
-            {currentStep === 4 && <RoadmapView />}
+            {currentStep === 4 && <RoadmapDashboard roadmap={roadmap} userId={answers?.userId} />}
         </div>
     );
 }

@@ -3,6 +3,10 @@ import { Box, CircularProgress, LinearProgress, Paper, Stack, Typography } from 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { alpha } from "@mui/material/styles";
 import { useAssessment } from "../context/AssessmentContext";
+import { assessmentApi } from "../services/assessmentApi";
+import { roadmapData as fallbackRoadmap } from "../../../../roadmap/data";
+
+const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 const levelMap = {
     none: 0,
@@ -47,7 +51,6 @@ const ProcessingState = () => {
 
     const profile = answers?.profile || {};
     const processedSkills = useMemo(() => buildSkillScores(surveyResult, answers), [surveyResult, answers]);
-    const roadmap = useMemo(() => buildRoadmap(processedSkills, profile), [processedSkills, profile]);
     const matchPercentage = useMemo(() => calculateMatchPercentage(processedSkills), [processedSkills]);
     const statuses = useMemo(
         () => [
@@ -59,27 +62,82 @@ const ProcessingState = () => {
     );
 
     useEffect(() => {
+        let isCancelled = false;
+        const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
         const progressInterval = window.setInterval(() => {
             setProgress((prev) => (prev >= 94 ? 94 : Math.min(94, prev + Math.random() * 14)));
         }, 320);
 
-        const statusTimeouts = [
-            window.setTimeout(() => setStatusIndex(1), 950),
-            window.setTimeout(() => setStatusIndex(2), 1900),
-            window.setTimeout(() => {
-                setSkillScores(processedSkills);
-                updateMatchPercentage(matchPercentage);
-                setRoadmap(roadmap);
-                setProgress(100);
-                window.setTimeout(() => nextStep(), 420);
-            }, 2850),
-        ];
+        const run = async () => {
+            await wait(950);
+            if (isCancelled) {
+                return;
+            }
+            setStatusIndex(1);
+
+            await wait(950);
+            if (isCancelled) {
+                return;
+            }
+            setStatusIndex(2);
+
+            setSkillScores(processedSkills);
+            updateMatchPercentage(matchPercentage);
+
+            let resolvedRoadmap = null;
+            const userId = answers?.userId;
+
+            if (userId && userId !== EMPTY_GUID) {
+                try {
+                    const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
+                        userId,
+                        forceRegenerate: true,
+                    });
+
+                    resolvedRoadmap = generateResponse?.data?.roadmap ?? generateResponse?.data?.Roadmap ?? null;
+                } catch (error) {
+                    console.error("Generate roadmap failed:", error);
+                }
+
+                if (!resolvedRoadmap) {
+                    try {
+                        const fetchResponse = await assessmentApi.getRoadmapByUserId(userId);
+                        resolvedRoadmap = fetchResponse?.data?.roadmap ?? fetchResponse?.data?.Roadmap ?? null;
+                    } catch (error) {
+                        console.error("Fetch roadmap fallback failed:", error);
+                    }
+                }
+            }
+
+            if (isCancelled) {
+                return;
+            }
+
+            setRoadmap(resolvedRoadmap ?? fallbackRoadmap);
+            setProgress(100);
+            await wait(420);
+
+            if (!isCancelled) {
+                nextStep();
+            }
+        };
+
+        run();
 
         return () => {
+            isCancelled = true;
             window.clearInterval(progressInterval);
-            statusTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
         };
-    }, [matchPercentage, nextStep, processedSkills, roadmap, setRoadmap, setSkillScores, updateMatchPercentage]);
+    }, [
+        answers?.userId,
+        matchPercentage,
+        nextStep,
+        processedSkills,
+        setRoadmap,
+        setSkillScores,
+        updateMatchPercentage,
+    ]);
 
     return (
         <Box sx={{ maxWidth: 760, mx: "auto", px: 3, py: 10 }}>
@@ -96,7 +154,13 @@ const ProcessingState = () => {
             >
                 <Stack spacing={4} alignItems="center">
                     <Box sx={{ position: "relative", display: "inline-flex" }}>
-                        <CircularProgress size={120} thickness={4} value={100} variant="determinate" sx={{ color: alpha("#cbd5e1", 0.8) }} />
+                        <CircularProgress
+                            size={120}
+                            thickness={4}
+                            value={100}
+                            variant="determinate"
+                            sx={{ color: alpha("#cbd5e1", 0.8) }}
+                        />
                         <CircularProgress
                             size={120}
                             thickness={4}
@@ -162,7 +226,11 @@ function buildSkillScores(surveyResult, answers) {
         }));
     }
 
-    const stackSkills = buildStackDrivenSkills(answers?.profile?.techstack || [], answers?.responses || [], targetLevel);
+    const stackSkills = buildStackDrivenSkills(
+        answers?.profile?.techstack || [],
+        answers?.responses || [],
+        targetLevel,
+    );
     if (stackSkills.length > 0) {
         return stackSkills;
     }
@@ -184,7 +252,8 @@ function buildSkillScores(surveyResult, answers) {
     const normalizedSkills = skillSource
         .map((item) => {
             const answerSkill = responseMap.get((item.skill || item.Skill || "").toLowerCase());
-            const rawLevel = item.selectedLevel || item.SelectedLevel || answerSkill?.selectedLevel || answerSkill?.answer || "";
+            const rawLevel =
+                item.selectedLevel || item.SelectedLevel || answerSkill?.selectedLevel || answerSkill?.answer || "";
             const sfiaLevel = mapToLevel(rawLevel);
             return {
                 ...evaluateSkillReadiness(sfiaLevel, targetLevel),
@@ -201,8 +270,12 @@ function buildSkillScores(surveyResult, answers) {
 
 function buildStackDrivenSkills(techstack = [], responses = [], targetLevel = 4) {
     return techstack.map((stack) => {
-        const normalizedStack = String(stack || "").trim().toLowerCase();
-        const keywords = Array.from(new Set([normalizedStack, ...(stackKeywordMap[normalizedStack] || [])])).filter(Boolean);
+        const normalizedStack = String(stack || "")
+            .trim()
+            .toLowerCase();
+        const keywords = Array.from(new Set([normalizedStack, ...(stackKeywordMap[normalizedStack] || [])])).filter(
+            Boolean,
+        );
         const relatedResponses = responses.filter((response) => {
             const haystack = `${response.skill || ""} ${response.question || ""}`.toLowerCase();
             return keywords.some((keyword) => haystack.includes(keyword));
@@ -228,7 +301,14 @@ function buildStackDrivenSkills(techstack = [], responses = [], targetLevel = 4)
             skillKey: stack,
             sfiaLevel: Math.max(0, Math.round(roundedLevel)),
             baseScore: Math.min(100, Math.round((roundedLevel / 7) * 100)),
-            selectedLevel: roundedLevel <= 1 ? "Missing" : roundedLevel <= 3 ? "Weak" : roundedLevel <= 5 ? "Intermediate" : "Advanced",
+            selectedLevel:
+                roundedLevel <= 1
+                    ? "Missing"
+                    : roundedLevel <= 3
+                      ? "Weak"
+                      : roundedLevel <= 5
+                        ? "Intermediate"
+                        : "Advanced",
         };
     });
 }
@@ -391,7 +471,8 @@ function buildRoadmap(skills, profile) {
             title: `Week ${index + 1}`,
             focus: skill.skillKey,
             description: `Strengthen ${skill.skillKey} for ${stackLabel} interview scenarios.`,
-            gapLabel: skill.status === "missing" ? "Priority Gap" : skill.status === "weak" ? "Core Gap" : "Growth Track",
+            gapLabel:
+                skill.status === "missing" ? "Priority Gap" : skill.status === "weak" ? "Core Gap" : "Growth Track",
             progress: Math.max(10, skill.score),
             locked: false,
             attributes: buildAttributes(skill),

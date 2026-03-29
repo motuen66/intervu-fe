@@ -13,6 +13,7 @@ import { ROLES } from "../../../../common/constants/common.js";
 import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
 import FeedbackListModal from "./FeedbackListModal.jsx";
 import RescheduleRequestModal from "./RescheduleRequestModal.jsx";
+import JDMultiRoundRescheduleModal from "./JDMultiRoundRescheduleModal.jsx";
 import ConfirmModal from "../../../../common/components/ConfirmModal.jsx";
 // import AICVSelectionModal from "./components/AICVSelectionModal.jsx";
 import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
@@ -313,6 +314,23 @@ function InterviewRoomListPage() {
 
     const handleSubmitReschedule = async (data) => {
         try {
+            if (data?.type === "multi-round") {
+                await callApi({
+                    method: METHOD.POST,
+                    endpoint: interviewEndPoints.RESCHEDULE_JD_BOOKING(data.bookingRequestId),
+                    arg: {
+                        rounds: data.rounds,
+                    },
+                    displaySuccessMessage: true,
+                });
+
+                await fetchRooms([0, 1]);
+                await fetchRooms([2, 3]);
+                await fetchRescheduleRequests();
+                handleCloseRescheduleModal();
+                return;
+            }
+
             await callApi({
                 method: METHOD.POST,
                 endpoint: interviewEndPoints.CREATE_RESCHEDULE_REQUEST,
@@ -469,6 +487,10 @@ function InterviewRoomListPage() {
         );
     }
 
+    const isMultiRoundReschedule = Boolean(
+        rescheduleModalState.room?.rounds && rescheduleModalState.room.rounds.length > 1,
+    );
+
     return (
         <Box sx={{ minHeight: "100vh", py: 4 }}>
             <Container maxWidth="lg">
@@ -570,13 +592,22 @@ function InterviewRoomListPage() {
                     user={user}
                 />
 
-                {/* Reschedule Request Modal */}
-                <RescheduleRequestModal
-                    open={rescheduleModalState.open}
-                    onClose={handleCloseRescheduleModal}
-                    onSubmit={handleSubmitReschedule}
-                    currentSession={rescheduleModalState.room}
-                />
+                {/* Reschedule Modal */}
+                {isMultiRoundReschedule ? (
+                    <JDMultiRoundRescheduleModal
+                        open={rescheduleModalState.open}
+                        onClose={handleCloseRescheduleModal}
+                        onSubmit={handleSubmitReschedule}
+                        currentSession={rescheduleModalState.room}
+                    />
+                ) : (
+                    <RescheduleRequestModal
+                        open={rescheduleModalState.open}
+                        onClose={handleCloseRescheduleModal}
+                        onSubmit={handleSubmitReschedule}
+                        currentSession={rescheduleModalState.room}
+                    />
+                )}
 
                 <ConfirmModal
                     show={cancelConfirmState.open}

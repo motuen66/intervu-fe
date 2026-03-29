@@ -9,6 +9,7 @@ export const interviewEndPoints = {
 
     CANCEL_INTERVIEW: (interviewRoomId) => `/interview-booking/cancel/${interviewRoomId}`,
     CANCEL_BOOKING_REQUEST: (bookingRequestId) => `/booking-requests/${bookingRequestId}/cancel`,
+    RESCHEDULE_JD_BOOKING: (bookingRequestId) => `/booking-requests/${bookingRequestId}/reschedule`,
 
     UPLOAD_CV_AI_INTERVIEW: `/ai/upload-cv-ai-interview`,
     GET_LAST_CV_PDF_URL: `/ai/last-cv-pdf-url`,
