@@ -1,13 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-    Background,
-    Controls,
-    Handle,
-    MarkerType,
-    Position,
-    ReactFlow,
-    ReactFlowProvider,
-} from "@xyflow/react";
+import { Background, Controls, Handle, MarkerType, Position, ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
@@ -22,20 +14,35 @@ const nodeTypes = {
 };
 
 const RoadmapView = () => {
-    const { roadmap = { today: [], weeks: [] }, answers, skillScores = [] } = useAssessment();
     const navigate = useNavigate();
+    const { roadmap, answers, skillScores, resetAssessment, saveAssessmentSnapshot } = useAssessment();
+
     const profile = answers?.profile || {};
+    const roadmapMeta = roadmap?.meta || {};
+    const interviewReady = Boolean(roadmapMeta.interviewReady);
     const graphData = useMemo(() => buildRoadmapTree(roadmap, profile), [roadmap, profile]);
     const [selectedNodeId, setSelectedNodeId] = useState(graphData.initialSelectedId);
     const selectedDetail = graphData.detailMap[selectedNodeId] || graphData.detailMap[graphData.initialSelectedId];
-    const strongestSkills = skillScores.slice().sort((a, b) => b.score - a.score).slice(0, 2);
+    const strongestSkills = (skillScores || [])
+        .slice()
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 2);
 
     useEffect(() => {
         setSelectedNodeId(graphData.initialSelectedId);
     }, [graphData.initialSelectedId]);
 
-    const handleSaveAndGoHome = () => {
-        navigate("/home");
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSaveAndGoHome = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            if (saveAssessmentSnapshot) await saveAssessmentSnapshot();
+            navigate("/home");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const nodes = graphData.nodes.map((node) => ({
@@ -61,28 +68,40 @@ const RoadmapView = () => {
                         <Stack direction={{ xs: "column", lg: "row" }} justifyContent="space-between" spacing={3}>
                             <Box>
                                 <Typography variant="h3" fontWeight={800} gutterBottom>
-                                    Your Personalized Roadmap
+                                    {interviewReady ? "Interview Practice Plan" : "Your Personalized Roadmap"}
                                 </Typography>
                                 <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 820 }}>
-                                    Follow the skill tree from your target role into the exact practice path you need next.
+                                    {interviewReady
+                                        ? roadmapMeta.description
+                                        : "Follow the skill tree from your target role into the exact practice path you need next."}
                                 </Typography>
                                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 2 }}>
                                     {profile.role ? <Chip label={profile.role} /> : null}
+                                    {interviewReady ? <Chip label="Interview Ready" color="success" /> : null}
                                     {(profile.techstack || []).slice(0, 4).map((item) => (
                                         <Chip key={item} label={item} variant="outlined" />
                                     ))}
                                     {strongestSkills.map((skill) => (
-                                        <Chip key={skill.skillKey} label={`Strong: ${skill.skillKey}`} color="success" variant="outlined" />
+                                        <Chip
+                                            key={skill.skillKey}
+                                            label={`Strong: ${skill.skillKey}`}
+                                            color="success"
+                                            variant="outlined"
+                                        />
                                     ))}
                                 </Stack>
                             </Box>
 
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                                <Button variant="outlined" startIcon={<CheckCircleRoundedIcon />} onClick={handleSaveAndGoHome}>
-                                    Save Progress
-                                </Button>
-                                <Button variant="contained" startIcon={<HomeRoundedIcon />} onClick={handleSaveAndGoHome}>
-                                    Save And Go Home
+                                <Button
+                                    variant="text"
+                                    size="small"
+                                    onClick={handleSaveAndGoHome}
+                                    startIcon={<HomeRoundedIcon />}
+                                    disabled={isSaving}
+                                    sx={{ minWidth: 156, py: 0.9, color: "#64748b" }}
+                                >
+                                    {isSaving ? "Saving..." : "Save And Go Home"}
                                 </Button>
                             </Stack>
                         </Stack>
@@ -120,12 +139,18 @@ const RoadmapView = () => {
                         <Box
                             sx={{
                                 display: "grid",
-                                gridTemplateColumns: { xs: "1fr", xl: "360px 1fr" },
+                                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
                                 gap: 3,
                             }}
                         >
-                            <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
-                                <Typography variant="overline" sx={{ color: "#64748b", fontWeight: 800, letterSpacing: "0.08em" }}>
+                            <Paper
+                                elevation={0}
+                                sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}
+                            >
+                                <Typography
+                                    variant="overline"
+                                    sx={{ color: "#64748b", fontWeight: 800, letterSpacing: "0.08em" }}
+                                >
                                     Skill Overview
                                 </Typography>
                                 <Typography variant="h5" fontWeight={800} sx={{ mt: 1 }}>
@@ -139,17 +164,31 @@ const RoadmapView = () => {
                                 </Box>
                             </Paper>
 
-                            <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
-                                <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
+                            <Paper
+                                elevation={0}
+                                sx={{ p: 3, borderRadius: 4, border: "1px solid", borderColor: "divider" }}
+                            >
+                                <Stack
+                                    direction={{ xs: "column", md: "row" }}
+                                    justifyContent="space-between"
+                                    spacing={2}
+                                    sx={{ mb: 3 }}
+                                >
                                     <Box>
-                                        <Typography variant="overline" sx={{ color: "#64748b", fontWeight: 800, letterSpacing: "0.08em" }}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{ color: "#64748b", fontWeight: 800, letterSpacing: "0.08em" }}
+                                        >
                                             Study Plan
                                         </Typography>
                                         <Typography variant="h5" fontWeight={800}>
-                                            Practice Tasks
+                                            {interviewReady ? "Interview Actions" : "Practice Tasks"}
                                         </Typography>
                                     </Box>
-                                    <Chip icon={<AutoAwesomeRoundedIcon />} label={`${selectedDetail.tasks?.length || 0} actions`} />
+                                    <Chip
+                                        icon={<AutoAwesomeRoundedIcon />}
+                                        label={`${selectedDetail.tasks?.length || 0} actions`}
+                                    />
                                 </Stack>
 
                                 <Stack spacing={2}>
@@ -177,8 +216,14 @@ const RoadmapView = () => {
                                                         width: 34,
                                                         height: 34,
                                                         borderRadius: "50%",
-                                                        bgcolor: selectedDetail.activeTaskId === task.id ? "#84cc16" : "#e2e8f0",
-                                                        color: selectedDetail.activeTaskId === task.id ? "#1f2937" : "#475569",
+                                                        bgcolor:
+                                                            selectedDetail.activeTaskId === task.id
+                                                                ? "#84cc16"
+                                                                : "#e2e8f0",
+                                                        color:
+                                                            selectedDetail.activeTaskId === task.id
+                                                                ? "#1f2937"
+                                                                : "#475569",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
@@ -190,7 +235,12 @@ const RoadmapView = () => {
                                                 </Box>
                                                 <Box>
                                                     <Typography fontWeight={800}>{task.title}</Typography>
-                                                    <Chip label={task.type} size="small" variant="outlined" sx={{ mt: 0.75, mb: 1 }} />
+                                                    <Chip
+                                                        label={task.type}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        sx={{ mt: 0.75, mb: 1 }}
+                                                    />
                                                     <Typography variant="body2" color="text.secondary">
                                                         {task.detail}
                                                     </Typography>
@@ -212,8 +262,8 @@ function RoadmapNode({ data }) {
     return (
         <Box
             sx={{
-                width: data.compact ? 176 : 208,
-                minHeight: data.compact ? 74 : 96,
+                width: 216,
+                minHeight: 96,
                 px: 1.75,
                 py: 1.45,
                 borderRadius: 3,
@@ -290,7 +340,14 @@ function RadarChart({ attributes }) {
             {points.map((point) => (
                 <g key={point.label}>
                     <circle cx={point.x} cy={point.y} r="4" fill="#84cc16" />
-                    <text x={point.labelX} y={point.labelY} textAnchor="middle" fontSize="10" fill="#475569" fontWeight="700">
+                    <text
+                        x={point.labelX}
+                        y={point.labelY}
+                        textAnchor="middle"
+                        fontSize="10"
+                        fill="#475569"
+                        fontWeight="700"
+                    >
                         {point.label}
                     </text>
                 </g>
@@ -303,6 +360,7 @@ function buildRoadmapTree(roadmap, profile) {
     const detailMap = {};
     const weekItems = roadmap.weeks || [];
     const todayItems = roadmap.today || [];
+    const roadmapMeta = roadmap?.meta || {};
     const rootId = "roadmap-root";
     const baseX = 220;
 
@@ -312,13 +370,16 @@ function buildRoadmapTree(roadmap, profile) {
             type: "roadmap",
             position: { x: 420, y: 0 },
             data: {
-                label: "Target",
-                title: profile.role || "Assessment Goal",
-                description: profile.freeText || "Your roadmap starts from the role you want to reach.",
-                background: "#f0fdf4",
-                borderColor: alpha("#84cc16", 0.75),
-                accentText: "#4d7c0f",
-                titleColor: "#14532d",
+                label: roadmapMeta.interviewReady ? "Ready" : "Target",
+                title: roadmapMeta.title || profile.role || "Assessment Goal",
+                description:
+                    roadmapMeta.description ||
+                    profile.freeText ||
+                    "Your roadmap starts from the role you want to reach.",
+                background: roadmapMeta.interviewReady ? "#ecfdf5" : "#f0fdf4",
+                borderColor: roadmapMeta.interviewReady ? alpha("#10b981", 0.72) : alpha("#84cc16", 0.75),
+                accentText: roadmapMeta.interviewReady ? "#047857" : "#4d7c0f",
+                titleColor: roadmapMeta.interviewReady ? "#065f46" : "#14532d",
                 bodyColor: "#4b5563",
             },
         },
@@ -403,16 +464,18 @@ function buildRoadmapTree(roadmap, profile) {
             });
         });
 
-        if (weekIndex === 0) {
+        if (weekIndex === 0 && !roadmapMeta.interviewReady) {
             initialSelectedId = weekId;
         }
     });
 
     detailMap[rootId] = {
-        title: profile.role || "Assessment Goal",
-        description: profile.freeText || "Your roadmap starts here and branches into the skills you need most.",
-        attributes:
-            todayItems[0]?.attributes ||
+        title: roadmapMeta.title || profile.role || "Assessment Goal",
+        description:
+            roadmapMeta.description ||
+            profile.freeText ||
+            "Your roadmap starts here and branches into the skills you need most.",
+        attributes: todayItems[0]?.attributes ||
             weekItems[0]?.attributes || [
                 { label: "Knowledge", value: 52 },
                 { label: "Execution", value: 48 },
