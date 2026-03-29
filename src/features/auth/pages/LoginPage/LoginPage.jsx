@@ -13,7 +13,11 @@ import SplitText from "./SplitText";
 import { TextField, Typography, Box } from "@mui/material";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
-import { assessmentApi } from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
+import {
+    assessmentEndPoints,
+    hasAssessmentData,
+    hasSkillGapData,
+} from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 
@@ -48,12 +52,8 @@ function LoginPage() {
             // Candidate: check whether we already have an assessment/skill-gap
             try {
                 const assessmentSeenKey = getCandidateFirstLoginAssessmentKey(user.id);
-                const res = await assessmentApi.getSkillGaps(user.id);
+                const hasData = await hasAssessmentData(user.id);
 
-                const hasData =
-                    res?.success &&
-                    res?.data &&
-                    (Array.isArray(res.data) ? res.data.length > 0 : Object.keys(res.data).length > 0);
                 if (hasData) {
                     // mark as seen and go to home where Roadmap tab can show data
                     localStorage.setItem(assessmentSeenKey, "true");

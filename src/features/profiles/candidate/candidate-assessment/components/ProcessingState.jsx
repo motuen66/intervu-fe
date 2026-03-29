@@ -32,6 +32,14 @@ const stackKeywordMap = {
     "spring boot": ["spring", "spring boot", "java"],
 };
 
+const targetLevelMap = [
+    { keywords: ["staff", "lead", "principal"], level: 7 },
+    { keywords: ["senior"], level: 6 },
+    { keywords: ["mid", "intermediate"], level: 5 },
+    { keywords: ["junior", "associate"], level: 4 },
+    { keywords: ["fresher", "entry", "intern", "graduate"], level: 3 },
+];
+
 const ProcessingState = () => {
     const { answers, surveyResult, setSkillScores, updateMatchPercentage, setRoadmap, nextStep } = useAssessment();
     const [progress, setProgress] = useState(0);
@@ -142,17 +150,19 @@ const ProcessingState = () => {
 };
 
 function buildSkillScores(surveyResult, answers) {
+    const targetLevel = getTargetLevel(answers?.profile?.level);
+
     if (Array.isArray(answers?.derivedSkills) && answers.derivedSkills.length > 0) {
         return answers.derivedSkills.map((skill) => ({
+            ...evaluateSkillReadiness(skill.scoreValue || 0, targetLevel),
             skillKey: skill.skillKey,
             sfiaLevel: Math.max(0, Math.round(skill.scoreValue || 0)),
-            status: skill.status,
-            score: Math.min(100, Math.round(((skill.scoreValue || 0) / 7) * 100)),
+            baseScore: Math.min(100, Math.round(((skill.scoreValue || 0) / 7) * 100)),
             selectedLevel: skill.selectedLevel,
         }));
     }
 
-    const stackSkills = buildStackDrivenSkills(answers?.profile?.techstack || [], answers?.responses || []);
+    const stackSkills = buildStackDrivenSkills(answers?.profile?.techstack || [], answers?.responses || [], targetLevel);
     if (stackSkills.length > 0) {
         return stackSkills;
     }
@@ -177,10 +187,10 @@ function buildSkillScores(surveyResult, answers) {
             const rawLevel = item.selectedLevel || item.SelectedLevel || answerSkill?.selectedLevel || answerSkill?.answer || "";
             const sfiaLevel = mapToLevel(rawLevel);
             return {
+                ...evaluateSkillReadiness(sfiaLevel, targetLevel),
                 skillKey: item.skill || item.Skill || answerSkill?.skill || "Unknown Skill",
                 sfiaLevel,
-                status: sfiaLevel <= 1 ? "missing" : sfiaLevel <= 3 ? "weak" : sfiaLevel <= 5 ? "medium" : "good",
-                score: Math.min(100, Math.round((sfiaLevel / 7) * 100)),
+                baseScore: Math.min(100, Math.round((sfiaLevel / 7) * 100)),
                 selectedLevel: rawLevel,
             };
         })
@@ -189,7 +199,7 @@ function buildSkillScores(surveyResult, answers) {
     return dedupeSkills(normalizedSkills);
 }
 
-function buildStackDrivenSkills(techstack = [], responses = []) {
+function buildStackDrivenSkills(techstack = [], responses = [], targetLevel = 4) {
     return techstack.map((stack) => {
         const normalizedStack = String(stack || "").trim().toLowerCase();
         const keywords = Array.from(new Set([normalizedStack, ...(stackKeywordMap[normalizedStack] || [])])).filter(Boolean);
@@ -200,10 +210,10 @@ function buildStackDrivenSkills(techstack = [], responses = []) {
 
         if (!relatedResponses.length) {
             return {
+                ...evaluateSkillReadiness(0, targetLevel),
                 skillKey: stack,
                 sfiaLevel: 0,
-                status: "missing",
-                score: 0,
+                baseScore: 0,
                 selectedLevel: "Missing",
             };
         }
@@ -214,10 +224,10 @@ function buildStackDrivenSkills(techstack = [], responses = []) {
         const roundedLevel = Math.round(averageLevel * 10) / 10;
 
         return {
+            ...evaluateSkillReadiness(roundedLevel, targetLevel),
             skillKey: stack,
             sfiaLevel: Math.max(0, Math.round(roundedLevel)),
-            status: roundedLevel <= 1 ? "missing" : roundedLevel <= 3 ? "weak" : roundedLevel <= 5 ? "medium" : "good",
-            score: Math.min(100, Math.round((roundedLevel / 7) * 100)),
+            baseScore: Math.min(100, Math.round((roundedLevel / 7) * 100)),
             selectedLevel: roundedLevel <= 1 ? "Missing" : roundedLevel <= 3 ? "Weak" : roundedLevel <= 5 ? "Intermediate" : "Advanced",
         };
     });
@@ -234,6 +244,60 @@ function dedupeSkills(skills) {
     });
 
     return Array.from(uniqueMap.values()).sort((a, b) => a.score - b.score);
+}
+
+function getTargetLevel(level) {
+    const normalized = String(level || "").toLowerCase();
+
+    for (const target of targetLevelMap) {
+        if (target.keywords.some((keyword) => normalized.includes(keyword))) {
+            return target.level;
+        }
+    }
+
+    return 4;
+}
+
+function evaluateSkillReadiness(skillLevel, targetLevel) {
+    if (skillLevel <= 1) {
+        return {
+            status: "missing",
+            score: 0,
+            targetLevel,
+        };
+    }
+
+    const readinessRatio = targetLevel ? skillLevel / targetLevel : 0;
+
+    if (readinessRatio >= 1) {
+        return {
+            status: "good",
+            score: 100,
+            targetLevel,
+        };
+    }
+
+    if (readinessRatio >= 0.75) {
+        return {
+            status: "medium",
+            score: Math.round(readinessRatio * 100),
+            targetLevel,
+        };
+    }
+
+    if (readinessRatio >= 0.45) {
+        return {
+            status: "weak",
+            score: Math.round(readinessRatio * 100),
+            targetLevel,
+        };
+    }
+
+    return {
+        status: "missing",
+        score: Math.round(readinessRatio * 100),
+        targetLevel,
+    };
 }
 
 function mapToLevel(value) {
@@ -253,13 +317,64 @@ function calculateMatchPercentage(skills) {
         return 35;
     }
 
-    const totalScore = skills.reduce((sum, skill) => sum + (skill.score || 0), 0);
-    return Math.max(20, Math.round(totalScore / skills.length));
+    const statusFloor = {
+        missing: 15,
+        weak: 45,
+        medium: 70,
+        good: 90,
+    };
+
+    const totalScore = skills.reduce((sum, skill) => {
+        const floor = statusFloor[skill.status] ?? 50;
+        const blended = Math.max(floor, skill.score || 0, skill.baseScore || 0);
+        return sum + blended;
+    }, 0);
+
+    return Math.max(25, Math.min(100, Math.round(totalScore / skills.length)));
 }
 
 function buildRoadmap(skills, profile) {
     const focusSkills = skills.filter((skill) => skill.status !== "good").slice(0, 4);
     const stackLabel = profile.techstack?.[0] || profile.role || "your target role";
+    const hasBlockingGap = skills.some((skill) => skill.status === "weak" || skill.status === "missing");
+    const interviewReady = skills.length > 0 && !hasBlockingGap;
+
+    if (interviewReady) {
+        const readinessTasks = buildInterviewReadyTasks(profile, stackLabel, skills);
+        const readinessAttributes = buildInterviewReadyAttributes(skills);
+
+        return {
+            meta: {
+                interviewReady: true,
+                title: "You can start interview practice directly",
+                description: `No weak or missing gaps were found for your ${profile.level || "current"} target, so mock interviews and feedback loops will help more than extra study.`,
+            },
+            today: [
+                {
+                    id: "today-ready",
+                    title: "Start live interview reps",
+                    type: "mock-cycle",
+                    duration: "45 min",
+                    focus: stackLabel,
+                    attributes: readinessAttributes,
+                    tasks: readinessTasks,
+                },
+            ],
+            weeks: [
+                {
+                    id: "week-ready",
+                    title: "Interview Sprint",
+                    focus: profile.role || stackLabel,
+                    description: `Use ${stackLabel} interview reps, self-review, and targeted feedback instead of more study sessions.`,
+                    gapLabel: "Interview Ready",
+                    progress: 100,
+                    locked: false,
+                    attributes: readinessAttributes,
+                    tasks: readinessTasks,
+                },
+            ],
+        };
+    }
 
     return {
         today: (focusSkills.length ? focusSkills : skills.slice(0, 3)).map((skill, index) => ({
@@ -296,6 +411,20 @@ function buildAttributes(skill) {
     ];
 }
 
+function buildInterviewReadyAttributes(skills) {
+    const averageScore = skills.length
+        ? Math.round(skills.reduce((sum, skill) => sum + (skill.score || 0), 0) / skills.length)
+        : 80;
+
+    return [
+        { label: "Knowledge", value: Math.max(70, Math.min(98, averageScore + 6)) },
+        { label: "Execution", value: Math.max(66, Math.min(96, averageScore - 2)) },
+        { label: "Speed", value: Math.max(64, Math.min(94, averageScore - 4)) },
+        { label: "Communication", value: Math.max(72, Math.min(98, averageScore + 4)) },
+        { label: "Confidence", value: Math.max(70, Math.min(96, averageScore + 2)) },
+    ];
+}
+
 function buildSkillTasks(skill, stackLabel) {
     return [
         {
@@ -315,6 +444,36 @@ function buildSkillTasks(skill, stackLabel) {
             type: "Mock",
             title: `Run a mock scenario focused on ${skill.skillKey}`,
             detail: `Simulate a timed interview prompt, then review where your explanation became unclear or incomplete.`,
+        },
+    ];
+}
+
+function buildInterviewReadyTasks(profile, stackLabel, skills) {
+    const topSkills = skills
+        .slice()
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 2)
+        .map((skill) => skill.skillKey)
+        .join(" and ");
+
+    return [
+        {
+            id: "ready-mock-1",
+            type: "Mock",
+            title: `Run a timed ${profile.role || stackLabel} interview`,
+            detail: `Practice a full interview round and answer out loud using your strongest examples in ${topSkills || stackLabel}.`,
+        },
+        {
+            id: "ready-review-2",
+            type: "Feedback",
+            title: "Review your delivery after each mock",
+            detail: "Focus on clarity, structure, and confidence instead of spending more time studying new topics.",
+        },
+        {
+            id: "ready-apply-3",
+            type: "Practice",
+            title: "Apply to interviews and iterate from real feedback",
+            detail: `Use each live interview to sharpen your ${stackLabel} storytelling, examples, and problem-solving pace.`,
         },
     ];
 }
