@@ -1,15 +1,13 @@
 import {
-    Box,
     TextField,
+    Typography,
     InputAdornment,
     Select,
     MenuItem,
-    Button,
     Stack,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 
 function InterviewFilterBar({ 
     searchQuery, 
@@ -22,10 +20,10 @@ function InterviewFilterBar({
     return (
         <Stack
             direction={{ xs: "column", sm: "row" }}
-            spacing={2}
+            spacing={1.25}
             alignItems={{ xs: "stretch", sm: "center" }}
             justifyContent="space-between"
-            sx={{ mb: 3 }}
+            sx={{ mb: 2 }}
         >
             {/* Search Input */}
             <TextField
@@ -37,8 +35,9 @@ function InterviewFilterBar({
                     flex: 1,
                     maxWidth: { xs: "100%", sm: 400 },
                     "& .MuiOutlinedInput-root": {
-                        borderRadius: 2,
+                        borderRadius: 2.5,
                         bgcolor: "background.paper",
+                        minHeight: 40,
                     },
                 }}
                 InputProps={{
@@ -51,7 +50,7 @@ function InterviewFilterBar({
             />
 
             {/* Filter & Export */}
-            <Stack direction="row" spacing={1.5}>
+            <Stack direction="row" spacing={1}>
                 <Select
                     value={filterValue}
                     onChange={(e) => onFilterChange(e.target.value)}
@@ -59,8 +58,9 @@ function InterviewFilterBar({
                     displayEmpty
                     sx={{
                         minWidth: 120,
-                        borderRadius: 2,
+                        borderRadius: 2.5,
                         bgcolor: "background.paper",
+                        minHeight: 40,
                         "& .MuiSelect-select": {
                             display: "flex",
                             alignItems: "center",
@@ -101,8 +101,5 @@ function InterviewFilterBar({
         </Stack>
     );
 }
-
-// Add missing Typography import
-import { Typography } from "@mui/material";
 
 export default InterviewFilterBar;

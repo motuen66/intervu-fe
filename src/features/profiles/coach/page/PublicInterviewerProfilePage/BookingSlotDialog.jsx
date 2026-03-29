@@ -27,7 +27,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { addMonths, addMinutes, format } from "date-fns";
+import { addDays, addMonths, addMinutes, format, startOfDay } from "date-fns";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
@@ -37,8 +37,13 @@ import "./BookingSlotDialog.css";
 import StatusChip from "../../../../../common/components/StatusChip";
 
 const STEPS = ["Select Service", "Pick Time on Calendar"];
+const getTodayStart = () => startOfDay(new Date());
+const getRollingSevenDayRange = () => {
+    const start = getTodayStart();
+    return { start, end: addDays(start, 7) };
+};
 
-const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => {
+const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initialService = null }) => {
     // Step management
     const [activeStep, setActiveStep] = useState(0);
 
@@ -62,6 +67,11 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
         if (open && interviewerId) {
             loadServices();
             fetchAvailableSlots();
+
+            if (initialService) {
+                setSelectedService(initialService);
+                setActiveStep(1);
+            }
         }
         if (!open) {
             // Reset state when dialog closes
@@ -71,7 +81,14 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
             setContainingSlot(null);
             setError(null);
         }
-    }, [open, interviewerId]);
+    }, [open, interviewerId, initialService]);
+
+    useEffect(() => {
+        if (!open || activeStep !== 1 || !calendarRef.current) return;
+
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.changeView("rollingSevenDay", getTodayStart());
+    }, [open, activeStep]);
 
     const loadServices = async () => {
         setLoadingServices(true);
@@ -316,7 +333,30 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                 <Stepper activeStep={activeStep} sx={{ mt: 2 }}>
                     {STEPS.map((label) => (
                         <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
+                            <StepLabel
+                                sx={(theme) => ({
+                                    "& .MuiStepLabel-label": {
+                                        color: theme.palette.text.secondary,
+                                    },
+                                    "& .MuiStepLabel-label.Mui-active": {
+                                        color: theme.palette.primary.main,
+                                    },
+                                    "& .MuiStepLabel-label.Mui-completed": {
+                                        color: theme.palette.success.main,
+                                    },
+                                    "& .MuiStepIcon-root": {
+                                        color: theme.palette.grey[400],
+                                    },
+                                    "& .MuiStepIcon-root.Mui-active": {
+                                        color: theme.palette.primary.main,
+                                    },
+                                    "& .MuiStepIcon-root.Mui-completed": {
+                                        color: theme.palette.success.main,
+                                    },
+                                })}
+                            >
+                                {label}
+                            </StepLabel>
                         </Step>
                     ))}
                 </Stepper>
@@ -396,7 +436,12 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                     </Stack>
 
                                                     {isSelected && (
-                                                        <CheckCircleIcon sx={{ color: "var(--mui-palette-primary-main)", fontSize: 28 }} />
+                                                        <CheckCircleIcon
+                                                            sx={{
+                                                                color: "var(--mui-palette-primary-main)",
+                                                                fontSize: 28,
+                                                            }}
+                                                        />
                                                     )}
                                                 </Stack>
                                             </Box>
@@ -431,15 +476,24 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                 <FullCalendar
                                     ref={calendarRef}
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                    initialView="timeGridWeek"
+                                    initialDate={getTodayStart()}
+                                    initialView="rollingSevenDay"
+                                    views={{
+                                        rollingSevenDay: {
+                                            type: "timeGrid",
+                                            duration: { days: 7 },
+                                            dateAlignment: "day",
+                                            buttonText: "7 Days",
+                                            visibleRange: getRollingSevenDayRange,
+                                        },
+                                    }}
                                     headerToolbar={{
-                                        left: "prev,next today",
+                                        left: "today",
                                         center: "title",
-                                        right: "timeGridWeek,timeGridDay",
+                                        right: "rollingSevenDay,timeGridDay",
                                     }}
                                     buttonText={{
                                         today: "Today",
-                                        week: "Week",
                                         day: "Day",
                                     }}
                                     events={calendarEvents}
@@ -593,7 +647,11 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                                                 <Typography variant="body2" fontWeight={600}>
                                                     Total
                                                 </Typography>
-                                                <Typography variant="subtitle1" fontWeight={700} color="var(--mui-palette-primary-main)">
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    fontWeight={700}
+                                                    color="var(--mui-palette-primary-main)"
+                                                >
                                                     {selectedService?.price?.toLocaleString()} VND
                                                 </Typography>
                                             </Box>
@@ -619,14 +677,9 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected }) => 
                     )}
                 </Box>
                 <Stack direction="row" spacing={1.5}>
-                    <SecondaryButton onClick={onClose}>
-                        Cancel
-                    </SecondaryButton>
+                    <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
                     {activeStep === 0 ? (
-                        <PrimaryButton
-                            onClick={handleNextStep}
-                            disabled={!selectedService}
-                        >
+                        <PrimaryButton onClick={handleNextStep} disabled={!selectedService}>
                             Next
                         </PrimaryButton>
                     ) : (

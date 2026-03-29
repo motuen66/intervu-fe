@@ -4,7 +4,6 @@ import { METHOD } from "../../../common/constants/api";
 import { authEndPoints } from "../services/authApi";
 import { useNavigate } from "react-router-dom";
 import useLoading from "../../../common/hooks/useLoading";
-import DarkVeil from './LoginPage/DarkVeil';
 import SplitText from "./LoginPage/SplitText";
 import { TextField, Typography } from '@mui/material';
 import { PrimaryButton } from "../../../common/components/buttons";
@@ -47,14 +46,6 @@ function SignUpPage() {
 
     return (
         <div style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', overflow: 'hidden', background: '#ffffff' }}>
-            {/* LightVeil effect with pastel blue colors */}
-            <DarkVeil
-                lightMode={true}
-                hueShift={200}
-                speed={0.3}
-                warpAmount={0.5}
-            />
-
             {/* overlay container centers the signup card */}
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, padding: '24px' }}>
                 {/* main two-column card */}
@@ -212,7 +203,7 @@ function SignUpPage() {
                                     }}
                                     {...register('password', {
                                         required: 'Password is required',
-                                        minLength: { value: 6, message: 'Password must be at least 6 characters' }
+                                        minLength: { value: 8, message: 'Password must be at least 8 characters' }
                                     })}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
