@@ -62,7 +62,7 @@
 .logo-text span {
     font-size: 10px;
     font-weight: 700;
-    color: #64748b;
+    color: var(--mui-palette-text-secondary);
     letter-spacing: 0.1em;
 }
 
@@ -77,7 +77,7 @@
     padding: 10px 16px;
     font-size: 14px;
     font-weight: 600;
-    color: #475569;
+    color: var(--mui-palette-text-secondary);
     text-decoration: none;
     border-radius: 12px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -92,7 +92,7 @@
 
 .nav-item:hover {
     color: var(--mui-palette-primary-main);
-    background: rgba(0, 0, 0, 0.03);
+    background: var(--mui-palette-action-hover);
 }
 
 .nav-item.active {
@@ -170,7 +170,7 @@
     gap: 6px;
     font-size: 11px;
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--mui-palette-text-disabled);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding-left: 12px;
@@ -179,7 +179,7 @@
 }
 
 .section-title-icon {
-    color: #f97316; /* Flame color */
+    color: var(--mui-palette-warning-main); /* Standardized warning color */
 }
 
 .section-items {
@@ -258,14 +258,14 @@
 .menu-label {
     font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--mui-palette-text-primary);
 }
 
 .menu-badge {
     position: absolute;
     top: 12px;
     right: 12px;
-    background: #ef4444;
+    background: var(--mui-palette-error-main);
     color: white;
     font-size: 10px;
     font-weight: 700;
@@ -332,13 +332,13 @@
 
 .user-email {
     font-size: 12px;
-    color: #64748b;
+    color: var(--mui-palette-text-secondary);
     margin: 2px 0 0 0;
 }
 
 .dropdown-divider {
     height: 1px;
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--mui-palette-divider);
     margin: 8px 0;
 }
 
@@ -350,7 +350,7 @@
     padding: 10px 14px;
     font-size: 13px;
     font-weight: 600;
-    color: #475569;
+    color: var(--mui-palette-text-secondary);
     text-decoration: none;
     border: none;
     background: transparent;
@@ -367,12 +367,12 @@
 }
 
 .logout-link {
-    color: #ef4444;
+    color: var(--mui-palette-error-main);
 }
 
 .logout-link:hover {
-    background: #fef2f2;
-    color: #b91c1c;
+    background: var(--mui-palette-error-light);
+    color: var(--mui-palette-error-dark);
 }
 
 /* Right Section Buttons */
@@ -406,9 +406,9 @@
 }
 
 .app-btn:hover {
-    background: #1e293b;
+    background: var(--mui-palette-primary-light);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
     color: white;
 }
 
@@ -454,7 +454,7 @@
 .mobile-section-title {
     font-size: 10px;
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--mui-palette-text-disabled);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 8px 12px 4px;
