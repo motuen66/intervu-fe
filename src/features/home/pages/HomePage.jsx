@@ -16,7 +16,6 @@ import {
     Trophy,
     Users,
     Calendar,
-    Sparkles,
 } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -83,7 +82,6 @@ function HomePage() {
     useEffect(() => {
         dispatch(fetchCompanies());
         dispatch(fetchSkills());
-        dispatch(fetchInterviewers());
     }, [dispatch]);
 
     // GSAP Animations
@@ -136,21 +134,25 @@ function HomePage() {
         return () => ctx.revert();
     }, []);
 
-    // Re-fetch khi filters thay đổi
+    // Re-fetch when filters or page changes
     useEffect(() => {
         dispatch(
             fetchInterviewers({
+                page: pagination.currentPage,
                 searchTerm: filters.searchTerm,
                 companyId: filters.company,
                 skillId: filters.skill,
+                skillIds: filters.skillIds?.length ? filters.skillIds.join(",") : undefined,
+                minExperienceYears: filters.minExperienceYears || undefined,
+                maxExperienceYears: filters.maxExperienceYears || undefined,
+                minPrice: filters.minPrice || undefined,
+                maxPrice: filters.maxPrice || undefined,
             }),
         );
-    }, [dispatch, filters.searchTerm, filters.company, filters.skill]);
-
-    // Re-fetch khi page thay đổi
-    useEffect(() => {
-        dispatch(fetchInterviewers({ page: pagination.currentPage, ...filters }));
-    }, [dispatch, pagination.currentPage]);
+    }, [
+        dispatch,
+        pagination.currentPage,
+    ]);
 
     // Ensure interviewers is an array
     const interviewersList = Array.isArray(interviewers) ? interviewers : [];
@@ -295,39 +297,15 @@ function HomePage() {
             <section className="browse-section" ref={browseSectionRef}>
                 <div
                     style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        display: "block",
                         marginBottom: "16px",
                     }}
                 >
                     <h2 style={{ margin: 0 }}>Browse all coaches</h2>
-                    <button
-                        className="hero-cta"
-                        onClick={openSmartMatch}
-                        style={{
-                            background: "linear-gradient(135deg, #BEF264 0%, #D9F99D 100%)",
-                            color: "#0F172A",
-                            border: "none",
-                            padding: "10px 20px",
-                            borderRadius: "10px",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            fontSize: "0.875rem",
-                            boxShadow: "0 2px 12px rgba(217, 249, 157, 0.4)",
-                            transition: "all 0.2s ease",
-                        }}
-                    >
-                        <Sparkles size={18} />
-                        Smart AI Match
-                    </button>
                 </div>
 
                 {/* Filters */}
-                <FilterBar />
+                <FilterBar onOpenSmartMatch={openSmartMatch} />
 
                 {/* Error State */}
                 {error && <div className="error-message">⚠️ {error}</div>}
@@ -351,7 +329,7 @@ function HomePage() {
                         {!loading && interviewersList.length === 0 && (
                             <div className="empty-state">
                                 <Search size={48} color="#64748B" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
-                                <p>No interviewers found matching your criteria.</p>
+                                <p>No coaches found matching your criteria.</p>
                             </div>
                         )}
 
