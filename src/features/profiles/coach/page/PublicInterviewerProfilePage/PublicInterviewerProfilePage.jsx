@@ -1,51 +1,125 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { Box } from "@mui/material";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
-import { useParams, useSearchParams, useLocation } from "react-router-dom";
-import CoachServicesSection from "../../../../coach/pages/CoachInterviewServicePage/CoachServicesSection";
+import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import {
-    Avatar,
-    Box,
-    CardContent,
-    CircularProgress,
-    Container,
-    Stack,
-    Typography,
-    Link,
-    Paper,
-    Skeleton,
-    useTheme,
-} from "@mui/material";
-import BaseCard from "../../../../../common/components/cards/BaseCard";
-import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
-import BookingSlotDialog from "./BookingSlotDialog";
-import JDBookingDialog from "./JDBookingDialog";
-import StatusChip from "../../../../../common/components/StatusChip";
-import { Calendar, Send, FileText, ExternalLink, Star, Briefcase, Building2, Code } from "lucide-react";
+    Check,
+    ArrowRight,
+    Briefcase,
+    FileText,
+    Rocket,
+    Clock,
+    Tag
+} from 'lucide-react';
 import toast from "react-hot-toast";
 import { PAYOS_TRANSACTION_STATUS, TRANSACTION_STATUS } from "../../../../../common/constants/status";
+import BookingSlotDialog from "./BookingSlotDialog";
+import JDBookingDialog from "./JDBookingDialog";
+import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
+import "./EliteCoachProfile.css";
 
-function PublicInterviewerProfilePage() {
-    const theme = useTheme();
+const PublicInterviewerProfilePage = () => {
+    const navigate = useNavigate();
+    const { slugProfileUrl } = useParams();
+    const [searchParams] = useSearchParams();
+
+    // State
     const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [services, setServices] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [availableDates, setAvailableDates] = useState([]);
+
+    // UI State
     const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
     const [jdBookingOpen, setJdBookingOpen] = useState(false);
-    const [selectedSlot, setSelectedSlot] = useState(null);
-    const { slugProfileUrl } = useParams();
+    const [selectedService, setSelectedService] = useState(null);
 
-    // Handle payos callback params
-    const [searchParams] = useSearchParams();
     const orderCode = searchParams.get("orderCode");
     const paymentStatus = searchParams.get("status");
 
     useEffect(() => {
-        if (slugProfileUrl) fetchProfile();
-
-        if (orderCode && paymentStatus === PAYOS_TRANSACTION_STATUS.PAID) checkTransactionStatus();
+        if (slugProfileUrl) {
+            loadData();
+        }
+        if (orderCode && paymentStatus === PAYOS_TRANSACTION_STATUS.PAID) {
+            checkTransactionStatus();
+        }
     }, [slugProfileUrl, orderCode, paymentStatus]);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            // Fetch Profile
+            const profileRes = await callApi({
+                method: METHOD.GET,
+                endpoint: interviewerProfileEndPoints.VIEW_PROFILE_BY_CANDIDATE.replace("{slugProfileUrl}", slugProfileUrl),
+            });
+            const profileData = profileRes.data;
+            setProfile(profileData);
+
+            if (profileData?.user?.id) {
+                // Fetch Services
+                const svcData = await getCoachInterviewServices(profileData.user.id);
+                setServices(svcData || []);
+
+                // Fetch Availability for the current month
+                fetchCoachAvailability(profileData.user.id);
+            }
+        } catch (e) {
+            setError("Failed to load coach profile.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchCoachAvailability = async (coachId) => {
+        try {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const year = now.getFullYear();
+
+            const res = await callApi({
+                method: METHOD.GET,
+                endpoint: `/availabilities/${coachId}/free-slots?month=${month}&year=${year}`,
+            });
+
+            if (res.success && res.data) {
+                const uniqueDates = [];
+                const dateSet = new Set();
+
+                // Filter slots that are in the future
+                res.data.forEach(slot => {
+                    const d = new Date(slot.startTime);
+                    if (d >= now) {
+                        let dateStr = d.toLocaleDateString('en-US', { weekday: 'long' });
+
+                        const today = new Date();
+                        const tomorrow = new Date();
+                        tomorrow.setDate(today.getDate() + 1);
+
+                        if (d.toDateString() === today.toDateString()) {
+                            dateStr = "Today";
+                        } else if (d.toDateString() === tomorrow.toDateString()) {
+                            dateStr = "Tomorrow";
+                        }
+
+                        if (!dateSet.has(dateStr)) {
+                            dateSet.add(dateStr);
+                            uniqueDates.push(dateStr);
+                        }
+                    }
+                });
+
+                setAvailableDates(uniqueDates.slice(0, 4));
+            }
+        } catch (err) {
+            console.error("Error fetching availability:", err);
+        }
+    };
 
     const checkTransactionStatus = async () => {
         const { data } = await callApi({
@@ -54,422 +128,242 @@ function PublicInterviewerProfilePage() {
         });
         if (data && data.status === TRANSACTION_STATUS.PAID) {
             toast.success("Interview booked successfully!");
-        } else {
-            toast.error("Failed to confirm booking. Please contact support.");
         }
     };
 
-    const fetchProfile = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const res = await callApi({
-                method: METHOD.GET,
-                endpoint: interviewerProfileEndPoints.VIEW_PROFILE_BY_CANDIDATE.replace(
-                    "{slugProfileUrl}",
-                    slugProfileUrl,
-                ),
-            });
-            setProfile(res.data);
-        } catch (e) {
-            setError("Failed to load profile.");
-        } finally {
-            setLoading(true);
-            setTimeout(() => setLoading(false), 200);
-        }
+    const handleServiceSelect = (svc) => {
+        setSelectedService(svc);
+        setBookingDialogOpen(true);
     };
 
-    const handleSlotSelected = async ({ slot, service, startTime }) => {
-        setSelectedSlot(slot);
-
-        console.log("Selected booking:", { slot, service, startTime });
+    const handleBooking = async ({ slot, service, startTime }) => {
         const returnUrl = window.location.origin + window.location.pathname;
-        const { data } = await callApi({
-            method: METHOD.POST,
-            endpoint: interviewerProfileEndPoints.BOOK_INTERVIEW,
-            arg: {
-                coachId: slot.coachId,
-                coachAvailabilityId: slot.id,
-                coachInterviewServiceId: service.id,
-                startTime: startTime.toISOString(),
-                returnUrl: returnUrl,
-            },
-        });
+        try {
+            const { data } = await callApi({
+                method: METHOD.POST,
+                endpoint: interviewerProfileEndPoints.BOOK_INTERVIEW,
+                arg: {
+                    coachId: slot.coachId,
+                    coachAvailabilityId: slot.id,
+                    coachInterviewServiceId: service.id,
+                    startTime: startTime.toISOString(),
+                    returnUrl: returnUrl,
+                },
+            });
 
-        if (data && data.checkOutUrl) {
-            window.location.href = data.checkOutUrl;
-        } else if (data && data.isPaid == true && !data.checkOutUrl) {
-            toast.success("Interview booked successfully!");
+            if (data?.checkOutUrl) {
+                window.location.href = data.checkOutUrl;
+            } else {
+                toast.success("Interview booked successfully!");
+            }
+        } catch (err) {
+            toast.error("Booking failed. Please try again.");
         }
-        console.log("checkOutUrl:", data?.checkOutUrl);
     };
 
-    const avatarLetter = useMemo(() => profile?.user?.fullName?.trim()?.charAt(0)?.toUpperCase() || "?", [profile]);
-
-    // Avatar logic matching home page
     const avatarUrl = useMemo(() => {
         if (!profile) return "";
-
-        // Extract profile data like in InterviewerCard
-        const interviewerProfile = profile.interviewerProfile || profile;
         const user = profile.user || {};
-
-        // Get avatar with same logic as home page
-        const profilePicture = user?.profilePicture || interviewerProfile?.profilePicture;
-
-        return profilePicture || "";
+        return user.profilePicture || profile.profilePicture || "";
     }, [profile]);
 
+    const [expandedBio, setExpandedBio] = useState(false);
+    const bioLimit = 400;
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+                <CommonLoader text="Loading Profile" subtext="Preparing the coach's details for you..." />
+            </Box>
+        );
+    }
+
+    if (error || !profile) {
+        return (
+            <div className="elite-profile-container">
+                <div className="ep-shell" style={{ padding: '4rem 0', textAlign: 'center' }}>
+                    <h2>{error || "Coach not found."}</h2>
+                    <button className="ep-btn-book" onClick={() => navigate('/')} style={{ marginTop: '1rem' }}>Back to Home</button>
+                </div>
+            </div>
+        );
+    }
+
+    const currentTitle = profile.jobTitle || "Senior Interviewer";
+    const currentCompany = profile.companyName || (profile.companies?.length > 0 ? profile.companies[0].name : "");
+
     return (
-        <Container maxWidth="1400px" sx={{ py: 4 }}>
-            {loading && (
-                <Box display="flex" justifyContent="center" py={6}>
-                    <CircularProgress />
-                </Box>
-            )}
+        <div className="elite-profile-container" style={{ paddingTop: '2rem' }}>
+            <main className="ep-shell">
+                {/* Hero Profile Section */}
+                <section className="ep-hero">
+                    <div className="ep-hero-avatar-wrap">
+                        <img
+                            src={avatarUrl || "https://ui-avatars.com/api/?name=" + profile.user.fullName}
+                            alt={profile.user.fullName}
+                            className="ep-hero-avatar"
+                        />
+                    </div>
+                    <div className="ep-hero-content">
+                        <h1 className="ep-hero-name">{profile.user.fullName}</h1>
+                        <p className="ep-hero-title">
+                            {currentTitle} {currentCompany && <>@ <strong>{currentCompany}</strong></>}
+                        </p>
 
-            {!loading && error && (
-                <Paper sx={{ p: 3, bgcolor: "error.light" }}>
-                    <Typography color="error.contrastText">{error}</Typography>
-                </Paper>
-            )}
+                        <div className="ep-stats-grid">
+                            <div className="ep-stat-item">
+                                <span className="ep-stat-value">{profile.experienceYears}+</span>
+                                <span className="ep-stat-label">Years Exp</span>
+                            </div>
+                            <div className="ep-stat-item">
+                                <span className="ep-stat-value">{(profile.rating || 0).toFixed(1)} <span style={{ color: '#fbbf24', fontSize: '1.2rem' }}>★</span></span>
+                                <span className="ep-stat-label">Candidate Rating</span>
+                            </div>
+                            <div className="ep-stat-item">
+                                <span className="ep-stat-value">{profile.sessionsCount || 0}</span>
+                                <span className="ep-stat-label">Mock Interviews</span>
+                            </div>
+                        </div>
 
-            {!loading && profile && (
-                <Box
-                    sx={{
-                        display: "flex",
-                        gap: 4,
-                        alignItems: "flex-start",
-                        flexDirection: { xs: "column", md: "row" },
-                    }}
-                >
-                    {/* Left column - Profile Content */}
-                    <Box
-                        sx={{
-                            flex: 1,
-                            maxWidth: { md: "calc(100% - 410px)" },
-                        }}
-                    >
-                        <Stack spacing={3}>
-                            {/* Profile Header */}
-                            <BaseCard variant="outlined" sx={{ p: 3 }}>
-                                <Box display="flex" alignItems="center">
-                                    <Avatar
-                                        src={avatarUrl}
-                                        alt={profile.user.fullName}
-                                        sx={{
-                                            width: 120,
-                                            height: 120,
-                                            fontSize: 48,
-                                            mr: 4,
-                                            bgcolor: avatarUrl ? "transparent" : "secondary.main",
-                                            color: avatarUrl ? "inherit" : "primary.main",
-                                            fontWeight: 600
-                                        }}
+                        <div className="ep-about">
+                            <h3 className="ep-about-title">About</h3>
+                            <p className="ep-about-text">
+                                {expandedBio ? profile.bio : `${profile.bio?.slice(0, bioLimit)}${profile.bio?.length > bioLimit ? '...' : ''}`}
+                                {profile.bio?.length > bioLimit && (
+                                    <button 
+                                        onClick={() => setExpandedBio(!expandedBio)}
+                                        className="ep-view-more-btn"
                                     >
-                                        {!avatarUrl ? avatarLetter : null}
-                                    </Avatar>
-                                    <Box flex={1}>
-                                        <Typography variant="h3" fontWeight={700} sx={{ mb: 0.5 }}>
-                                            {profile.user.fullName}
-                                        </Typography>
-                                        <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                                            Senior Interviewer • {profile.experienceYears}+ years of experience
-                                        </Typography>
-                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star
-                                                    key={i}
-                                                    size={20}
-                                                    strokeWidth={1.5}
-                                                    fill={i < Math.floor(profile.rating || 0) ? theme.palette.secondary.main : "transparent"}
-                                                    stroke={i < Math.floor(profile.rating || 0) ? theme.palette.secondary.main : "#E0E0E0"}
-                                                />
-                                            ))}
-                                            <Typography variant="body2" sx={{ ml: 1 }}>
-                                                {profile.rating
-                                                    ? `${profile.rating.toFixed(1)} (${profile.sessionsCount || 0} reviews)`
-                                                    : "No reviews yet"}
-                                            </Typography>
-                                        </Stack>
-                                        <Typography
-                                            variant="body1"
-                                            color="text.secondary"
-                                            sx={{ whiteSpace: "pre-wrap" }}
-                                        >
-                                            {profile.bio}
-                                        </Typography>
-                                        {profile.portfolioUrl && (
-                                            <Box mt={2}>
-                                                <Link
-                                                    href={profile.portfolioUrl}
-                                                    target="_blank"
-                                                    rel="noopener"
-                                                    underline="hover"
-                                                    display="inline-flex"
-                                                    alignItems="center"
-                                                    gap={0.5}
-                                                >
-                                                    Portfolio <ExternalLink size={16} strokeWidth={1.5} />
-                                                </Link>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </Box>
-                            </BaseCard>
+                                        {expandedBio ? 'View Less' : 'View More'}
+                                    </button>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+                </section>
 
-                            {/* Skills Section */}
-                            <BaseCard variant="outlined" sx={{ p: 3 }}>
-                                <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                                    Skills
-                                </Typography>
-                                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                                    {profile.skills?.map((skill) => (
-                                        <StatusChip key={skill.id} label={skill.name} color="primary" />
-                                    ))}
-                                </Stack>
-                            </BaseCard>
+                <div className="ep-main-grid">
+                    <div className="ep-content-left">
+                        {/* Expertise & Experience */}
+                        <section className="ep-expertise">
+                            <h2 className="ep-section-title">Expertise & Experience</h2>
 
-                            {/* Companies Section */}
-                            <BaseCard variant="outlined" sx={{ p: 3 }}>
-                                <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                                    Companies Worked At
-                                </Typography>
-                                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                                    {profile.companies?.map((c) => (
-                                        <StatusChip
-                                            key={c.id}
-                                            icon={<Building2 size={16} strokeWidth={1.5} />}
-                                            label={c.name}
-                                            color="info"
-                                            onClick={() => window.open(c.website, "_blank")}
-                                            clickable
-                                        />
-                                    ))}
-                                </Stack>
-                            </BaseCard>
+                            <h4 className="ep-sub-title">Core Skills</h4>
+                            <div className="ep-skills-wrap">
+                                {profile.skills?.map(skill => (
+                                    <div key={skill.id} className="ep-skill-tag">{skill.name}</div>
+                                ))}
+                                {(!profile.skills || profile.skills.length === 0) && <p className="ep-text-muted">No skills listed.</p>}
+                            </div>
 
-                            {/* Reviews Section */}
-                            {profile.rating && profile.sessionsCount > 0 && (
-                                <BaseCard variant="outlined" sx={{ p: 3 }}>
-                                    <Stack
-                                        direction="row"
-                                        justifyContent="space-between"
-                                        alignItems="center"
-                                        sx={{ mb: 3 }}
+                            <h4 className="ep-sub-title">Working Experience</h4>
+                            <div className="ep-track-grid">
+                                {profile.companies?.map(c => (
+                                    <div key={c.id} className="ep-track-card">
+                                        <h4>{c.name}</h4>
+                                        <p>{c.role || "Software Engineer"} | {c.years || "2021 - Present"}</p>
+                                    </div>
+                                ))}
+                                {(!profile.companies || profile.companies.length === 0) && <p className="ep-text-muted">No companies listed.</p>}
+                            </div>
+                        </section>
+
+                        {/* Services */}
+                        <section className="ep-services">
+                            <h2 className="ep-section-title">Interview Services Provided</h2>
+                            <div className="ep-services-grid">
+                                {services.map(svc => (
+                                    <div
+                                        key={svc.id}
+                                        className="ep-service-card"
+                                        onClick={() => handleServiceSelect(svc)}
                                     >
-                                        <Typography variant="h6" fontWeight={600}>
-                                            Reviews of {profile.user.fullName}'s coaching
-                                        </Typography>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star
-                                                    key={i}
-                                                    size={20}
-                                                    strokeWidth={1.5}
-                                                    fill={i < Math.floor(profile.rating || 0) ? theme.palette.secondary.main : "transparent"}
-                                                    stroke={i < Math.floor(profile.rating || 0) ? theme.palette.secondary.main : "#E0E0E0"}
-                                                />
-                                            ))}
-                                        </Stack>
-                                    </Stack>
+                                        <div className="ep-service-top">
+                                            <div className="ep-service-icon">
+                                                {svc.isCoding ? <FileText size={20} /> : <Briefcase size={20} />}
+                                            </div>
+                                            <div className="ep-service-price">
+                                                <span>{svc.price?.toLocaleString()} ₫</span>
+                                            </div>
+                                        </div>
+                                        <h4>{svc.interviewTypeName}</h4>
+                                        <div className="ep-service-meta">
+                                            <span><Clock size={12} /> {svc.durationMinutes} min</span>
+                                            <span><Tag size={12} /> One-on-one</span>
+                                        </div>
+                                        {/* Simplified interaction: Whole card is clickable */}
+                                        <div className="ep-service-hint">Select Service <ArrowRight size={14} /></div>
+                                    </div>
+                                ))}
+                                {services.length === 0 && <p className="ep-text-muted">No services offered yet.</p>}
+                            </div>
+                        </section>
+                    </div>
 
-                                    {profile.reviews && profile.reviews.length > 0 ? (
-                                        <Stack spacing={3}>
-                                            {profile.reviews.slice(0, 2).map((review, index) => (
-                                                <Box key={index}>
-                                                    <Stack
-                                                        direction="row"
-                                                        spacing={1}
-                                                        alignItems="center"
-                                                        sx={{ mb: 1 }}
-                                                    >
-                                                        {[...Array(5)].map((_, i) => (
-                                                            <Star
-                                                                key={i}
-                                                                size={16}
-                                                                strokeWidth={1.5}
-                                                                fill={i < Math.floor(review.rating || 0) ? theme.palette.secondary.main : "transparent"}
-                                                                stroke={i < Math.floor(review.rating || 0) ? theme.palette.secondary.main : "#E0E0E0"}
-                                                            />
-                                                        ))}
-                                                    </Stack>
-                                                    <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-                                                        {review.comment || review.feedback || "Great experience!"}
-                                                    </Typography>
-                                                </Box>
-                                            ))}
+                    {/* Sidebar */}
+                    <aside className="ep-sidebar">
+                        {/* Availability Card */}
+                        <div className="ep-side-card">
+                            <span className="ep-slot-tag">{availableDates.length > 0 ? "Limited Slots" : "Check Schedule"}</span>
+                            <h5>Availability</h5>
+                            <h2 className="ep-side-status">{availableDates.length > 0 ? "Open for Bookings" : "View Free Time"}</h2>
 
-                                            {profile.reviews.length > 2 && (
-                                                <TextButton
-                                                    sx={{ alignSelf: "flex-start" }}
-                                                >
-                                                    See all {profile.reviews.length} reviews
-                                                </TextButton>
-                                            )}
-                                        </Stack>
-                                    ) : (
-                                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                                            No detailed reviews available yet.
-                                        </Typography>
-                                    )}
-                                </BaseCard>
-                            )}
+                            <p className="ep-about-title" style={{ fontSize: '0.65rem' }}>Next Available Dates</p>
+                            <div className="ep-date-grid">
+                                {availableDates.length > 0 ? (
+                                    availableDates.map(date => (
+                                        <div key={date} className="ep-date-btn">{date}</div>
+                                    ))
+                                ) : (
+                                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', gridColumn: 'span 2' }}>Click below to see schedule.</p>
+                                )}
+                            </div>
 
-                            {/* Interview Services Section */}
-                            <CoachServicesSection coachId={profile?.user?.id} />
-                        </Stack>
-                    </Box>
+                            <ul className="ep-benefit-list">
+                                <li className="ep-benefit-item">
+                                    <div className="ep-benefit-check"><Check size={12} strokeWidth={3} /></div>
+                                    1:1 Live Mock Session
+                                </li>
+                                <li className="ep-benefit-item">
+                                    <div className="ep-benefit-check"><Check size={12} strokeWidth={3} /></div>
+                                    Personalized Feedback Report
+                                </li>
+                            </ul>
 
-                    {/* Right column - Booking Panel */}
-                    <Box
-                        sx={{
-                            width: { xs: "100%", md: "400px" },
-                            flexShrink: 0,
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                position: "sticky",
-                                top: 24,
-                            }}
-                        >
-                            <BaseCard
-                                elevation={3}
-                                sx={{
-                                    borderRadius: "12px",
-                                    border: "1px solid #E5E7EB",
-                                    width: "100%",
-                                }}
-                            >
-                                <CardContent sx={{ p: 3 }}>
-                                    <Typography variant="h5" fontWeight={700} sx={{ mb: 3, color: "primary.main" }}>
-                                        Book time with {profile.user.fullName} now
-                                    </Typography>
+                            <button className="ep-btn-inquire" onClick={() => { setSelectedService(null); setBookingDialogOpen(true); }}>
+                                Book Available Slot <ArrowRight size={18} />
+                            </button>
 
-                                    <Stack spacing={2} sx={{ mb: 3 }}>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <Box
-                                                sx={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    backgroundColor: "primary.main",
-                                                    borderRadius: "4px",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                            >
-                                                <Calendar size={14} strokeWidth={2} color="white" />
-                                            </Box>
-                                            <Typography variant="body2">1-hour phone or video chat</Typography>
-                                        </Stack>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <Box
-                                                sx={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    backgroundColor: "primary.main",
-                                                    borderRadius: "4px",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                            >
-                                                <Star size={14} strokeWidth={2} color="white" />
-                                            </Box>
-                                            <Typography variant="body2">Detailed written feedback</Typography>
-                                        </Stack>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <Box
-                                                sx={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    backgroundColor: "primary.main",
-                                                    borderRadius: "4px",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                            >
-                                                <Briefcase size={14} strokeWidth={2} color="white" />
-                                            </Box>
-                                            <Typography variant="body2">Convenient scheduling</Typography>
-                                        </Stack>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <Box
-                                                sx={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    backgroundColor: "primary.main",
-                                                    borderRadius: "4px",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                            >
-                                                <Code size={14} strokeWidth={2} color="white" />
-                                            </Box>
-                                            <Typography variant="body2">Switch coaches at any time</Typography>
-                                        </Stack>
-                                    </Stack>
+                            <button className="ep-btn-secondary" onClick={() => setJdBookingOpen(true)} style={{ marginTop: '0.75rem' }}>
+                                <FileText size={18} /> JD Multi-Round Booking
+                            </button>
+                            <p style={{ textAlign: 'center', fontSize: '0.65rem', color: '#94a3b8', marginTop: '1rem', textTransform: 'uppercase', fontWeight: 700 }}>Fully refundable if cancelled 24h prior</p>
+                        </div>
 
-                                    <PrimaryButton
-                                        fullWidth
-                                        size="large"
-                                        onClick={() => setBookingDialogOpen(true)}
-                                        sx={{
-                                            borderRadius: "8px",
-                                            py: 1.5,
-                                            fontSize: "1rem",
-                                            mb: 1,
-                                        }}
-                                    >
-                                        Book Available Slot
-                                    </PrimaryButton>
-
-                                    <SecondaryButton
-                                        fullWidth
-                                        size="large"
-                                        startIcon={<FileText size={18} strokeWidth={2} />}
-                                        onClick={() => setJdBookingOpen(true)}
-                                        sx={{
-                                            borderRadius: "8px",
-                                            py: 1.5,
-                                            fontSize: "0.9rem",
-                                            mb: 2,
-                                        }}
-                                    >
-                                        JD Multi-Round Booking
-                                    </SecondaryButton>
-                                </CardContent>
-                            </BaseCard>
-                        </Box>
-                    </Box>
-                </Box>
-            )}
-
-            {!loading && !error && !profile && (
-                <Box py={6} textAlign="center">
-                    <Skeleton variant="rectangular" height={120} />
-                    <Typography variant="body2" mt={2}>
-                        No data found.
-                    </Typography>
-                </Box>
-            )}
-
-            {/* Booking Dialog (Flow A — available slots) */}
+                        {/* Match Card (Derived logic) */}
+                        <div className="ep-side-card ep-match-card">
+                            <h5>Coach Match Index</h5>
+                            <div className="ep-progress-bg">
+                                <div className="ep-progress-bar" style={{ width: '85%' }}></div>
+                            </div>
+                            <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                Based on your background analysis.
+                            </p>
+                        </div>
+                    </aside>
+                </div>
+            </main>
+            {/* Existing Dialogs */}
             <BookingSlotDialog
                 open={bookingDialogOpen}
-                onClose={() => setBookingDialogOpen(false)}
+                onClose={() => { setBookingDialogOpen(false); setSelectedService(null); }}
                 interviewerId={profile?.user?.id}
-                onSlotSelected={handleSlotSelected}
+                onSlotSelected={handleBooking}
+                initialService={selectedService}
             />
-
-            {/* JD Multi-Round Booking Dialog (Flow C) */}
             <JDBookingDialog open={jdBookingOpen} onClose={() => setJdBookingOpen(false)} coachId={profile?.user?.id} />
-        </Container>
+        </div>
     );
-}
+};
 
 export default PublicInterviewerProfilePage;

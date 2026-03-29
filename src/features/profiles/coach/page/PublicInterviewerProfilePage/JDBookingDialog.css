@@ -1,39 +1,444 @@
-/* ──────────────────────────────────────
-   JDBookingDialog — Round-specific styles
-   Inherits calendar styles from BookingSlotDialog.css
-   via .booking-calendar-container class
-   ────────────────────────────────────── */
+/* Theme lime (matches MUI secondary.main) — works outside Elite coach scope */
+.jd-booking-dialog-paper {
+    --ep-accent: #d9f99d;
+}
 
-/* ───── Round Cards ───── */
+/* ───── Step 1: Job Details & Sequence ───── */
 
-.jd-round-card {
-    padding: 12px 14px;
-    border-radius: 8px !important;
+.jd-url-section {
+    background: transparent;
+    padding: 0;
+    margin-bottom: 24px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.jd-label-mini {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.jd-input-stitch {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.jd-round-card:hover {
-    border-color: #6366f1 !important;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
+.jd-input-stitch:focus-within {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
 }
 
-.jd-round-card.active {
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.03), rgba(99, 102, 241, 0.06));
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+/* Underline row — matches JD mock (icon + text + bottom rule only) */
+.jd-input-underline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 0 10px;
+    border-bottom: 1px solid #e2e8f0;
+    background: transparent;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
 }
 
-.jd-round-card.dragging {
-    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25);
-    border-color: #6366f1 !important;
+.jd-input-underline:focus-within {
+    border-bottom-color: #0f172a;
 }
 
-/* ───── Round Events in Calendar ───── */
+.jd-input-underline .MuiInputBase-root {
+    flex: 1;
+}
 
-.jd-calendar-container .fc .jd-round-event {
-    border-radius: 6px !important;
-    opacity: 0.9 !important;
-    border-width: 2px !important;
-    cursor: default !important;
-    font-size: 0.75rem;
+.jd-input-underline .MuiInputBase-input::placeholder {
+    color: #94a3b8;
+    opacity: 1;
+}
+
+/* ───── Sequence Visualization Panel ───── */
+
+.jd-sequence-panel-stitch {
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 16px;
+    margin-bottom: 32px;
+}
+
+.jd-track-stitch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.jd-bubble-stitch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.jd-bubble-num {
+    width: 32px;
+    height: 32px;
+    background: #0f172a;
+    color: #fff;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+}
+
+.jd-bubble-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* One line: ROUND N + service name (mock) */
+.jd-bubble-title-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+}
+
+.jd-bubble-title-row--muted {
+    opacity: 1;
+}
+
+.jd-bubble-round-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.jd-bubble-service-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.25;
+}
+
+.jd-bubble-service-name--muted {
+    color: #94a3b8;
     font-weight: 600;
+    font-style: normal;
+}
+
+.jd-bubble-round {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.jd-bubble-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.jd-arrow-stitch {
+    color: #94a3b8;
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+.jd-bubble-stitch--inactive {
+    opacity: 0.92;
+}
+
+.jd-bubble-num.jd-bubble-num--dashed {
+    background: transparent !important;
+    border: 2px dashed #cbd5e1 !important;
+    color: #94a3b8 !important;
+}
+
+/* ───── Round Cards Grid ───── */
+
+.jd-round-card-stitch {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: all 0.3s ease;
+    height: 240px;
+    width: 300px;
+}
+
+.jd-round-card-stitch:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.jd-card-icon-wrap {
+    width: 40px;
+    height: 40px;
+    background: #f8fafc;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 20px;
+}
+
+/* Mock: dark tile behind service icon */
+.jd-card-icon-wrap--dark {
+    background: #1e293b;
+    cursor: grab;
+}
+
+.jd-card-icon-wrap--dark:active {
+    cursor: grabbing;
+}
+
+.jd-card-icon-wrap--dark svg {
+    color: #e2e8f0;
+}
+
+.jd-round-badge {
+    position: absolute;
+    top: 52px;
+    right: 16px;
+    background: var(--ep-accent);
+    color: #1a1a1c;
+    font-size: 0.625rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    z-index: 2;
+}
+
+.jd-status-bar {
+    margin-top: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.25s ease;
+}
+
+.jd-status-bar.selecting {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.jd-status-bar.selecting .jd-status-text {
+    color: #b45309;
+}
+
+.jd-status-bar.configured {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.jd-status-bar.configured .jd-status-text {
+    color: #15803d;
+}
+
+.jd-status-text {
+    font-size: 0.725rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ───── Buttons ───── */
+/* Prefer MUI containedPrimary / containedSecondary from theme; classes kept for overrides */
+
+.jd-btn-next-footer {
+    border-radius: 8px !important;
+    padding: 10px 24px !important;
+    font-weight: 800 !important;
+    text-transform: none !important;
+}
+
+/* Footer bar — mock: full-width lime accent */
+.jd-dialog-footer {
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 3px solid var(--ep-accent);
+    background: #f8fafc;
+}
+
+/* ───── Schedule Timeline ───── */
+
+.jd-schedule-panel {
+    background: #f8fafc;
+    border-radius: 20px;
+    padding: 24px;
+}
+
+.jd-schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-radius: 12px;
+    padding: 12px 16px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.jd-schedule-item:hover {
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.jd-schedule-item.active {
+    background: #f8fafc;
+    border-color: var(--ep-accent);
+    box-shadow: 0 8px 20px -8px rgba(var(--ep-accent-rgb, 0, 0, 0), 0.15);
+}
+
+.jd-schedule-item.disabled {
+    opacity: 0.6;
+    background: #f1f5f9;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
+.jd-schedule-marker {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    color: #94a3b8;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+}
+
+.jd-schedule-item.active .jd-schedule-marker {
+    border-color: var(--ep-accent);
+    color: var(--ep-accent);
+}
+
+.jd-schedule-item.done .jd-schedule-marker {
+    background: var(--ep-accent);
+    border-color: var(--ep-accent);
+    color: #1a1a1c;
+}
+
+.jd-schedule-item.current .jd-schedule-marker {
+    background: #1e293b;
+    border-color: #1e293b;
+    color: #fff;
+}
+
+/* ───── Transitions ───── */
+.jd-summary-card-stitch {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.jd-summary-card-stitch .MuiTypography-overline {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.jd-step-enter-forward {
+    animation: jd-slide-forward 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.jd-step-enter-backward {
+    animation: jd-slide-backward 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes jd-slide-forward {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes jd-slide-backward {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+/* Fix FullCalendar background event opacity (stop 'graying out' dark colors) */
+.fc-bg-event,
+.fc-daygrid-bg-event,
+.fc-timegrid-bg-event {
+  opacity: 1 !important;
+}
+
+/* Masterpiece Liquid/Glass Slot Styling */
+.fc-bg-event.liquid-slot {
+  background-color: rgba(190, 242, 100, 0.15) !important;
+  border-left: 3px solid #bef264 !important;
+  backdrop-filter: blur(4px) !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Masterpiece Price Dashboard Card */
+.jd-price-dashboard-stitch {
+  background: #0f172a;
+  padding: 24px;
+  border-radius: 20px;
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.jd-price-dashboard-stitch .MuiTypography-overline {
+  color: rgba(255, 255, 255, 0.6);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.jd-price-dashboard-stitch .price-vibrant {
+  color: #d4ff3d;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.jd-price-dashboard-stitch .duration-badge {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.725rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }

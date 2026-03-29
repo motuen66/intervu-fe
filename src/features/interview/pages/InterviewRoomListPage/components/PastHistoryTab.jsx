@@ -4,51 +4,20 @@ import {
     Typography,
     Stack,
     Pagination,
-    CircularProgress,
 } from "@mui/material";
-import InterviewCard from "./InterviewCard";
-import InterviewFilterBar from "./InterviewFilterBar";
-import { useNavigate } from "react-router-dom";
+import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
+import RecentInterviewItem from "./RecentInterviewItem";
+import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
 const ITEMS_PER_PAGE = 5;
 
-function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
-    const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState("");
-    const [filterValue, setFilterValue] = useState("");
+function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestions }) {
     const [page, setPage] = useState(1);
 
-    const filterOptions = [
-        { value: "completed", label: "Completed" },
-        { value: "cancelled", label: "Cancelled" },
-    ];
-
-    // Filter and search logic
+    // Simplified list: removed internal search/filter bars
     const filteredRooms = useMemo(() => {
-        let result = [...rooms];
-
-        // Apply search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (room) =>
-                    room.problemShortName?.toLowerCase().includes(query) ||
-                    room.coachName?.toLowerCase().includes(query) ||
-                    room.candidateName?.toLowerCase().includes(query)
-            );
-        }
-
-        // Apply status filter
-        if (filterValue) {
-            if (filterValue === "completed") {
-                result = result.filter((room) => room.status === 2);
-            } else if (filterValue === "cancelled") {
-                result = result.filter((room) => room.status === 3);
-            }
-        }
-
-        return result;
-    }, [rooms, searchQuery, filterValue]);
+        return [...rooms];
+    }, [rooms]);
 
     // Pagination logic
     const totalPages = Math.ceil(filteredRooms.length / ITEMS_PER_PAGE);
@@ -62,35 +31,22 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
     };
 
     const handleCardClick = (room) => {
-        // Past interviews should not navigate to room
-        // Users can only view details, not enter the room
-        return;
-    };
-
-    const handleExport = () => {
-        // TODO: Implement export functionality
-        console.log("Export past interviews");
+        // Handle viewing feedback
+        if (onViewFeedback) {
+            onViewFeedback(room);
+        }
     };
 
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
+                <CommonLoader />
             </Box>
         );
     }
 
     return (
         <Box>
-            <InterviewFilterBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                filterValue={filterValue}
-                onFilterChange={setFilterValue}
-                onExport={handleExport}
-                filterOptions={filterOptions}
-            />
-
             {paginatedRooms.length === 0 ? (
                 <Box
                     sx={{
@@ -110,14 +66,14 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback }) {
                     </Typography>
                 </Box>
             ) : (
-                <Stack spacing={2}>
+                <Stack spacing={2} sx={{ width: "100%" }}>
                     {paginatedRooms.map((room) => (
-                        <InterviewCard
+                        <RecentInterviewItem
                             key={room.id}
                             room={room}
                             user={user}
                             onClick={handleCardClick}
-                            showActions={false}
+                            onReviewQuestions={onReviewQuestions}
                         />
                     ))}
                 </Stack>

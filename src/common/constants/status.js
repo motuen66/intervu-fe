@@ -78,10 +78,11 @@ export const getAvailabilityColors = (status, isPast = false) => {
             title: "Available",
             textColor: palette.secondary.contrastText, // #0F172A (Navy)
         },
+        // TODO: Consider using theme.error for UNAVAILABLE if it fits the design, or define a custom color in the theme palette for consistency.
         UNAVAILABLE: {
-            bg: "#F43F5E", // Rose — specific to schedule, not in theme error palette
-            border: "#e11d48",
-            title: "Unavailable",
+            bg: palette.primary.main, // Rose — specific to schedule, not in theme error palette
+            border: palette.primary.dark,
+            title: "Booked",
             textColor: "#ffffff",
         },
         PAST: {

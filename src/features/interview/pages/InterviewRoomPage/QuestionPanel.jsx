@@ -5,8 +5,10 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
-import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button, Tooltip, IconButton } from "@mui/material";
+import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button, Tooltip, IconButton, Chip } from "@mui/material";
 import { ROLES } from "../../../../common/constants/common.js";
+import DescriptionIcon from "@mui/icons-material/Description";
+import TuneIcon from "@mui/icons-material/Tune";
 
 function QuestionPanel({
     user,
@@ -61,7 +63,7 @@ function QuestionPanel({
 
             {isEditingProblem && user?.role === ROLES.INTERVIEWER ? (
                 // EDITING VIEW (Role 1 only)
-                <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", border: "1px solid #E5E7EB", borderRadius: 2, p: 2, bgcolor: "white" }}>
                     <Typography variant="h6" gutterBottom>
                         Problem Setup
                     </Typography>
@@ -73,13 +75,12 @@ function QuestionPanel({
                         variant="outlined"
                         sx={{ mb: 2 }}
                     />
-                    <Box sx={{ height: 250, mb: 2, ".ql-container": { height: "calc(100% - 42px)" } }}>
+                    <Box sx={{ mb: 2, ".ql-container": { height: "200px" } }}>
                         <ReactQuill
                             theme="snow"
                             value={problemDescription}
                             onChange={setProblemDescription}
                             modules={quillModules}
-                            style={{ height: "80%" }}
                         />
                     </Box>
                     <Typography variant="h6" sx={{ mb: 1 }}>
@@ -120,7 +121,7 @@ function QuestionPanel({
                             </IconButton>
                         </Tooltip>
                     </Box>
-                    <Box sx={{ pt: 2, flex: 1, overflowY: "auto" }}>
+                    <Box sx={{ pt: 2 }}>
                         {testCases[activeTestCaseTab] && (
                             <Stack spacing={2}>
                                 <Typography variant="subtitle2">Inputs</Typography>
@@ -206,18 +207,64 @@ function QuestionPanel({
                             </Stack>
                         )}
                     </Box>
-                    <Button onClick={sendProblem} variant="contained" sx={{ mt: 2 }}>
+                    <Button onClick={sendProblem} variant="contained" sx={{ mt: 2, mb: 1 }}>
                         Send Problem to Candidate
                     </Button>
                 </Box>
             ) : (
                 // DISPLAY VIEW (Both roles)
-                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                    <Tabs value={problemTab} onChange={(e, newValue) => setProblemTab(newValue)}>
+                <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "white", borderRadius: 2, border: "1px solid #E5E7EB", overflow: "hidden" }}>
+                    <Box sx={{ px: 3, pt: 3, pb: 1, borderBottom: "1px solid #F3F4F6", overflow: "hidden" }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "#8B5CF6", mb: 2 }}>
+                            <DescriptionIcon fontSize="small" />
+                            <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1 }}>PROBLEM STATEMENT</Typography>
+                        </Stack>
+                        <Typography 
+                            variant="h5" 
+                            sx={{ 
+                                fontWeight: 700, 
+                                color: "#111827", 
+                                mb: 2,
+                                wordBreak: "break-word",
+                                overflowWrap: "anywhere"
+                            }}
+                        >
+                            {problemData?.shortName || "No Problem Assigned Yet"}
+                        </Typography>
+                        {!problemData && (
+                            <Typography variant="body2" sx={{ color: "#64748B", fontStyle: 'italic' }}>
+                                Wait for the coach to post a question for you...
+                            </Typography>
+                        )}
+                    </Box>
+                    <Tabs
+                        value={problemTab}
+                        onChange={(e, newValue) => setProblemTab(newValue)}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        allowScrollButtonsMobile
+                        sx={{
+                            borderBottom: "1px solid #F3F4F6",
+                            px: 1,
+                            '& .MuiTabs-scrollButtons': { width: 28 },
+                            '& .MuiTab-root': {
+                                minWidth: 'auto',
+                                px: 2,
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                minHeight: 48
+                            }
+                        }}
+                    >
                         <Tab label="Description" />
-                        <Tab label="Test Cases" disabled={!problemData} />
+                        <Tab label={
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                                <TuneIcon fontSize="small" />
+                                <span>Test cases</span>
+                            </Stack>
+                        } disabled={!problemData} />
                     </Tabs>
-                    <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+                    <Box sx={{ p: problemTab === 0 ? 3 : 2, bgcolor: "transparent" }}>
                         {problemTab === 0 && (
                             <Box className="ql-snow">
                                 <Box className="ql-editor" sx={{ p: 0, whiteSpace: "pre-wrap", fontFamily: "body" }}>
@@ -228,7 +275,7 @@ function QuestionPanel({
                                             }}
                                         />
                                     ) : (
-                                        "The problem description will appear here."
+                                        "No problem description provided yet."
                                     )}
                                 </Box>
                             </Box>
@@ -236,7 +283,7 @@ function QuestionPanel({
                         {problemTab === 1 && problemData && (
                             <Stack spacing={2}>
                                 {problemData?.testCases?.map((tc, index) => (
-                                    <Paper key={index} elevation={2} sx={{ p: 2 }}>
+                                    <Paper key={index} elevation={0} sx={{ p: 2, border: "1px solid #E5E7EB" }}>
                                         <Typography variant="subtitle2" gutterBottom>
                                             Test Case {index + 1}
                                         </Typography>
@@ -255,6 +302,8 @@ function QuestionPanel({
                                                         background: "#f5f5f5",
                                                         p: 1,
                                                         borderRadius: 1,
+                                                        border: "1px solid #E5E7EB",
+                                                        wordBreak: "break-all"
                                                     }}
                                                 >
                                                     {input.value}
@@ -263,11 +312,11 @@ function QuestionPanel({
                                         ))}
                                     </Paper>
                                 ))}
-                                <Paper elevation={2} sx={{ p: 2, mt: 2, background: "#e3f2fd" }}>
-                                    <Typography variant="subtitle2" gutterBottom>
+                                <Paper elevation={0} sx={{ p: 2, mt: 2, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 2 }}>
+                                    <Typography variant="subtitle2" gutterBottom sx={{ color: "#2C5282" }}>
                                         Expected Outputs
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                    <Typography variant="caption" sx={{ color: "#2B6CB0" }}>
                                         The candidate's code output must match one of the valid answers provided by the
                                         interviewer.
                                     </Typography>

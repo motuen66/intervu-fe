@@ -7,6 +7,7 @@ import { setToken, setUserData } from "../../common/store/authSlice";
 import { callApi } from "../../common/utils/apiConnector";
 import { METHOD } from "../../common/constants/api";
 import { authEndPoints } from "../../features/auth/services/authApi";
+import SuspendedGate from "../../common/components/SuspendedGate";
 
 const DefaultLayout = () => {
     const { userData } = useSelector((state) => state.auth || {});
@@ -69,6 +70,7 @@ const DefaultLayout = () => {
                 </Container>
             </Box>
 
+            <SuspendedGate />
             <ScrollTopFab />
         </Box>
     );

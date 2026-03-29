@@ -9,11 +9,14 @@ import EmptyLayout from "../layouts/EmptyLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
 import HomePage from "../../features/home/pages/HomePage";
+import LandingPage from "../../features/landing/pages/LandingPage";
+import RootPage from "./RootPage";
 import InterviewerProfilePage from "../../features/profiles/coach/page/InterviewerProfilePage.jsx";
 import CandidateProfilePage from "../../features/profiles/candidate/page/CandidateProfilePage.jsx";
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
+import InterviewPrecheckPage from "../../features/interview/pages/InterviewPrecheckPage/InterviewPrecheckPage";
 import BookingRequestListPage from "../../features/interview/pages/BookingRequestPage/BookingRequestListPage";
 import BookingRequestDetailPage from "../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
@@ -25,7 +28,8 @@ import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExp
 import SavedQuestionsPage from "../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx";
 
 export const routes = [
-    { path: "/", element: <Navigate to="/home" replace /> },
+    { path: "/", element: <RootPage /> },
+    { path: "/landing", element: <LandingPage /> },
 
     // Auth routes
     { element: <EmptyLayout />, children: authRoutes },
@@ -82,6 +86,7 @@ export const routes = [
                 element: <MainLayout />,
                 children: [{ index: true, element: <InterviewRoomListPage /> }],
             },
+            { path: "/interview/precheck/:roomId", element: <InterviewPrecheckPage /> },
             { path: "/interview/room/:roomId", element: <InterviewRoomPage /> },
         ],
     },

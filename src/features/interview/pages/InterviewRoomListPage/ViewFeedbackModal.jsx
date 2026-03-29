@@ -12,47 +12,67 @@ import {
     Stack,
     Divider,
     Rating,
+    IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
 } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
 import { SecondaryButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
+import { ROLES } from "../../../../common/constants/common";
 import StarIcon from "@mui/icons-material/Star";
+import CloseIcon from "@mui/icons-material/Close";
 
-function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
+function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
     const [feedback, setFeedback] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (open && interviewRoomId) {
+        if (open && interviewRoomId && user) {
             fetchFeedback();
         }
-    }, [open, interviewRoomId]);
+    }, [open, interviewRoomId, user]);
 
     const fetchFeedback = async () => {
         setLoading(true);
         setError(null);
         try {
+            console.log("Fetching feedback for role:", user?.role, "Room ID:", interviewRoomId);
+            const isCandidate = user?.role == ROLES.CANDIDATE; // Loose equality for safety
+            // Now: Candidate views the evaluation they RECEIVED from the coach
+            // Coach views the feedback they RECEIVED from the candidate
+            const endpoint = isCandidate
+                ? `/interviewroom/${interviewRoomId}/coach-evaluation`
+                : `/Feedbacks/interview-room/${interviewRoomId}`;
+
             const res = await callApi({
                 method: METHOD.GET,
-                endpoint: `/Feedbacks/interview-room/${interviewRoomId}`,
+                endpoint: endpoint,
             });
 
             console.log("Feedback API Response:", res);
 
             if (res.success && res.data) {
-                console.log("Feedback Data:", res.data);
-
-                // Handle both array and single object response
-                let feedbackData = res.data;
-                if (Array.isArray(res.data) && res.data.length > 0) {
-                    feedbackData = res.data[0]; // Get first feedback if array
-                    console.log("Using first feedback from array:", feedbackData);
+                if (res.data?.evaluationResults) {
+                    // Evaluation data (usually for Candidate viewing Coach's feedback)
+                    setFeedback(res.data);
+                } else {
+                    // Standard feedback data (usually for Coach viewing Candidate's feedback)
+                    // Handle both array and single object response
+                    let feedbackData = res.data;
+                    if (Array.isArray(res.data) && res.data.length > 0) {
+                        feedbackData = res.data[0];
+                    }
+                    setFeedback(feedbackData);
                 }
-
-                setFeedback(feedbackData);
             } else {
                 console.log("No feedback found in response");
                 setError("No feedback available for this interview.");
@@ -72,11 +92,26 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
     };
 
     return (
-        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth PaperProps={{ sx: dialogStyles.paper }}>
-            <DialogTitle>
-                <Typography variant="h5" component="div" fontWeight={600}>
-                    Interview Feedback
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    ...dialogStyles.paper,
+                    borderRadius: "24px",
+                    overflow: "hidden",
+                }
+            }}
+        >
+            <DialogTitle sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }} component="div">
+                <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: "-0.01em" }} component="span">
+                    Performance Feedback
                 </Typography>
+                <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
+                    <CloseIcon />
+                </IconButton>
             </DialogTitle>
 
             <DialogContent>
@@ -100,110 +135,180 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId }) {
 
                 {!loading && feedback && (
                     <Stack spacing={3}>
-                        {/* Rating Section */}
-                        <Box>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                Overall Rating
-                            </Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                <Rating
-                                    value={feedback.rating || 0}
-                                    readOnly
-                                    precision={0.5}
-                                    icon={<StarIcon fontSize="inherit" />}
-                                />
-                                <Typography variant="h6" component="div" color="primary">
-                                    {feedback.rating ? feedback.rating.toFixed(1) : "N/A"}
-                                </Typography>
-                            </Stack>
-                        </Box>
-
-                        <Divider />
-
-                        {/* Comments Section */}
-                        <Box>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                Feedback Comments
-                            </Typography>
-                            <Box
-                                sx={{
-                                    bgcolor: "grey.50",
-                                    p: 2,
-                                    borderRadius: "8px",
-                                    border: "1px solid",
-                                    borderColor: "grey.200",
-                                }}
-                            >
-                                <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
-                                    {feedback.comments || "No comments provided."}
-                                </Typography>
-                            </Box>
-                        </Box>
-
-                        {/* Strengths */}
-                        {feedback.strengths && (
+                        {feedback.evaluationResults ? (
+                            /* Evaluation Results View (Questions + Scores) */
                             <Box>
-                                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                    Strengths
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                    Evaluation Details
                                 </Typography>
-                                <Box
-                                    sx={{
-                                        bgcolor: "success.50",
-                                        p: 2,
-                                        borderRadius: "8px",
-                                        border: "1px solid",
-                                        borderColor: "success.200",
-                                    }}
-                                >
-                                    <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                                        {feedback.strengths}
-                                    </Typography>
+                                <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "grey.200", borderRadius: "12px" }}>
+                                    <Table size="medium">
+                                        <TableHead sx={{ bgcolor: "grey.50" }}>
+                                            <TableRow>
+                                                <TableCell sx={{ fontWeight: 700 }}>Critria / Question</TableCell>
+                                                <TableCell align="center" sx={{ fontWeight: 700, width: 100 }}>Score</TableCell>
+                                                <TableCell sx={{ fontWeight: 700 }}>Feedback Details</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {feedback.evaluationResults?.map((item, index) => (
+                                                <TableRow key={index} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                                                    <TableCell component="th" scope="row">
+                                                        <Typography variant="body2" fontWeight={600}>
+                                                            {item.question}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell align="center">
+                                                        <Box
+                                                            sx={{
+                                                                display: "inline-flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "center",
+                                                                width: 36,
+                                                                height: 36,
+                                                                borderRadius: "50%",
+                                                                bgcolor: item.score >= 8 ? "success.50" : item.score >= 5 ? "warning.50" : "error.50",
+                                                                color: item.score >= 8 ? "success.dark" : item.score >= 5 ? "warning.dark" : "error.dark",
+                                                                fontWeight: 700,
+                                                                border: "1px solid",
+                                                                borderColor: item.score >= 8 ? "success.100" : item.score >= 5 ? "warning.100" : "error.100",
+                                                            }}
+                                                        >
+                                                            {item.score}
+                                                        </Box>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+                                                            {item.answer || "No specific feedback."}
+                                                        </Typography>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+
+                                <Box sx={{ mt: 3, p: 2, bgcolor: "primary.50", borderRadius: "8px", border: "1px solid", borderColor: "primary.100" }}>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                        <Typography variant="subtitle2" color="primary.dark">
+                                            Evaluation Status
+                                        </Typography>
+                                        <StatusChip
+                                            label={feedback.isEvaluationCompleted ? "Fully Evaluated" : "In Progress"}
+                                            color={feedback.isEvaluationCompleted ? "success" : "warning"}
+                                        />
+                                    </Stack>
                                 </Box>
                             </Box>
-                        )}
-
-                        {/* Areas for Improvement */}
-                        {feedback.areasForImprovement && (
-                            <Box>
-                                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                    Areas for Improvement
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        bgcolor: "warning.50",
-                                        p: 2,
-                                        borderRadius: "8px",
-                                        border: "1px solid",
-                                        borderColor: "warning.200",
-                                    }}
-                                >
-                                    <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                                        {feedback.areasForImprovement}
+                        ) : (
+                            /* Candidate View: Standard Feedback (Rating + Comments) */
+                            <>
+                                {/* Rating Section */}
+                                <Box>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                        Overall Rating
                                     </Typography>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <Rating
+                                            value={feedback.rating || 0}
+                                            readOnly
+                                            precision={0.5}
+                                            icon={<StarIcon fontSize="inherit" />}
+                                        />
+                                        <Typography variant="h6" component="div" color="primary">
+                                            {feedback.rating ? feedback.rating.toFixed(1) : "N/A"}
+                                        </Typography>
+                                    </Stack>
                                 </Box>
-                            </Box>
-                        )}
 
-                        {/* Status */}
-                        <Box>
-                            <Stack direction="row" spacing={2} alignItems="center">
-                                <Typography variant="subtitle2" color="text.secondary">
-                                    Status:
-                                </Typography>
-                                <StatusChip
-                                    label={feedback.isSubmitted ? "Submitted" : "Draft"}
-                                    color={feedback.isSubmitted ? "success" : "default"}
-                                />
-                            </Stack>
-                        </Box>
+                                <Divider />
 
-                        {/* Submitted Date */}
-                        {feedback.submittedAt && (
-                            <Box>
-                                <Typography variant="caption" color="text.secondary">
-                                    Submitted on: {new Date(feedback.submittedAt).toLocaleString()}
-                                </Typography>
-                            </Box>
+                                {/* Comments Section */}
+                                <Box>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                        Feedback Comments
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            bgcolor: "grey.50",
+                                            p: 2,
+                                            borderRadius: "8px",
+                                            border: "1px solid",
+                                            borderColor: "grey.200",
+                                        }}
+                                    >
+                                        <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
+                                            {feedback.comments || "No comments provided."}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                {/* Strengths */}
+                                {feedback.strengths && (
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            Strengths
+                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                bgcolor: "success.50",
+                                                p: 2,
+                                                borderRadius: "8px",
+                                                border: "1px solid",
+                                                borderColor: "success.200",
+                                            }}
+                                        >
+                                            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                                                {feedback.strengths}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                )}
+
+                                {/* Areas for Improvement */}
+                                {feedback.areasForImprovement && (
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            Areas for Improvement
+                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                bgcolor: "warning.50",
+                                                p: 2,
+                                                borderRadius: "8px",
+                                                border: "1px solid",
+                                                borderColor: "warning.200",
+                                            }}
+                                        >
+                                            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                                                {feedback.areasForImprovement}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                )}
+
+                                {/* Status */}
+                                <Box>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            Status:
+                                        </Typography>
+                                        <StatusChip
+                                            label={feedback.isSubmitted ? "Submitted" : "Draft"}
+                                            color={feedback.isSubmitted ? "success" : "default"}
+                                        />
+                                    </Stack>
+                                </Box>
+
+                                {/* Submitted Date */}
+                                {feedback.submittedAt && (
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Submitted on: {new Date(feedback.submittedAt).toLocaleString()}
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </>
                         )}
                     </Stack>
                 )}

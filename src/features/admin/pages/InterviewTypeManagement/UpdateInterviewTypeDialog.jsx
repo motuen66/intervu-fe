@@ -8,6 +8,8 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { interviewTypeEndPoints } from "../../services/interviewTypeApi";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -28,6 +30,12 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
         minPrice: 0,
         maxPrice: 0,
         status: 1,
+        evaluationStructure: [
+            {
+                type: "",
+                question: "",
+            },
+        ],
     });
     const [saving, setSaving] = useState(false);
 
@@ -41,19 +49,64 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                 minPrice: item.minPrice || 0,
                 maxPrice: item.maxPrice || 0,
                 status: item.status ?? 1,
+                evaluationStructure:
+                    item.evaluationStructure?.length > 0
+                        ? item.evaluationStructure.map((ev) => ({
+                              type: ev.type || ev.Type || "",
+                              question: ev.question || ev.Question || "",
+                          }))
+                        : [
+                              {
+                                  type: "",
+                                  question: "",
+                              },
+                          ],
             });
         }
     }, [item]);
+
+    const handleEvaluationChange = (index, key, value) => {
+        setForm((s) => {
+            const next = [...(s.evaluationStructure || [])];
+            next[index] = { ...next[index], [key]: value };
+            return { ...s, evaluationStructure: next };
+        });
+    };
+
+    const handleAddEvaluation = () => {
+        setForm((s) => ({
+            ...s,
+            evaluationStructure: [...(s.evaluationStructure || []), { type: "", question: "" }],
+        }));
+    };
+
+    const handleRemoveEvaluation = (index) => {
+        setForm((s) => {
+            const next = [...(s.evaluationStructure || [])];
+            next.splice(index, 1);
+            return {
+                ...s,
+                evaluationStructure: next.length === 0 ? [{ type: "", question: "" }] : next,
+            };
+        });
+    };
 
     const handleSubmit = async () => {
         if (!item) return;
         setSaving(true);
         try {
+            const evaluationStructure = (form.evaluationStructure || [])
+                .map((ev) => ({
+                    type: ev.type?.trim() || "",
+                    question: ev.question?.trim() || "",
+                }))
+                .filter((ev) => ev.type || ev.question);
+
             await callApi({
                 method: METHOD.PUT,
                 endpoint: interviewTypeEndPoints.UPDATE_TYPE(item.id),
                 // include id to ensure backend receives the identifying key
-                arg: { id: item.id, ...form },
+                arg: { id: item.id, ...form, evaluationStructure },
                 displaySuccessMessage: true,
                 alertErrorMessage: true,
             });
@@ -73,9 +126,8 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
         <Dialog
             open={open}
             onClose={handleClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
-            PaperProps={{ sx: dialogStyles.paper }}
         >
             <DialogTitle
                 sx={{
@@ -112,7 +164,7 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                 }}
             >
                 <DialogContent sx={{ pt: 3 }}>
-                    <Grid container spacing={2.5} direction="column">
+                    <Grid container spacing={2.5}>
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
@@ -133,7 +185,7 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                                 required
                             />
                         </Grid>
-                        <Grid item xs={12} sx={{ width: "100%" }}>
+                        <Grid item xs={12} sm={6} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
                                 select
@@ -146,7 +198,7 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                                 <MenuItem value={0}>Inactive</MenuItem>
                             </FormTextField>
                         </Grid>
-                        <Grid item xs={12} sx={{ width: "100%" }}>
+                        <Grid item xs={12} sm={6} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
                                 label="Suggested Duration (minutes)"
@@ -157,7 +209,7 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                                 required
                             />
                         </Grid>
-                        <Grid item xs={12} sx={{ width: "100%" }}>
+                        <Grid item xs={12} sm={6} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
                                 label="Min Price"
@@ -168,7 +220,7 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                                 required
                             />
                         </Grid>
-                        <Grid item xs={12} sx={{ width: "100%" }}>
+                        <Grid item xs={12} sm={6} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
                                 label="Max Price"
@@ -192,6 +244,68 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                                     "& .MuiFormControlLabel-label": { color: "#111827" },
                                 }}
                             />
+                        </Grid>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
+                            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+                                <Typography sx={{ fontWeight: 600, color: "#111827" }}>
+                                    Evaluation structure
+                                </Typography>
+                            </Box>
+
+                            <Box display="flex" flexDirection="column" gap={2}>
+                                {(form.evaluationStructure || []).map((ev, idx) => (
+                                    <Box
+                                        key={idx}
+                                        sx={{
+                                            border: "1px solid #e5e7eb",
+                                            borderRadius: 1.5,
+                                            p: 2,
+                                            bgcolor: "#f8fafc",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 1.5,
+                                        }}
+                                    >
+                                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                                            <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>
+                                                Item {idx + 1}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleRemoveEvaluation(idx)}
+                                                disabled={(form.evaluationStructure || []).length === 1}
+                                            >
+                                                <DeleteOutlineIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+
+                                        <FormTextField
+                                            fullWidth
+                                            label="Category / Type"
+                                            value={ev.type}
+                                            onChange={(e) => handleEvaluationChange(idx, "type", e.target.value)}
+                                            required
+                                        />
+                                        <FormTextField
+                                            fullWidth
+                                            label="Guiding question"
+                                            value={ev.question}
+                                            onChange={(e) => handleEvaluationChange(idx, "question", e.target.value)}
+                                            multiline
+                                            rows={3}
+                                            required
+                                        />
+                                    </Box>
+                                ))}
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<AddCircleOutlineIcon />}
+                                    onClick={handleAddEvaluation}
+                                    sx={{ fontWeight: 600 }}
+                                >
+                                    Add
+                                </Button>
+                            </Box>
                         </Grid>
                     </Grid>
                 </DialogContent>
