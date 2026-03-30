@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
 import "./MainLayout.css";
 import { Container, Avatar } from "@mui/material";
 import { ROLES } from "../../common/constants/common";
@@ -25,6 +26,8 @@ import {
     BarChart2,
     Bell,
     LogOut,
+    User,
+    Settings,
     ChevronDown,
     Search,
 } from "lucide-react";
@@ -264,21 +267,50 @@ const MainLayout = () => {
                                         src={remoteAvatar ?? userData?.profilePicture}
                                         alt={userData?.fullName || "User"}
                                         sx={{ width: 36, height: 36 }}
-                                    />
+                                    >
+                                        {!(remoteAvatar ?? userData?.profilePicture) &&
+                                            (userData?.fullName?.charAt(0) || "U")}
+                                    </Avatar>
                                 </button>
-                                {isUserDropdownOpen && (
-                                    <div className="dropdown-menu admin-dropdown-menu">
-                                        <div className="dropdown-header">
-                                            <p className="dropdown-name">{userData?.fullName}</p>
-                                            <p className="dropdown-email">{userData?.email}</p>
-                                        </div>
-                                        <hr className="dropdown-divider" />
-                                        <button className="dropdown-item" onClick={() => { navigate("/user/profile"); setIsUserDropdownOpen(false); }}>View Profile</button>
-                                        <button className="dropdown-item" onClick={() => { navigate("/settings"); setIsUserDropdownOpen(false); }}>Settings</button>
-                                        <hr className="dropdown-divider" />
-                                        <button className="dropdown-item logout-item" onClick={handleLogout}>Logout</button>
-                                    </div>
-                                )}
+                                <AnimatePresence>
+                                    {isUserDropdownOpen && (
+                                        <motion.div
+                                            className="user-dropdown-menu admin-dropdown-menu"
+                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            <div className="dropdown-user-info">
+                                                <p className="user-name">{userData?.fullName}</p>
+                                                <p className="user-email">{userData?.email}</p>
+                                            </div>
+                                            <div className="dropdown-divider" />
+                                            <button
+                                                className="dropdown-item"
+                                                onClick={() => {
+                                                    navigate("/user/profile");
+                                                    setIsUserDropdownOpen(false);
+                                                }}
+                                            >
+                                                <User size={16} /> My Profile
+                                            </button>
+                                            <button
+                                                className="dropdown-item"
+                                                onClick={() => {
+                                                    navigate("/settings");
+                                                    setIsUserDropdownOpen(false);
+                                                }}
+                                            >
+                                                <Settings size={16} /> Settings
+                                            </button>
+                                            <div className="dropdown-divider" />
+                                            <button className="dropdown-item logout-link" onClick={handleLogout}>
+                                                <LogOut size={16} /> Logout
+                                            </button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                     </header>
