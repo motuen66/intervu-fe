@@ -472,7 +472,18 @@ export default function QuestionDetailPage() {
                                 multiline
                                 size="small"
                                 value={editContent}
-                                onChange={(e) => setEditContent(e.target.value)}
+                                onChange={(e) => {
+                                    const WORD_LIMIT = 55;
+                                    let val = e.target.value || "";
+                                    const words = val.trim().split(/\s+/).filter(Boolean);
+                                    if (words.length > WORD_LIMIT) {
+                                        val = words.slice(0, WORD_LIMIT).join(" ");
+                                    }
+                                    setEditContent(val);
+                                }}
+                                helperText={`${
+                                    (editContent || "").trim().split(/\s+/).filter(Boolean).length
+                                } / 55 words`}
                                 autoFocus
                                 sx={{ mb: 1 }}
                             />

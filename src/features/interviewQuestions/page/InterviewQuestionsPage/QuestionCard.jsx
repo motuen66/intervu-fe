@@ -73,6 +73,9 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     ].filter(Boolean);
 
     const answerText = previewAnswer?.content || "";
+    const PREVIEW_CHAR_LIMIT = 220;
+    const [expandedPreview, setExpandedPreview] = useState(false);
+    const needsTruncate = answerText.length > PREVIEW_CHAR_LIMIT;
 
     useEffect(() => {
         setLikeCount(item?.likeCount ?? item?.vote ?? 0);
@@ -192,6 +195,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     return (
         <Paper
             variant="outlined"
+            onClick={() => navigate(`/questions/${item.id}`)}
             sx={{
                 p: 2.5,
                 borderRadius: 2,
@@ -245,9 +249,10 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                             mb: 1.5,
                             cursor: "pointer",
                             lineHeight: 1.45,
+                            wordBreak: "break-word",
+                            overflowWrap: "anywhere",
                             "&:hover": { color: "primary.main" },
                         }}
-                        onClick={() => item.id && navigate(`/questions/${item.id}`)}
                     >
                         {item.content}
                     </Typography>
@@ -311,59 +316,79 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
 
             {/* Answer preview */}
             {previewAnswer && (
-                <Box
-                    onClick={() => setExpanded((v) => !v)}
-                    sx={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 1,
-                        bgcolor: "grey.50",
-                        borderRadius: 2,
-                        px: 1.75,
-                        py: 1.25,
-                        mt: 1.5,
-                        cursor: "pointer",
-                    }}
-                >
-                    {(previewAnswer?.authorAvatar ??
-                        previewAnswer?.authorProfilePicture ??
-                        item.authorAvatar ??
-                        item.authorProfilePicture) && (
-                        <Avatar
-                            src={
-                                previewAnswer?.authorAvatar ??
-                                previewAnswer?.authorProfilePicture ??
-                                item.authorAvatar ??
-                                item.authorProfilePicture
-                            }
-                            sx={{ width: 22, height: 22, fontSize: 10, flexShrink: 0 }}
-                        >
-                            {(previewAnswer?.authorName ?? item.authorName)?.[0] ?? "U"}
-                        </Avatar>
-                    )}
-                    <Typography
-                        variant="caption"
-                        color="text.secondary"
+                <Box sx={{ mt: 1.5 }}>
+                    <Box
+                        onClick={() => setExpanded((v) => !v)}
                         sx={{
-                            flex: 1,
-                            fontStyle: "italic",
-                            overflow: "hidden",
-                            whiteSpace: expanded ? "pre-wrap" : "nowrap",
-                            textOverflow: expanded ? "unset" : "ellipsis",
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 1,
+                            bgcolor: "grey.50",
+                            borderRadius: 2,
+                            px: 1.75,
+                            py: 1.25,
+                            cursor: "pointer",
+                            position: "relative",
+                            minWidth: 0,
                         }}
                     >
-                        {expanded
-                            ? answerText
-                            : `"${answerText.slice(0, 120)}${answerText.length > 120 ? " ..." : ""}"`}
-                    </Typography>
-                    <KeyboardArrowDownIcon
-                        sx={{
-                            fontSize: 18,
-                            flexShrink: 0,
-                            transform: expanded ? "rotate(180deg)" : "none",
-                            transition: "transform 0.2s",
-                        }}
-                    />
+                        {(previewAnswer?.authorAvatar ??
+                            previewAnswer?.authorProfilePicture ??
+                            item.authorAvatar ??
+                            item.authorProfilePicture) && (
+                            <Avatar
+                                src={
+                                    previewAnswer?.authorAvatar ??
+                                    previewAnswer?.authorProfilePicture ??
+                                    item.authorAvatar ??
+                                    item.authorProfilePicture
+                                }
+                                sx={{ width: 22, height: 22, fontSize: 10, flexShrink: 0 }}
+                            >
+                                {(previewAnswer?.authorName ?? item.authorName)?.[0] ?? "U"}
+                            </Avatar>
+                        )}
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                                flex: 1,
+                                fontStyle: "italic",
+                                wordBreak: "break-word",
+                                overflowWrap: "anywhere",
+                                whiteSpace: "pre-line",
+                                display: "-webkit-box",
+                                WebkitBoxOrient: "vertical",
+                                WebkitLineClamp: expanded || expandedPreview ? "unset" : 5,
+                                overflow: "hidden",
+                            }}
+                        >
+                            {answerText}
+                        </Typography>
+                        <KeyboardArrowDownIcon
+                            sx={{
+                                fontSize: 18,
+                                flexShrink: 0,
+                                transform: expanded ? "rotate(180deg)" : "none",
+                                transition: "transform 0.2s",
+                            }}
+                        />
+                    </Box>
+
+                    {needsTruncate && (
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5 }}>
+                            <Button
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedPreview((v) => !v);
+                                }}
+                                sx={{ textTransform: "none", p: 0, minWidth: 0 }}
+                            >
+                                {expandedPreview ? "View less" : "View more"}
+                            </Button>
+                        </Box>
+                    )}
                 </Box>
             )}
         </Paper>

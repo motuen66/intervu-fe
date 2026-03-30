@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROLES } from "../constants/common";
-import { hasAssessmentData } from "../../features/profiles/candidate/candidate-assessment/services/assessmentApi";
+import { hasSkillGapData } from "../../features/profiles/candidate/candidate-assessment/services/assessmentApi";
 
 function CandidateAssessmentGate({ children }) {
     const navigate = useNavigate();
@@ -25,7 +25,7 @@ function CandidateAssessmentGate({ children }) {
 
         const checkSkillGap = async () => {
             console.log("nhi along with userData", userData);
-            const isAssessment = await hasAssessmentData(userData?.id);
+            const isAssessment = await hasSkillGapData(userData?.id);
             if (!isAssessment) {
                 navigate("/assessment", { replace: true });
             }
