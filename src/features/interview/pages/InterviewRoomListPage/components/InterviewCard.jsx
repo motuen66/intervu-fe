@@ -74,8 +74,19 @@ function InterviewCard({
 
 
     // Check if reschedule is available
+    const hasMultipleRounds = Array.isArray(room.rounds) && room.rounds.length > 1;
+    const multiRoundEligibleCount = hasMultipleRounds
+        ? room.rounds.filter(
+            (round) =>
+                round.status === INTERVIEW_ROOM_STATUS.SCHEDULED &&
+                round.canReschedule &&
+                !round.hasPendingReschedule,
+        ).length
+        : 0;
     const isRescheduled = room.rescheduleAttemptCount >= 1;
-    const canReschedule = !isRescheduled && !hasPendingReschedule;
+    const canReschedule = hasMultipleRounds
+        ? multiRoundEligibleCount > 0
+        : (room.canReschedule ?? (!isRescheduled && !hasPendingReschedule));
 
     const getDisplayDate = (dateTime) => {
         const date = new Date(dateTime);
@@ -457,8 +468,6 @@ function InterviewCard({
             .toUpperCase()
             .slice(0, 2);
     };
-
-    const hasMultipleRounds = room.rounds && room.rounds.length > 1;
 
     const formatTypeName = (name) => {
         if (!name) return "";

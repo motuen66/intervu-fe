@@ -1,24 +1,14 @@
 import {
     Box,
     Typography,
-    List,
-    ListItem,
-    Paper,
     Stack,
-    Accordion,
-    AccordionSummary,
-    AccordionDetails,
-    IconButton,
     TextField,
     Fab,
-    Badge,
-    Avatar
+    Avatar,
 } from "@mui/material";
-import { DangerButton, PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
-import { Videocam, VideocamOff, Mic, MicOff, ExpandMore, PresentToAll } from "@mui/icons-material";
+import { Videocam, VideocamOff, Mic, MicOff } from "@mui/icons-material";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
-import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import CreateIcon from "@mui/icons-material/Create";
 import { ROLES } from "../../../../common/constants/common.js";
 import { useEffect, useState } from "react";
@@ -40,16 +30,15 @@ function VideoPanel({
     onLeaveRoom,
     user,
     roomInfo,
-    endMeeting,
 }) {
     const isCandidate = user?.role === ROLES.CANDIDATE;
     const remotePeerName = roomInfo ? (isCandidate ? roomInfo.coachName || "Coach" : roomInfo.candidateName || "Candidate") : "Peer";
     const remotePeerRole = isCandidate ? "Coach" : "Candidate";
     
     const [fetchedRemoteAvatar, setFetchedRemoteAvatar] = useState(null);
-    const participantId = roomInfo ? (isCandidate ? roomInfo.coachId : roomInfo.candidateId) : null;
 
     useEffect(() => {
+        const participantId = roomInfo ? (isCandidate ? roomInfo.coachId : roomInfo.candidateId) : null;
         if (!participantId) return;
         callApi({ method: METHOD.GET, endpoint: `/userprofile/${participantId}` })
             .then((res) => {
@@ -58,9 +47,8 @@ function VideoPanel({
                 if (url) setFetchedRemoteAvatar(url);
             })
             .catch(() => { /* ignore */ });
-    }, [participantId]);
+    }, [roomInfo, isCandidate]);
 
-    // Robust check for remote avatar
     const remoteAvatar = fetchedRemoteAvatar || (roomInfo ? (isCandidate 
         ? (roomInfo.coachAvatar || roomInfo.coachProfilePicture || roomInfo.coach?.profilePicture || roomInfo.coach?.avatarUrl || roomInfo.coach?.avatar || roomInfo.interviewer?.profilePicture || roomInfo.interviewer?.avatar || roomInfo.interviewer?.avatarUrl || roomInfo.interviewerAvatar)
         : (roomInfo.candidateAvatar || roomInfo.candidateProfilePicture || roomInfo.candidate?.profilePicture || roomInfo.candidate?.avatarUrl || roomInfo.candidate?.avatar)
@@ -68,10 +56,8 @@ function VideoPanel({
 
     const localRoleNameInRoom = isCandidate ? roomInfo?.candidateName : roomInfo?.coachName;
     const localPeerName = user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
-    const localPeerRole = "You";
-    
-    // Robust check for local avatar
-    const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imageUrl || user?.imagePath || user?.avatar;
+    const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imagePath || user?.avatar;
+
     return (
         <Box
             sx={{
@@ -79,12 +65,18 @@ function VideoPanel({
                 display: "flex",
                 flexDirection: "column",
                 p: 2,
-                overflow: "auto",
+                overflow: "hidden", 
                 bgcolor: "#FFFFFF"
             }}
         >
             {/* Videos Container */}
-            <Stack spacing={2} sx={{ mb: 3 }}>
+            <Stack 
+                spacing={2} 
+                sx={{ 
+                    mb: 3,
+                    flexShrink: 0,
+                }}
+            >
                 <Box sx={{ 
                     position: "relative", 
                     width: "100%", 
@@ -93,8 +85,7 @@ function VideoPanel({
                     aspectRatio: "16/9", 
                     bgcolor: "#E5E7EB", 
                     border: isRemoteSpeaking ? "4px solid #A3E635" : "2px solid #E5E7EB",
-                    boxShadow: isRemoteSpeaking ? "0 0 15px rgba(163, 230, 53, 0.6)" : "none",
-                    transition: "all 0.2s ease"
+                    transition: "all 0.2s ease",
                 }}>
                     <video
                         ref={remoteVideoRef}
@@ -120,8 +111,6 @@ function VideoPanel({
                     aspectRatio: "16/9", 
                     bgcolor: "#E5E7EB", 
                     border: isLocalSpeaking ? "4px solid #3B82F6" : "2px solid #E5E7EB",
-                    boxShadow: isLocalSpeaking ? "0 0 15px rgba(59, 130, 246, 0.6)" : "none",
-                    transition: "all 0.2s ease"
                 }}>
                     <video
                         ref={localVideoRef}
@@ -137,9 +126,7 @@ function VideoPanel({
                     <Box sx={{ position: "absolute", bottom: 8, left: 8, bgcolor: "#A3E635", px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Avatar src={localAvatar} sx={{ width: 20, height: 20 }} />
                         <Typography variant="caption" sx={{ fontWeight: 700, color: "#166534" }}>
-                            {localPeerName !== "You" 
-                                ? `You (${localPeerName})`
-                                : "You"}
+                            {localPeerName !== "You" ? `You (${localPeerName})` : "You"}
                         </Typography>
                     </Box>
                 </Box>
@@ -150,13 +137,12 @@ function VideoPanel({
                 direction="row" 
                 justifyContent="center" 
                 alignItems="center"
-                spacing={{ xs: 1, sm: 1.5, md: 2 }} 
+                spacing={2} 
                 sx={{ 
                     mb: 4, 
                     width: "100%",
                     flexWrap: "nowrap",
-                    overflow: "hidden", // Prevent breaking layout
-                    "& > *": { flexShrink: 0 } // Prevent buttons from shrinking
+                    "& > *": { flexShrink: 0 }
                 }}
             >
                 <Fab
@@ -166,7 +152,6 @@ function VideoPanel({
                         bgcolor: isMicOn ? "#FFFFFF" : "#EF4444",
                         color: isMicOn ? "#4B5563" : "#FFFFFF",
                         border: isMicOn ? "1px solid #E5E7EB" : "none",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                         "&:hover": { bgcolor: isMicOn ? "#F3F4F6" : "#DC2626" }
                     }}
                 >
@@ -179,7 +164,6 @@ function VideoPanel({
                         bgcolor: isCameraOn ? "#FFFFFF" : "#EF4444",
                         color: isCameraOn ? "#4B5563" : "#FFFFFF",
                         border: isCameraOn ? "1px solid #E5E7EB" : "none",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                         "&:hover": { bgcolor: isCameraOn ? "#F3F4F6" : "#DC2626" }
                     }}
                 >
@@ -191,7 +175,6 @@ function VideoPanel({
                         bgcolor: "#FFFFFF",
                         color: "#4B5563",
                         border: "1px solid #E5E7EB",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                         "&:hover": { bgcolor: "#F3F4F6" }
                     }}
                 >
@@ -203,9 +186,6 @@ function VideoPanel({
                     sx={{ 
                         bgcolor: "#EF4444", 
                         color: "#FFFFFF",
-                        minWidth: 48,
-                        height: 48,
-                        boxShadow: "0 4px 6px -1px rgba(239, 68, 68, 0.2)",
                         "&:hover": { bgcolor: "#DC2626" }
                     }}
                 >
@@ -214,16 +194,15 @@ function VideoPanel({
             </Stack>
 
             {/* Internal Notes */}
-            <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1, flexShrink: 0 }}>
                     <Typography variant="overline" sx={{ fontWeight: 800, color: "#6B7280", letterSpacing: 1 }}>INTERNAL NOTES</Typography>
                     <CreateIcon sx={{ color: "#9CA3AF", fontSize: 18 }} />
                 </Stack>
                 <TextField
                     multiline
                     fullWidth
-                    minRows={4}
-                    placeholder="No notes added yet..."
+                    placeholder="Add your private notes here..."
                     variant="outlined"
                     sx={{
                         flex: 1,
@@ -232,14 +211,15 @@ function VideoPanel({
                             alignItems: 'flex-start',
                             bgcolor: "#F9FAFB",
                             borderRadius: 2,
-                            '& fieldset': { borderColor: '#E5E7EB' },
-                            '&:hover fieldset': { borderColor: '#D1D5DB' },
-                            '&.Mui-focused fieldset': { borderColor: '#3B82F6' },
+                            display: 'flex',
+                            flexDirection: 'column'
                         },
                         '& .MuiInputBase-input': {
-                            color: '#6B7280',
+                            color: '#1F2937',
                             fontSize: 14,
-                            fontStyle: 'italic'
+                            lineHeight: 1.5,
+                            height: '100% !important',
+                            overflowY: 'auto !important'
                         }
                     }}
                 />

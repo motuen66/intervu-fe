@@ -1,21 +1,101 @@
-import React, { useMemo } from "react";
-import { Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
+import React, { useMemo, useState } from "react";
+import { Box, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { alpha } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
+import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 
-const statusColorMap = {
-    good: "success",
-    medium: "warning",
-    weak: "warning",
-    missing: "error",
+const statusVisualMap = {
+    good: {
+        label: "Ready",
+        main: "#16a34a",
+        soft: alpha("#16a34a", 0.12),
+        border: alpha("#16a34a", 0.28),
+        text: "#166534",
+    },
+    medium: {
+        label: "On Track",
+        main: "#eab308",
+        soft: alpha("#eab308", 0.16),
+        border: alpha("#eab308", 0.36),
+        text: "#854d0e",
+    },
+    weak: {
+        label: "Needs Work",
+        main: "#f97316",
+        soft: alpha("#f97316", 0.12),
+        border: alpha("#f97316", 0.28),
+        text: "#9a3412",
+    },
+    missing: {
+        label: "Missing",
+        main: "#ef4444",
+        soft: alpha("#ef4444", 0.1),
+        border: alpha("#ef4444", 0.24),
+        text: "#991b1b",
+    },
 };
 
 const ResultDashboard = () => {
-    const { answers, skillScores, matchPercentage, lastMatchPercentage, nextStep } = useAssessment();
+    const navigate = useNavigate();
+    const { answers, skillScores, matchPercentage, lastMatchPercentage, nextStep, saveAssessmentSnapshot } =
+        useAssessment();
+    const [isSaving, setIsSaving] = useState(false);
     const profile = answers?.profile || {};
-    const strongestSkills = useMemo(() => skillScores.slice().sort((a, b) => b.score - a.score).slice(0, 3), [skillScores]);
-    const focusSkills = useMemo(() => skillScores.filter((skill) => skill.status !== "good").slice(0, 3), [skillScores]);
+    const strongestSkills = useMemo(
+        () =>
+            skillScores
+                .slice()
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 3),
+        [skillScores],
+    );
+    const blockingSkills = useMemo(
+        () => skillScores.filter((skill) => skill.status === "weak" || skill.status === "missing"),
+        [skillScores],
+    );
+    const interviewReady = skillScores.length > 0 && blockingSkills.length === 0;
+    const focusSkills = useMemo(() => blockingSkills.slice(0, 3), [blockingSkills]);
+    const mediumSkills = useMemo(() => skillScores.filter((skill) => skill.status === "medium"), [skillScores]);
+    const summaryTone = interviewReady
+        ? statusVisualMap.good
+        : matchPercentage >= 70
+          ? statusVisualMap.medium
+          : statusVisualMap.weak;
+    const readinessHeadline = interviewReady
+        ? `You can start ${profile.role || "interview"} practice directly.`
+        : focusSkills.length
+          ? `Focus next on ${focusSkills.map((skill) => skill.skillKey).join(", ")}.`
+          : `Keep strengthening ${profile.role || "your interview"} momentum.`;
+    const readinessBody = interviewReady
+        ? `Benchmarked against ${profile.level || "your target"} expectations, your current tech stack is ready for mock interviews and real interview reps.`
+        : mediumSkills.length
+          ? `${mediumSkills.map((skill) => skill.skillKey).join(", ")} is already on track for ${profile.level || "your target level"}, but you still have a few core gaps to close first.`
+          : `Your score reflects both your chosen level and the stack-specific answers you gave in the assessment.`;
+
+    const handleSaveAndGoHome = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await saveAssessmentSnapshot();
+            navigate("/home");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleViewRoadmap = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await saveAssessmentSnapshot();
+            nextStep();
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <Box sx={{ maxWidth: 1120, mx: "auto", px: 3, pb: 8 }}>
@@ -31,7 +111,10 @@ const ResultDashboard = () => {
                     }}
                 >
                     <Stack spacing={2}>
-                        <Typography variant="overline" sx={{ color: "#64748b", fontWeight: 800, letterSpacing: "0.08em" }}>
+                        <Typography
+                            variant="overline"
+                            sx={{ color: "#64748b", fontWeight: 800, letterSpacing: "0.08em" }}
+                        >
                             Assessment Summary
                         </Typography>
                         <Typography variant="h4" fontWeight={800}>
@@ -47,9 +130,7 @@ const ResultDashboard = () => {
                             ))}
                         </Stack>
                         {profile.freeText ? (
-                            <Typography color="text.secondary">
-                                Goal: {profile.freeText}
-                            </Typography>
+                            <Typography color="text.secondary">Goal: {profile.freeText}</Typography>
                         ) : null}
                     </Stack>
                 </Paper>
@@ -71,7 +152,7 @@ const ResultDashboard = () => {
                                     width: 180,
                                     height: 180,
                                     borderRadius: "50%",
-                                    background: `conic-gradient(#84cc16 ${matchPercentage * 3.6}deg, #e5e7eb 0deg)`,
+                                    background: `conic-gradient(${summaryTone.main} ${matchPercentage * 3.6}deg, #e5e7eb 0deg)`,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -105,7 +186,8 @@ const ResultDashboard = () => {
                             </Box>
                         </Box>
                         <Typography color="text.secondary" textAlign="center">
-                            Calibrated for {profile.role || "your target role"} using your real chat answers.
+                            Calibrated for a {profile.level || "target"} {profile.role || "role"} using your real tech
+                            stack answers, not just a generic average.
                         </Typography>
                     </Paper>
 
@@ -122,27 +204,68 @@ const ResultDashboard = () => {
                                         spacing={1}
                                         sx={{ mb: 1 }}
                                     >
-                                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                            flexWrap="wrap"
+                                            useFlexGap
+                                        >
                                             <Typography fontWeight={700}>{skill.skillKey}</Typography>
                                             <Chip
-                                                label={skill.status}
+                                                label={
+                                                    (
+                                                        statusVisualMap[skill.status?.toLowerCase()] ||
+                                                        statusVisualMap.medium
+                                                    ).label
+                                                }
                                                 size="small"
-                                                color={statusColorMap[skill.status?.toLowerCase()] || "default"}
                                                 variant="outlined"
+                                                sx={{
+                                                    bgcolor: (
+                                                        statusVisualMap[skill.status?.toLowerCase()] ||
+                                                        statusVisualMap.medium
+                                                    ).soft,
+                                                    borderColor: (
+                                                        statusVisualMap[skill.status?.toLowerCase()] ||
+                                                        statusVisualMap.medium
+                                                    ).border,
+                                                    color: (
+                                                        statusVisualMap[skill.status?.toLowerCase()] ||
+                                                        statusVisualMap.medium
+                                                    ).text,
+                                                    fontWeight: 700,
+                                                }}
                                             />
                                         </Stack>
                                         <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                                            Level {skill.sfiaLevel}
+                                            Current L{skill.sfiaLevel} / Target L{skill.targetLevel || 4}
                                         </Typography>
                                     </Stack>
                                     <LinearProgress
                                         variant="determinate"
                                         value={skill.score}
-                                        color={statusColorMap[skill.status?.toLowerCase()] || "primary"}
-                                        sx={{ height: 10, borderRadius: 999 }}
+                                        sx={{
+                                            height: 10,
+                                            borderRadius: 999,
+                                            bgcolor: (
+                                                statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium
+                                            ).soft,
+                                            "& .MuiLinearProgress-bar": {
+                                                borderRadius: 999,
+                                                bgcolor: (
+                                                    statusVisualMap[skill.status?.toLowerCase()] ||
+                                                    statusVisualMap.medium
+                                                ).main,
+                                            },
+                                        }}
                                     />
-                                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
-                                        {skill.score}% readiness
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{ mt: 0.75, display: "block" }}
+                                    >
+                                        {skill.score}% ready for {profile.level || "your chosen"} benchmark
                                     </Typography>
                                 </Box>
                             ))}
@@ -167,20 +290,34 @@ const ResultDashboard = () => {
                     >
                         <Box>
                             <Typography variant="h4" fontWeight={800} gutterBottom>
-                                {focusSkills.length
-                                    ? `Focus next on ${focusSkills.map((skill) => skill.skillKey).join(", ")}.`
-                                    : `Keep strengthening ${profile.role || "your interview"} momentum.`}
+                                {readinessHeadline}
                             </Typography>
                             <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>
-                                Strongest areas:{" "}
+                                {readinessBody} Strongest areas:{" "}
                                 {strongestSkills.length
                                     ? strongestSkills.map((skill) => skill.skillKey).join(", ")
-                                    : "Your assessment data is ready for roadmap generation."}
+                                    : "Assessment ready."}
                             </Typography>
                         </Box>
-                        <Button variant="contained" size="large" onClick={nextStep}>
-                            View Roadmap
-                        </Button>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+                            <PrimaryButton
+                                size="small"
+                                loading={isSaving}
+                                onClick={handleViewRoadmap}
+                                sx={{
+                                    minWidth: 132,
+                                    minHeight: 38,
+                                    py: 0.55,
+                                    textTransform: "none",
+                                    fontWeight: 800,
+                                    bgcolor: "#b7ef4e",
+                                    color: "#1f2937",
+                                    "&:hover": { bgcolor: "#a6dd41" },
+                                }}
+                            >
+                                View Roadmap
+                            </PrimaryButton>
+                        </Stack>
                     </Stack>
                 </Paper>
             </Stack>

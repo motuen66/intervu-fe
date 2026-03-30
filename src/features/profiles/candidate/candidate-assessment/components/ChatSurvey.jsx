@@ -32,7 +32,9 @@ import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
 import SportsEsportsRoundedIcon from "@mui/icons-material/SportsEsportsRounded";
 import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
-import { assessmentApi } from "../services/assessmentApi";
+import { assessmentEndPoints } from "../services/assessmentApi";
+import { callApi } from "../../../../../common/utils/apiConnector";
+import { METHOD } from "../../../../../common/constants/api";
 
 const setupFields = [
     {
@@ -114,6 +116,15 @@ const normalizeToArray = (value) =>
               .map((item) => item.trim())
               .filter(Boolean)
         : [];
+
+const shuffleArray = (list = []) => {
+    const arr = [...list];
+    for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+};
 
 const stackKeywordMap = {
     react: ["react", "jsx", "component", "hook", "state", "redux", "context", "frontend", "ui"],
@@ -225,6 +236,12 @@ const buildGeneratedQuestions = (data) => {
     const questions = [];
 
     phaseA.forEach((item, index) => {
+        const optionPairs = (item?.options || []).map((option) => ({
+            text: option?.text || option?.level || "",
+            level: option?.level || option?.text || "",
+        }));
+        const shuffled = shuffleArray(optionPairs);
+
         questions.push({
             id: `phaseA_${index + 1}`,
             phase: "phaseA",
@@ -232,15 +249,18 @@ const buildGeneratedQuestions = (data) => {
             type: "single",
             question: item?.question || `Phase A question ${index + 1}`,
             helper: "Choose the option that best matches your real experience.",
-            options: (item?.options || []).map((option) => option?.text || option?.level).filter(Boolean),
-            optionLevels: (item?.options || []).map((option) => ({
-                text: option?.text || option?.level || "",
-                level: option?.level || option?.text || "",
-            })),
+            options: shuffled.map((option) => option.text).filter(Boolean),
+            optionLevels: shuffled,
         });
     });
 
     phaseB.forEach((item, index) => {
+        const optionPairs = (item?.options || []).map((option) => ({
+            text: option?.text || option?.level || "",
+            level: option?.level || option?.text || "",
+        }));
+        const shuffled = shuffleArray(optionPairs);
+
         questions.push({
             id: `phaseB_${index + 1}`,
             phase: "phaseB",
@@ -248,15 +268,23 @@ const buildGeneratedQuestions = (data) => {
             type: "single",
             question: item?.question || `Phase B question ${index + 1}`,
             helper: "Choose the target level you want to reach.",
-            options: (item?.options || []).map((option) => option?.text || option?.level).filter(Boolean),
-            optionLevels: (item?.options || []).map((option) => ({
-                text: option?.text || option?.level || "",
-                level: option?.level || option?.text || "",
-            })),
+            options: shuffled.map((option) => option.text).filter(Boolean),
+            optionLevels: shuffled,
         });
     });
 
     return questions;
+};
+
+const buildGeneratedAssessment = (data) => {
+    const source = data?.phaseA || data?.phaseB || data?.context_question ? data : data?.data || {};
+
+    return {
+        introText:
+            source?.context_question ||
+            "Profile calibrated. I'm generating a focused interview conversation based on your setup.",
+        questions: buildGeneratedQuestions(source),
+    };
 };
 
 const buildFallbackSurveyResult = (responses) => ({
@@ -278,13 +306,19 @@ const createFallbackQuestions = () => [
         type: "single",
         question: "How much real project experience do you have solving technical problems in your main stack?",
         helper: "Choose the option that best matches your real experience.",
-        options: ["None", "Basic", "Intermediate", "Advanced"],
-        optionLevels: [
-            { text: "None", level: "None" },
-            { text: "Basic", level: "Basic" },
-            { text: "Intermediate", level: "Intermediate" },
-            { text: "Advanced", level: "Advanced" },
-        ],
+        ...(() => {
+            const optionPairs = [
+                { text: "None", level: "None" },
+                { text: "Basic", level: "Basic" },
+                { text: "Intermediate", level: "Intermediate" },
+                { text: "Advanced", level: "Advanced" },
+            ];
+            const shuffled = shuffleArray(optionPairs);
+            return {
+                options: shuffled.map((opt) => opt.text),
+                optionLevels: shuffled,
+            };
+        })(),
     },
 ];
 
@@ -559,16 +593,18 @@ const ChatSurvey = () => {
         startGenerateProgress();
 
         try {
-            const response = await assessmentApi.generateAssessment(payload);
-            const generatedQuestions = buildGeneratedQuestions(response?.data || {});
+            const apiResult = await callApi({
+                method: METHOD.POST,
+                endpoint: assessmentEndPoints.GENERATE_ASSESSMENT,
+                arg: payload,
+                alertErrorMessage: true,
+            });
+            const { introText, questions: generatedQuestions } = buildGeneratedAssessment(apiResult?.data || apiResult);
             if (!generatedQuestions.length) {
                 throw new Error("Assessment generator returned no questions.");
             }
             await finishGenerateProgress();
-            await startGeneratedAssessment(
-                generatedQuestions,
-                "Profile calibrated. I'm generating a focused interview conversation based on your setup.",
-            );
+            await startGeneratedAssessment(generatedQuestions, introText);
         } catch (error) {
             console.error(error);
             await finishGenerateProgress();
@@ -628,17 +664,25 @@ const ChatSurvey = () => {
         };
 
         setAnswers({
+            userId,
             profile: { role, level, techstack, domain, freeText: setupForm.free_text || "" },
             responses: finalResponses,
             derivedSkills,
+            processingPayload: payload,
         });
 
         setIsSubmitting(true);
         await runBotMessage("Thanks. I'm analyzing your answers now.", { processingMs: 1500 });
 
         try {
-            const response = await assessmentApi.processSurveyResponses(payload);
-            setSurveyResult(response?.data || buildFallbackSurveyResult(finalResponses));
+            const apiResult = await callApi({
+                method: METHOD.POST,
+                endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
+                arg: payload,
+                alertErrorMessage: true,
+            });
+
+            setSurveyResult(apiResult?.data || buildFallbackSurveyResult(finalResponses));
         } catch (error) {
             console.error(error);
             setSurveyResult(buildFallbackSurveyResult(finalResponses));
@@ -658,7 +702,7 @@ const ChatSurvey = () => {
         setAnswers({ profile: { role: "", level: "", techstack: [], domain: [], freeText: "" }, responses: [] });
         setSurveyResult(null);
         setSkillScores([]);
-        setRoadmap({ today: [], weeks: [] });
+        setRoadmap(null);
         updateMatchPercentage(0);
         navigate("/home");
     };
@@ -1165,16 +1209,26 @@ const ChatSurvey = () => {
     }
 
     return (
-        <Box sx={{ maxWidth: 980, mx: "auto", px: { xs: 2, md: 3 }, py: { xs: 2.5, md: 4 } }}>
-            <Stack spacing={3}>
+        <Box
+            sx={{
+                maxWidth: 1100,
+                mx: "auto",
+                px: { xs: 2, md: 3 },
+                py: { xs: 3, md: 4 },
+                background: "linear-gradient(135deg, #eef2ff 0%, #f8fafc 55%, #eef2ff 100%)",
+                borderRadius: 5,
+            }}
+        >
+            <Stack spacing={3.5}>
                 <Paper
                     elevation={0}
                     sx={{
-                        p: 3,
+                        p: { xs: 3, md: 3.5 },
                         borderRadius: 4,
                         border: "1px solid",
-                        borderColor: alpha("#cbd5e1", 0.85),
+                        borderColor: alpha("#cbd5e1", 0.9),
                         background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                        boxShadow: "0 16px 36px rgba(15,23,42,0.08)",
                     }}
                 >
                     <Stack

@@ -13,6 +13,7 @@ import { ROLES } from "../../../../common/constants/common.js";
 import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
 import FeedbackListModal from "./FeedbackListModal.jsx";
 import RescheduleRequestModal from "./RescheduleRequestModal.jsx";
+import JDMultiRoundRescheduleModal from "./JDMultiRoundRescheduleModal.jsx";
 import ConfirmModal from "../../../../common/components/ConfirmModal.jsx";
 // import AICVSelectionModal from "./components/AICVSelectionModal.jsx";
 import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
@@ -191,55 +192,51 @@ function InterviewRoomListPage() {
             const pastRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED || r.status === INTERVIEW_ROOM_STATUS.CANCELLED);
 
             // Update state
+            // State updates based on status filter
             if (statuses === null || statuses.includes(0)) {
                 setUpcomingRooms(upcomingRoomsList);
             }
+            setPastRooms(pastRoomsList); // Always set past rooms for Recent History
 
-            setPastRooms(pastRoomsList); // Always set past rooms so UpcomingTab can display Recent History
+            // ALWAYS calculate stats based on grouped rooms shown in the list for UI consistency
+            const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
+            const evaluatedRooms = completedRooms.filter(r => typeof r.score === 'number');
 
-            // Calculate stats
-            if (statuses === null || statuses.includes(0)) {
-                const upcomingCount = upcomingRoomsList.length;
-                const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
-
-                let avgScore = null;
-                // Calculate average score across ALL individual completed rooms, not just grouped ones
-                const allCompletedIndividualRooms = allRoomsData.filter(r => r.status === INTERVIEW_ROOM_STATUS.COMPLETED && typeof r.score === 'number');
-                if (allCompletedIndividualRooms.length > 0) {
-                    const totalScore = allCompletedIndividualRooms.reduce((acc, room) => acc + room.score, 0);
-                    avgScore = (totalScore / allCompletedIndividualRooms.length).toFixed(1);
-                }
-
-                // Next session calculation
-                const now = new Date();
-                let nextSession = "—";
-                const upcomingFutureRooms = upcomingRoomsList
-                    .map(r => ({ ...r, dateObj: new Date(r.scheduledTime) }))
-                    .filter(r => !isNaN(r.dateObj.getTime()) && r.dateObj >= now)
-                    .sort((a, b) => a.dateObj - b.dateObj);
-
-                if (upcomingFutureRooms.length > 0) {
-                    const diffMs = upcomingFutureRooms[0].dateObj - now;
-                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-                    if (diffDays > 0) {
-                        nextSession = `${diffDays}d ${diffHours}h`;
-                    } else if (diffHours > 0) {
-                        nextSession = `${diffHours}h`;
-                    } else {
-                        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                        nextSession = `${diffMins}m`;
-                    }
-                }
-
-                setStats({
-                    upcoming: upcomingCount,
-                    completed: completedRooms.length,
-                    avgScore: avgScore && !isNaN(avgScore) ? parseFloat(avgScore) : null,
-                    nextSessionIn: nextSession,
-                });
+            let avgScore = null;
+            if (evaluatedRooms.length > 0) {
+                const totalScore = evaluatedRooms.reduce((acc, room) => acc + room.score, 0);
+                avgScore = (totalScore / evaluatedRooms.length).toFixed(1);
             }
+
+            // Next session calculation
+            const now = new Date();
+            let nextSession = "—";
+            const upcomingFutureRooms = upcomingRoomsList
+                .map(r => ({ ...r, dateObj: new Date(r.scheduledTime) }))
+                .filter(r => !isNaN(r.dateObj.getTime()) && r.dateObj >= now)
+                .sort((a, b) => a.dateObj - b.dateObj);
+
+            if (upcomingFutureRooms.length > 0) {
+                const diffMs = upcomingFutureRooms[0].dateObj - now;
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+                if (diffDays > 0) {
+                    nextSession = `${diffDays}d ${diffHours}h`;
+                } else if (diffHours > 0) {
+                    nextSession = `${diffHours}h`;
+                } else {
+                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    nextSession = `${diffMins}m`;
+                }
+            }
+
+            setStats({
+                upcoming: upcomingRoomsList.length,
+                completed: completedRooms.length,
+                avgScore: avgScore && !isNaN(avgScore) ? parseFloat(avgScore) : null,
+                nextSessionIn: nextSession,
+            });
         } catch (error) {
             console.error("Failed to fetch rooms:", error);
         }
@@ -284,13 +281,17 @@ function InterviewRoomListPage() {
         try {
             const res = await callApi({
                 method: METHOD.GET,
-                endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=100&Statuses=${INTERVIEW_ROOM_STATUS.COMPLETED}`,
+                endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=1000`, // Increased limit to find rounds
             });
             const rooms = res?.data || [];
+            
+            // For multi-round interviews, we need to check ALL individual rooms,
+            // not just the ones currently marked as 'COMPLETED' in the top-level grouping.
             const pendingRoom = rooms.find(
                 (room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED && room.isEvaluationCompleted === false,
             );
-            console.log("Checked pending coach evaluations. Rooms:", rooms, "Pending evaluation room:", pendingRoom);
+            
+            console.log("Checked pending coach evaluations. Total rooms:", rooms.length, "Pending evaluation room:", pendingRoom);
             if (pendingRoom) {
                 setCoachEvaluationState({ open: true, room: pendingRoom });
             }
@@ -313,6 +314,23 @@ function InterviewRoomListPage() {
 
     const handleSubmitReschedule = async (data) => {
         try {
+            if (data?.type === "multi-round") {
+                await callApi({
+                    method: METHOD.POST,
+                    endpoint: interviewEndPoints.RESCHEDULE_JD_BOOKING(data.bookingRequestId),
+                    arg: {
+                        rounds: data.rounds,
+                    },
+                    displaySuccessMessage: true,
+                });
+
+                await fetchRooms([0, 1]);
+                await fetchRooms([2, 3]);
+                await fetchRescheduleRequests();
+                handleCloseRescheduleModal();
+                return;
+            }
+
             await callApi({
                 method: METHOD.POST,
                 endpoint: interviewEndPoints.CREATE_RESCHEDULE_REQUEST,
@@ -469,6 +487,10 @@ function InterviewRoomListPage() {
         );
     }
 
+    const isMultiRoundReschedule = Boolean(
+        rescheduleModalState.room?.rounds && rescheduleModalState.room.rounds.length > 1,
+    );
+
     return (
         <Box sx={{ minHeight: "100vh", py: 4 }}>
             <Container maxWidth="lg">
@@ -570,13 +592,22 @@ function InterviewRoomListPage() {
                     user={user}
                 />
 
-                {/* Reschedule Request Modal */}
-                <RescheduleRequestModal
-                    open={rescheduleModalState.open}
-                    onClose={handleCloseRescheduleModal}
-                    onSubmit={handleSubmitReschedule}
-                    currentSession={rescheduleModalState.room}
-                />
+                {/* Reschedule Modal */}
+                {isMultiRoundReschedule ? (
+                    <JDMultiRoundRescheduleModal
+                        open={rescheduleModalState.open}
+                        onClose={handleCloseRescheduleModal}
+                        onSubmit={handleSubmitReschedule}
+                        currentSession={rescheduleModalState.room}
+                    />
+                ) : (
+                    <RescheduleRequestModal
+                        open={rescheduleModalState.open}
+                        onClose={handleCloseRescheduleModal}
+                        onSubmit={handleSubmitReschedule}
+                        currentSession={rescheduleModalState.room}
+                    />
+                )}
 
                 <ConfirmModal
                     show={cancelConfirmState.open}

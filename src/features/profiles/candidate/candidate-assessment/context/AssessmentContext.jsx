@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
+import { callApi } from "../../../../../common/utils/apiConnector";
+import { METHOD } from "../../../../../common/constants/api";
+import { assessmentEndPoints } from "../services/assessmentApi";
 
 const AssessmentContext = createContext(null);
 
@@ -7,7 +10,7 @@ export function AssessmentProvider({ children }) {
     const [answers, setAnswers] = useState(null);
     const [surveyResult, setSurveyResult] = useState(null);
     const [skillScores, setSkillScores] = useState([]);
-    const [roadmap, setRoadmap] = useState({ today: [], weeks: [] });
+    const [roadmap, setRoadmap] = useState(null);
     const [matchPercentage, setMatchPercentage] = useState(0);
     const [lastMatchPercentage, setLastMatchPercentage] = useState(0);
 
@@ -25,6 +28,38 @@ export function AssessmentProvider({ children }) {
             setSkillScores,
             roadmap,
             setRoadmap,
+            saveAssessmentSnapshot: async () => {
+                if (surveyResult) {
+                    return surveyResult;
+                }
+
+                const payload = answers?.processingPayload;
+                if (!payload) {
+                    return surveyResult;
+                }
+
+                const apiResult = await callApi({
+                    method: METHOD.POST,
+                    endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
+                    arg: payload,
+                    alertErrorMessage: true,
+                });
+                if (apiResult?.data) {
+                    setSurveyResult(apiResult.data);
+                    return apiResult.data;
+                }
+
+                return surveyResult;
+            },
+            resetAssessment: () => {
+                setAnswers(null);
+                setSurveyResult(null);
+                setSkillScores([]);
+                setRoadmap({ today: [], weeks: [] });
+                setMatchPercentage(0);
+                setLastMatchPercentage(0);
+                setCurrentStep(1);
+            },
             matchPercentage,
             lastMatchPercentage,
             updateMatchPercentage: (nextValue) => {

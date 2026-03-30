@@ -30,10 +30,13 @@ function UpcomingTab({
     const [page, setPage] = useState(1);
 
     // Helper to check if room has pending reschedule request
-    const hasPendingRescheduleRequest = (roomId) => {
-        return rescheduleRequests.some(
-            (req) => req.interviewRoomId === roomId && req.status === 0
-        );
+    const hasPendingRescheduleRequest = (room) => {
+        if (room?.rounds?.length > 1) {
+            const roundIds = new Set(room.rounds.map((round) => round.id));
+            return rescheduleRequests.some((req) => roundIds.has(req.interviewRoomId) && req.status === 0);
+        }
+
+        return rescheduleRequests.some((req) => req.interviewRoomId === room?.id && req.status === 0);
     };
 
     // Filter and search logic (Simplified: removed search/filter bar)
@@ -129,7 +132,7 @@ function UpcomingTab({
                                 onJoin={onJoin}
                                 onReviewQuestions={onReviewQuestions}
                                 showActions={true}
-                                hasPendingReschedule={hasPendingRescheduleRequest(room.id)}
+                                hasPendingReschedule={hasPendingRescheduleRequest(room)}
                             />
                         </Box>
                     ))}
