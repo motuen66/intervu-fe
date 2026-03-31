@@ -160,8 +160,14 @@ export default function QuestionDetailPage() {
             navigate("/login");
             return;
         }
+
         const prev = questionLiked;
+        const prevVote = data?.vote ?? 0;
+
+        // optimistic update
         setQuestionLiked(!prev);
+        setData((d) => ({ ...(d ?? {}), vote: prevVote + (!prev ? 1 : -1) }));
+
         try {
             const { data: res } = await callApi({
                 method: METHOD.POST,
@@ -169,8 +175,12 @@ export default function QuestionDetailPage() {
             });
             const serverLiked = typeof res === "boolean" ? res : (res?.isLiked ?? !prev);
             setQuestionLiked(serverLiked);
+            // reconcile vote count with server response
+            setData((d) => ({ ...(d ?? {}), vote: d?.vote ?? prevVote }));
         } catch {
+            // revert
             setQuestionLiked(prev);
+            setData((d) => ({ ...(d ?? {}), vote: prevVote }));
         }
     };
 
@@ -201,13 +211,60 @@ export default function QuestionDetailPage() {
         }
     };
 
-    /* ── Like comment ── */
+    /* ── Like comment (optimistic + update local answers) ── */
     const handleVoteComment = async (commentId) => {
-        const { data: res } = await callApi({
-            method: METHOD.POST,
-            endpoint: interactionEndPoints.LIKE_COMMENT(id, commentId),
-        });
-        return typeof res === "boolean" ? res : (res?.isLiked ?? undefined);
+        const current = answers.find((a) => String(a.id) === String(commentId));
+        if (!current) {
+            const { data: res } = await callApi({
+                method: METHOD.POST,
+                endpoint: interactionEndPoints.LIKE_COMMENT(id, commentId),
+            });
+            return typeof res === "boolean" ? res : (res?.isLiked ?? undefined);
+        }
+
+        const prevLiked = current.isLikedByUser ?? false;
+        const prevVote = current.vote ?? 0;
+
+        setAnswers((prev) =>
+            prev.map((a) =>
+                String(a.id) === String(commentId)
+                    ? { ...a, isLikedByUser: !prevLiked, vote: prevVote + (!prevLiked ? 1 : -1) }
+                    : a,
+            ),
+        );
+
+        try {
+            const { data: res } = await callApi({
+                method: METHOD.POST,
+                endpoint: interactionEndPoints.LIKE_COMMENT(id, commentId),
+            });
+            const serverLiked = typeof res === "boolean" ? res : (res?.isLiked ?? undefined);
+
+            if (serverLiked !== undefined) {
+                setAnswers((prev) =>
+                    prev.map((a) =>
+                        String(a.id) === String(commentId)
+                            ? {
+                                  ...a,
+                                  isLikedByUser: serverLiked,
+                                  vote: serverLiked
+                                      ? Math.max(a.vote ?? 0, prevVote + 1)
+                                      : Math.max((a.vote ?? 0) - 1, 0),
+                              }
+                            : a,
+                    ),
+                );
+            }
+
+            return serverLiked;
+        } catch (err) {
+            setAnswers((prev) =>
+                prev.map((a) =>
+                    String(a.id) === String(commentId) ? { ...a, isLikedByUser: prevLiked, vote: prevVote } : a,
+                ),
+            );
+            throw err;
+        }
     };
 
     /* ── Add comment ── */
@@ -391,7 +448,7 @@ export default function QuestionDetailPage() {
         },
         {
             icon: <FlagOutlinedIcon sx={{ fontSize: 15 }} />,
-            label: "Flag",
+            label: "Report",
             tooltip: "",
             onClick: () =>
                 setReportTarget({
