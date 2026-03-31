@@ -87,8 +87,12 @@ function InterviewRoomListPage() {
         const roomId = params.get("roomId");
         const action = params.get("action");
 
-        if (roomId && action === "review-questions") {
-            setGenQuestionsModalState({ open: true, roomId });
+        if (roomId) {
+            if (action === "review-questions") {
+                setGenQuestionsModalState({ open: true, roomId });
+            } else if (action === "view-feedback") {
+                setViewFeedbackState({ open: true, interviewRoomId: roomId });
+            }
             // Clean up URL without reload
             navigate(location.pathname, { replace: true });
         }
