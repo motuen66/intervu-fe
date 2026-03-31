@@ -37,9 +37,9 @@ createRoot(document.getElementById("root")).render(
             <Toaster
                 position="top-right"
                 toastOptions={{
-                    duration: 3000,
+                    duration: 4000,
                     error: {
-                        duration: Infinity, // Never close error toasts automatically
+                        duration: 4000,
                     },
                 }}
             >

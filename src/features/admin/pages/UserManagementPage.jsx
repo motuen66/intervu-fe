@@ -303,7 +303,6 @@ export default function UserManagementPage() {
         { field: 'id', headerName: 'ID', width: 70 },
         { field: 'fullName', headerName: 'Full Name', width: 200 },
         { field: 'email', headerName: 'Email', width: 250 },
-        { field: 'phoneNumber', headerName: 'Phone Number', width: 150 },
         {
             field: 'role',
             headerName: 'Role',

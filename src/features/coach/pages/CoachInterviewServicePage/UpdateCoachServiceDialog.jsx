@@ -43,7 +43,7 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
             await updateCoachInterviewService(item.id, form);
             onUpdated && onUpdated();
         } catch (err) {
-            setError(err.message || "Failed to update service.");
+            // callApi alertErrorMessage: true already handles the toast.
         } finally {
             setSaving(false);
         }
@@ -107,7 +107,12 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
                                 label="Your Price"
                                 type="number"
                                 value={form.price}
-                                onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val.length <= 9) {
+                                        setForm({ ...form, price: Number(val) });
+                                    }
+                                }}
                                 inputProps={{ min: 0 }}
                                 required
                             />
