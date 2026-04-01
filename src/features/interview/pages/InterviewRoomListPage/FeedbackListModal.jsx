@@ -112,7 +112,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
             setError(''); // Reset error before new submission
             await callApi({
                 method: METHOD.PUT,
-                endpoint: interviewEndPoints.UPDATE_FEEDBACK(selectedFeedback.id),
+                endpoint: interviewEndPoints.UPDATE_FEEDBACK(selectedFeedback.feedbackId),
                 arg: { rating: rating, comments: comments },
             });
             
@@ -121,7 +121,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                 onFeedbackSubmitted();
             }
 
-            const updatedFeedbacks = feedbacks.filter((fb) => fb.id !== selectedFeedback.id).map(fb => fb.id === selectedFeedback.id ? {...fb, comments, rating} : fb);
+            const updatedFeedbacks = feedbacks.filter((fb) => fb.feedbackId !== selectedFeedback.feedbackId).map(fb => fb.feedbackId === selectedFeedback.feedbackId ? {...fb, comments, rating} : fb);
             setFeedbacks(updatedFeedbacks);
 
             // Reset form state

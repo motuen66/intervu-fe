@@ -40,7 +40,6 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
-        phoneNumber: '',
         password: '',
         role: 0,
     });
@@ -53,7 +52,6 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
             setFormData({
                 fullName: user.fullName || '',
                 email: user.email || '',
-                phoneNumber: user.phoneNumber || '',
                 password: '', // Không hiển thị password cũ
                 role: typeof user.role === 'number' ? user.role : roleTextToNumber[user.role] || 0,
             });
@@ -61,7 +59,6 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
             setFormData({
                 fullName: '',
                 email: '',
-                phoneNumber: '',
                 password: '',
                 role: 0,
             });
@@ -109,16 +106,10 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
             newErrors.email = 'Please enter a valid email address.';
         }
 
-        if (!formData.password.trim()) {
+        if (mode === 'create' && !formData.password.trim()) {
             newErrors.password = 'Password is required.';
         } else if (formData.password && formData.password.length < 6) {
             newErrors.password = 'Password must be at least 6 characters.';
-        }
-
-        if (!formData.phoneNumber.trim()) {
-            newErrors.phoneNumber = 'Phone number is required.';
-        } else if (!/^[0-9+\-\s]{8,15}$/.test(formData.phoneNumber.trim())) {
-            newErrors.phoneNumber = 'Please enter a valid phone number.';
         }
 
         if (formData.role === '' || formData.role === null) {
@@ -149,7 +140,6 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
         setFormData({
             fullName: '',
             email: '',
-            phoneNumber: '',
             password: '',
             role: 'CANDIDATE',
         });
@@ -261,43 +251,18 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                             />
                         </Grid>
 
-                        <Grid item xs={12} sx={{ width: '100%' }}>
-                            <TextField
-                                fullWidth
-                                label="Phone number"
-                                name="phoneNumber"
-                                value={formData.phoneNumber}
-                                onChange={handleChange}
-                                error={!!errors.phoneNumber}
-                                helperText={errors.phoneNumber}
-                                required
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '&:hover fieldset': {
-                                            borderColor: '#4F46E5',
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#4F46E5',
-                                        },
-                                    },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#4F46E5',
-                                    },
-                                }}
-                            />
-                        </Grid>
 
                         <Grid item xs={12} sx={{ width: '100%' }}>
                             <TextField
                                 fullWidth
-                                label="Password"
+                                label={mode === 'edit' ? "Password (leave blank to keep current)" : "Password"}
                                 name="password"
                                 type={showPassword ? 'text' : 'password'}
                                 value={formData.password}
                                 onChange={handleChange}
                                 error={!!errors.password}
                                 helperText={errors.password}
-                                required
+                                required={mode === 'create'}
                                 InputProps={{
                                     endAdornment: (
                                         <InputAdornment position="end">
