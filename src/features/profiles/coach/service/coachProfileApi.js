@@ -6,6 +6,8 @@ export const interviewerProfileEndPoints = {
     GET_ALL_COMPANIES: BE_BASE_URL + "/Companies?page={page}&pageSize={pageSize}",
     VIEW_OWN_INTERVIEWER_PROFILE: BE_BASE_URL + `/coach-profile/{id}`,
     VIEW_PROFILE_BY_CANDIDATE: BE_BASE_URL + `/coach-profile/{slugProfileUrl}/profile`,
+    // GET_DASHBOARD_STATS: BE_BASE_URL + `/coach-profile/stats`,
+    GET_COACH_RATING: BE_BASE_URL + `/coach-profile/{id}/rating`,
     CREATE_INTERVIEWER_PROFILE: BE_BASE_URL + "/coach-profile",
     UPDATE_INTERVIEWER_PROFILE: BE_BASE_URL + `/coach-profile/{id}`,
 
