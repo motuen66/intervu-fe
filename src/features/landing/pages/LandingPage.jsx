@@ -15,7 +15,7 @@ import {
 import { PrimaryButton, SecondaryButton, TextButton } from '../../../common/components/buttons';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import PublicHeader from '../../../common/components/PublicHeader';
+import Navbar from '../../../common/components/Navbar/Navbar';
 import ThreeHero from '../components/ThreeHero';
 import '../styles/LandingPage.css';
 
@@ -559,7 +559,7 @@ function LandingPage() {
 
   return (
     <div className="landing-page polished-light" ref={pageRef}>
-      <PublicHeader />
+      <Navbar />
 
       <section className="hero-polished" ref={heroRef}>
         <div className="hero-noise" />

@@ -13,7 +13,8 @@ import {
     CircularProgress,
     IconButton,
 } from "@mui/material";
-import { Edit2 as EditIcon, Trash2 as DeleteIcon } from "lucide-react";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import toast from "react-hot-toast";
 import "./CoachInterviewServicePage.css";
 import { PrimaryButton } from "../../../../common/components/buttons";
@@ -88,7 +89,6 @@ export default function CoachInterviewServicePage() {
         try {
             await deleteCoachInterviewService(deletingId);
             fetchItems();
-            toast.success("Service deleted successfully!");
         } catch (err) {
             console.error(err);
             toast.error("Failed to delete service.");
@@ -141,10 +141,14 @@ export default function CoachInterviewServicePage() {
                                     </div>
                                     <div className="coach-service-card-actions">
                                         <IconButton size="small" onClick={() => handleUpdateClick(it)}>
-                                            <EditIcon />
+                                            <EditIcon fontSize="small" />
                                         </IconButton>
-                                        <IconButton size="small" onClick={() => handleDeleteClick(it.id)}>
-                                            <DeleteIcon />
+                                        <IconButton
+                                            size="small"
+                                            className="delete-btn"
+                                            onClick={() => handleDeleteClick(it.id)}
+                                        >
+                                            <DeleteIcon fontSize="small" />
                                         </IconButton>
                                     </div>
                                 </div>

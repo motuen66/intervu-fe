@@ -109,8 +109,8 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
             newErrors.email = "Please enter a valid email address.";
         }
 
-        if (!formData.password.trim()) {
-            newErrors.password = "Password is required.";
+        if (mode === 'create' && !formData.password.trim()) {
+            newErrors.password = 'Password is required.';
         } else if (formData.password && formData.password.length < 6) {
             newErrors.password = "Password must be at least 6 characters.";
         }
@@ -295,14 +295,14 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <TextField
                                 fullWidth
-                                label="Password"
+                                label={mode === 'edit' ? "Password (leave blank to keep current)" : "Password"}
                                 name="password"
                                 type={showPassword ? "text" : "password"}
                                 value={formData.password}
                                 onChange={handleChange}
                                 error={!!errors.password}
                                 helperText={errors.password}
-                                required
+                                required={mode === 'create'}
                                 inputProps={{ maxLength: 50 }}
                                 InputProps={{
                                     endAdornment: (

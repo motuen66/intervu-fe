@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
 import "./MainLayout.css";
 import { Container, Avatar } from "@mui/material";
 import { ROLES } from "../../common/constants/common";
@@ -13,6 +14,7 @@ import NotificationDropdown from "../../features/notification/components/Notific
 import useNotificationHub from "../../features/notification/hooks/useNotificationHub";
 import SuspendedGate from "../../common/components/SuspendedGate";
 import CandidateAssessmentGate from "../../common/components/CandidateAssessmentGate";
+import Navbar from "../../common/components/Navbar/Navbar";
 import {
     LayoutDashboard,
     Calendar,
@@ -24,6 +26,8 @@ import {
     BarChart2,
     Bell,
     LogOut,
+    User,
+    Settings,
     ChevronDown,
     Search,
 } from "lucide-react";
@@ -36,15 +40,17 @@ const MainLayout = () => {
     const dispatch = useDispatch();
     const [remoteAvatar, setRemoteAvatar] = useState(null);
 
-    // Connect to notification SignalR hub
+    // Initialize SignalR notification hub
     useNotificationHub(userData?.id, token);
 
+    // Synchronize avatar state with current user data
     useEffect(() => {
         if (userData?.profilePicture) {
             setRemoteAvatar(userData.profilePicture);
         }
     }, [userData?.profilePicture]);
 
+    // Synchronize user data across multiple browser tabs/windows
     useEffect(() => {
         const onStorage = (e) => {
             if (e.key !== "user") return;
@@ -54,12 +60,11 @@ const MainLayout = () => {
                     if (newUser.profilePicture) setRemoteAvatar(newUser.profilePicture);
                     setTimeout(() => dispatch(setUserData(newUser)), 0);
                 }
-            } catch (err) {}
+            } catch (err) { }
         };
-
         window.addEventListener("storage", onStorage);
         return () => window.removeEventListener("storage", onStorage);
-    }, []);
+    }, [dispatch]);
 
     const handleLogout = async () => {
         try {
@@ -75,38 +80,36 @@ const MainLayout = () => {
         }
     };
 
-    const menuItems = [
-        // CANDIDATE
+    // Navigation menu configuration mapped by user roles
+    const menuItems = useMemo(() => [
+        // ROLE: CANDIDATE
         [
             { label: "Home", path: "/home" },
             { label: "Questions", path: "/questions" },
             { label: "Interview", path: "/interview" },
             { label: "Roadmap", path: "/assessment?step=roadmap" },
             { label: "Booking Requests", path: "/booking-requests" },
-            { label: "Messages", path: "#" },
             { label: "Settings", path: "/settings" },
         ],
-        // INTERVIEWER
+        // ROLE: INTERVIEWER/COACH
         [
-            { label: "Dashboard", path: "/#" },
+            { label: "Dashboard", path: "/coach/dashboard" },
             { label: "Questions", path: "/questions" },
-            { label: "Schedule", path: "/schedule" },
-            { label: "Interview", path: "/interview" },
-            { label: "Booking Requests", path: "/booking-requests" },
-            { label: "My Services", path: "/my-services" },
-            { label: "Messages", path: "#" },
+            { label: "Schedule", path: "/coach/schedule" },
+            { label: "Booking Requests", path: "/coach/requests" },
+            { label: "My Services", path: "/coach/services" },
         ],
-        // ADMIN
+        // ROLE: ADMIN
         [
-            { label: "Dashboard", path: "#" },
-            { label: "Users", path: "#" },
-            { label: "Reports", path: "#" },
+            { label: "Dashboard", path: "/admin/dashboard" },
+            { label: "Users", path: "/admin/users" },
+            { label: "Reports", path: "/admin/reports" },
         ],
-    ];
-
-    const currentMenuItems = menuItems[userData?.role] || menuItems[ROLES.CANDIDATE];
+    ], []);
 
     const isAdmin = userData?.role === ROLES.ADMIN;
+
+    // Sidebar group toggle states for Admin view
     const [openGroups, setOpenGroups] = useState({
         users: true,
         income: true,
@@ -117,6 +120,7 @@ const MainLayout = () => {
         setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
+    // Extract user ID from token and refresh profile data from server
     useEffect(() => {
         const fetchLatestUser = async () => {
             let userId = userData?.id;
@@ -124,43 +128,38 @@ const MainLayout = () => {
                 try {
                     const raw = localStorage.getItem("token");
                     if (raw) {
-                        const token = JSON.parse(raw);
-                        if (token && typeof token === "string") {
-                            const parts = token.split(".");
+                        const t = JSON.parse(raw);
+                        if (t && typeof t === "string") {
+                            const parts = t.split(".");
                             if (parts.length >= 2) {
+                                // Decode JWT payload safely
                                 const json = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
                                 const payload = JSON.parse(json);
                                 userId = payload?.sub ?? payload?.id ?? payload?.userId ?? payload?.uid ?? userId;
                             }
                         }
                     }
-                } catch (e) {
-                    // ignore
-                }
+                } catch (e) { }
             }
-
             if (!userId) return;
-
             try {
-                const res = await callApi({ method: METHOD.GET, endpoint: userEndPoints.GET_USER_PROFILE(userId) });
+                const res = await callApi({
+                    method: METHOD.GET,
+                    endpoint: userEndPoints.GET_USER_PROFILE(userId)
+                });
                 const url = res?.data?.profilePicture ?? res?.data?.user?.profilePicture ?? null;
                 if (url) {
                     setRemoteAvatar(url);
                     const updated = { ...(userData || {}), profilePicture: url, id: userId };
-                    try {
-                        localStorage.setItem("user", JSON.stringify(updated));
-                    } catch (e) {
-                        console.warn("Failed to persist user to localStorage", e);
-                    }
+                    localStorage.setItem("user", JSON.stringify(updated));
                     dispatch(setUserData(updated));
                 }
             } catch (err) {
                 console.error("Failed to fetch user profile", err);
             }
         };
-
         fetchLatestUser();
-    }, [userData?.id]);
+    }, [userData?.id, dispatch]);
 
     const adminNavItems = [
         { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
@@ -182,8 +181,7 @@ const MainLayout = () => {
         { label: "Reports", icon: BarChart2, path: "/admin/reports" },
     ];
 
-    const isMenuItemActive = (path) => location.pathname === path;
-
+    // ADMIN LAYOUT
     if (isAdmin) {
         return (
             <div className="main-layout admin-layout">
@@ -197,18 +195,12 @@ const MainLayout = () => {
                                 if (item.children) {
                                     return (
                                         <div key={item.label} className="sidebar-group">
-                                            <button
-                                                className="sidebar-item"
-                                                onClick={() => toggleGroup(item.key)}
-                                                type="button"
-                                            >
+                                            <button className="sidebar-item" onClick={() => toggleGroup(item.key)} type="button">
                                                 <span className="sidebar-item-icon">
                                                     <Icon size={20} strokeWidth={1.5} color="#64748B" />
                                                 </span>
                                                 <span className="sidebar-item-text">{item.label}</span>
-                                                <span
-                                                    className={`sidebar-item-arrow ${openGroups[item.key] ? "open" : ""}`}
-                                                >
+                                                <span className={`sidebar-item-arrow ${openGroups[item.key] ? "open" : ""}`}>
                                                     <ChevronDown size={16} strokeWidth={2} color="#64748B" />
                                                 </span>
                                             </button>
@@ -229,7 +221,6 @@ const MainLayout = () => {
                                         </div>
                                     );
                                 }
-
                                 return (
                                     <button
                                         key={item.label}
@@ -245,7 +236,6 @@ const MainLayout = () => {
                                 );
                             })}
                         </div>
-
                         <div className="sidebar-section">
                             <div className="sidebar-section-title">Settings</div>
                             <button
@@ -253,227 +243,91 @@ const MainLayout = () => {
                                 onClick={() => navigate("/settings")}
                                 type="button"
                             >
-                                <span className="sidebar-item-icon">
-                                    <Bell size={20} strokeWidth={1.5} color="#64748B" />
-                                </span>
+                                <span className="sidebar-item-icon"><Bell size={20} strokeWidth={1.5} color="#64748B" /></span>
                                 <span className="sidebar-item-text">Notification</span>
                             </button>
                             <button className="sidebar-item" onClick={handleLogout} type="button">
-                                <span className="sidebar-item-icon">
-                                    <LogOut size={20} strokeWidth={1.5} color="#64748B" />
-                                </span>
+                                <span className="sidebar-item-icon"><LogOut size={20} strokeWidth={1.5} color="#64748B" /></span>
                                 <span className="sidebar-item-text">Log out</span>
                             </button>
                         </div>
                     </nav>
                 </aside>
-
                 <div className="admin-content">
                     <header className="admin-topbar">
                         <div className="admin-search">
                             <input type="text" placeholder="Search..." className="admin-search-input" />
-                            <span className="admin-search-icon">
-                                <Search size={20} strokeWidth={1.5} color="#64748B" />
-                            </span>
+                            <span className="admin-search-icon"><Search size={20} strokeWidth={1.5} color="#64748B" /></span>
                         </div>
                         <div className="admin-actions">
                             <NotificationDropdown />
                             <div className="admin-user-dropdown">
-                                <button
-                                    className="admin-avatar-btn"
-                                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                                    title="Account"
-                                >
+                                <button className="admin-avatar-btn" onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}>
                                     <Avatar
                                         src={remoteAvatar ?? userData?.profilePicture}
                                         alt={userData?.fullName || "User"}
                                         sx={{ width: 36, height: 36 }}
-                                        imgProps={{
-                                            onError: (e) => {
-                                                e.currentTarget.style.display = "none";
-                                            },
-                                        }}
                                     >
                                         {!(remoteAvatar ?? userData?.profilePicture) &&
-                                            (userData?.fullName
-                                                ?.split(" ")
-                                                .map((n) => n[0])
-                                                .join("")
-                                                .toUpperCase() ||
-                                                "U")}
+                                            (userData?.fullName?.charAt(0) || "U")}
                                     </Avatar>
                                 </button>
-
-                                {isUserDropdownOpen && (
-                                    <div className="dropdown-menu admin-dropdown-menu">
-                                        <div className="dropdown-header">
-                                            <p className="dropdown-name">{userData?.fullName}</p>
-                                            <p className="dropdown-email">{userData?.email}</p>
-                                        </div>
-                                        <hr className="dropdown-divider" />
-                                        <button
-                                            className="dropdown-item"
-                                            onClick={() => {
-                                                navigate("/user/profile");
-                                                setIsUserDropdownOpen(false);
-                                            }}
+                                <AnimatePresence>
+                                    {isUserDropdownOpen && (
+                                        <motion.div
+                                            className="user-dropdown-menu admin-dropdown-menu"
+                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            transition={{ duration: 0.2 }}
                                         >
-                                            View Profile
-                                        </button>
-                                        <button
-                                            className="dropdown-item"
-                                            onClick={() => {
-                                                navigate("/settings");
-                                                setIsUserDropdownOpen(false);
-                                            }}
-                                        >
-                                            Settings
-                                        </button>
-                                        <button className="dropdown-item">Help & Support</button>
-                                        <hr className="dropdown-divider" />
-                                        <button className="dropdown-item logout-item" onClick={handleLogout}>
-                                            Logout
-                                        </button>
-                                    </div>
-                                )}
+                                            <div className="dropdown-user-info">
+                                                <p className="user-name">{userData?.fullName}</p>
+                                                <p className="user-email">{userData?.email}</p>
+                                            </div>
+                                            <div className="dropdown-divider" />
+                                            <button
+                                                className="dropdown-item"
+                                                onClick={() => {
+                                                    navigate("/user/profile");
+                                                    setIsUserDropdownOpen(false);
+                                                }}
+                                            >
+                                                <User size={16} /> My Profile
+                                            </button>
+                                            <button
+                                                className="dropdown-item"
+                                                onClick={() => {
+                                                    navigate("/settings");
+                                                    setIsUserDropdownOpen(false);
+                                                }}
+                                            >
+                                                <Settings size={16} /> Settings
+                                            </button>
+                                            <div className="dropdown-divider" />
+                                            <button className="dropdown-item logout-link" onClick={handleLogout}>
+                                                <LogOut size={16} /> Logout
+                                            </button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                     </header>
-                    <main className="admin-main">
-                        <Outlet />
-                    </main>
+                    <main className="admin-main"><Outlet /></main>
                 </div>
-
                 <SuspendedGate />
             </div>
         );
     }
 
+    // CANDIDATE / COACH LAYOUT
     return (
         <>
             <CandidateAssessmentGate />
             <div className="main-layout">
-                {/* Navbar */}
-                <nav className="navbar">
-                    <div className="navbar-container">
-                        {/* Logo */}
-                        <div className="navbar-logo">
-                            <div className="navbar-logo-icon">V</div>
-                            <h1>INTERVU</h1>
-                        </div>
+                <Navbar remoteAvatar={remoteAvatar} menuItems={menuItems} />
 
-                        {/* Navigation Menu */}
-                        <div className="navbar-menu">
-                            {currentMenuItems.map((item) => (
-                                <button
-                                    key={item.label}
-                                    className={`nav-item ${isMenuItemActive(item.path) ? "active" : ""}`}
-                                    onClick={() => navigate(item.path)}
-                                >
-                                    {item.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Right Section */}
-                        <div className="navbar-right">
-                            {/* Upgrade Button */}
-                            {userData?.role === ROLES.CANDIDATE && <button className="app-btn">Upgrade Pro</button>}
-
-                            {/* Notification Dropdown */}
-                            <NotificationDropdown />
-
-                            {/* User Avatar Dropdown */}
-                            <div className="user-dropdown">
-                                <button
-                                    className="navbar-avatar-btn"
-                                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                                    title="Account"
-                                >
-                                    <Avatar
-                                        src={remoteAvatar ?? userData?.profilePicture}
-                                        alt={userData?.fullName || "User"}
-                                        sx={{ width: 40, height: 40 }}
-                                        imgProps={{
-                                            onError: (e) => {
-                                                e.currentTarget.style.display = "none";
-                                            },
-                                        }}
-                                    >
-                                        {!(remoteAvatar ?? userData?.profilePicture) &&
-                                            (userData?.fullName
-                                                ?.split(" ")
-                                                .map((n) => n[0])
-                                                .join("")
-                                                .toUpperCase()
-                                                .slice(0, 2) ||
-                                                "U")}
-                                    </Avatar>
-                                </button>
-
-                                {isUserDropdownOpen && (
-                                    <div className="dropdown-menu">
-                                        <div className="dropdown-header">
-                                            <p className="dropdown-name">{userData?.fullName}</p>
-                                            <p className="dropdown-email">{userData?.email}</p>
-                                        </div>
-                                        <hr className="dropdown-divider" />
-                                        <button
-                                            className="dropdown-item"
-                                            onClick={() => {
-                                                const role = userData?.role;
-                                                const path =
-                                                    role === ROLES.INTERVIEWER
-                                                        ? "/interviewer/profile"
-                                                        : role === ROLES.CANDIDATE
-                                                          ? "/candidate/profile"
-                                                          : "/user/profile";
-                                                navigate(path);
-                                                setIsUserDropdownOpen(false);
-                                            }}
-                                        >
-                                            View Profile
-                                        </button>
-                                        <button
-                                            className="dropdown-item"
-                                            onClick={() => {
-                                                navigate("/payment-history");
-                                                setIsUserDropdownOpen(false);
-                                            }}
-                                        >
-                                            View Payment History
-                                        </button>
-                                        <button
-                                            className="dropdown-item"
-                                            onClick={() => {
-                                                navigate("/questions/saved");
-                                                setIsUserDropdownOpen(false);
-                                            }}
-                                        >
-                                            Saved Questions
-                                        </button>
-                                        <button
-                                            className="dropdown-item"
-                                            onClick={() => {
-                                                navigate("/settings");
-                                                setIsUserDropdownOpen(false);
-                                            }}
-                                        >
-                                            Settings
-                                        </button>
-                                        <button className="dropdown-item">Help & Support</button>
-                                        <hr className="dropdown-divider" />
-                                        <button className="dropdown-item logout-item" onClick={handleLogout}>
-                                            Logout
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-
-                {/* Main Content */}
                 <main className="main-content">
                     <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
                         <Outlet />
@@ -482,7 +336,6 @@ const MainLayout = () => {
 
                 <SuspendedGate />
 
-                {/* Footer */}
                 <footer className="footer">
                     <div className="footer-container">
                         <p>&copy; 2026 Intervu. All rights reserved.</p>

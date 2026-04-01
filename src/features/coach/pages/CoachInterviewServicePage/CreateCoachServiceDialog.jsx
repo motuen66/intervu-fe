@@ -47,7 +47,8 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
             onCreated && onCreated();
             setForm({ interviewTypeId: "", price: 0, durationMinutes: 30 });
         } catch (err) {
-            setError(err.message || "Failed to create service.");
+            // callApi with alertErrorMessage: true already shows the toast.
+            // We just catch it here to stop the saving flow and avoid crashing.
         } finally {
             setSaving(false);
         }
@@ -150,7 +151,12 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                                 label="Your Price"
                                 type="number"
                                 value={form.price}
-                                onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val.length <= 9) {
+                                        setForm({ ...form, price: Number(val) });
+                                    }
+                                }}
                                 inputProps={{ min: 0 }}
                                 required
                                 helperText={

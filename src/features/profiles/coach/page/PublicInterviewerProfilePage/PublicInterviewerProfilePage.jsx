@@ -20,11 +20,14 @@ import BookingSlotDialog from "./BookingSlotDialog";
 import JDBookingDialog from "./JDBookingDialog";
 import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
 import "./EliteCoachProfile.css";
+import { useSelector } from "react-redux";
+import { ROLES } from "../../../../../common/constants/common";
 
 const PublicInterviewerProfilePage = () => {
     const navigate = useNavigate();
     const { slugProfileUrl } = useParams();
     const [searchParams] = useSearchParams();
+    const { userData } = useSelector((state) => state.auth || {});
 
     // State
     const [profile, setProfile] = useState(null);
@@ -138,7 +141,7 @@ const PublicInterviewerProfilePage = () => {
 
     const handleBooking = async ({ slot, service, startTime }) => {
         const returnUrl = window.location.origin + window.location.pathname;
-        try {
+        // try {
             const { data } = await callApi({
                 method: METHOD.POST,
                 endpoint: interviewerProfileEndPoints.BOOK_INTERVIEW,
@@ -156,9 +159,9 @@ const PublicInterviewerProfilePage = () => {
             } else {
                 toast.success("Interview booked successfully!");
             }
-        } catch (err) {
-            toast.error("Booking failed. Please try again.");
-        }
+        // } catch (err) {
+        //     // toast.error("Booking failed. Please try again.");
+        // }
     };
 
     const avatarUrl = useMemo(() => {
@@ -330,13 +333,28 @@ const PublicInterviewerProfilePage = () => {
                                 </li>
                             </ul>
 
-                            <button className="ep-btn-inquire" onClick={() => { setSelectedService(null); setBookingDialogOpen(true); }}>
-                                Book Available Slot <ArrowRight size={18} />
-                            </button>
+                            {userData?.role === ROLES.CANDIDATE && (
+                                <>
+                                    <button
+                                        className="ep-btn-inquire"
+                                        onClick={() => {
+                                            setSelectedService(null);
+                                            setBookingDialogOpen(true);
+                                        }}
+                                    >
+                                        Book Available Slot <ArrowRight size={18} />
+                                    </button>
 
-                            <button className="ep-btn-secondary" onClick={() => setJdBookingOpen(true)} style={{ marginTop: '0.75rem' }}>
-                                <FileText size={18} /> JD Multi-Round Booking
-                            </button>
+                                    <button
+                                        className="ep-btn-secondary"
+                                        onClick={() => setJdBookingOpen(true)}
+                                        style={{ marginTop: "0.75rem" }}
+                                    >
+                                        <FileText size={18} /> JD Multi-Round Booking
+                                    </button>
+                                </>
+                            )}
+                            
                             <p style={{ textAlign: 'center', fontSize: '0.65rem', color: '#94a3b8', marginTop: '1rem', textTransform: 'uppercase', fontWeight: 700 }}>Fully refundable if cancelled 24h prior</p>
                         </div>
 

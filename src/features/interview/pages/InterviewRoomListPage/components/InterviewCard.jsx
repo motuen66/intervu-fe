@@ -347,17 +347,19 @@ function InterviewCard({
         if (room.status === INTERVIEW_ROOM_STATUS.SCHEDULED) {
             return (
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
-                    {/* Cancel Button */}
-                    <SecondaryButton
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onCancel?.(room);
-                        }}
-                    >
-                        Cancel
-                    </SecondaryButton>
+                    {/* Cancel Button - Only for Candidate */}
+                    {user?.role === ROLES.CANDIDATE && (
+                        <SecondaryButton
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onCancel?.(room);
+                            }}
+                        >
+                            Cancel
+                        </SecondaryButton>
+                    )}
 
-                    {/* Reschedule Button */}
+                    {/* Reschedule Button - Only for Candidate */}
                     {user?.role === ROLES.CANDIDATE && (
                         canReschedule ? (
                             <PrimaryButton

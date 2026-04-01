@@ -401,10 +401,11 @@ const ScheduleManagement = () => {
     const handleMiniCalendarDateClick = (date) => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
-            const dateUtc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            calendarApi.gotoDate(dateUtc);
+            // Keep the clicked day in local time; forcing UTC here can shift the shown day.
+            const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            calendarApi.gotoDate(localDate);
             calendarApi.changeView("timeGridDay");
-            setSelectedDate(dateUtc);
+            setSelectedDate(localDate);
         }
     };
 

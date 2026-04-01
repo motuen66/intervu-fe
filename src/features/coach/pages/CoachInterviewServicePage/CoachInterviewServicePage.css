@@ -15,20 +15,23 @@
 
 .coach-service-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, 340px);
+    justify-content: center;
+    gap: 20px;
     padding: 16px;
 }
 
 .coach-service-card {
+    width: 340px;
+    min-height: 180px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 14px;
-    padding: 16px;
+    padding: 18px;
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    justify-content: space-between;
 }
 
 .coach-service-card-header {
@@ -51,8 +54,28 @@
 
 .coach-service-card-actions {
     display: flex;
-    align-items: flex-start;
-    gap: 6px;
+    align-items: center;
+    gap: 8px;
+}
+
+.coach-service-card-actions .MuiIconButton-root {
+    color: #475569;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: 10px;
+    padding: 6px;
+    transition: all 0.2s ease;
+}
+
+.coach-service-card-actions .MuiIconButton-root:hover {
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--mui-palette-primary-main);
+    border-color: var(--mui-palette-primary-main);
+}
+
+.coach-service-card-actions .MuiIconButton-root.delete-btn:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
 }
 
 .coach-service-card-meta {
@@ -88,6 +111,7 @@
     align-items: center;
     justify-content: center;
     width: fit-content;
+    white-space: nowrap;
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 11px;
