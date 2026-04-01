@@ -346,26 +346,69 @@ function InterviewRoomPage() {
 
         conn.on("UserJoined", (connectionId) => {
             console.log("UserJoined", connectionId);
+            const selfId = conn.connectionId;
+            if (connectionId === selfId) return;
+
             setPeers((p) => {
-                const selfId = conn.connectionId;
-                if (!p.includes(connectionId) && connectionId !== selfId) return [...p, connectionId];
+                if (!p.includes(connectionId)) return [...p, connectionId];
                 return p;
             });
-            // Initiate call as existing participant if we already have media
-            if (!pcRef.current && (isCameraOn || isMicOn)) {
+
+            // If we have an existing pc, reset it to allow a fresh connection with the new ID
+            if (pcRef.current) {
+                console.log("Closing existing PeerConnection for new peer join from", connectionId);
+                pcRef.current.close();
+                pcRef.current = null;
+                remotePeerIdRef.current = null;
+            }
+
+            // GLARE HANDLING: Only the participant with the lexicographically smaller ID initiates
+            // This ensures only one side calls when both are present.
+            if ((isCameraOn || isMicOn) && (selfId < connectionId)) {
+                console.log("Initiating call to newcomer (polite peer logic)");
                 remotePeerIdRef.current = connectionId;
                 call(connectionId);
             }
         });
 
         conn.on("UserLeft", (connectionId) => {
+            console.log("UserLeft", connectionId);
             setPeers((p) => p.filter((x) => x !== connectionId));
+            if (remotePeerIdRef.current === connectionId) {
+                console.log("Remote peer left, closing connection");
+                if (pcRef.current) {
+                    pcRef.current.close();
+                    pcRef.current = null;
+                }
+                remotePeerIdRef.current = null;
+                if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+                setIsRemoteSpeaking(false);
+            }
         });
 
         // Receive list of existing peers when we join
-        conn.on("ExistingPeers", (existing) => {
-            console.log("ExistingPeers", existing);
-            setPeers(existing.filter((id) => id !== conn.connectionId));
+        conn.on("ExistingPeers", (existingList) => {
+            console.log("ExistingPeers", existingList);
+            const selfId = conn.connectionId;
+            const peersList = existingList.filter((id) => id !== selfId);
+            setPeers(peersList);
+
+            // If we have an existing pc, reset it to be safe
+            if (pcRef.current) {
+                pcRef.current.close();
+                pcRef.current = null;
+                remotePeerIdRef.current = null;
+            }
+
+            // AUTO-CALL logic: initiate call if we have media and satisfy tie-breaker
+            if ((isCameraOn || isMicOn)) {
+                const targetPeer = peersList[0];
+                if (targetPeer && (selfId < targetPeer)) {
+                    console.log("Initiating call to existing peer (polite peer logic)");
+                    remotePeerIdRef.current = targetPeer;
+                    call(targetPeer);
+                }
+            }
         });
 
         // New handler for receiving the full initial state upon joining
