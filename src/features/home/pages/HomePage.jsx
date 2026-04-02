@@ -21,7 +21,7 @@ import {
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./HomePage.css";
-import { hasAssessmentData } from "../../profiles/candidate/candidate-assessment/services/assessmentApi";
+import { hasSkillGapData } from "../../profiles/candidate/candidate-assessment/services/assessmentApi";
 
 gsap.registerPlugin(ScrollTrigger);
 

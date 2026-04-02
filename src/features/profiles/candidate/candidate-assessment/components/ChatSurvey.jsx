@@ -664,7 +664,6 @@ const ChatSurvey = () => {
         };
 
         setAnswers({
-            userId,
             profile: { role, level, techstack, domain, freeText: setupForm.free_text || "" },
             responses: finalResponses,
             derivedSkills,
@@ -702,7 +701,7 @@ const ChatSurvey = () => {
         setAnswers({ profile: { role: "", level: "", techstack: [], domain: [], freeText: "" }, responses: [] });
         setSurveyResult(null);
         setSkillScores([]);
-        setRoadmap(null);
+        setRoadmap({ today: [], weeks: [] });
         updateMatchPercentage(0);
         navigate("/home");
     };
@@ -1009,6 +1008,12 @@ const ChatSurvey = () => {
                                                         error={Boolean(setupErrors[field.id])}
                                                         helperText={setupErrors[field.id] || " "}
                                                         placeholder={field.placeholder}
+                                                        inputProps={{
+                                                            maxLength:
+                                                                field.id === "role" ? 40 :
+                                                                field.id === "level" ? 30 :
+                                                                field.id === "techstack" ? 100 : undefined,
+                                                        }}
                                                         sx={{
                                                             mt: 1.5,
                                                             "& .MuiOutlinedInput-root": {
@@ -1040,6 +1045,7 @@ const ChatSurvey = () => {
                                                     error={Boolean(setupErrors[field.id])}
                                                     helperText={setupErrors[field.id] || "Optional custom domain input"}
                                                     placeholder={field.placeholder}
+                                                    inputProps={{ maxLength: 60 }}
                                                     sx={{
                                                         mt: 1.5,
                                                         "& .MuiOutlinedInput-root": {
@@ -1069,6 +1075,7 @@ const ChatSurvey = () => {
                                                         error={Boolean(setupErrors[field.id])}
                                                         helperText={setupErrors[field.id] || " "}
                                                         placeholder={field.placeholder}
+                                                        inputProps={{ maxLength: 300 }}
                                                         sx={{
                                                             "& .MuiOutlinedInput-root": {
                                                                 alignItems: "flex-start",

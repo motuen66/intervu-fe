@@ -1,46 +1,44 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../service/coachProfileApi";
-import {
-    Avatar,
-    Box,
-    Fade,
-    Link,
-    Autocomplete,
-    Typography,
-    Stack,
-    Grid,
-    Paper,
-    CardContent,
-    Divider,
-    TextField,
-    IconButton,
-    Alert,
-    CircularProgress,
-} from "@mui/material";
-import StatusChip from "../../../../common/components/StatusChip";
-import BaseCard from "../../../../common/components/cards/BaseCard";
-import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
-
-import {
-    Edit3 as EditIcon,
-    Briefcase as WorkIcon,
-    User as PersonIcon,
-    Mail as EmailIcon,
-    Link as LinkIcon,
-    Code as CodeIcon,
-    X as CloseIcon,
-    Save as SaveIcon,
-    Camera as CameraIcon,
-} from "lucide-react";
+import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
 import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import BankSelection from "./BankSelection";
+import {
+    Box,
+    Typography,
+    Stack,
+    CircularProgress,
+    Avatar,
+    IconButton,
+    TextField,
+    Paper,
+    Link,
+    Grid,
+    Divider,
+    CardContent,
+} from "@mui/material";
+import {
+    Camera as CameraIcon,
+    Edit as EditIcon,
+    X as CloseIcon,
+    Briefcase as WorkIcon,
+    Mail as EmailIcon,
+    Link as LinkIcon,
+    Code as CodeIcon,
+    User as PersonIcon,
+    Save as SaveIcon,
+    Star as StarIcon,
+} from "lucide-react";
+import { Autocomplete } from "@mui/material";
+import BaseCard from "../../../../common/components/cards/BaseCard";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
 function getRoleFromJwt() {
     try {
@@ -82,6 +80,8 @@ function InterviewerProfilePage() {
     const [pendingAvatarLocalUrl, setPendingAvatarLocalUrl] = useState(null);
     const [showConfirmAvatar, setShowConfirmAvatar] = useState(false);
     const [showConfirmSave, setShowConfirmSave] = useState(false);
+    const [coachRating, setCoachRating] = useState(null);
+    const [coachRatingCount, setCoachRatingCount] = useState(0);
 
     const tokenRole = useMemo(() => {
         const r = getRoleFromJwt();
@@ -173,6 +173,28 @@ function InterviewerProfilePage() {
         };
         fetchDropdownData();
     }, []);
+
+    useEffect(() => {
+        const fetchRating = async () => {
+            if (!profile?.id) return;
+            try {
+                const res = await callApi({
+                    endpoint: interviewerProfileEndPoints.GET_COACH_RATING.replace("{id}", profile.id),
+                    method: METHOD.GET,
+                });
+                const data = res?.data || {};
+                const payload = data?.data || data;
+                setCoachRating(payload?.averageRating ?? payload?.avgRating ?? payload?.rating ?? 0);
+                setCoachRatingCount(
+                    payload?.totalRatings ?? payload?.totalFeedbacks ?? payload?.ratingCount ?? payload?.count ?? 0,
+                );
+            } catch (err) {
+                // ignore
+            }
+        };
+
+        fetchRating();
+    }, [profile?.id]);
 
     if (!user) {
         return (
@@ -286,7 +308,10 @@ function InterviewerProfilePage() {
                 profilePicture: avatarUrl,
                 portfolioUrl: profile.portfolioUrl || "",
                 currentAmount: Number(profile.currentAmount) || 0,
-                experienceYears: Number(profile.experienceYears) || 0,
+                experienceYears:
+                    profile.experienceYears === "" || profile.experienceYears == null
+                        ? undefined
+                        : Number(profile.experienceYears),
                 bio: profile.bio || "",
                 skillIds,
                 companyIds,
@@ -305,7 +330,7 @@ function InterviewerProfilePage() {
                 setEditMode(false);
                 setSaveSuccess(true);
                 setProfile((prev) => ({ ...prev, ...payload }));
-                dispatch(setUserData(res.data.user));
+                //dispatch(setUserData(res.data.user));
             } else {
                 setError(res.message || "Failed to save profile.");
             }
@@ -333,9 +358,12 @@ function InterviewerProfilePage() {
     const companiesDisplay = (profile?.companies || [])
         .map((c) => (typeof c === "object" ? c?.name : c))
         .filter(Boolean);
+    const averageRating = Number(coachRating ?? profile?.rating ?? 0);
+    const totalRatings = Number(coachRatingCount ?? profile?.ratingCount ?? 0);
 
     const isSelf = !routeId || String(routeId) === String(user?.id);
     const canEdit = isInterviewer && isSelf;
+    const canManageBank = isInterviewer && isSelf;
 
     return (
         <Box sx={{ minHeight: "100vh" }}>
@@ -435,6 +463,7 @@ function InterviewerProfilePage() {
                                     label="Full Name"
                                     fullWidth
                                     value={profile?.user?.fullName || ""}
+                                    inputProps={{ maxLength: 100 }}
                                     onChange={(e) =>
                                         setProfile((prev) => ({
                                             ...prev,
@@ -457,11 +486,13 @@ function InterviewerProfilePage() {
                                             label="Years of experience"
                                             type="number"
                                             size="small"
-                                            value={years}
+                                            value={profile?.experienceYears ?? ""}
+                                            inputProps={{ maxLength: 3, min: 0 }}
                                             onChange={(e) =>
                                                 setProfile((prev) => ({
                                                     ...prev,
-                                                    experienceYears: Number(e.target.value),
+                                                    experienceYears:
+                                                        e.target.value === "" ? "" : Number(e.target.value),
                                                 }))
                                             }
                                             sx={{ width: 200 }}
@@ -494,8 +525,9 @@ function InterviewerProfilePage() {
                                     multiline
                                     minRows={4}
                                     value={profile.bio || ""}
+                                    inputProps={{ maxLength: 3000 }}
                                     onChange={(e) => setProfile((prev) => ({ ...prev, bio: e.target.value }))}
-                                    placeholder="Tell us about yourself..."
+                                    placeholder="Tell us about yourself (max 500 words)..."
                                     sx={{ mt: 1 }}
                                 />
                             ) : (
@@ -521,204 +553,536 @@ function InterviewerProfilePage() {
             </BaseCard>
 
             {profile && (
-                <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
-                        <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
-                            <CardContent>
-                                <Typography
-                                    variant="h6"
-                                    fontWeight={600}
-                                    gutterBottom
-                                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                <Grid
+                    container
+                    spacing={0}
+                    sx={{
+                        border: "0.5px solid",
+                        borderColor: "divider",
+                        borderRadius: 3,
+                        overflow: "hidden",
+                        bgcolor: "background.paper",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                    }}
+                >
+                    {/* ─── LEFT: Contact ─────────────────────────── */}
+                    <Grid
+                        item
+                        xs={12}
+                        md={4}
+                        sx={{
+                            borderRight: { md: "0.5px solid" },
+                            borderRightColor: { md: "divider" },
+                            borderBottom: { xs: "0.5px solid", md: "none" },
+                            borderBottomColor: { xs: "divider" },
+                        }}
+                    >
+                        <Box sx={{ p: 3 }}>
+                            {/* Header */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 2.5 }}>
+                                <Box
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 1.5,
+                                        bgcolor: (t) => `${t.palette.primary.main}14`,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                    }}
                                 >
-                                    <EmailIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
+                                    <EmailIcon size={16} strokeWidth={1.8} color="var(--mui-palette-primary-main)" />
+                                </Box>
+                                <Typography variant="subtitle2" fontWeight={700} letterSpacing={0.1}>
                                     Contact Information
                                 </Typography>
-                                <Divider sx={{ mb: 2 }} />
+                            </Box>
 
-                                <InfoRow icon={<EmailIcon size={18} strokeWidth={2} />} label="Email" content={email} />
+                            <Divider sx={{ mb: 2.5, opacity: 0.6 }} />
 
-                                <InfoRow
-                                    icon={<LinkIcon size={18} strokeWidth={2} />}
-                                    label="Portfolio"
-                                    content={
-                                        editMode ? (
+                            {/* Email */}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: 1.5,
+                                    mb: 2,
+                                    p: 1.5,
+                                    borderRadius: 2,
+                                    border: "0.5px solid",
+                                    borderColor: "divider",
+                                    bgcolor: "grey.50",
+                                    "&:hover": { bgcolor: "grey.100" },
+                                    transition: "background 0.15s",
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: "50%",
+                                        bgcolor: "background.paper",
+                                        border: "0.5px solid",
+                                        borderColor: "divider",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                        mt: 0.25,
+                                    }}
+                                >
+                                    <EmailIcon size={13} strokeWidth={1.8} />
+                                </Box>
+                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.disabled"
+                                        fontWeight={600}
+                                        sx={{
+                                            textTransform: "uppercase",
+                                            letterSpacing: 0.7,
+                                            display: "block",
+                                            mb: 0.25,
+                                        }}
+                                    >
+                                        Email
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        fontWeight={500}
+                                        sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                    >
+                                        {email}
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            {/* Portfolio */}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: 1.5,
+                                    mb: 2,
+                                    p: 1.5,
+                                    borderRadius: 2,
+                                    border: "0.5px solid",
+                                    borderColor: "divider",
+                                    bgcolor: "grey.50",
+                                    "&:hover": { bgcolor: "grey.100" },
+                                    transition: "background 0.15s",
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: "50%",
+                                        bgcolor: "background.paper",
+                                        border: "0.5px solid",
+                                        borderColor: "divider",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                        mt: 0.25,
+                                    }}
+                                >
+                                    <LinkIcon size={13} strokeWidth={1.8} />
+                                </Box>
+                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.disabled"
+                                        fontWeight={600}
+                                        sx={{
+                                            textTransform: "uppercase",
+                                            letterSpacing: 0.7,
+                                            display: "block",
+                                            mb: 0.25,
+                                        }}
+                                    >
+                                        Portfolio
+                                    </Typography>
+                                    {editMode ? (
+                                        <TextField
+                                            size="small"
+                                            fullWidth
+                                            placeholder="https://yourportfolio.com"
+                                            value={profile.portfolioUrl || ""}
+                                            onChange={(e) =>
+                                                setProfile((prev) => ({ ...prev, portfolioUrl: e.target.value }))
+                                            }
+                                            sx={{
+                                                mt: 0.5,
+                                                "& .MuiOutlinedInput-root": { bgcolor: "background.paper" },
+                                            }}
+                                        />
+                                    ) : profile.portfolioUrl ? (
+                                        <Link
+                                            href={profile.portfolioUrl}
+                                            target="_blank"
+                                            rel="noopener"
+                                            variant="body2"
+                                            fontWeight={500}
+                                            sx={{
+                                                display: "block",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {profile.portfolioUrl}
+                                        </Link>
+                                    ) : (
+                                        <Typography variant="body2" color="text.disabled" fontStyle="italic">
+                                            Not provided
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Box>
+
+                            {/* Pricing row — interviewer specific */}
+                            {/* {profile.currentAmount != null && (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: 1.5,
+                                        p: 1.5,
+                                        borderRadius: 2,
+                                        border: "0.5px solid",
+                                        borderColor: "divider",
+                                        bgcolor: "grey.50",
+                                        "&:hover": { bgcolor: "grey.100" },
+                                        transition: "background 0.15s",
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            width: 28,
+                                            height: 28,
+                                            borderRadius: "50%",
+                                            bgcolor: "background.paper",
+                                            border: "0.5px solid",
+                                            borderColor: "divider",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            flexShrink: 0,
+                                            mt: 0.25,
+                                        }}
+                                    >
+                                        <WorkIcon size={13} strokeWidth={1.8} />
+                                    </Box>
+                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.disabled"
+                                            fontWeight={600}
+                                            sx={{
+                                                textTransform: "uppercase",
+                                                letterSpacing: 0.7,
+                                                display: "block",
+                                                mb: 0.25,
+                                            }}
+                                        >
+                                            Rate
+                                        </Typography>
+                                        {editMode ? (
                                             <TextField
-                                                fullWidth
                                                 size="small"
-                                                placeholder="https://yourportfolio.com"
-                                                value={profile.portfolioUrl || ""}
+                                                type="number"
+                                                fullWidth
+                                                value={profile.currentAmount ?? ""}
                                                 onChange={(e) =>
                                                     setProfile((prev) => ({
                                                         ...prev,
-                                                        portfolioUrl: e.target.value,
+                                                        currentAmount:
+                                                            e.target.value === "" ? "" : Number(e.target.value),
                                                     }))
                                                 }
+                                                sx={{
+                                                    mt: 0.5,
+                                                    "& .MuiOutlinedInput-root": { bgcolor: "background.paper" },
+                                                }}
                                             />
-                                        ) : profile.portfolioUrl ? (
-                                            <Link
-                                                href={profile.portfolioUrl}
-                                                target="_blank"
-                                                rel="noopener"
-                                                sx={{ fontWeight: 500 }}
-                                            >
-                                                {profile.portfolioUrl}
-                                            </Link>
                                         ) : (
-                                            <Typography color="text.secondary">Not provided</Typography>
-                                        )
-                                    }
-                                />
+                                            <Typography variant="body2" fontWeight={500}>
+                                                {profile.currentAmount ? (
+                                                    `${Number(profile.currentAmount).toLocaleString()} / session`
+                                                ) : (
+                                                    <span
+                                                        style={{
+                                                            fontStyle: "italic",
+                                                            color: "var(--mui-palette-text-disabled)",
+                                                        }}
+                                                    >
+                                                        Not set
+                                                    </span>
+                                                )}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Box>
+                            )} */}
 
-                                {/* Bank BIN */}
-                                <InfoRow
-                                    icon={<LinkIcon size={18} strokeWidth={2} />}
-                                    label="Bank"
-                                    content={
-                                        editMode ? (
-                                            <BankSelection
-                                                valueBin={profile?.bankBinNumber || ""}
-                                                onBankBinChange={(bin) =>
-                                                    setProfile((prev) => ({ ...prev, bankBinNumber: bin }))
-                                                }
-                                            />
-                                        ) : profile?.bankBinNumber ? (
-                                            `BIN: ${profile.bankBinNumber}`
-                                        ) : (
-                                            <Typography color="text.secondary">Not provided</Typography>
-                                        )
-                                    }
-                                />
-
-                                {/* Bank Account Number */}
-                                <InfoRow
-                                    icon={<LinkIcon size={18} strokeWidth={2} />}
-                                    label="Bank Account Number"
-                                    content={
-                                        editMode ? (
-                                            <TextField
-                                                fullWidth
-                                                size="small"
-                                                placeholder="Enter bank account number"
-                                                value={profile?.bankAccountNumber || ""}
-                                                onChange={(e) =>
-                                                    setProfile((prev) => ({
-                                                        ...prev,
-                                                        bankAccountNumber: e.target.value,
-                                                    }))
-                                                }
-                                            />
-                                        ) : profile?.bankAccountNumber ? (
-                                            profile.bankAccountNumber
-                                        ) : (
-                                            <Typography color="text.secondary">Not provided</Typography>
-                                        )
-                                    }
-                                />
-                            </CardContent>
-                        </BaseCard>
+                            {/* Rating row */}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: 1.5,
+                                    p: 1.5,
+                                    borderRadius: 2,
+                                    border: "0.5px solid",
+                                    borderColor: "divider",
+                                    bgcolor: "grey.50",
+                                    "&:hover": { bgcolor: "grey.100" },
+                                    transition: "background 0.15s",
+                                    mt: 2,
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: "50%",
+                                        bgcolor: "background.paper",
+                                        border: "0.5px solid",
+                                        borderColor: "divider",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                        mt: 0.25,
+                                    }}
+                                >
+                                    <StarIcon size={13} strokeWidth={1.8} />
+                                </Box>
+                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.disabled"
+                                        fontWeight={600}
+                                        sx={{
+                                            textTransform: "uppercase",
+                                            letterSpacing: 0.7,
+                                            display: "block",
+                                            mb: 0.25,
+                                        }}
+                                    >
+                                        Coach Rating
+                                    </Typography>
+                                    <Typography variant="body2" fontWeight={600}>
+                                        {averageRating > 0 ? averageRating.toFixed(1) : "N/A"} / 5
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {totalRatings.toLocaleString()} ratings
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
                     </Grid>
 
-                    {/* Skills & Companies */}
-                    <Grid item xs={12} sm={6}>
-                        <BaseCard elevation={0} sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
-                            <CardContent>
-                                <Typography
-                                    variant="h6"
-                                    fontWeight={600}
-                                    gutterBottom
-                                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    {/* ─── RIGHT: Skills & Companies ─────────────── */}
+                    <Grid item xs={12} md={8} sx={{ minWidth: "900px" }}>
+                        <Box sx={{ p: 3 }}>
+                            {/* Header */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 2.5 }}>
+                                <Box
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 1.5,
+                                        bgcolor: (t) => `${t.palette.secondary.main}14`,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                    }}
                                 >
-                                    <CodeIcon size={24} strokeWidth={1.5} color="var(--mui-palette-primary-main)" />
+                                    <CodeIcon size={16} strokeWidth={1.8} color="var(--mui-palette-secondary-main)" />
+                                </Box>
+                                <Typography variant="subtitle2" fontWeight={700} letterSpacing={0.1}>
                                     Expertise
                                 </Typography>
-                                <Divider sx={{ mb: 2 }} />
+                            </Box>
+                            <Divider sx={{ mb: 2.5, opacity: 0.6 }} />
+                            {/* Skills */}
+                            <Box sx={{ mb: 3 }}>
+                                <Typography
+                                    variant="caption"
+                                    color="text.disabled"
+                                    fontWeight={600}
+                                    sx={{ textTransform: "uppercase", letterSpacing: 0.7, display: "block", mb: 1.25 }}
+                                >
+                                    Skills
+                                </Typography>
 
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography
-                                        variant="subtitle2"
-                                        color="text.secondary"
-                                        gutterBottom
-                                        fontWeight={600}
-                                    >
-                                        SKILLS
+                                {editMode ? (
+                                    <Autocomplete
+                                        multiple
+                                        options={allSkills || []}
+                                        getOptionLabel={(option) => option.name}
+                                        value={
+                                            profile.skills?.map((s) =>
+                                                typeof s === "object" ? s : allSkills.find((sk) => sk.name === s),
+                                            ) || []
+                                        }
+                                        onChange={(e, newValue) =>
+                                            setProfile((prev) => ({ ...prev, skills: newValue }))
+                                        }
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                placeholder="Add skills"
+                                                size="small"
+                                                inputProps={{ ...params.inputProps, maxLength: 100 }}
+                                            />
+                                        )}
+                                    />
+                                ) : skillsDisplay.length === 0 ? (
+                                    <Typography variant="body2" color="text.disabled" fontStyle="italic">
+                                        No skills added yet
                                     </Typography>
-                                    {editMode ? (
-                                        <Autocomplete
-                                            multiple
-                                            options={allSkills || []}
-                                            getOptionLabel={(option) => option.name}
-                                            value={
-                                                profile.skills?.map((s) =>
-                                                    typeof s === "object" ? s : allSkills.find((sk) => sk.name === s),
-                                                ) || []
-                                            }
-                                            onChange={(e, newValue) =>
-                                                setProfile((prev) => ({ ...prev, skills: newValue }))
-                                            }
-                                            renderInput={(params) => (
-                                                <TextField {...params} placeholder="Add skills" size="small" />
-                                            )}
-                                        />
-                                    ) : (
-                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-                                            {skillsDisplay.length > 0 ? (
-                                                skillsDisplay.map((s, i) => (
-                                                    <StatusChip key={`skill-${i}`} label={s} color="primary" />
-                                                ))
-                                            ) : (
-                                                <Typography color="text.secondary" variant="body2">
-                                                    No skills added
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    )}
-                                </Box>
+                                ) : (
+                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
+                                        {skillsDisplay.map((name, i) => (
+                                            <Box
+                                                key={`skill-${i}`}
+                                                sx={{
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: 1,
+                                                    px: 1.25,
+                                                    py: 0.75,
+                                                    borderRadius: 2,
+                                                    border: "0.5px solid",
+                                                    borderColor: "divider",
+                                                    bgcolor: "grey.50",
+                                                    color: "text.primary",
+                                                    fontSize: "0.96rem",
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.35,
+                                                    transition: "all 0.12s ease",
+                                                    cursor: "default",
+                                                    minWidth: 140,
+                                                    justifyContent: "flex-start",
+                                                    "&:hover": {
+                                                        bgcolor: "grey.100",
+                                                        borderColor: "grey.400",
+                                                        transform: "translateY(-1px)",
+                                                    },
+                                                }}
+                                            >
+                                                <CompanyLogo name={String(name)} size={18} />
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        display: "block",
+                                                        whiteSpace: "normal",
+                                                        wordBreak: "break-word",
+                                                    }}
+                                                >
+                                                    {name}
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                            </Box>
+                            {/* Companies */}
+                            <Box
+                                sx={{
+                                    pt: 2.5,
+                                    borderTop: "0.5px solid",
+                                    borderColor: "divider",
+                                }}
+                            >
+                                <Typography
+                                    variant="caption"
+                                    color="text.disabled"
+                                    fontWeight={600}
+                                    sx={{ textTransform: "uppercase", letterSpacing: 0.7, display: "block", mb: 1.25 }}
+                                >
+                                    Companies
+                                </Typography>
 
-                                <Box>
-                                    <Typography
-                                        variant="subtitle2"
-                                        color="text.secondary"
-                                        gutterBottom
-                                        fontWeight={600}
-                                    >
-                                        COMPANIES
+                                {editMode ? (
+                                    <Autocomplete
+                                        multiple
+                                        options={allCompanies || []}
+                                        getOptionLabel={(option) => option.name}
+                                        value={
+                                            profile.companies?.map((c) =>
+                                                typeof c === "object" ? c : allCompanies.find((co) => co.name === c),
+                                            ) || []
+                                        }
+                                        onChange={(e, newValue) =>
+                                            setProfile((prev) => ({ ...prev, companies: newValue }))
+                                        }
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                placeholder="Add companies"
+                                                size="small"
+                                                inputProps={{ ...params.inputProps, maxLength: 100 }}
+                                            />
+                                        )}
+                                    />
+                                ) : companiesDisplay.length === 0 ? (
+                                    <Typography variant="body2" color="text.disabled" fontStyle="italic">
+                                        No companies added yet
                                     </Typography>
-                                    {editMode ? (
-                                        <Autocomplete
-                                            multiple
-                                            options={allCompanies || []}
-                                            getOptionLabel={(option) => option.name}
-                                            value={
-                                                profile.companies?.map((c) =>
-                                                    typeof c === "object"
-                                                        ? c
-                                                        : allCompanies.find((co) => co.name === c),
-                                                ) || []
-                                            }
-                                            onChange={(e, newValue) =>
-                                                setProfile((prev) => ({ ...prev, companies: newValue }))
-                                            }
-                                            renderInput={(params) => (
-                                                <TextField {...params} placeholder="Add companies" size="small" />
-                                            )}
-                                        />
-                                    ) : (
-                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-                                            {companiesDisplay.length > 0 ? (
-                                                companiesDisplay.map((c, i) => (
-                                                    <StatusChip key={`company-${i}`} label={c} color="secondary" />
-                                                ))
-                                            ) : (
-                                                <Typography color="text.secondary" variant="body2">
-                                                    No companies added
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    )}
-                                </Box>
-                            </CardContent>
-                        </BaseCard>
+                                ) : (
+                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
+                                        {companiesDisplay.map((name, i) => (
+                                            <Box
+                                                key={`company-${i}`}
+                                                sx={{
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: 1,
+                                                    px: 1.25,
+                                                    py: 0.75,
+                                                    borderRadius: 2,
+                                                    border: "0.5px solid",
+                                                    borderColor: "divider",
+                                                    bgcolor: "grey.50",
+                                                    color: "text.primary",
+                                                    fontSize: "0.96rem",
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.35,
+                                                    transition: "all 0.12s ease",
+                                                    cursor: "default",
+                                                    minWidth: 140,
+                                                    justifyContent: "flex-start",
+                                                    "&:hover": {
+                                                        bgcolor: "grey.100",
+                                                        borderColor: "grey.400",
+                                                        transform: "translateY(-1px)",
+                                                    },
+                                                }}
+                                            >
+                                                <CompanyLogo name={String(name)} size={18} />
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        display: "block",
+                                                        whiteSpace: "normal",
+                                                        wordBreak: "break-word",
+                                                    }}
+                                                >
+                                                    {name}
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
                     </Grid>
                 </Grid>
             )}
