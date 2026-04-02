@@ -112,6 +112,8 @@ function InterviewRoomPage() {
         remoteStream,
         isCameraOn,
         isMicOn,
+        isLocalSpeaking,
+        isRemoteSpeaking,
         toggleCam,
         toggleMic,
         initiatePeerConnection,
@@ -121,6 +123,10 @@ function InterviewRoomPage() {
         handleIceCandidate,
     } = useWebRTC({ signalingSender: sendSignal, selfId: connectionId });
 
+    // ── Remote peer media state (camera/mic indicators for late-joiners) ─────
+    const [remoteCameraOn, setRemoteCameraOn] = useState(false);
+    const [remoteMicOn, setRemoteMicOn] = useState(false);
+
     // ── Wire callbacks bag ─────────────────────────────────────────────────────
     // This runs every render but is cheap (just ref assignment).
     callbacks.current = {
@@ -129,7 +135,11 @@ function InterviewRoomPage() {
         onAnswer: handleAnswer,
         onIce: handleIceCandidate,
         onPeerJoin: initiatePeerConnection,
-        onPeerLeave: closePeerConnection,
+        onPeerLeave: (peerId) => {
+            closePeerConnection();
+            setRemoteCameraOn(false);
+            setRemoteMicOn(false);
+        },
         // Code sync
         onReceiveCode: applyExternalCode,
         onReceiveLanguage: applyExternalLanguage,
@@ -149,6 +159,15 @@ function InterviewRoomPage() {
                     shortName: state.problemShortName,
                     testCases: state.testCases,
                 });
+                // Hydrate remote peer media states from FullState
+                if (state.peerCameraStates) {
+                    const remoteEntries = Object.entries(state.peerCameraStates).filter(([id]) => id !== connectionId);
+                    if (remoteEntries.length > 0) setRemoteCameraOn(remoteEntries[0][1]);
+                }
+                if (state.peerMicStates) {
+                    const remoteEntries = Object.entries(state.peerMicStates).filter(([id]) => id !== connectionId);
+                    if (remoteEntries.length > 0) setRemoteMicOn(remoteEntries[0][1]);
+                }
             }
         },
         onReceiveProblem: (description, shortName, testCases) => {
@@ -164,6 +183,13 @@ function InterviewRoomPage() {
         onReceiveTestResults: (results) => {
             setTestResults(results);
             setIsRunning(false);
+        },
+        // Remote media state
+        onReceiveCameraState: (_fromId, isOn) => {
+            setRemoteCameraOn(isOn);
+        },
+        onReceiveMicState: (_fromId, isOn) => {
+            setRemoteMicOn(isOn);
         },
     };
 
@@ -426,6 +452,10 @@ function InterviewRoomPage() {
                         remoteVideoRef={remoteVideoRef}
                         isCameraOn={isCameraOn}
                         isMicOn={isMicOn}
+                        isLocalSpeaking={isLocalSpeaking}
+                        isRemoteSpeaking={isRemoteSpeaking}
+                        remoteCameraOn={remoteCameraOn}
+                        remoteMicOn={remoteMicOn}
                         onToggleCamera={toggleCam}
                         onToggleMic={toggleMic}
                         onLeaveRoom={handleLeaveRoom}

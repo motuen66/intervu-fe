@@ -28,6 +28,56 @@ const ICE_CONFIG = {
 };
 
 // ---------------------------------------------------------------------------
+// Audio level detection — uses AudioContext + AnalyserNode to determine if a
+// MediaStream contains audible speech.  Returns a cleanup function.
+// ---------------------------------------------------------------------------
+function monitorAudioLevel(stream, onSpeakingChange) {
+  if (!stream || stream.getAudioTracks().length === 0) return () => {};
+
+  let audioCtx;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch {
+    return () => {};
+  }
+
+  const analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 512;
+  analyser.smoothingTimeConstant = 0.4;
+
+  const source = audioCtx.createMediaStreamSource(stream);
+  source.connect(analyser);
+
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  let speaking = false;
+  let rafId = null;
+
+  const THRESHOLD = 25; // amplitude threshold (0-255)
+
+  const check = () => {
+    analyser.getByteFrequencyData(data);
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) sum += data[i];
+    const avg = sum / data.length;
+
+    const nowSpeaking = avg > THRESHOLD;
+    if (nowSpeaking !== speaking) {
+      speaking = nowSpeaking;
+      onSpeakingChange(speaking);
+    }
+    rafId = requestAnimationFrame(check);
+  };
+
+  check();
+
+  return () => {
+    if (rafId != null) cancelAnimationFrame(rafId);
+    source.disconnect();
+    audioCtx.close().catch(() => {});
+  };
+}
+
+// ---------------------------------------------------------------------------
 // useWebRTC — Perfect Negotiation Pattern
 //
 // Key design rules (fixes for the renegotiation storm):
@@ -59,6 +109,7 @@ const ICE_CONFIG = {
 // Outputs
 //   localStream, remoteStream
 //   isCameraOn, isMicOn
+//   isLocalSpeaking, isRemoteSpeaking
 //   toggleCam(), toggleMic()
 //   initiatePeerConnection(targetId)
 //   closePeerConnection()
@@ -89,12 +140,48 @@ export function useWebRTC({ signalingSender, selfId }) {
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isMicOn, setIsMicOn] = useState(false);
 
+  // ── Speaking detection state ───────────────────────────────────────────────
+  const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
+  const [isRemoteSpeaking, setIsRemoteSpeaking] = useState(false);
+  const localSpeakingCleanup = useRef(null);
+  const remoteSpeakingCleanup = useRef(null);
+
   // ── Stable refs for async handlers ────────────────────────────────────────
   const signalingSenderRef = useRef(signalingSender);
   useEffect(() => { signalingSenderRef.current = signalingSender; }, [signalingSender]);
 
   const selfIdRef = useRef(selfId);
   useEffect(() => { selfIdRef.current = selfId; }, [selfId]);
+
+  // ── Speaking detection for local stream ───────────────────────────────────
+  useEffect(() => {
+    localSpeakingCleanup.current?.();
+    localSpeakingCleanup.current = null;
+    if (localStream) {
+      localSpeakingCleanup.current = monitorAudioLevel(localStream, setIsLocalSpeaking);
+    } else {
+      setIsLocalSpeaking(false);
+    }
+    return () => {
+      localSpeakingCleanup.current?.();
+      localSpeakingCleanup.current = null;
+    };
+  }, [localStream]);
+
+  // ── Speaking detection for remote stream ──────────────────────────────────
+  useEffect(() => {
+    remoteSpeakingCleanup.current?.();
+    remoteSpeakingCleanup.current = null;
+    if (remoteStream) {
+      remoteSpeakingCleanup.current = monitorAudioLevel(remoteStream, setIsRemoteSpeaking);
+    } else {
+      setIsRemoteSpeaking(false);
+    }
+    return () => {
+      remoteSpeakingCleanup.current?.();
+      remoteSpeakingCleanup.current = null;
+    };
+  }, [remoteStream]);
 
   // ── ICE queue flush ────────────────────────────────────────────────────────
   const flushIceCandidateQueue = useCallback(async () => {
@@ -146,6 +233,10 @@ export function useWebRTC({ signalingSender, selfId }) {
 
     pc.onconnectionstatechange = () => {
       console.log("[WebRTC] Connection state:", pc.connectionState);
+      if (pc.connectionState === "failed") {
+        console.warn("[WebRTC] Connection failed – restarting ICE");
+        pc.restartIce();
+      }
     };
 
     // ── Remote tracks ─────────────────────────────────────────────────────────
@@ -223,19 +314,34 @@ export function useWebRTC({ signalingSender, selfId }) {
       pcRef.current.close();
       pcRef.current = null;
     }
+    // Reset ALL peer-related state so a reconnecting peer can re-initiate
+    targetPeerIdRef.current = null;
     iceCandidatesQueue.current = [];
     makingOffer.current = false;
     ignoreOffer.current = false;
     isSettingRemoteAnswerPending.current = false;
+    isPolite.current = false;
     setRemoteStream(null);
     console.log("[WebRTC] PeerConnection closed.");
+  }, []);
+
+  // ── Helper: add local tracks to PC if not already present ──────────────────
+  const addLocalTracksToPc = useCallback((pc) => {
+    if (!pc || !localStreamRef.current) return;
+    const localTracks = localStreamRef.current.getTracks().filter((t) => t.enabled);
+    const existingKinds = new Set(
+      pc.getSenders().map((s) => s.track?.kind).filter(Boolean)
+    );
+    for (const track of localTracks) {
+      if (!existingKinds.has(track.kind)) {
+        pc.addTrack(track, localStreamRef.current);
+      }
+    }
   }, []);
 
   // ── Signaling: incoming offer ─────────────────────────────────────────────
   const handleOffer = useCallback(async (fromId, sdp) => {
     // Answerer path: create PC if it doesn't exist yet.
-    // No tracks are added here — the browser auto-creates recvonly transceivers
-    // from the incoming SDP, and our tracks (if any) are added after the answer.
     if (!pcRef.current) {
       isPolite.current = (selfIdRef.current ?? "") < fromId;
       targetPeerIdRef.current = fromId;
@@ -257,24 +363,21 @@ export function useWebRTC({ signalingSender, selfId }) {
     // Also reset makingOffer here since we're abandoning any pending offer.
     makingOffer.current = false;
 
+    // FIX (B1): Set remote description FIRST, then add local tracks BEFORE
+    // creating the answer. This ensures our tracks are included in the answer
+    // SDP (recvonly transceivers from the offer become sendrecv).
     await pc.setRemoteDescription({ type: "offer", sdp });
-    await pc.setLocalDescription(); // auto-creates answer
 
-    // If we have local tracks that aren't yet in the PC, add them now so they
-    // are included in the answer (avoids a separate renegotiation round).
-    const localTracks = localStreamRef.current?.getTracks().filter((t) => t.enabled) ?? [];
-    const existingKinds = new Set(pc.getSenders().map((s) => s.track?.kind).filter(Boolean));
-    for (const track of localTracks) {
-      if (!existingKinds.has(track.kind)) {
-        pc.addTrack(track, localStreamRef.current);
-      }
-    }
+    // Add local tracks BEFORE creating the answer so they are in the SDP.
+    addLocalTracksToPc(pc);
+
+    await pc.setLocalDescription(); // auto-creates answer with our tracks included
 
     signalingSenderRef.current?.("SendAnswer", fromId, pc.localDescription.sdp);
     console.log("[WebRTC] Answer sent →", fromId);
 
     await flushIceCandidateQueue();
-  }, [createPeerConnection, flushIceCandidateQueue]);
+  }, [createPeerConnection, flushIceCandidateQueue, addLocalTracksToPc]);
 
   // ── Signaling: incoming answer ────────────────────────────────────────────
   const handleAnswer = useCallback(async (fromId, sdp) => {
@@ -414,6 +517,8 @@ export function useWebRTC({ signalingSender, selfId }) {
     remoteStream,
     isCameraOn,
     isMicOn,
+    isLocalSpeaking,
+    isRemoteSpeaking,
     toggleCam,
     toggleMic,
     initiatePeerConnection,
