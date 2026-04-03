@@ -1,6 +1,11 @@
 import { METHOD } from "../../../../../common/constants/api";
 import { BE_BASE_URL } from "../../../../../common/constants/env";
 import { axiosInstance, callApi } from "../../../../../common/utils/apiConnector";
+import {
+    getAssessmentDataFromCache,
+    isAssessmentCacheValid,
+    setAssessmentCache,
+} from "../../../../../common/utils/assessmentCache";
 
 const ASSESSMENT_BASE = `${BE_BASE_URL}/assessment`;
 const AI_GENERATOR_URL = `${BE_BASE_URL}/generate-assessment`;
@@ -47,14 +52,4 @@ export const hasSkillGapData = (data) => {
 
         return value !== null && value !== undefined && value !== "";
     });
-};
-
-export const hasAssessmentData = async (userId) => {
-    const res = await callApi({
-        method: METHOD.GET,
-        endpoint: assessmentEndPoints.GET_SKILL_GAPS(userId),
-        alertErrorMessage: false,
-    });
-
-    return res?.success && hasSkillGapData(res?.data);
 };

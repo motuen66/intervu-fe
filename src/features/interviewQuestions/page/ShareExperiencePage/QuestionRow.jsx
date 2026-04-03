@@ -66,12 +66,22 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
         }
     };
 
+    const WORD_LIMIT = 100;
+
     const handleInputChange = (e) => {
-        const val = e.target.value;
+        let val = e.target.value || "";
+
+        // Enforce word limit (100 words)
+        const words = val.trim().split(/\s+/).filter(Boolean);
+        if (words.length > WORD_LIMIT) {
+            val = words.slice(0, WORD_LIMIT).join(" ");
+        }
+
         if (q.linkedQuestion) {
             onUpdateField(idx, "linkedQuestion", null);
             onUpdateField(idx, "type", "");
         }
+
         onUpdateField(idx, "question", val);
         clearTimeout(timerRef.current);
         if (val.trim()) {
@@ -206,6 +216,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                             aria-haspopup="listbox"
                             aria-expanded={suggestionsOpen}
                             inputProps={{ "aria-label": "Interview question" }}
+                            helperText={`${(q.question || "").trim().split(/\s+/).filter(Boolean).length} / ${WORD_LIMIT} words`}
                             InputProps={{
                                 endAdornment: searchLoading ? (
                                     <CircularProgress size={14} sx={{ mr: 0.5 }} />

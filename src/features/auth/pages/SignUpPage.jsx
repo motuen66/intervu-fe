@@ -24,24 +24,29 @@ function SignUpPage() {
     };
 
     const onSubmit = async (data) => {
-        const { success, data: responseData, message } = await callApi({
-            method: METHOD.POST,
-            endpoint: authEndPoints.SIGN_UP_API,
-            arg: {
-                fullName: data.fullName,
-                email: data.email,
-                password: data.password,
-            },
-            displaySuccessMessage: true,
-            alertErrorMessage: true,
-        });
+        try {
+            const { success, data: responseData, message } = await callApi({
+                method: METHOD.POST,
+                endpoint: authEndPoints.SIGN_UP_API,
+                arg: {
+                    fullName: data.fullName,
+                    email: data.email,
+                    password: data.password,
+                },
+                // don't auto-show backend success toast here to avoid duplication;
+                // we'll show the message and control navigation explicitly
+                displaySuccessMessage: false,
+                alertErrorMessage: true,
+            });
 
-        if (success) {
-            toast.success("Account created successfully! Please log in.");
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            navigate("/login");
+            if (success) {
+                toast.success(message || "Account created successfully! Please log in.");
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+                navigate("/login");
+            }
+        } finally {
+            resetForm();
         }
-        resetForm();
     };
 
     return (

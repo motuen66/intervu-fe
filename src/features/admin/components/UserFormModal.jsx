@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -11,63 +11,63 @@ import {
     IconButton,
     InputAdornment,
     Alert,
-    Typography
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import { PrimaryButton, SecondaryButton } from '../../../common/components/buttons';
+    Typography,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 
 const USER_ROLES = [
-    { value: 0, label: 'Candidate' },
-    { value: 1, label: 'Coach' },
-    { value: 2, label: 'Admin' },
+    { value: 0, label: "Candidate" },
+    { value: 1, label: "Coach" },
+    { value: 2, label: "Admin" },
 ];
 
 const roleNumberToText = {
-    0: 'Candidate',
-    1: 'Coach',
-    2: 'Admin'
+    0: "Candidate",
+    1: "Coach",
+    2: "Admin",
 };
 
 const roleTextToNumber = {
-    'Candidate': 0,
-    'Coach': 1,
-    'Admin': 2
+    Candidate: 0,
+    Coach: 1,
+    Admin: 2,
 };
 
-export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'create' }) {
+export default function UserFormModal({ open, onClose, onSubmit, user, mode = "create" }) {
     const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phoneNumber: '',
-        password: '',
+        fullName: "",
+        email: "",
+        phoneNumber: "",
+        password: "",
         role: 0,
     });
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
-    const [submitError, setSubmitError] = useState('');
+    const [submitError, setSubmitError] = useState("");
 
     useEffect(() => {
-        if (mode === 'edit' && user) {
+        if (mode === "edit" && user) {
             setFormData({
-                fullName: user.fullName || '',
-                email: user.email || '',
-                phoneNumber: user.phoneNumber || '',
-                password: '', // Không hiển thị password cũ
-                role: typeof user.role === 'number' ? user.role : roleTextToNumber[user.role] || 0,
+                fullName: user.fullName || "",
+                email: user.email || "",
+                phoneNumber: user.phoneNumber || "",
+                password: "", // Không hiển thị password cũ
+                role: typeof user.role === "number" ? user.role : roleTextToNumber[user.role] || 0,
             });
-        } else if (mode === 'create') {
+        } else if (mode === "create") {
             setFormData({
-                fullName: '',
-                email: '',
-                phoneNumber: '',
-                password: '',
+                fullName: "",
+                email: "",
+                phoneNumber: "",
+                password: "",
                 role: 0,
             });
         }
         setErrors({});
-        setSubmitError('');
+        setSubmitError("");
     }, [user, mode, open]);
 
     const handleChange = (e) => {
@@ -75,24 +75,24 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
         let finalValue = value;
 
         // Convert role to number
-        if (name === 'role') {
+        if (name === "role") {
             finalValue = parseInt(value, 10);
         }
 
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            [name]: finalValue
+            [name]: finalValue,
         }));
         // Clear error when user types
         if (errors[name]) {
-            setErrors(prev => ({
+            setErrors((prev) => ({
                 ...prev,
-                [name]: ''
+                [name]: "",
             }));
         }
         // Clear submit error
         if (submitError) {
-            setSubmitError('');
+            setSubmitError("");
         }
     };
 
@@ -100,29 +100,29 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
         const newErrors = {};
 
         if (!formData.fullName.trim()) {
-            newErrors.fullName = 'Full name is required.';
+            newErrors.fullName = "Full name is required.";
         }
 
         if (!formData.email.trim()) {
-            newErrors.email = 'Email is required.';
+            newErrors.email = "Email is required.";
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Please enter a valid email address.';
+            newErrors.email = "Please enter a valid email address.";
         }
 
-        if (!formData.password.trim()) {
+        if (mode === 'create' && !formData.password.trim()) {
             newErrors.password = 'Password is required.';
         } else if (formData.password && formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters.';
+            newErrors.password = "Password must be at least 6 characters.";
         }
 
         if (!formData.phoneNumber.trim()) {
-            newErrors.phoneNumber = 'Phone number is required.';
+            newErrors.phoneNumber = "Phone number is required.";
         } else if (!/^[0-9+\-\s]{8,15}$/.test(formData.phoneNumber.trim())) {
-            newErrors.phoneNumber = 'Please enter a valid phone number.';
+            newErrors.phoneNumber = "Please enter a valid phone number.";
         }
 
-        if (formData.role === '' || formData.role === null) {
-            newErrors.role = 'Role is required.';
+        if (formData.role === "" || formData.role === null) {
+            newErrors.role = "Role is required.";
         }
 
         setErrors(newErrors);
@@ -147,11 +147,11 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
 
     const handleClose = () => {
         setFormData({
-            fullName: '',
-            email: '',
-            phoneNumber: '',
-            password: '',
-            role: 'CANDIDATE',
+            fullName: "",
+            email: "",
+            phoneNumber: "",
+            password: "",
+            role: "CANDIDATE",
         });
         setErrors({});
         onClose();
@@ -166,31 +166,33 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
             PaperProps={{
                 sx: {
                     borderRadius: 3,
-                    background: 'rgba(255,255,255,0.98)',
-                }
+                    background: "rgba(255,255,255,0.98)",
+                },
             }}
         >
-            <DialogTitle sx={{
-                fontWeight: 700,
-                pb: 1,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
+            <DialogTitle
+                sx={{
+                    fontWeight: 700,
+                    pb: 1,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                }}
+            >
                 <Box>
-                    <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#111827' }}>
-                        {mode === 'create' ? 'Create user' : 'Edit user'}
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#111827" }}>
+                        {mode === "create" ? "Create user" : "Edit user"}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.85rem', color: '#6b7280', mt: 0.5 }}>
-                        {mode === 'create' ? 'Add a new account to the system.' : 'Update user profile details.'}
+                    <Typography sx={{ fontSize: "0.85rem", color: "#6b7280", mt: 0.5 }}>
+                        {mode === "create" ? "Add a new account to the system." : "Update user profile details."}
                     </Typography>
                 </Box>
                 <IconButton
                     onClick={handleClose}
                     size="small"
                     sx={{
-                        color: '#6b7280',
-                        '&:hover': { background: 'rgba(15,23,42,0.06)' }
+                        color: "#6b7280",
+                        "&:hover": { background: "rgba(15,23,42,0.06)" },
                     }}
                 >
                     <CloseIcon />
@@ -201,13 +203,13 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                 <DialogContent sx={{ pt: 3 }}>
                     <Grid container spacing={2.5} direction="column">
                         {submitError && (
-                            <Grid item xs={12} sx={{ width: '100%' }}>
+                            <Grid item xs={12} sx={{ width: "100%" }}>
                                 <Alert severity="error" sx={{ mb: 2 }}>
                                     {submitError}
                                 </Alert>
                             </Grid>
                         )}
-                        <Grid item xs={12} sx={{ width: '100%' }}>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
                             <TextField
                                 fullWidth
                                 label="Full name"
@@ -217,23 +219,24 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 error={!!errors.fullName}
                                 helperText={errors.fullName}
                                 required
+                                inputProps={{ maxLength: 60 }}
                                 sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '&:hover fieldset': {
-                                            borderColor: '#4F46E5',
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#4F46E5',
+                                        "&.Mui-focused fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
                                     },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#4F46E5',
+                                    "& .MuiInputLabel-root.Mui-focused": {
+                                        color: "#4F46E5",
                                     },
                                 }}
                             />
                         </Grid>
 
-                        <Grid item xs={12} sx={{ width: '100%' }}>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
                             <TextField
                                 fullWidth
                                 label="Email"
@@ -244,24 +247,25 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 error={!!errors.email}
                                 helperText={errors.email}
                                 required
-                                disabled={mode === 'edit'}
+                                inputProps={{ maxLength: 100 }}
+                                disabled={mode === "edit"}
                                 sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '&:hover fieldset': {
-                                            borderColor: '#4F46E5',
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#4F46E5',
+                                        "&.Mui-focused fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
                                     },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#4F46E5',
+                                    "& .MuiInputLabel-root.Mui-focused": {
+                                        color: "#4F46E5",
                                     },
                                 }}
                             />
                         </Grid>
 
-                        <Grid item xs={12} sx={{ width: '100%' }}>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
                             <TextField
                                 fullWidth
                                 label="Phone number"
@@ -271,33 +275,35 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 error={!!errors.phoneNumber}
                                 helperText={errors.phoneNumber}
                                 required
+                                inputProps={{ maxLength: 20 }}
                                 sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '&:hover fieldset': {
-                                            borderColor: '#4F46E5',
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#4F46E5',
+                                        "&.Mui-focused fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
                                     },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#4F46E5',
+                                    "& .MuiInputLabel-root.Mui-focused": {
+                                        color: "#4F46E5",
                                     },
                                 }}
                             />
                         </Grid>
 
-                        <Grid item xs={12} sx={{ width: '100%' }}>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
                             <TextField
                                 fullWidth
-                                label="Password"
+                                label={mode === 'edit' ? "Password (leave blank to keep current)" : "Password"}
                                 name="password"
-                                type={showPassword ? 'text' : 'password'}
+                                type={showPassword ? "text" : "password"}
                                 value={formData.password}
                                 onChange={handleChange}
                                 error={!!errors.password}
                                 helperText={errors.password}
-                                required
+                                required={mode === 'create'}
+                                inputProps={{ maxLength: 50 }}
                                 InputProps={{
                                     endAdornment: (
                                         <InputAdornment position="end">
@@ -312,22 +318,22 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                     ),
                                 }}
                                 sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '&:hover fieldset': {
-                                            borderColor: '#4F46E5',
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#4F46E5',
+                                        "&.Mui-focused fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
                                     },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#4F46E5',
+                                    "& .MuiInputLabel-root.Mui-focused": {
+                                        color: "#4F46E5",
                                     },
                                 }}
                             />
                         </Grid>
 
-                        <Grid item xs={12} sx={{ width: '100%' }}>
+                        <Grid item xs={12} sx={{ width: "100%" }}>
                             <TextField
                                 fullWidth
                                 select
@@ -339,16 +345,16 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                                 helperText={errors.role}
                                 required
                                 sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '&:hover fieldset': {
-                                            borderColor: '#4F46E5',
+                                    "& .MuiOutlinedInput-root": {
+                                        "&:hover fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#4F46E5',
+                                        "&.Mui-focused fieldset": {
+                                            borderColor: "#4F46E5",
                                         },
                                     },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#4F46E5',
+                                    "& .MuiInputLabel-root.Mui-focused": {
+                                        color: "#4F46E5",
                                     },
                                 }}
                             >
@@ -363,11 +369,9 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = 'c
                 </DialogContent>
 
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                    <SecondaryButton onClick={handleClose}>
-                        Cancel
-                    </SecondaryButton>
+                    <SecondaryButton onClick={handleClose}>Cancel</SecondaryButton>
                     <PrimaryButton type="submit" sx={{ px: 4 }}>
-                        {mode === 'create' ? 'Create user' : 'Save changes'}
+                        {mode === "create" ? "Create user" : "Save changes"}
                     </PrimaryButton>
                 </DialogActions>
             </form>

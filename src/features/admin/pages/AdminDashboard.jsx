@@ -324,7 +324,6 @@ export default function AdminDashboard() {
         { field: 'id', headerName: 'ID', width: 70 },
         { field: 'fullName', headerName: 'Full Name', width: 200 },
         { field: 'email', headerName: 'Email', width: 200 },
-        { field: 'phoneNumber', headerName: 'Phone', width: 150 },
         { field: 'specialization', headerName: 'Specialization', width: 150 },
         { field: 'experienceYears', headerName: 'Experience (Years)', width: 150, render: (val) => val ? `${val} years` : '-' },
         { field: 'createdAt', headerName: 'Created At', type: 'date' },

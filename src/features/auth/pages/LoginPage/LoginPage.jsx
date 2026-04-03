@@ -13,11 +13,7 @@ import SplitText from "./SplitText";
 import { TextField, Typography, Box } from "@mui/material";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
-import {
-    assessmentEndPoints,
-    hasAssessmentData,
-    hasSkillGapData,
-} from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
+import { hasSkillGapData } from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 
@@ -49,28 +45,22 @@ function LoginPage() {
                 return;
             }
 
-            // Candidate: check whether we already have an assessment/skill-gap
             try {
                 const assessmentSeenKey = getCandidateFirstLoginAssessmentKey(user.id);
-                const hasData = await hasAssessmentData(user.id);
+                const hasData = await hasSkillGapData(user.id);
 
                 if (hasData) {
-                    // mark as seen and go to home where Roadmap tab can show data
                     localStorage.setItem(assessmentSeenKey, "true");
                     navigate("/home");
                 } else {
-                    // first time: redirect to assessment chat/survey flow
                     localStorage.setItem(assessmentSeenKey, "false");
                     navigate("/assessment");
                 }
             } catch (err) {
-                // if the check fails treat as no assessment and send to survey
                 try {
                     const assessmentSeenKey = getCandidateFirstLoginAssessmentKey(user.id);
                     localStorage.setItem(assessmentSeenKey, "false");
-                } catch (e) {
-                    /* ignore */
-                }
+                } catch (e) {}
                 navigate("/assessment");
             }
         },

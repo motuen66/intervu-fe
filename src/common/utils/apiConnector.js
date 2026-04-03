@@ -136,6 +136,7 @@ export const callApi = async ({
             // window.location.href = "/";
         } else if (alertErrorMessage) {
             toast.error(error.response?.data?.message || error.message || "An error occurred");
+            throw error;
         } else {
             throw error;
         }

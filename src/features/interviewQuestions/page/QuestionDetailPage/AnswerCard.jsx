@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, Box, Button, Chip, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { keyframes } from "@mui/system";
@@ -32,10 +32,25 @@ export default function AnswerCard({
     const [saving, setSaving] = useState(false);
     const [voteCount, setVoteCount] = useState(comment.vote);
     const [voted, setVoted] = useState(comment.isLikedByUser ?? false);
+    const [expandedPreview, setExpandedPreview] = useState(false);
 
     const navigate = useNavigate();
     const commentId = comment?.id;
     const isAuthor = !!currentUserId && String(currentUserId) === String(comment.createdBy);
+
+    const textRef = useRef(null);
+    const [needsTruncate, setNeedsTruncate] = useState(false);
+
+    useEffect(() => {
+        let t = null;
+        t = setTimeout(() => {
+            if (textRef.current) {
+                setNeedsTruncate(textRef.current.scrollHeight > textRef.current.clientHeight);
+            }
+        }, 0);
+
+        return () => clearTimeout(t);
+    }, [comment.content, expandedPreview]);
 
     const handleVote = async () => {
         if (!currentUserId) {
@@ -177,6 +192,7 @@ export default function AnswerCard({
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
                         autoFocus
+                        inputProps={{ maxLength: 300 }}
                         sx={{ mb: 1 }}
                     />
                     <Stack direction="row" gap={1}>
@@ -202,12 +218,55 @@ export default function AnswerCard({
                     </Stack>
                 </Box>
             ) : (
-                <Typography
-                    variant="body2"
-                    sx={{ lineHeight: 1.65, color: "text.primary", mb: 1.75, whiteSpace: "pre-wrap" }}
-                >
-                    {comment.content}
-                </Typography>
+                <>
+                    <Box sx={{ position: "relative", mb: 1.25 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                lineHeight: 1.65,
+                                color: "text.primary",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                                overflowWrap: "anywhere",
+                                display: "-webkit-box",
+                                WebkitLineClamp: expandedPreview ? "unset" : 5,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                            }}
+                            ref={textRef}
+                        >
+                            {comment.content}
+                        </Typography>
+
+                        {/* gradient overlay when collapsed and content is long */}
+                        {needsTruncate && !expandedPreview && (
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    transition: "all 0.25s ease",
+                                    left: 16,
+                                    right: 16,
+                                    bottom: 0,
+                                    height: 40,
+                                    background: "linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.95))",
+                                    pointerEvents: "none",
+                                }}
+                            />
+                        )}
+                    </Box>
+
+                    {needsTruncate && (
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.25 }}>
+                            <Button
+                                size="small"
+                                onClick={() => setExpandedPreview((v) => !v)}
+                                sx={{ textTransform: "none", p: 0, minWidth: 0 }}
+                            >
+                                {expandedPreview ? "View less" : "View more"}
+                            </Button>
+                        </Box>
+                    )}
+                </>
             )}
             {/* Actions */}
             <Stack direction="row" gap={2}>

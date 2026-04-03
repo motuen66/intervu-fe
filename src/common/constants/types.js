@@ -83,8 +83,8 @@ export const ROUNDS = [
 export const POPULAR_ROLES = [
     { value: 1, label: "Product Manager" },
     { value: 2, label: "Software Engineer" },
-    { value: 5, label: "Technical Program Manager" },
-    { value: 3, label: "Data Engineer" },
+    { value: 5, label: "DevOps Engineer" },
+    { value: 3, label: "UI/UX Designer" },
     { value: 4, label: "Data Scientist" },
 ];
 

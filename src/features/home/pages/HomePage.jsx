@@ -21,7 +21,7 @@ import {
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./HomePage.css";
-import { hasAssessmentData } from "../../profiles/candidate/candidate-assessment/services/assessmentApi";
+import { hasSkillGapData } from "../../profiles/candidate/candidate-assessment/services/assessmentApi";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -341,84 +341,6 @@ function HomePage() {
 
             {/* Smart Match Modal */}
             <SmartMatchModal open={smartMatchOpen} onClose={closeSmartMatch} />
-            {/* New Specialized Tracks Section */}
-            <section className="home-tracks-section">
-                <div className="section-header">
-                    <h2>Specialized Tracks</h2>
-                    <p>Targeted preparation for specific technical and leadership roles</p>
-                </div>
-                <div className="home-tracks-grid">
-                    {specializedTracks.map((track) => (
-                        <div key={track.label} className="home-track-card">
-                            <div className="track-icon-wrapper">{track.icon}</div>
-                            <span>{track.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* New Workflow Section */}
-            <section className="home-workflow-section">
-                <div className="section-header">
-                    <h2>The Path to Mastery</h2>
-                    <p>Our proven method for systematic career advancement</p>
-                </div>
-                <div className="home-workflow-grid">
-                    {workflowSteps.map((step) => (
-                        <div key={step.step} className="home-workflow-card">
-                            <div className="workflow-step-badge">{step.step}</div>
-                            <div className="workflow-icon-circle">{step.icon}</div>
-                            <h3>{step.label}</h3>
-                            <p>{step.description}</p>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* New Questions Feature Section */}
-            <section className="home-questions-feature">
-                <div className="home-feature-card">
-                    <div className="feature-info">
-                        <span className="feature-label">NEW FEATURE</span>
-                        <h2>Master the Question Bank</h2>
-                        <p>10,000+ real-world questions analyzed by AI from top tech interview transcripts.</p>
-                        <div className="feature-highlights">
-                            <div className="highlight">
-                                <strong>5K+</strong>
-                                <span>Questions</span>
-                            </div>
-                            <div className="highlight">
-                                <strong>50+</strong>
-                                <span>Companies</span>
-                            </div>
-                        </div>
-                        <button className="feature-btn" onClick={() => (window.location.href = "/questions")}>
-                            Explore Bank <ArrowRight size={18} />
-                        </button>
-                    </div>
-                    <div className="feature-visual">
-                        <div className="code-snippet-window">
-                            <div className="code-header">
-                                <span className="dot" />
-                                <span className="dot" />
-                                <span className="dot" />
-                                <span className="title">System Design: Rate Limiter</span>
-                            </div>
-                            <div className="code-content">
-                                <pre>
-                                    <code>
-                                        {`// Scenario: High-scale requests
-Design a distributed rate limiter 
-supporting 1M+ requests/sec 
-with <2ms latency penalty.`}
-                                    </code>
-                                </pre>
-                            </div>
-                        </div>
-                        <div className="feature-glow" />
-                    </div>
-                </div>
-            </section>
         </div>
     );
 }
