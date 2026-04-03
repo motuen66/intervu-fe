@@ -15,6 +15,7 @@ import CodeEditorPanel from "./CodeEditorPanel";
 import { useWebRTC } from "../../hooks/useWebRTC.js";
 import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
 import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
+import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
 
 // ---------------------------------------------------------------------------
 // InterviewRoomPage — Clean Orchestrator
@@ -122,6 +123,16 @@ function InterviewRoomPage() {
         handleAnswer,
         handleIceCandidate,
     } = useWebRTC({ signalingSender: sendSignal, selfId: connectionId });
+
+    // ── Audio Recording ────────────────────────────────────────────────────────
+    // We record chunks for processing (Interviewer and Candidate)
+    // Recording is now tied to the user's mic state.
+    useAudioRecorder({
+        roomId,
+        isEnabled: !loading && !error && (user?.role === ROLES.INTERVIEWER || user?.role === ROLES.CANDIDATE),
+        isMicOn, // only record if mic is on
+        chunkIntervalMs: 15000
+    });
 
     // ── Remote peer media state (camera/mic indicators for late-joiners) ─────
     const [remoteCameraOn, setRemoteCameraOn] = useState(false);
@@ -245,18 +256,18 @@ function InterviewRoomPage() {
     }, [sendSignal, roomId, problemDescription, problemShortName, testCases]);
 
     // Test-case helpers (pure state mutations, no WebRTC/SignalR involvement)
-    const handleTestCaseInputChange = (tcIdx, inIdx, field, value) => {
+    const handleTestCaseInputChange = (tcIdx, inIdx, field, fieldVal) => {
         setTestCases((prev) => {
             const next = JSON.parse(JSON.stringify(prev));
-            next[tcIdx].inputs[inIdx][field] = value;
+            next[tcIdx].inputs[inIdx][field] = fieldVal;
             return next;
         });
     };
 
-    const handleTestCaseOutputChange = (tcIdx, outIdx, value) => {
+    const handleTestCaseOutputChange = (tcIdx, outIdx, fieldVal) => {
         setTestCases((prev) => {
             const next = JSON.parse(JSON.stringify(prev));
-            next[tcIdx].expectedOutputs[outIdx] = value;
+            next[tcIdx].expectedOutputs[outIdx] = fieldVal;
             return next;
         });
     };
