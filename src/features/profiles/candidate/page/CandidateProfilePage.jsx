@@ -48,6 +48,7 @@ import ConfirmModal from "../../../../common/components/ConfirmModal";
 import UploadCv from "../../components/UploadCv.jsx";
 import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
 import { ROLES } from "../../../../common/constants/common";
+import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPage/QuestionCard";
 
 // ─── Shared row component ──────────────────────────────────────────────────────
 function InfoRow({ icon, label, children }) {
@@ -852,21 +853,11 @@ function CandidateProfilePage() {
                                     No saved questions yet.
                                 </Typography>
                             ) : (
-                                <List disablePadding>
+                                <Stack spacing={1}>
                                     {savedQuestions.map((q) => (
-                                        <ListItem key={q.id} disablePadding>
-                                            <ListItemButton
-                                                onClick={() => navigate(`/questions/${q.id}`)}
-                                                sx={{ borderRadius: 1, mb: 0.5 }}
-                                            >
-                                                <ListItemText
-                                                    primary={q.content ?? q.title ?? "Untitled"}
-                                                    secondary={`${q.answerCount ?? 0} answers · ${q.vote ?? q.voteCount ?? 0} votes`}
-                                                />
-                                            </ListItemButton>
-                                        </ListItem>
+                                        <QuestionCard key={q.id} item={q} />
                                     ))}
-                                </List>
+                                </Stack>
                             )}
                         </Box>
                     )}
