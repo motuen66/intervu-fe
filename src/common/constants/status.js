@@ -22,6 +22,7 @@ export const PAYOS_TRANSACTION_STATUS = {
 export const AVAILABILITY_SLOTS_STATUS = {
     AVAILABLE: 0,
     UNAVAILABLE: 1,
+    BOOKED: 2,
 };
 
 export const AIM_LEVEL = {
@@ -97,6 +98,7 @@ export const getAvailabilityColors = (status, isPast = false) => {
 
     switch (status) {
         case AVAILABILITY_SLOTS_STATUS.UNAVAILABLE:
+        case AVAILABILITY_SLOTS_STATUS.BOOKED:
             return colors.UNAVAILABLE;
         case AVAILABILITY_SLOTS_STATUS.AVAILABLE:
         default:

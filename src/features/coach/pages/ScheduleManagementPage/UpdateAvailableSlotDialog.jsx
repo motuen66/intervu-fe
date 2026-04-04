@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import {
     Box,
     TextField,
@@ -9,11 +9,15 @@ import {
     FormControl,
     Select,
     MenuItem,
+    Divider,
 } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
-import { IoAdd, IoTrash } from "react-icons/io5";
-import toast from "react-hot-toast";
+import { IoTrash } from "react-icons/io5";
+import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
+
+const MINUTES_STEP = 30;
+const MINUTE_OPTIONS = Array.from({ length: 60 / MINUTES_STEP }, (_, i) => i * MINUTES_STEP);
 
 const UpdateAvailableSlotDialog = ({
     open,
@@ -25,32 +29,45 @@ const UpdateAvailableSlotDialog = ({
     loading,
     minDate,
     maxDate,
+    existingBlocks = [],
 }) => {
-    const [tempDate, setTempDate] = useState("");
+    // Generate the list of affected 30-min blocks based on current form state
+    const affectedBlocks = useMemo(() => {
+        if (!formData.date) return [];
+        const startTotal = Number(formData.startHour) * 60 + Number(formData.startMinute);
+        const endTotal = Number(formData.endHour) * 60 + Number(formData.endMinute);
+        if (endTotal <= startTotal) return [];
 
-    const handleAddDuplicateDate = () => {
-        if (!tempDate) return;
-        if (formData.date === tempDate) {
-            toast.error("Date already selected as main date");
-            return;
-        }
-        if (formData.duplicateDates.includes(tempDate)) {
-            toast.error("Date already added");
-            return;
-        }
-        setFormData({
-            ...formData,
-            duplicateDates: [...formData.duplicateDates, tempDate],
-        });
-        setTempDate("");
-    };
+        const blocks = [];
+        let cursor = startTotal;
+        while (cursor < endTotal) {
+            const blockStartH = Math.floor(cursor / 60);
+            const blockStartM = cursor % 60;
+            const blockEndCursor = cursor + MINUTES_STEP;
+            const blockEndH = Math.floor(blockEndCursor / 60);
+            const blockEndM = blockEndCursor % 60;
 
-    const handleRemoveDuplicateDate = (dateToRemove) => {
-        setFormData({
-            ...formData,
-            duplicateDates: formData.duplicateDates.filter((d) => d !== dateToRemove),
-        });
-    };
+            // Check if this block matches any existing booked block
+            const [year, month, day] = formData.date.split("-").map(Number);
+            const blockStartDate = new Date(year, month - 1, day, blockStartH, blockStartM);
+            const isBooked = existingBlocks.some((b) => {
+                const bStart = new Date(b.startTime);
+                return (
+                    bStart.getTime() === blockStartDate.getTime() &&
+                    Number(b.status) === AVAILABILITY_SLOTS_STATUS.UNAVAILABLE
+                );
+            });
+
+            blocks.push({
+                label: `${String(blockStartH).padStart(2, "0")}:${String(blockStartM).padStart(2, "0")} - ${String(blockEndH).padStart(2, "0")}:${String(blockEndM).padStart(2, "0")}`,
+                isBooked,
+            });
+            cursor = blockEndCursor;
+        }
+        return blocks;
+    }, [formData.date, formData.startHour, formData.startMinute, formData.endHour, formData.endMinute, existingBlocks]);
+
+    const hasBookedBlocks = affectedBlocks.some((b) => b.isBooked);
 
     return (
         <Modal
@@ -97,48 +114,6 @@ const UpdateAvailableSlotDialog = ({
 
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
-                                Duplicate to other dates (Optional)
-                            </Typography>
-                            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                                <TextField
-                                    type="date"
-                                    value={tempDate}
-                                    onChange={(e) => setTempDate(e.target.value)}
-                                    inputProps={{
-                                        min:
-                                            minDate ||
-                                            (() => {
-                                                const now = new Date();
-                                                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-                                            })(),
-                                        max: maxDate,
-                                    }}
-                                    fullWidth
-                                    variant="outlined"
-                                    size="small"
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                                />
-                                <SecondaryButton
-                                    onClick={handleAddDuplicateDate}
-                                    sx={{ minWidth: "auto", px: 1 }}
-                                >
-                                    <IoAdd size={20} />
-                                </SecondaryButton>
-                            </Stack>
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                {formData.duplicateDates?.map((date) => (
-                                    <StatusChip
-                                        key={date}
-                                        label={date}
-                                        onDelete={() => handleRemoveDuplicateDate(date)}
-                                        color="primary"
-                                    />
-                                ))}
-                            </Box>
-                        </Box>
-
-                        <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
                                 Start Time
                             </Typography>
                             <Stack direction="row" spacing={1}>
@@ -161,10 +136,12 @@ const UpdateAvailableSlotDialog = ({
                                 <FormControl fullWidth size="small">
                                     <Select
                                         value={formData.startMinute}
-                                        onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, startMinute: Number(e.target.value) })
+                                        }
                                         sx={{ borderRadius: "8px" }}
                                     >
-                                        {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
+                                        {MINUTE_OPTIONS.map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
                                             </MenuItem>
@@ -182,7 +159,9 @@ const UpdateAvailableSlotDialog = ({
                                 <FormControl fullWidth size="small">
                                     <Select
                                         value={formData.endHour}
-                                        onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, endHour: Number(e.target.value) })
+                                        }
                                         sx={{ borderRadius: "8px" }}
                                     >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
@@ -196,10 +175,12 @@ const UpdateAvailableSlotDialog = ({
                                 <FormControl fullWidth size="small">
                                     <Select
                                         value={formData.endMinute}
-                                        onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, endMinute: Number(e.target.value) })
+                                        }
                                         sx={{ borderRadius: "8px" }}
                                     >
-                                        {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
+                                        {MINUTE_OPTIONS.map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
                                             </MenuItem>
@@ -209,24 +190,48 @@ const UpdateAvailableSlotDialog = ({
                             </Stack>
                         </Box>
 
+                        {/* Affected 30-min blocks preview */}
+                        {affectedBlocks.length > 0 && (
+                            <Box>
+                                <Divider sx={{ my: 1 }} />
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
+                                    Affected 30-min Blocks
+                                </Typography>
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                    {affectedBlocks.map((block) => (
+                                        <StatusChip
+                                            key={block.label}
+                                            label={block.isBooked ? `${block.label} (Booked)` : block.label}
+                                            color={block.isBooked ? "error" : "secondary"}
+                                            variant={block.isBooked ? "filled" : "default"}
+                                        />
+                                    ))}
+                                </Box>
+                                {hasBookedBlocks && (
+                                    <Typography variant="caption" sx={{ color: "error.main", mt: 1, display: "block" }}>
+                                        Range contains booked blocks. Booked blocks cannot be modified or removed.
+                                    </Typography>
+                                )}
+                            </Box>
+                        )}
+
                         <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ mt: 3 }}>
                             <SecondaryButton
                                 color="error"
                                 startIcon={<IoTrash size={16} />}
                                 onClick={handleDelete}
-                                disabled={loading}
+                                disabled={loading || hasBookedBlocks}
                             >
                                 Delete
                             </SecondaryButton>
                             <Stack direction="row" spacing={2}>
-                                <SecondaryButton
-                                    onClick={onClose}
-                                >
+                                <SecondaryButton onClick={onClose}>
                                     Cancel
                                 </SecondaryButton>
                                 <PrimaryButton
                                     onClick={handleSubmit}
                                     loading={loading}
+                                    disabled={hasBookedBlocks}
                                 >
                                     Update
                                 </PrimaryButton>

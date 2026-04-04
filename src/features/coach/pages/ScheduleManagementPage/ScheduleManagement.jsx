@@ -5,6 +5,7 @@ import {
     addAvailability,
     editAvailability,
     removeAvailability,
+    removeAvailabilityRange,
 } from "../../store/availabilitySlice";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -25,17 +26,21 @@ import StatusLegend from "./StatusLegend";
 import UpcomingSessionBlog from "./UpcomingSessionBlog";
 import "./ScheduleManagement.css";
 
+const BLOCK_MINUTES = 30;
+
 const getTodayStart = () => startOfDay(new Date());
 const getRollingSevenDayRange = () => {
     const start = getTodayStart();
     return { start, end: addDays(start, 7) };
 };
 
+/** Snap minutes to nearest 30-min boundary */
+const snapTo30 = (minutes) => Math.round(minutes / BLOCK_MINUTES) * BLOCK_MINUTES;
+
 const ScheduleManagement = () => {
     const dispatch = useDispatch();
     const { availabilities, loading, error } = useSelector((state) => state.availability);
     const authState = useSelector((state) => state.auth);
-    // auth state has userData, not user
     const userId = authState?.userData?.id;
 
     const calendarRef = useRef(null);
@@ -43,19 +48,22 @@ const ScheduleManagement = () => {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [openModal, setOpenModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    // Store the original range when editing, for the update diff
+    const [originalRange, setOriginalRange] = useState(null);
     const [formData, setFormData] = useState({
         date: "",
         startHour: 9,
         startMinute: 0,
         endHour: 10,
         endMinute: 0,
-        duplicateDates: [], // Added for duplication
+        duplicateDates: [],
     });
     const [confirmOpen, setConfirmOpen] = useState(false);
-    // const [confirmType, set] = useState(null); // "update" | "delete"
     const [selectedItem, setSelectedItem] = useState(null);
+    // For showing booked slot details
+    const [bookedDetailOpen, setBookedDetailOpen] = useState(false);
+    const [bookedDetailData, setBookedDetailData] = useState(null);
 
-    // Calculate date range for current month
     const today = new Date();
     const minDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const maxDate30 = new Date(today);
@@ -79,30 +87,30 @@ const ScheduleManagement = () => {
         return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     };
 
+    const refetchMonth = () => {
+        if (!userId) return;
+        const month = currentDate.getMonth() + 1;
+        const year = currentDate.getFullYear();
+        dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
+    };
+
     useEffect(() => {
         if (userId) {
             const month = currentDate.getMonth() + 1;
             const year = currentDate.getFullYear();
-            console.log("Fetching availabilities with:", { interviewerId: userId, month, year });
-            const fetchAction = dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
-            // Log the thunk result for debugging
-            if (fetchAction && typeof fetchAction.then === "function") {
-                fetchAction
-                    .then((res) => console.log("fetchAvailabilitiesByMonth result:", res))
-                    .catch((err) => console.error("fetchAvailabilitiesByMonth error:", err));
-            }
+            dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
         }
     }, [userId, currentDate.getMonth(), currentDate.getFullYear()]);
 
     useEffect(() => {
         if (error && error !== "Network Error") {
-            console.log("Error from state:", error);
             showError(error);
         }
     }, [error]);
 
     const handleAddClick = () => {
         setEditingId(null);
+        setOriginalRange(null);
         const today = new Date().toISOString().split("T")[0];
         setFormData({
             date: today,
@@ -116,23 +124,34 @@ const ScheduleManagement = () => {
     };
 
     const handleEditClick = (availability) => {
+        // Only allow editing Available blocks
+        if (Number(availability.status) === AVAILABILITY_SLOTS_STATUS.UNAVAILABLE) {
+            // Show booked detail instead
+            setBookedDetailData(availability);
+            setBookedDetailOpen(true);
+            return;
+        }
+
         const startDate = new Date(availability.startTime);
         const endDate = new Date(availability.endTime);
 
-        // Format date as YYYY-MM-DD in local time
         const year = startDate.getFullYear();
         const month = String(startDate.getMonth() + 1).padStart(2, "0");
         const day = String(startDate.getDate()).padStart(2, "0");
         const localDateStr = `${year}-${month}-${day}`;
 
         setEditingId(availability.id);
+        setOriginalRange({
+            startTime: availability.startTime,
+            endTime: availability.endTime,
+        });
         setFormData({
             coachId: availability.coachId,
             date: localDateStr,
             startHour: startDate.getHours(),
-            startMinute: startDate.getMinutes(),
+            startMinute: snapTo30(startDate.getMinutes()),
             endHour: endDate.getHours(),
-            endMinute: endDate.getMinutes(),
+            endMinute: snapTo30(endDate.getMinutes()),
             duplicateDates: [],
         });
         setOpenModal(true);
@@ -148,6 +167,7 @@ const ScheduleManagement = () => {
             setOpenModal(false);
             setSelectedItem(editingId);
             setEditingId(null);
+            setOriginalRange(null);
             setConfirmOpen(true);
         }
     };
@@ -163,7 +183,7 @@ const ScheduleManagement = () => {
         }
 
         setEditingId(null);
-        // Format as YYYY-MM-DD in local time
+        setOriginalRange(null);
         const year = start.getFullYear();
         const month = String(start.getMonth() + 1).padStart(2, "0");
         const day = String(start.getDate()).padStart(2, "0");
@@ -172,9 +192,9 @@ const ScheduleManagement = () => {
         setFormData({
             date: localDateStr,
             startHour: start.getHours(),
-            startMinute: start.getMinutes(),
+            startMinute: snapTo30(start.getMinutes()),
             endHour: end.getHours(),
-            endMinute: end.getMinutes(),
+            endMinute: snapTo30(end.getMinutes()),
             duplicateDates: [],
         });
         setOpenModal(true);
@@ -183,48 +203,37 @@ const ScheduleManagement = () => {
 
     const handleEventChange = async (info) => {
         const event = info.event;
-        const availabilityId = event.id;
 
         if (!event.end) {
             info.revert();
-            toast.error("Invalid end time – cannot resize to exactly midnight");
+            toast.error("Invalid end time");
             return;
         }
 
-        // Prevent editing past events
         if (event.extendedProps.isPast) {
             toast.error("Cannot modify past availability");
             info.revert();
             return;
         }
 
-        // Prevent editing unavailable slots
         if (event.extendedProps.isUnavailable) {
-            toast.error("Cannot modify unavailable slots");
+            toast.error("Cannot modify booked slots");
             info.revert();
             return;
         }
 
-        let startTime = event.start;
-        let endTime = event.end;
+        const startTime = event.start;
+        const endTime = event.end;
 
-        // Validation: Check if start time is in the past
         if (startTime < new Date()) {
             toast.error("Cannot move availability to the past");
             info.revert();
             return;
         }
 
-        // Validation: Minimum duration check (15 minutes for Job Description)
         const durationMinutes = (endTime - startTime) / (1000 * 60);
-
-        // Get availability data from extended props or find in array
-        const avail = availabilities.find((a) => String(a.id) === String(availabilityId)) || {
-            coachId: event.extendedProps.coachId || userId,
-        };
-
-        if (durationMinutes < 30) {
-            toast.error("Availability must be at least 30 minutes");
+        if (durationMinutes < BLOCK_MINUTES) {
+            toast.error(`Availability must be at least ${BLOCK_MINUTES} minutes`);
             info.revert();
             return;
         }
@@ -239,36 +248,31 @@ const ScheduleManagement = () => {
             return;
         }
 
+        // Use range-based update: original times from the event's previous position
+        const originalStart = info.oldEvent?.start ?? event.start;
+        const originalEnd = info.oldEvent?.end ?? event.end;
+
         const payload = {
-            coachId: avail.coachId || userId,
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
+            coachId: event.extendedProps.coachId || userId,
+            originalStartTime: originalStart.toISOString(),
+            originalEndTime: originalEnd.toISOString(),
+            newStartTime: startTime.toISOString(),
+            newEndTime: endTime.toISOString(),
         };
 
-        // Show loading toast
-        // const loadingToast = toast.loading("Updating availability...");
-
         try {
-            const result = await dispatch(editAvailability({ id: availabilityId, payload }));
-            console.log("editAvailability result:", result);
-
-            toast.dismiss(loadingToast);
-
+            const result = await dispatch(editAvailability(payload));
             if (editAvailability.fulfilled.match(result)) {
-                toast.success("Availability updated successfully");
+                toast.success("Availability updated");
+                refetchMonth();
             } else {
-                // Revert the change on error
                 info.revert();
-
-                const payloadMessage = typeof result.payload === "string" ? result.payload : result.payload?.message;
-                const errMsg = payloadMessage || result.error?.message || "Failed to update availability";
+                const errMsg = typeof result.payload === "string" ? result.payload : result.payload?.message || "Failed to update";
                 toast.error(errMsg);
             }
         } catch (error) {
-            toast.dismiss(loadingToast);
             info.revert();
             toast.error("An unexpected error occurred");
-            console.error("Error updating availability:", error);
         }
     };
 
@@ -291,108 +295,91 @@ const ScheduleManagement = () => {
         const startTotalMinutes = startHour * 60 + startMinute;
         const endTotalMinutes = endHour * 60 + endMinute;
 
-        // End can > start
-        const isOvernight = endTotalMinutes <= startTotalMinutes;
-        const durationMinutes = isOvernight
-            ? 24 * 60 - startTotalMinutes + endTotalMinutes
-            : endTotalMinutes - startTotalMinutes;
-
-        if (durationMinutes === 0) {
-            showError("Start time and end time cannot be the same");
+        if (endTotalMinutes <= startTotalMinutes) {
+            showError("End time must be after start time");
             return;
         }
 
-        if (durationMinutes < 30) {
-            showError("Availability must be at least 30 minutes");
+        const durationMinutes = endTotalMinutes - startTotalMinutes;
+
+        if (durationMinutes < BLOCK_MINUTES) {
+            showError(`Availability must be at least ${BLOCK_MINUTES} minutes`);
             return;
         }
 
-        // Validate all dates (main date + duplicate dates)
+        if (durationMinutes % BLOCK_MINUTES !== 0) {
+            showError(`Duration must be a multiple of ${BLOCK_MINUTES} minutes`);
+            return;
+        }
+
+        // Build payloads for all dates
         const allDates = [formData.date, ...(formData.duplicateDates || [])];
-        const payloads = [];
-
-        for (const dateStr of allDates) {
-            // dateStr is "YYYY-MM-DD"
-            const [year, month, day] = dateStr.split("-").map(Number);
-
-            const startTime = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
-            const endTime = isOvernight
-                ? new Date(year, month - 1, day + 1, endHour, endMinute, 0, 0)
-                : new Date(year, month - 1, day, endHour, endMinute, 0, 0);
-
-            if (startTime < new Date()) {
-                showError(`Cannot create availability in the past for date: ${dateStr}`);
-                return;
-            }
-
-            payloads.push({
-                coachId: userId,
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
-            });
-        }
-
-        // const loadingToast = toast.loading(
-        //     editingId ? "Updating and duplicating slots..." : "Creating availability slots...",
-        // );
 
         try {
-            if (editingId) {
-                // Update primary slot
-                const result = await dispatch(editAvailability({ id: editingId, payload: payloads[0] }));
+            if (editingId && originalRange) {
+                // Range-based update for the primary date
+                const [year, month, day] = formData.date.split("-").map(Number);
+                const newStart = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
+                const newEnd = new Date(year, month - 1, day, endHour, endMinute, 0, 0);
 
+                const updatePayload = {
+                    coachId: userId,
+                    originalStartTime: originalRange.startTime,
+                    originalEndTime: originalRange.endTime,
+                    newStartTime: newStart.toISOString(),
+                    newEndTime: newEnd.toISOString(),
+                };
+
+                const result = await dispatch(editAvailability(updatePayload));
                 if (!editAvailability.fulfilled.match(result)) {
-                    // toast.dismiss(loadingToast);
                     const errorMsg = typeof result.payload === "string" ? result.payload : result.payload?.message;
-                    showError(errorMsg || "Failed to update main slot");
+                    showError(errorMsg || "Failed to update slot");
                     return;
                 }
 
-                // Create duplicates
-                for (let i = 1; i < payloads.length; i++) {
-                    const res = await dispatch(addAvailability(payloads[i]));
-                    console.log("addAvailability (duplicate) result:", res);
+                // Create duplicates on other dates as new ranges
+                for (let i = 1; i < allDates.length; i++) {
+                    const [dy, dm, dd] = allDates[i].split("-").map(Number);
+                    const dupStart = new Date(dy, dm - 1, dd, startHour, startMinute, 0, 0);
+                    const dupEnd = new Date(dy, dm - 1, dd, endHour, endMinute, 0, 0);
+
+                    await dispatch(addAvailability({
+                        coachId: userId,
+                        rangeStartTime: dupStart.toISOString(),
+                        rangeEndTime: dupEnd.toISOString(),
+                    }));
                 }
-
-                // toast.dismiss(loadingToast);
-                // toast.success("Availability updated and duplicated successfully");
-
-                const month = currentDate.getMonth() + 1;
-                const year = currentDate.getFullYear();
-
-                await dispatch(
-                    fetchAvailabilitiesByMonth({
-                        interviewerId: userId,
-                        month,
-                        year,
-                    }),
-                );
             } else {
-                // Create all slots
-                for (const p of payloads) {
-                    const res = await dispatch(addAvailability(p));
-                    console.log("addAvailability result:", res);
+                // Create new ranges for all dates
+                for (const dateStr of allDates) {
+                    const [year, month, day] = dateStr.split("-").map(Number);
+                    const rangeStart = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
+                    const rangeEnd = new Date(year, month - 1, day, endHour, endMinute, 0, 0);
+
+                    if (rangeStart < new Date()) {
+                        showError(`Cannot create availability in the past for date: ${dateStr}`);
+                        return;
+                    }
+
+                    const res = await dispatch(addAvailability({
+                        coachId: userId,
+                        rangeStartTime: rangeStart.toISOString(),
+                        rangeEndTime: rangeEnd.toISOString(),
+                    }));
+
+                    if (!addAvailability.fulfilled.match(res)) {
+                        const errMsg = typeof res.payload === "string" ? res.payload : res.payload?.message;
+                        showError(errMsg || `Failed to create slot for ${dateStr}`);
+                        return;
+                    }
                 }
-
-                // toast.dismiss(loadingToast);
-                // toast.success("Availability slots created successfully");
-
-                const month = currentDate.getMonth() + 1;
-                const year = currentDate.getFullYear();
-
-                await dispatch(
-                    fetchAvailabilitiesByMonth({
-                        interviewerId: userId,
-                        month,
-                        year,
-                    }),
-                );
             }
 
+            refetchMonth();
             setOpenModal(false);
             setEditingId(null);
+            setOriginalRange(null);
         } catch (err) {
-            // toast.dismiss(loadingToast);
             console.error(err);
             showError("An unexpected error occurred");
         }
@@ -401,7 +388,6 @@ const ScheduleManagement = () => {
     const handleMiniCalendarDateClick = (date) => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
-            // Keep the clicked day in local time; forcing UTC here can shift the shown day.
             const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
             calendarApi.gotoDate(localDate);
             calendarApi.changeView("timeGridDay");
@@ -410,44 +396,31 @@ const ScheduleManagement = () => {
     };
 
     const calendarEvents = availabilities.map((avail) => {
-        // Compare UTC timestamps directly without timezone conversion
-        const now = new Date().toISOString(); // Get current UTC time as ISO string
+        const now = new Date().toISOString();
         const eventEnd = avail.endTime;
-        const isPast = eventEnd < now; // String comparison works for ISO 8601 format
+        const isPast = eventEnd < now;
 
-        let backgroundColor,
-            borderColor,
-            classNames = [],
-            title = "";
-
-        // Use helper to map numeric API status to colors/titles
+        let classNames = [];
         const status = avail.status ?? AVAILABILITY_SLOTS_STATUS.AVAILABLE;
         const colors = getAvailabilityColors(status, isPast);
-        backgroundColor = colors.bg;
-        borderColor = colors.border;
-        // Use generic titles; do not display candidate data on this page
-        title = colors.title;
 
-        if (isPast) {
-            classNames.push("past-event");
-        }
+        if (isPast) classNames.push("past-event");
 
-        // Derive isUnavailable from status
         const isUnavailable = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.UNAVAILABLE;
 
         return {
             id: String(avail.id),
-            title: title,
+            title: colors.title,
             start: avail.startTime,
             end: avail.endTime,
-            backgroundColor,
-            borderColor,
+            backgroundColor: colors.bg,
+            borderColor: colors.border,
             textColor: colors.textColor,
             classNames,
             editable: !isPast && !isUnavailable,
             extendedProps: {
                 isPast,
-                isUnavailable: isUnavailable,
+                isUnavailable,
                 status: avail.status,
                 coachId: avail.coachId,
             },
@@ -455,13 +428,12 @@ const ScheduleManagement = () => {
     });
 
     const handleConfirm = async () => {
-        // if (!confirmType) return;
-
         if (selectedItem) {
             try {
                 const resultAction = await dispatch(removeAvailability(selectedItem));
                 if (removeAvailability.fulfilled.match(resultAction)) {
                     toast.success("Availability slot deleted");
+                    refetchMonth();
                 } else {
                     showError(
                         resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability",
@@ -474,18 +446,12 @@ const ScheduleManagement = () => {
         }
 
         setConfirmOpen(false);
-        // setConfirmType(null);
         setSelectedItem(null);
     };
 
     return (
         <>
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    py: 4,
-                }}
-            >
+            <Box sx={{ minHeight: "100vh", py: 4 }}>
                 <Box sx={{ maxWidth: "1400px", mx: "auto" }}>
                     {/* Header */}
                     <Stack
@@ -496,14 +462,7 @@ const ScheduleManagement = () => {
                         sx={{ mb: 4 }}
                     >
                         <div>
-                            <Typography
-                                variant="h3"
-                                sx={{
-                                    fontWeight: 700,
-                                    color: "text.primary",
-                                    mb: 0.5,
-                                }}
-                            >
+                            <Typography variant="h3" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
                                 Interview Schedule
                             </Typography>
                             <Typography variant="body2" sx={{ color: "text.secondary" }}>
@@ -511,14 +470,7 @@ const ScheduleManagement = () => {
                             </Typography>
                         </div>
 
-                        <PrimaryButton
-                            startIcon={<IoAdd size={18} />}
-                            onClick={handleAddClick}
-                            sx={{
-                                py: 1.25,
-                                px: 3,
-                            }}
-                        >
+                        <PrimaryButton startIcon={<IoAdd size={18} />} onClick={handleAddClick} sx={{ py: 1.25, px: 3 }}>
                             Add Slot
                         </PrimaryButton>
                     </Stack>
@@ -526,29 +478,15 @@ const ScheduleManagement = () => {
                     {/* Main Content */}
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
                         {/* Calendar Section */}
-                        <BaseCard
-                            variant="outlined"
-                            sx={{
-                                borderColor: "divider",
-                                borderRadius: "12px",
-                                overflow: "hidden",
-                            }}
-                        >
+                        <BaseCard variant="outlined" sx={{ borderColor: "divider", borderRadius: "12px", overflow: "hidden" }}>
                             <Box sx={{ p: 3, position: "relative" }}>
                                 {loading && (
                                     <Box
                                         sx={{
                                             position: "absolute",
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center",
-                                            bgcolor: "rgba(255,255,255,0.4)",
-                                            zIndex: 2,
-                                            borderRadius: "12px",
+                                            top: 0, left: 0, right: 0, bottom: 0,
+                                            display: "flex", justifyContent: "center", alignItems: "center",
+                                            bgcolor: "rgba(255,255,255,0.4)", zIndex: 2, borderRadius: "12px",
                                         }}
                                     >
                                         <CircularProgress />
@@ -573,10 +511,7 @@ const ScheduleManagement = () => {
                                         center: "title",
                                         right: "rollingSevenDay,timeGridDay",
                                     }}
-                                    buttonText={{
-                                        today: "Today",
-                                        day: "Day",
-                                    }}
+                                    buttonText={{ today: "Today", day: "Day" }}
                                     events={calendarEvents}
                                     eventClick={(info) => {
                                         if (info.event.extendedProps.isPast) {
@@ -599,21 +534,15 @@ const ScheduleManagement = () => {
                                     eventResize={handleEventChange}
                                     eventResizableFromStart={true}
                                     eventDurationEditable={true}
-                                    // now={new Date().toISOString()}
-                                    now={new Date()} // use local time
+                                    now={new Date()}
                                     nowIndicator={true}
-                                    snapDuration="00:15:00"
+                                    snapDuration="00:30:00"
+                                    slotDuration="00:30:00"
                                     selectOverlap={false}
                                     eventOverlap={false}
                                     eventAllow={(dropInfo, draggedEvent) => {
-                                        // Prevent dragging past events
-                                        if (draggedEvent.extendedProps.isPast) {
-                                            return false;
-                                        }
-                                        // Prevent dragging unavailable slots
-                                        if (draggedEvent.extendedProps.isUnavailable) {
-                                            return false;
-                                        }
+                                        if (draggedEvent.extendedProps.isPast) return false;
+                                        if (draggedEvent.extendedProps.isUnavailable) return false;
                                         return true;
                                     }}
                                     datesSet={(info) => {
@@ -628,21 +557,13 @@ const ScheduleManagement = () => {
                                     }}
                                     height="auto"
                                     timeZone="local"
-                                    slotLabelFormat={{
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                    }}
-                                    eventTimeFormat={{
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                    }}
+                                    slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+                                    eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
                                 />
                             </Box>
                         </BaseCard>
 
-                        {/* Right Panel: Mini Calendar + Quick Legend */}
+                        {/* Right Panel */}
                         <Stack spacing={3}>
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                                 <MiniCalendar
@@ -653,24 +574,13 @@ const ScheduleManagement = () => {
                                 />
                             </div>
 
-                            <BaseCard
-                                sx={{
-                                    background: "white",
-                                    boxShadow: 1,
-                                    border: "1px solid",
-                                    borderColor: "grey.200",
-                                }}
-                            >
+                            <BaseCard sx={{ background: "white", boxShadow: 1, border: "1px solid", borderColor: "grey.200" }}>
                                 <CardContent sx={{ p: 2.5 }}>
                                     <Box display="flex" justifyContent="space-between" mb={2}>
-                                        <Typography
-                                            variant="overline"
-                                            sx={{ color: "text.secondary", fontWeight: 600, letterSpacing: 1 }}
-                                        >
+                                        <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 600, letterSpacing: 1 }}>
                                             Quick Legend
                                         </Typography>
                                     </Box>
-
                                     <StatusLegend />
                                 </CardContent>
                             </BaseCard>
@@ -693,14 +603,7 @@ const ScheduleManagement = () => {
                             onClose={() => {
                                 setOpenModal(false);
                                 setEditingId(null);
-                                setFormData({
-                                    date: "",
-                                    startHour: 9,
-                                    startMinute: 0,
-                                    endHour: 10,
-                                    endMinute: 0,
-                                    duplicateDates: [],
-                                });
+                                setOriginalRange(null);
                             }}
                             formData={formData}
                             setFormData={setFormData}
@@ -709,6 +612,7 @@ const ScheduleManagement = () => {
                             loading={loading}
                             minDate={minDateStr}
                             maxDate={maxDateStr}
+                            existingBlocks={availabilities}
                         />
                     ) : (
                         <CreateAvailableSlotDialog
@@ -716,14 +620,7 @@ const ScheduleManagement = () => {
                             onClose={() => {
                                 setOpenModal(false);
                                 setEditingId(null);
-                                setFormData({
-                                    date: "",
-                                    startHour: 9,
-                                    startMinute: 0,
-                                    endHour: 10,
-                                    endMinute: 0,
-                                    duplicateDates: [],
-                                });
+                                setOriginalRange(null);
                             }}
                             formData={formData}
                             setFormData={setFormData}
@@ -734,19 +631,38 @@ const ScheduleManagement = () => {
                         />
                     ))}
             </Box>
+
+            {/* Confirm Delete */}
             <ConfirmModal
                 show={confirmOpen}
-                title={"Confirm Delete"}
-                message={"Are you sure you want to delete this availability slot? This action cannot be undone."}
-                confirmText={"Delete"}
+                title="Confirm Delete"
+                message="Are you sure you want to delete this availability slot? This action cannot be undone."
+                confirmText="Delete"
                 cancelText="Cancel"
                 onConfirm={handleConfirm}
                 onCancel={() => {
                     setConfirmOpen(false);
-                    // setConfirmType(null);
                     setSelectedItem(null);
                 }}
             />
+
+            {/* Booked Slot Detail Modal */}
+            {bookedDetailOpen && bookedDetailData && (
+                <ConfirmModal
+                    show={bookedDetailOpen}
+                    title="Booked Session Details"
+                    message={`This slot is booked and cannot be edited.\n\nTime: ${parseLocalTime(bookedDetailData.startTime)} - ${parseLocalTime(bookedDetailData.endTime)}\nDate: ${parseLocalDate(bookedDetailData.startTime)}${bookedDetailData.candidateName ? `\nCandidate: ${bookedDetailData.candidateName}` : ""}${bookedDetailData.typeName || bookedDetailData.interviewType ? `\nType: ${bookedDetailData.typeName || bookedDetailData.interviewType}` : ""}`}
+                    confirmText="Close"
+                    onConfirm={() => {
+                        setBookedDetailOpen(false);
+                        setBookedDetailData(null);
+                    }}
+                    onCancel={() => {
+                        setBookedDetailOpen(false);
+                        setBookedDetailData(null);
+                    }}
+                />
+            )}
         </>
     );
 };

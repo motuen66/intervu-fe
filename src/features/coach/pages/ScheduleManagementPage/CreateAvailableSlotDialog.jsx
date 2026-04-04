@@ -151,7 +151,7 @@ const CreateAvailableSlotDialog = ({
                                         onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
                                         sx={{ borderRadius: "8px" }}
                                     >
-                                        {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
+                                        {[0, 30].map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
                                             </MenuItem>
@@ -186,7 +186,7 @@ const CreateAvailableSlotDialog = ({
                                         onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
                                         sx={{ borderRadius: "8px" }}
                                     >
-                                        {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
+                                        {[0, 30].map((minute) => (
                                             <MenuItem key={minute} value={minute}>
                                                 {minute.toString().padStart(2, "0")}
                                             </MenuItem>

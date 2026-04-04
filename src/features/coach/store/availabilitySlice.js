@@ -4,6 +4,7 @@ import {
     createAvailability,
     updateAvailability,
     deleteAvailability,
+    deleteAvailabilityRange,
 } from "../services/availabilityApi";
 
 export const fetchAvailabilitiesByMonth = createAsyncThunk(
@@ -18,6 +19,10 @@ export const fetchAvailabilitiesByMonth = createAsyncThunk(
     }
 );
 
+/**
+ * Create availability blocks from a range.
+ * payload: { coachId, rangeStartTime, rangeEndTime }
+ */
 export const addAvailability = createAsyncThunk(
     "availability/create",
     async (payload, { rejectWithValue }) => {
@@ -30,12 +35,16 @@ export const addAvailability = createAsyncThunk(
     }
 );
 
+/**
+ * Update availability range (diff-based).
+ * payload: { coachId, originalStartTime, originalEndTime, newStartTime, newEndTime }
+ */
 export const editAvailability = createAsyncThunk(
     "availability/update",
-    async ({ id, payload }, { rejectWithValue }) => {
+    async (payload, { rejectWithValue }) => {
         try {
-            await updateAvailability(id, payload);
-            return { id, ...payload };
+            await updateAvailability(payload);
+            return payload;
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -48,6 +57,22 @@ export const removeAvailability = createAsyncThunk(
         try {
             await deleteAvailability(id);
             return id;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+/**
+ * Delete all blocks in a range.
+ * payload: { coachId, rangeStartTime, rangeEndTime }
+ */
+export const removeAvailabilityRange = createAsyncThunk(
+    "availability/deleteRange",
+    async (payload, { rejectWithValue }) => {
+        try {
+            await deleteAvailabilityRange(payload);
+            return payload;
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -88,42 +113,31 @@ const availabilitySlice = createSlice({
                 state.error = action.payload;
             });
 
-        // Create availability - update local state without toggling global loading
+        // Create availability
         builder
             .addCase(addAvailability.pending, (state) => {
                 state.error = null;
             })
             .addCase(addAvailability.fulfilled, (state, action) => {
-                // action.payload expected to be the created availability object
-                if (action.payload) {
-                    state.availabilities.push(action.payload);
-                }
+                // After bulk create, we re-fetch to get all new blocks
             })
             .addCase(addAvailability.rejected, (state, action) => {
                 state.error = action.payload;
             });
 
-        // Update availability - update local state without toggling global loading
+        // Update availability (range diff)
         builder
             .addCase(editAvailability.pending, (state) => {
                 state.error = null;
             })
             .addCase(editAvailability.fulfilled, (state, action) => {
-                const index = state.availabilities.findIndex(
-                    (a) => String(a.id) === String(action.payload.id)
-                );
-                if (index !== -1) {
-                    state.availabilities[index] = {
-                        ...state.availabilities[index],
-                        ...action.payload,
-                    };
-                }
+                // After range update, we re-fetch to get current state
             })
             .addCase(editAvailability.rejected, (state, action) => {
                 state.error = action.payload;
             });
 
-        // Delete availability - update local state without toggling global loading
+        // Delete single availability
         builder
             .addCase(removeAvailability.pending, (state) => {
                 state.error = null;
@@ -134,6 +148,18 @@ const availabilitySlice = createSlice({
                 );
             })
             .addCase(removeAvailability.rejected, (state, action) => {
+                state.error = action.payload;
+            });
+
+        // Delete availability range
+        builder
+            .addCase(removeAvailabilityRange.pending, (state) => {
+                state.error = null;
+            })
+            .addCase(removeAvailabilityRange.fulfilled, (state, action) => {
+                // After range delete, we re-fetch to get current state
+            })
+            .addCase(removeAvailabilityRange.rejected, (state, action) => {
                 state.error = action.payload;
             });
     },
