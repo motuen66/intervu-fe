@@ -202,16 +202,6 @@ function InterviewerProfilePage() {
         fetchRating();
     }, [profile?.id]);
 
-    if (!user) {
-        return (
-            <Box sx={{ p: 4, textAlign: "center" }}>
-                <Typography variant="h6" color="text.secondary">
-                    Please login to view your profile.
-                </Typography>
-            </Box>
-        );
-    }
-
     const handleTabChange = (_, v) => setTabValue(v);
 
     const onPick = (e) => {
@@ -287,7 +277,7 @@ function InterviewerProfilePage() {
     const years = profile?.experienceYears ?? profile?.yearsOfExperience;
     const bio = profile?.bio || profile?.description || "";
 
-    const truncatedBio = React.useMemo(() => {
+    const truncatedBio = useMemo(() => {
         if (!bio) return "";
         if (bio.length <= 240) return bio;
         return expandedBio ? bio : bio.slice(0, 240) + "...";
@@ -349,19 +339,6 @@ function InterviewerProfilePage() {
         }
     };
 
-    if (loading) {
-        return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <Stack alignItems="center" spacing={2}>
-                    <CircularProgress size={48} />
-                    <Typography variant="h6" color="text.secondary">
-                        Loading profile...
-                    </Typography>
-                </Stack>
-            </Box>
-        );
-    }
-
     const skillsDisplay = (profile?.skills || []).map((s) => (typeof s === "object" ? s?.name : s)).filter(Boolean);
     const companiesDisplay = (profile?.companies || [])
         .map((c) => (typeof c === "object" ? c?.name : c))
@@ -385,6 +362,29 @@ function InterviewerProfilePage() {
             .catch(() => setSavedQuestions([]))
             .finally(() => setLoadingSaved(false));
     }, [tabValue, isSelf, isInterviewer]);
+
+    if (!user) {
+        return (
+            <Box sx={{ p: 4, textAlign: "center" }}>
+                <Typography variant="h6" color="text.secondary">
+                    Please login to view your profile.
+                </Typography>
+            </Box>
+        );
+    }
+
+    if (loading) {
+        return (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+                <Stack alignItems="center" spacing={2}>
+                    <CircularProgress size={48} />
+                    <Typography variant="h6" color="text.secondary">
+                        Loading profile...
+                    </Typography>
+                </Stack>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ minHeight: "100vh" }}>
