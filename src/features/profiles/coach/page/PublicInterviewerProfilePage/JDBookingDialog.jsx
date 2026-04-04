@@ -63,7 +63,7 @@ import { getCoachInterviewServices } from "../../../../coach/services/coachInter
 import { createJDBookingRequest, payBookingRequest } from "../../../../interview/services/bookingRequestApi";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
-import { validateJDBookingRounds } from "./jdBookingValidation";
+import { validateJDBookingRounds, isValidUrl } from "./jdBookingValidation";
 import toast from "react-hot-toast";
 import { useTheme } from "@mui/material/styles";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
@@ -321,6 +321,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
     const [activeStep, setActiveStep] = useState(0);
     const [form, setForm] = useState({ jobDescriptionUrl: "", cvUrl: "", aimLevel: "" });
+    const [formErrors, setFormErrors] = useState({ jobDescriptionUrl: "", cvUrl: "" });
     const [services, setServices] = useState([]);
     const [loadingServices, setLoadingServices] = useState(false);
     const [freeSlots, setFreeSlots] = useState([]);
@@ -351,6 +352,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
         if (!open) {
             setActiveStep(0);
             setForm({ jobDescriptionUrl: "", cvUrl: "", aimLevel: "" });
+            setFormErrors({ jobDescriptionUrl: "", cvUrl: "" });
             setRounds([createRound(), createRound()]);
             setActiveRoundIndex(0);
             setError("");
@@ -580,7 +582,31 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const completedRoundCount = rounds.filter(r => !!r.startTime).length;
 
     const handleNextStep = () => {
-        if (activeStep === 0 && canProceedStep1) {
+        if (activeStep === 0) {
+            const jdUrl = form.jobDescriptionUrl.trim();
+            const cvUrl = form.cvUrl.trim();
+            const newErrors = { jobDescriptionUrl: "", cvUrl: "" };
+            let hasError = false;
+
+            if (!isValidUrl(jdUrl)) {
+                newErrors.jobDescriptionUrl = "Please provide a valid link for the Job Description";
+                hasError = true;
+            }
+            if (!isValidUrl(cvUrl)) {
+                newErrors.cvUrl = "Please provide a valid link for your CV (e.g. Google Drive link)";
+                hasError = true;
+            }
+
+            setFormErrors(newErrors);
+
+            if (hasError) return;
+
+            if (!rounds.every(r => r.coachInterviewServiceId)) {
+                setError("Please select a service for all interview rounds.");
+                return;
+            }
+
+            setError("");
             setActiveStep(1);
             setActiveRoundIndex(0);
             setStepTransitionClass("jd-step-enter-forward");
@@ -648,34 +674,50 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                         sx={{ width: "100%", mx: 0 }}
                                     >
                                         <Grid item xs={12} md={4} sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-                                            <Typography className="jd-label-mini">Job url</Typography>
-                                            <Box className="jd-input-stitch">
-                                                <Link size={18} color="#94a3b8" aria-hidden />
+                                            <Typography className="jd-label-mini" sx={{ color: formErrors.jobDescriptionUrl ? "#ef4444" : "#64748b" }}>Job url</Typography>
+                                            <Box className={`jd-input-stitch ${formErrors.jobDescriptionUrl ? "error" : ""}`}>
+                                                <Link size={18} color={formErrors.jobDescriptionUrl ? "#ef4444" : "#94a3b8"} aria-hidden />
                                                 <TextField
                                                     fullWidth
                                                     variant="standard"
                                                     placeholder="https://company.com/role"
                                                     value={form.jobDescriptionUrl}
-                                                    onChange={(e) => setForm({ ...form, jobDescriptionUrl: e.target.value })}
+                                                    onChange={(e) => {
+                                                        setForm({ ...form, jobDescriptionUrl: e.target.value });
+                                                        if (formErrors.jobDescriptionUrl) setFormErrors(prev => ({ ...prev, jobDescriptionUrl: "" }));
+                                                    }}
                                                     InputProps={{ disableUnderline: true }}
                                                     sx={{ "& .MuiInputBase-input": { py: 0.5, fontSize: "0.95rem", fontWeight: 600, color: "#0f172a" } }}
                                                 />
                                             </Box>
+                                            {formErrors.jobDescriptionUrl && (
+                                                <Typography sx={{ color: "#ef4444", fontSize: "0.65rem", fontWeight: 700, mt: 0.5, ml: 0.5 }}>
+                                                    {formErrors.jobDescriptionUrl}
+                                                </Typography>
+                                            )}
                                         </Grid>
                                         <Grid item xs={12} md={4} sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-                                            <Typography className="jd-label-mini">CV url</Typography>
-                                            <Box className="jd-input-stitch">
-                                                <FileUser size={18} color="#94a3b8" aria-hidden />
+                                            <Typography className="jd-label-mini" sx={{ color: formErrors.cvUrl ? "#ef4444" : "#64748b" }}>CV url</Typography>
+                                            <Box className={`jd-input-stitch ${formErrors.cvUrl ? "error" : ""}`}>
+                                                <FileUser size={18} color={formErrors.cvUrl ? "#ef4444" : "#94a3b8"} aria-hidden />
                                                 <TextField
                                                     fullWidth
                                                     variant="standard"
                                                     placeholder="https://drive.google.com/cv.pdf"
                                                     value={form.cvUrl}
-                                                    onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
+                                                    onChange={(e) => {
+                                                        setForm({ ...form, cvUrl: e.target.value });
+                                                        if (formErrors.cvUrl) setFormErrors(prev => ({ ...prev, cvUrl: "" }));
+                                                    }}
                                                     InputProps={{ disableUnderline: true }}
                                                     sx={{ "& .MuiInputBase-input": { py: 0.5, fontSize: "0.95rem", fontWeight: 600, color: "#0f172a" } }}
                                                 />
                                             </Box>
+                                            {formErrors.cvUrl && (
+                                                <Typography sx={{ color: "#ef4444", fontSize: "0.65rem", fontWeight: 700, mt: 0.5, ml: 0.5 }}>
+                                                    {formErrors.cvUrl}
+                                                </Typography>
+                                            )}
                                         </Grid>
                                         <Grid item xs={12} md={4} sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
                                             <Typography className="jd-label-mini">Target</Typography>
