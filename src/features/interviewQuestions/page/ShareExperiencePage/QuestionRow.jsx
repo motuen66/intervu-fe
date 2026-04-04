@@ -66,7 +66,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
         }
     };
 
-    const WORD_LIMIT = 100;
+    const WORD_LIMIT = 60;
 
     const handleInputChange = (e) => {
         let val = e.target.value || "";
@@ -264,7 +264,19 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                                 "&:hover": { bgcolor: "action.hover" },
                                             }}
                                         >
-                                            <Typography variant="body2" fontWeight={500} mb={0.25}>
+                                            <Typography
+                                                variant="body2"
+                                                fontWeight={500}
+                                                mb={0.25}
+                                                sx={{
+                                                    display: "-webkit-box",
+                                                    WebkitBoxOrient: "vertical",
+                                                    WebkitLineClamp: 2,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "normal",
+                                                }}
+                                            >
                                                 {s.content}
                                             </Typography>
                                             <Stack direction="row" gap={0.5} flexWrap="wrap">
@@ -318,7 +330,19 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                             <Typography variant="body2" fontWeight={600} color="primary.main" mb={0.25}>
                                 Linked to existing question
                             </Typography>
-                            <Typography variant="body2" sx={{ lineHeight: 1.55, color: "text.primary" }}>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    lineHeight: 1.55,
+                                    color: "text.primary",
+                                    display: "-webkit-box",
+                                    WebkitBoxOrient: "vertical",
+                                    WebkitLineClamp: 2,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "normal",
+                                }}
+                            >
                                 {q.linkedQuestion.content}
                             </Typography>
                             <Stack direction="row" gap={0.75} mt={0.75} flexWrap="wrap">

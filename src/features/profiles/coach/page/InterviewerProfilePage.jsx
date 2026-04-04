@@ -24,6 +24,7 @@ import {
     Divider,
     CardContent,
 } from "@mui/material";
+import { Tabs, Tab } from "@mui/material";
 import {
     Camera as CameraIcon,
     Edit as EditIcon,
@@ -39,6 +40,8 @@ import {
 import { Autocomplete } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPage/QuestionCard";
+import { interactionEndPoints } from "../../../interviewQuestions/service/interactionApi";
 
 function getRoleFromJwt() {
     try {
@@ -82,6 +85,9 @@ function InterviewerProfilePage() {
     const [showConfirmSave, setShowConfirmSave] = useState(false);
     const [coachRating, setCoachRating] = useState(null);
     const [coachRatingCount, setCoachRatingCount] = useState(0);
+    const [tabValue, setTabValue] = useState(0);
+    const [savedQuestions, setSavedQuestions] = useState([]);
+    const [loadingSaved, setLoadingSaved] = useState(false);
 
     const tokenRole = useMemo(() => {
         const r = getRoleFromJwt();
@@ -205,6 +211,8 @@ function InterviewerProfilePage() {
             </Box>
         );
     }
+
+    const handleTabChange = (_, v) => setTabValue(v);
 
     const onPick = (e) => {
         const file = e.target.files?.[0];
@@ -364,6 +372,19 @@ function InterviewerProfilePage() {
     const isSelf = !routeId || String(routeId) === String(user?.id);
     const canEdit = isInterviewer && isSelf;
     const canManageBank = isInterviewer && isSelf;
+
+    useEffect(() => {
+        if (tabValue !== 1 || !isSelf || !isInterviewer) return;
+        setLoadingSaved(true);
+        callApi({ method: METHOD.GET, endpoint: interactionEndPoints.GET_SAVED_QUESTIONS })
+            .then(({ data }) => {
+                const payload = data ?? {};
+                const items = Array.isArray(payload) ? payload : (payload.items ?? payload.data ?? []);
+                setSavedQuestions(items);
+            })
+            .catch(() => setSavedQuestions([]))
+            .finally(() => setLoadingSaved(false));
+    }, [tabValue, isSelf, isInterviewer]);
 
     return (
         <Box sx={{ minHeight: "100vh" }}>
@@ -552,231 +573,334 @@ function InterviewerProfilePage() {
                 </CardContent>
             </BaseCard>
 
+            {/* Tabs: Profile / Saved Questions (coach) */}
+            {isSelf && isInterviewer && (
+                <Box sx={{ mt: 2, mb: 2 }}>
+                    <Tabs value={tabValue} onChange={handleTabChange}>
+                        <Tab label="Profile" />
+                        <Tab label="Saved Questions" />
+                    </Tabs>
+                </Box>
+            )}
+
             {profile && (
-                <Grid
-                    container
-                    spacing={0}
-                    sx={{
-                        border: "0.5px solid",
-                        borderColor: "divider",
-                        borderRadius: 3,
-                        overflow: "hidden",
-                        bgcolor: "background.paper",
-                        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                    }}
-                >
-                    {/* ─── LEFT: Contact ─────────────────────────── */}
-                    <Grid
-                        item
-                        xs={12}
-                        md={4}
-                        sx={{
-                            borderRight: { md: "0.5px solid" },
-                            borderRightColor: { md: "divider" },
-                            borderBottom: { xs: "0.5px solid", md: "none" },
-                            borderBottomColor: { xs: "divider" },
-                        }}
-                    >
-                        <Box sx={{ p: 3 }}>
-                            {/* Header */}
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 2.5 }}>
-                                <Box
-                                    sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 1.5,
-                                        bgcolor: (t) => `${t.palette.primary.main}14`,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    <EmailIcon size={16} strokeWidth={1.8} color="var(--mui-palette-primary-main)" />
-                                </Box>
-                                <Typography variant="subtitle2" fontWeight={700} letterSpacing={0.1}>
-                                    Contact Information
-                                </Typography>
-                            </Box>
-
-                            <Divider sx={{ mb: 2.5, opacity: 0.6 }} />
-
-                            {/* Email */}
-                            <Box
+                <>
+                    {tabValue === 0 && (
+                        <Grid
+                            container
+                            spacing={0}
+                            sx={{
+                                border: "0.5px solid",
+                                borderColor: "divider",
+                                borderRadius: 3,
+                                overflow: "hidden",
+                                bgcolor: "background.paper",
+                                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                                width: "100%",
+                                m: 0,
+                            }}
+                        >
+                            {/* ─── LEFT: Contact ─────────────────────────── */}
+                            <Grid
+                                item
+                                xs={12}
+                                md={4}
                                 sx={{
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    gap: 1.5,
-                                    mb: 2,
-                                    p: 1.5,
-                                    borderRadius: 2,
-                                    border: "0.5px solid",
-                                    borderColor: "divider",
-                                    bgcolor: "grey.50",
-                                    "&:hover": { bgcolor: "grey.100" },
-                                    transition: "background 0.15s",
+                                    borderRight: { md: "0.5px solid" },
+                                    borderRightColor: { md: "divider" },
+                                    borderBottom: { xs: "0.5px solid", md: "none" },
+                                    borderBottomColor: { xs: "divider" },
                                 }}
                             >
-                                <Box
-                                    sx={{
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: "50%",
-                                        bgcolor: "background.paper",
-                                        border: "0.5px solid",
-                                        borderColor: "divider",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                        mt: 0.25,
-                                    }}
-                                >
-                                    <EmailIcon size={13} strokeWidth={1.8} />
-                                </Box>
-                                <Box sx={{ minWidth: 0, flex: 1 }}>
-                                    <Typography
-                                        variant="caption"
-                                        color="text.disabled"
-                                        fontWeight={600}
-                                        sx={{
-                                            textTransform: "uppercase",
-                                            letterSpacing: 0.7,
-                                            display: "block",
-                                            mb: 0.25,
-                                        }}
-                                    >
-                                        Email
-                                    </Typography>
-                                    <Typography
-                                        variant="body2"
-                                        fontWeight={500}
-                                        sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                                    >
-                                        {email}
-                                    </Typography>
-                                </Box>
-                            </Box>
-
-                            {/* Portfolio */}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    gap: 1.5,
-                                    mb: 2,
-                                    p: 1.5,
-                                    borderRadius: 2,
-                                    border: "0.5px solid",
-                                    borderColor: "divider",
-                                    bgcolor: "grey.50",
-                                    "&:hover": { bgcolor: "grey.100" },
-                                    transition: "background 0.15s",
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: "50%",
-                                        bgcolor: "background.paper",
-                                        border: "0.5px solid",
-                                        borderColor: "divider",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                        mt: 0.25,
-                                    }}
-                                >
-                                    <LinkIcon size={13} strokeWidth={1.8} />
-                                </Box>
-                                <Box sx={{ minWidth: 0, flex: 1 }}>
-                                    <Typography
-                                        variant="caption"
-                                        color="text.disabled"
-                                        fontWeight={600}
-                                        sx={{
-                                            textTransform: "uppercase",
-                                            letterSpacing: 0.7,
-                                            display: "block",
-                                            mb: 0.25,
-                                        }}
-                                    >
-                                        Portfolio
-                                    </Typography>
-                                    {editMode ? (
-                                        <TextField
-                                            size="small"
-                                            fullWidth
-                                            placeholder="https://yourportfolio.com"
-                                            value={profile.portfolioUrl || ""}
-                                            onChange={(e) =>
-                                                setProfile((prev) => ({ ...prev, portfolioUrl: e.target.value }))
-                                            }
+                                <Box sx={{ p: 3 }}>
+                                    {/* Header */}
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 2.5 }}>
+                                        <Box
                                             sx={{
-                                                mt: 0.5,
-                                                "& .MuiOutlinedInput-root": { bgcolor: "background.paper" },
-                                            }}
-                                        />
-                                    ) : profile.portfolioUrl ? (
-                                        <Link
-                                            href={profile.portfolioUrl}
-                                            target="_blank"
-                                            rel="noopener"
-                                            variant="body2"
-                                            fontWeight={500}
-                                            sx={{
-                                                display: "block",
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap",
+                                                width: 32,
+                                                height: 32,
+                                                borderRadius: 1.5,
+                                                bgcolor: (t) => `${t.palette.primary.main}14`,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0,
                                             }}
                                         >
-                                            {profile.portfolioUrl}
-                                        </Link>
-                                    ) : (
-                                        <Typography variant="body2" color="text.disabled" fontStyle="italic">
-                                            Not provided
+                                            <EmailIcon
+                                                size={16}
+                                                strokeWidth={1.8}
+                                                color="var(--mui-palette-primary-main)"
+                                            />
+                                        </Box>
+                                        <Typography variant="subtitle2" fontWeight={700} letterSpacing={0.1}>
+                                            Contact Information
                                         </Typography>
-                                    )}
-                                </Box>
-                            </Box>
+                                    </Box>
 
-                            {/* Pricing row — interviewer specific */}
-                            {/* {profile.currentAmount != null && (
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "flex-start",
-                                        gap: 1.5,
-                                        p: 1.5,
-                                        borderRadius: 2,
-                                        border: "0.5px solid",
-                                        borderColor: "divider",
-                                        bgcolor: "grey.50",
-                                        "&:hover": { bgcolor: "grey.100" },
-                                        transition: "background 0.15s",
-                                    }}
-                                >
+                                    <Divider sx={{ mb: 2.5, opacity: 0.6 }} />
+
+                                    {/* Email */}
                                     <Box
                                         sx={{
-                                            width: 28,
-                                            height: 28,
-                                            borderRadius: "50%",
-                                            bgcolor: "background.paper",
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            gap: 1.5,
+                                            mb: 2,
+                                            p: 1.5,
+                                            borderRadius: 2,
                                             border: "0.5px solid",
                                             borderColor: "divider",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0,
-                                            mt: 0.25,
+                                            bgcolor: "grey.50",
+                                            "&:hover": { bgcolor: "grey.100" },
+                                            transition: "background 0.15s",
                                         }}
                                     >
-                                        <WorkIcon size={13} strokeWidth={1.8} />
+                                        <Box
+                                            sx={{
+                                                width: 28,
+                                                height: 28,
+                                                borderRadius: "50%",
+                                                bgcolor: "background.paper",
+                                                border: "0.5px solid",
+                                                borderColor: "divider",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0,
+                                                mt: 0.25,
+                                            }}
+                                        >
+                                            <EmailIcon size={13} strokeWidth={1.8} />
+                                        </Box>
+                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.disabled"
+                                                fontWeight={600}
+                                                sx={{
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: 0.7,
+                                                    display: "block",
+                                                    mb: 0.25,
+                                                }}
+                                            >
+                                                Email
+                                            </Typography>
+                                            <Typography
+                                                variant="body2"
+                                                fontWeight={500}
+                                                sx={{
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {email}
+                                            </Typography>
+                                        </Box>
                                     </Box>
-                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+
+                                    {/* Portfolio */}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            gap: 1.5,
+                                            mb: 2,
+                                            p: 1.5,
+                                            borderRadius: 2,
+                                            border: "0.5px solid",
+                                            borderColor: "divider",
+                                            bgcolor: "grey.50",
+                                            "&:hover": { bgcolor: "grey.100" },
+                                            transition: "background 0.15s",
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                width: 28,
+                                                height: 28,
+                                                borderRadius: "50%",
+                                                bgcolor: "background.paper",
+                                                border: "0.5px solid",
+                                                borderColor: "divider",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0,
+                                                mt: 0.25,
+                                            }}
+                                        >
+                                            <LinkIcon size={13} strokeWidth={1.8} />
+                                        </Box>
+                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.disabled"
+                                                fontWeight={600}
+                                                sx={{
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: 0.7,
+                                                    display: "block",
+                                                    mb: 0.25,
+                                                }}
+                                            >
+                                                Portfolio
+                                            </Typography>
+                                            {editMode ? (
+                                                <TextField
+                                                    size="small"
+                                                    fullWidth
+                                                    placeholder="https://yourportfolio.com"
+                                                    value={profile.portfolioUrl || ""}
+                                                    onChange={(e) =>
+                                                        setProfile((prev) => ({
+                                                            ...prev,
+                                                            portfolioUrl: e.target.value,
+                                                        }))
+                                                    }
+                                                    sx={{
+                                                        mt: 0.5,
+                                                        "& .MuiOutlinedInput-root": { bgcolor: "background.paper" },
+                                                    }}
+                                                />
+                                            ) : profile.portfolioUrl ? (
+                                                <Link
+                                                    href={profile.portfolioUrl}
+                                                    target="_blank"
+                                                    rel="noopener"
+                                                    variant="body2"
+                                                    fontWeight={500}
+                                                    sx={{
+                                                        display: "block",
+                                                        overflow: "hidden",
+                                                        textOverflow: "ellipsis",
+                                                        whiteSpace: "nowrap",
+                                                    }}
+                                                >
+                                                    {profile.portfolioUrl}
+                                                </Link>
+                                            ) : (
+                                                <Typography variant="body2" color="text.disabled" fontStyle="italic">
+                                                    Not provided
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </Box>
+
+                                    {/* Rating row */}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            gap: 1.5,
+                                            p: 1.5,
+                                            borderRadius: 2,
+                                            border: "0.5px solid",
+                                            borderColor: "divider",
+                                            bgcolor: "grey.50",
+                                            "&:hover": { bgcolor: "grey.100" },
+                                            transition: "background 0.15s",
+                                            mt: 2,
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                width: 28,
+                                                height: 28,
+                                                borderRadius: "50%",
+                                                bgcolor: "background.paper",
+                                                border: "0.5px solid",
+                                                borderColor: "divider",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0,
+                                                mt: 0.25,
+                                            }}
+                                        >
+                                            <StarIcon size={13} strokeWidth={1.8} />
+                                        </Box>
+                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.disabled"
+                                                fontWeight={600}
+                                                sx={{
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: 0.7,
+                                                    display: "block",
+                                                    mb: 0.25,
+                                                }}
+                                            >
+                                                Coach Rating
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {averageRating > 0 ? averageRating.toFixed(1) : "N/A"} / 5
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {totalRatings.toLocaleString()} ratings
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Bank Info in EDIT MODE ONLY */}
+                                    {editMode && canManageBank && (
+                                        <Box sx={{ mt: 3, pt: 2, borderTop: "1px dashed", borderColor: "divider" }}>
+                                            <Typography
+                                                variant="subtitle2"
+                                                fontWeight={700}
+                                                sx={{ mb: 1.5, color: "primary.main" }}
+                                            >
+                                                Payment Settings
+                                            </Typography>
+                                            <BankSelection
+                                                selectedBin={profile?.bankBinNumber}
+                                                accountNumber={profile?.bankAccountNumber}
+                                                onChange={(data) => {
+                                                    setProfile((prev) => ({
+                                                        ...prev,
+                                                        bankBinNumber: data.bin,
+                                                        bankAccountNumber: data.accountNumber,
+                                                    }));
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Grid>
+
+                            {/* ─── RIGHT: Skills & Companies ─────────────── */}
+                            <Grid item xs={12} md={8}>
+                                <Box sx={{ p: 3 }}>
+                                    {/* Header */}
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 2.5 }}>
+                                        <Box
+                                            sx={{
+                                                width: 32,
+                                                height: 32,
+                                                borderRadius: 1.5,
+                                                bgcolor: (t) => `${t.palette.secondary.main}14`,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            <CodeIcon
+                                                size={16}
+                                                strokeWidth={1.8}
+                                                color="var(--mui-palette-secondary-main)"
+                                            />
+                                        </Box>
+                                        <Typography variant="subtitle2" fontWeight={700} letterSpacing={0.1}>
+                                            Expertise
+                                        </Typography>
+                                    </Box>
+                                    <Divider sx={{ mb: 2.5, opacity: 0.6 }} />
+                                    {/* Skills */}
+                                    <Box sx={{ mb: 3 }}>
                                         <Typography
                                             variant="caption"
                                             color="text.disabled"
@@ -785,312 +909,236 @@ function InterviewerProfilePage() {
                                                 textTransform: "uppercase",
                                                 letterSpacing: 0.7,
                                                 display: "block",
-                                                mb: 0.25,
+                                                mb: 1.25,
                                             }}
                                         >
-                                            Rate
+                                            Skills
                                         </Typography>
+
                                         {editMode ? (
-                                            <TextField
-                                                size="small"
-                                                type="number"
-                                                fullWidth
-                                                value={profile.currentAmount ?? ""}
-                                                onChange={(e) =>
-                                                    setProfile((prev) => ({
-                                                        ...prev,
-                                                        currentAmount:
-                                                            e.target.value === "" ? "" : Number(e.target.value),
-                                                    }))
+                                            <Autocomplete
+                                                multiple
+                                                options={allSkills || []}
+                                                getOptionLabel={(option) => option.name}
+                                                value={
+                                                    profile.skills?.map((s) =>
+                                                        typeof s === "object"
+                                                            ? s
+                                                            : allSkills.find((sk) => sk.name === s),
+                                                    ) || []
                                                 }
-                                                sx={{
-                                                    mt: 0.5,
-                                                    "& .MuiOutlinedInput-root": { bgcolor: "background.paper" },
-                                                }}
+                                                onChange={(e, newValue) =>
+                                                    setProfile((prev) => ({ ...prev, skills: newValue }))
+                                                }
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        placeholder="Add skills"
+                                                        size="small"
+                                                        inputProps={{ ...params.inputProps, maxLength: 100 }}
+                                                    />
+                                                )}
                                             />
                                         ) : (
-                                            <Typography variant="body2" fontWeight={500}>
-                                                {profile.currentAmount ? (
-                                                    `${Number(profile.currentAmount).toLocaleString()} / session`
-                                                ) : (
-                                                    <span
-                                                        style={{
-                                                            fontStyle: "italic",
-                                                            color: "var(--mui-palette-text-disabled)",
-                                                        }}
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
+                                                {skillsDisplay.length === 0 ? (
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.disabled"
+                                                        fontStyle="italic"
                                                     >
-                                                        Not set
-                                                    </span>
+                                                        No skills added yet
+                                                    </Typography>
+                                                ) : (
+                                                    skillsDisplay.map((name, i) => (
+                                                        <Box
+                                                            key={`skill-${i}`}
+                                                            sx={{
+                                                                display: "inline-flex",
+                                                                alignItems: "center",
+                                                                gap: 1,
+                                                                px: 2,
+                                                                py: 1,
+                                                                borderRadius: "24px",
+                                                                border: "1px solid",
+                                                                borderColor: "divider",
+                                                                bgcolor: "grey.50",
+                                                                color: "text.primary",
+                                                                fontSize: "1rem",
+                                                                fontWeight: 600,
+                                                                lineHeight: 1.5,
+                                                                transition: "all 0.12s ease",
+                                                                cursor: "default",
+                                                                minWidth: 160,
+                                                                justifyContent: "flex-start",
+                                                                "&:hover": {
+                                                                    bgcolor: "grey.100",
+                                                                    borderColor: "grey.400",
+                                                                    transform: "translateY(-1px)",
+                                                                },
+                                                            }}
+                                                        >
+                                                            <CompanyLogo name={String(name)} size={20} />
+                                                            <Box
+                                                                component="span"
+                                                                sx={{
+                                                                    display: "block",
+                                                                    whiteSpace: "normal",
+                                                                    wordBreak: "break-word",
+                                                                }}
+                                                            >
+                                                                {name}
+                                                            </Box>
+                                                        </Box>
+                                                    ))
                                                 )}
-                                            </Typography>
+                                            </Box>
                                         )}
                                     </Box>
-                                </Box>
-                            )} */}
-
-                            {/* Rating row */}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    gap: 1.5,
-                                    p: 1.5,
-                                    borderRadius: 2,
-                                    border: "0.5px solid",
-                                    borderColor: "divider",
-                                    bgcolor: "grey.50",
-                                    "&:hover": { bgcolor: "grey.100" },
-                                    transition: "background 0.15s",
-                                    mt: 2,
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: "50%",
-                                        bgcolor: "background.paper",
-                                        border: "0.5px solid",
-                                        borderColor: "divider",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                        mt: 0.25,
-                                    }}
-                                >
-                                    <StarIcon size={13} strokeWidth={1.8} />
-                                </Box>
-                                <Box sx={{ minWidth: 0, flex: 1 }}>
-                                    <Typography
-                                        variant="caption"
-                                        color="text.disabled"
-                                        fontWeight={600}
+                                    {/* Companies */}
+                                    <Box
                                         sx={{
-                                            textTransform: "uppercase",
-                                            letterSpacing: 0.7,
-                                            display: "block",
-                                            mb: 0.25,
+                                            pt: 2.5,
+                                            borderTop: "0.5px solid",
+                                            borderColor: "divider",
                                         }}
                                     >
-                                        Coach Rating
-                                    </Typography>
-                                    <Typography variant="body2" fontWeight={600}>
-                                        {averageRating > 0 ? averageRating.toFixed(1) : "N/A"} / 5
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {totalRatings.toLocaleString()} ratings
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Grid>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.disabled"
+                                            fontWeight={600}
+                                            sx={{
+                                                textTransform: "uppercase",
+                                                letterSpacing: 0.7,
+                                                display: "block",
+                                                mb: 1.25,
+                                            }}
+                                        >
+                                            Companies
+                                        </Typography>
 
-                    {/* ─── RIGHT: Skills & Companies ─────────────── */}
-                    <Grid item xs={12} md={8} sx={{ minWidth: "900px" }}>
-                        <Box sx={{ p: 3 }}>
-                            {/* Header */}
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 2.5 }}>
+                                        {editMode ? (
+                                            <Autocomplete
+                                                multiple
+                                                options={allCompanies || []}
+                                                getOptionLabel={(option) => option.name}
+                                                value={
+                                                    profile.companies?.map((c) =>
+                                                        typeof c === "object"
+                                                            ? c
+                                                            : allCompanies.find((co) => co.name === c),
+                                                    ) || []
+                                                }
+                                                onChange={(e, newValue) =>
+                                                    setProfile((prev) => ({ ...prev, companies: newValue }))
+                                                }
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        placeholder="Add companies"
+                                                        size="small"
+                                                        inputProps={{ ...params.inputProps, maxLength: 100 }}
+                                                    />
+                                                )}
+                                            />
+                                        ) : (
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
+                                                {companiesDisplay.length === 0 ? (
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.disabled"
+                                                        fontStyle="italic"
+                                                    >
+                                                        No companies added yet
+                                                    </Typography>
+                                                ) : (
+                                                    companiesDisplay.map((name, i) => (
+                                                        <Box
+                                                            key={`company-${i}`}
+                                                            sx={{
+                                                                display: "inline-flex",
+                                                                alignItems: "center",
+                                                                gap: 1,
+                                                                px: 2,
+                                                                py: 1,
+                                                                borderRadius: "24px",
+                                                                border: "1px solid",
+                                                                borderColor: "divider",
+                                                                bgcolor: "grey.50",
+                                                                color: "text.primary",
+                                                                fontSize: "1rem",
+                                                                fontWeight: 600,
+                                                                lineHeight: 1.5,
+                                                                transition: "all 0.12s ease",
+                                                                cursor: "default",
+                                                                minWidth: 160,
+                                                                justifyContent: "flex-start",
+                                                                "&:hover": {
+                                                                    bgcolor: "grey.100",
+                                                                    borderColor: "grey.400",
+                                                                    transform: "translateY(-1px)",
+                                                                },
+                                                            }}
+                                                        >
+                                                            <CompanyLogo name={String(name)} size={20} />
+                                                            <Box
+                                                                component="span"
+                                                                sx={{
+                                                                    display: "block",
+                                                                    whiteSpace: "normal",
+                                                                    wordBreak: "break-word",
+                                                                }}
+                                                            >
+                                                                {name}
+                                                            </Box>
+                                                        </Box>
+                                                    ))
+                                                )}
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    )}
+                    {tabValue === 1 && isSelf && isInterviewer && (
+                        <Box sx={{ mt: 1 }}>
+                            {loadingSaved ? (
+                                <Box display="flex" justifyContent="center" py={4}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : savedQuestions.length === 0 ? (
+                                <Typography align="center" color="text.secondary" py={4}>
+                                    No saved questions yet.
+                                </Typography>
+                            ) : (
                                 <Box
                                     sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 1.5,
-                                        bgcolor: (t) => `${t.palette.secondary.main}14`,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
+                                        display: "grid",
+                                        gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
+                                        gap: 2,
                                     }}
                                 >
-                                    <CodeIcon size={16} strokeWidth={1.8} color="var(--mui-palette-secondary-main)" />
+                                    {savedQuestions.map((q) => (
+                                        <QuestionCard key={q.id} item={q} />
+                                    ))}
                                 </Box>
-                                <Typography variant="subtitle2" fontWeight={700} letterSpacing={0.1}>
-                                    Expertise
-                                </Typography>
-                            </Box>
-                            <Divider sx={{ mb: 2.5, opacity: 0.6 }} />
-                            {/* Skills */}
-                            <Box sx={{ mb: 3 }}>
-                                <Typography
-                                    variant="caption"
-                                    color="text.disabled"
-                                    fontWeight={600}
-                                    sx={{ textTransform: "uppercase", letterSpacing: 0.7, display: "block", mb: 1.25 }}
-                                >
-                                    Skills
-                                </Typography>
-
-                                {editMode ? (
-                                    <Autocomplete
-                                        multiple
-                                        options={allSkills || []}
-                                        getOptionLabel={(option) => option.name}
-                                        value={
-                                            profile.skills?.map((s) =>
-                                                typeof s === "object" ? s : allSkills.find((sk) => sk.name === s),
-                                            ) || []
-                                        }
-                                        onChange={(e, newValue) =>
-                                            setProfile((prev) => ({ ...prev, skills: newValue }))
-                                        }
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                placeholder="Add skills"
-                                                size="small"
-                                                inputProps={{ ...params.inputProps, maxLength: 100 }}
-                                            />
-                                        )}
-                                    />
-                                ) : skillsDisplay.length === 0 ? (
-                                    <Typography variant="body2" color="text.disabled" fontStyle="italic">
-                                        No skills added yet
-                                    </Typography>
-                                ) : (
-                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
-                                        {skillsDisplay.map((name, i) => (
-                                            <Box
-                                                key={`skill-${i}`}
-                                                sx={{
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                    px: 1.25,
-                                                    py: 0.75,
-                                                    borderRadius: 2,
-                                                    border: "0.5px solid",
-                                                    borderColor: "divider",
-                                                    bgcolor: "grey.50",
-                                                    color: "text.primary",
-                                                    fontSize: "0.96rem",
-                                                    fontWeight: 600,
-                                                    lineHeight: 1.35,
-                                                    transition: "all 0.12s ease",
-                                                    cursor: "default",
-                                                    minWidth: 140,
-                                                    justifyContent: "flex-start",
-                                                    "&:hover": {
-                                                        bgcolor: "grey.100",
-                                                        borderColor: "grey.400",
-                                                        transform: "translateY(-1px)",
-                                                    },
-                                                }}
-                                            >
-                                                <CompanyLogo name={String(name)} size={18} />
-                                                <Box
-                                                    component="span"
-                                                    sx={{
-                                                        display: "block",
-                                                        whiteSpace: "normal",
-                                                        wordBreak: "break-word",
-                                                    }}
-                                                >
-                                                    {name}
-                                                </Box>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                )}
-                            </Box>
-                            {/* Companies */}
-                            <Box
-                                sx={{
-                                    pt: 2.5,
-                                    borderTop: "0.5px solid",
-                                    borderColor: "divider",
-                                }}
-                            >
-                                <Typography
-                                    variant="caption"
-                                    color="text.disabled"
-                                    fontWeight={600}
-                                    sx={{ textTransform: "uppercase", letterSpacing: 0.7, display: "block", mb: 1.25 }}
-                                >
-                                    Companies
-                                </Typography>
-
-                                {editMode ? (
-                                    <Autocomplete
-                                        multiple
-                                        options={allCompanies || []}
-                                        getOptionLabel={(option) => option.name}
-                                        value={
-                                            profile.companies?.map((c) =>
-                                                typeof c === "object" ? c : allCompanies.find((co) => co.name === c),
-                                            ) || []
-                                        }
-                                        onChange={(e, newValue) =>
-                                            setProfile((prev) => ({ ...prev, companies: newValue }))
-                                        }
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                placeholder="Add companies"
-                                                size="small"
-                                                inputProps={{ ...params.inputProps, maxLength: 100 }}
-                                            />
-                                        )}
-                                    />
-                                ) : companiesDisplay.length === 0 ? (
-                                    <Typography variant="body2" color="text.disabled" fontStyle="italic">
-                                        No companies added yet
-                                    </Typography>
-                                ) : (
-                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
-                                        {companiesDisplay.map((name, i) => (
-                                            <Box
-                                                key={`company-${i}`}
-                                                sx={{
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                    px: 1.25,
-                                                    py: 0.75,
-                                                    borderRadius: 2,
-                                                    border: "0.5px solid",
-                                                    borderColor: "divider",
-                                                    bgcolor: "grey.50",
-                                                    color: "text.primary",
-                                                    fontSize: "0.96rem",
-                                                    fontWeight: 600,
-                                                    lineHeight: 1.35,
-                                                    transition: "all 0.12s ease",
-                                                    cursor: "default",
-                                                    minWidth: 140,
-                                                    justifyContent: "flex-start",
-                                                    "&:hover": {
-                                                        bgcolor: "grey.100",
-                                                        borderColor: "grey.400",
-                                                        transform: "translateY(-1px)",
-                                                    },
-                                                }}
-                                            >
-                                                <CompanyLogo name={String(name)} size={18} />
-                                                <Box
-                                                    component="span"
-                                                    sx={{
-                                                        display: "block",
-                                                        whiteSpace: "normal",
-                                                        wordBreak: "break-word",
-                                                    }}
-                                                >
-                                                    {name}
-                                                </Box>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                )}
-                            </Box>
+                            )}
                         </Box>
-                    </Grid>
-                </Grid>
+                    )}
+                </>
             )}
 
-            {/* Save Button */}
-            {editMode && profile && (
-                <>
-                    <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+            {/* Profile Action Buttons (Edit mode & Non-edit mode) */}
+            <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                {!editMode && isSelf && (
+                    <PrimaryButton startIcon={<EditIcon size={18} strokeWidth={2} />} onClick={() => setEditMode(true)}>
+                        Edit Profile
+                    </PrimaryButton>
+                )}
+
+                {editMode && profile && (
+                    <>
                         <SecondaryButton onClick={() => setEditMode(false)} disabled={saving}>
                             Cancel
                         </SecondaryButton>
@@ -1102,21 +1150,23 @@ function InterviewerProfilePage() {
                         >
                             Save Changes
                         </PrimaryButton>
-                    </Box>
+                    </>
+                )}
+            </Box>
 
-                    <ConfirmModal
-                        show={showConfirmSave}
-                        title="Confirm save"
-                        message="Are you sure you want to save changes to your profile?"
-                        onConfirm={async () => {
-                            setShowConfirmSave(false);
-                            await handleSave();
-                        }}
-                        onCancel={() => setShowConfirmSave(false)}
-                        confirmText="Save"
-                        cancelText="Cancel"
-                    />
-                </>
+            {editMode && (
+                <ConfirmModal
+                    show={showConfirmSave}
+                    title="Confirm save"
+                    message="Are you sure you want to save changes to your profile?"
+                    onConfirm={async () => {
+                        setShowConfirmSave(false);
+                        await handleSave();
+                    }}
+                    onCancel={() => setShowConfirmSave(false)}
+                    confirmText="Save"
+                    cancelText="Cancel"
+                />
             )}
 
             {!loading && !profile && !error && (

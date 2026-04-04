@@ -201,6 +201,12 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                 borderRadius: 2,
                 transition: "box-shadow 0.15s",
                 "&:hover": { boxShadow: 3 },
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                minHeight: 160,
+                maxHeight: 260,
+                overflow: "hidden",
             }}
         >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
@@ -251,6 +257,12 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                             lineHeight: 1.45,
                             wordBreak: "break-word",
                             overflowWrap: "anywhere",
+                            whiteSpace: "normal",
+                            display: "-webkit-box",
+                            WebkitBoxOrient: "vertical",
+                            WebkitLineClamp: 2,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
                             "&:hover": { color: "primary.main" },
                         }}
                     >

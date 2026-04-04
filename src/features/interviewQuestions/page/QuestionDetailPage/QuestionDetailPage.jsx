@@ -72,15 +72,18 @@ export default function QuestionDetailPage() {
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState("");
     const [savingEdit, setSavingEdit] = useState(false);
-    const [companies, setCompanies] = useState([]);
+    const [allCompanies, setAllCompanies] = useState([]);
+    const [editCompanies, setEditCompanies] = useState([]);
 
     useEffect(() => {
         callApi({ method: METHOD.GET, endpoint: homeEndPoints.GET_ALL_COMPANIES, arg: { page: 1, pageSize: 200 } })
             .then(({ data: d }) => {
                 const items = d?.items ?? d?.data ?? (Array.isArray(d) ? d : []);
-                setCompanies(
-                    items.map((c) => ({ id: c.id ?? c.companyId, name: c.name ?? c.companyName })).filter((c) => c.id),
-                );
+                const mapped = items
+                    .map((c) => ({ id: c.id ?? c.companyId, name: c.name ?? c.companyName }))
+                    .filter((c) => c.id);
+                setAllCompanies(items);
+                setEditCompanies(mapped);
             })
             .catch(() => {});
     }, []);
@@ -530,7 +533,7 @@ export default function QuestionDetailPage() {
                                 size="small"
                                 value={editContent}
                                 onChange={(e) => {
-                                    const WORD_LIMIT = 55;
+                                    const WORD_LIMIT = 60;
                                     let val = e.target.value || "";
                                     const words = val.trim().split(/\s+/).filter(Boolean);
                                     if (words.length > WORD_LIMIT) {
@@ -540,7 +543,7 @@ export default function QuestionDetailPage() {
                                 }}
                                 helperText={`${
                                     (editContent || "").trim().split(/\s+/).filter(Boolean).length
-                                } / 55 words`}
+                                } / 60 words`}
                                 autoFocus
                                 sx={{ mb: 1 }}
                             />
@@ -633,10 +636,13 @@ export default function QuestionDetailPage() {
                             {data.authorName}
                         </Typography>
                     )}
-                    <Typography variant="body2" color="text.secondary">
-                        {companyLabel}
-                        {data.createdAt && ` \u2022 ${timeAgo(data.createdAt)}`}
-                    </Typography>
+                    <Stack direction="row" alignItems="center" gap={0.75}>
+                        {companyNames.length > 0 && <CompanyLogo name={companyNames[0]} size={16} />}
+                        <Typography variant="body2" color="text.secondary">
+                            {companyLabel}
+                            {data.createdAt && ` \u2022 ${timeAgo(data.createdAt)}`}
+                        </Typography>
+                    </Stack>
                 </Stack>
 
                 {/* Actions */}
@@ -877,13 +883,23 @@ export default function QuestionDetailPage() {
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                                 {items.map((item) => {
                                     const isObject = typeof item === "object";
+                                    const itemName = isObject ? item.name : item;
+                                    const matchedCompany =
+                                        label === "Companies" &&
+                                        allCompanies?.find((c) => (c.name || c.companyName) === itemName);
 
                                     return (
                                         <Chip
                                             key={isObject ? item.id : item}
-                                            label={isObject ? item.name : item}
+                                            icon={<CompanyLogo name={matchedCompany?.domain || itemName} size={14} />}
+                                            label={itemName}
                                             size="small"
-                                            sx={{ bgcolor: "grey.100", fontSize: 13 }}
+                                            sx={{
+                                                bgcolor: "grey.100",
+                                                fontSize: 13,
+                                                px: 0.5,
+                                                "& .MuiChip-icon": { ml: 0.5 },
+                                            }}
                                         />
                                     );
                                 })}
@@ -913,16 +929,62 @@ export default function QuestionDetailPage() {
                                 }}
                             >
                                 <Stack direction="row" alignItems="center" gap={0.75} mb={0.5}>
-                                    {q.companyName && <CompanyLogo name={q.companyName} size={14} />}
+                                    {(q.companyName || (q.companyNames && q.companyNames[0])) && (
+                                        <CompanyLogo name={q.companyName || q.companyNames[0]} size={14} />
+                                    )}
                                     <Typography variant="caption" color="text.disabled">
-                                        {q.companyName && `Asked at ${q.companyName}`}
+                                        {(q.companyName || (q.companyNames && q.companyNames[0])) &&
+                                            `Asked at ${q.companyName || q.companyNames[0]}`}
                                         {q.answerCount != null && ` \u2022 ${q.answerCount} answers`}
                                         {q.createdAt && ` \u2022 ${timeAgo(q.createdAt)}`}
                                     </Typography>
                                 </Stack>
-                                <Typography variant="body2" fontWeight={600}>
+                                <Typography
+                                    variant="body2"
+                                    fontWeight={600}
+                                    sx={{
+                                        display: "-webkit-box",
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: "vertical",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        lineHeight: 1.5,
+                                        mb: 1.5,
+                                        height: "3em", // Exactly 2 lines height
+                                    }}
+                                >
                                     {q.title ?? q.content}
                                 </Typography>
+
+                                {((q.tags && q.tags.length > 0) ||
+                                    (q.roles && q.roles.length > 0) ||
+                                    q.companyName ||
+                                    (q.companyNames && q.companyNames.length > 0)) && (
+                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                        {[...(q.roles || []), ...(q.tags || [])].slice(0, 2).map((tag, i) => (
+                                            <Chip
+                                                key={i}
+                                                icon={
+                                                    <CompanyLogo
+                                                        name={typeof tag === "object" ? tag.name : tag}
+                                                        size={12}
+                                                    />
+                                                }
+                                                label={typeof tag === "object" ? tag.name : tag}
+                                                size="small"
+                                                sx={{
+                                                    height: 20,
+                                                    fontSize: 11,
+                                                    bgcolor: "grey.50",
+                                                    border: "1px solid",
+                                                    borderColor: "grey.200",
+                                                    "& .MuiChip-label": { px: 1 },
+                                                    "& .MuiChip-icon": { ml: 0.5, mr: -0.5 },
+                                                }}
+                                            />
+                                        ))}
+                                    </Box>
+                                )}
                             </Paper>
                         ))}
                     </Paper>
