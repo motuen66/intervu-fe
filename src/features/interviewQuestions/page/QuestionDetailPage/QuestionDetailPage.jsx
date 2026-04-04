@@ -308,8 +308,13 @@ export default function QuestionDetailPage() {
     /* ── Delete comment ── */
     const handleDeleteComment = async (commentId) => {
         try {
-            await callApi({ method: METHOD.DELETE, endpoint: commentEndPoints.DELETE_COMMENT(id, commentId) });
+            await callApi({
+                method: METHOD.DELETE,
+                endpoint: commentEndPoints.DELETE_COMMENT(id, commentId),
+                displaySuccessMessage: true,
+            });
             setAnswers((prev) => prev.filter((a) => a.id !== commentId));
+            setTotalComments((prev) => Math.max(prev - 1, 0));
         } catch (err) {
             toast.error(err?.response?.data?.message ?? "Failed to delete comment");
         }
