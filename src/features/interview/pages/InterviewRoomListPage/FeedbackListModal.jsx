@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Alert,
     Modal,
@@ -13,20 +13,48 @@ import {
     TextField,
     Button,
     Stack,
+    CircularProgress,
+    Chip,
+    Divider,
+    IconButton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { buttonStyles, fieldStyles, dialogStyles } from "../../../../common/constants/uiStyles";
 
+const formatFeedbackTimeRange = (scheduledTime, durationMinutes) => {
+    const startTime = scheduledTime ? new Date(scheduledTime) : null;
+    const endTime = startTime && durationMinutes
+        ? new Date(startTime.getTime() + durationMinutes * 60000)
+        : null;
+
+    const startLabel = startTime
+        ? startTime.toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+        })
+        : "";
+
+    const endLabel = endTime
+        ? endTime.toLocaleTimeString(undefined, {
+            timeStyle: "short",
+        })
+        : "";
+
+    return startLabel && endLabel ? `${startLabel} - ${endLabel}` : "";
+};
+
 function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending' }) {
     const theme = useTheme();
     const [feedbacks, setFeedbacks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [selectedFeedback, setSelectedFeedback] = useState(null);
     const [rating, setRating] = useState(0);
     const [comments, setComments] = useState('');
@@ -44,36 +72,14 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                 const feedbackData = res?.data?.items;
                 if (feedbackData) {
                     if (mode === 'pending') {
-                        // Filter for feedbacks that are not yet completed
                         const pending = feedbackData.filter(fb => !fb.comments || fb.comments.trim() === '');
                         setFeedbacks(pending);
-                        if (pending.length === 1) { // Automatically select if only one pending
+                        if (pending.length === 1) {
                             const only = pending[0];
-                            const startTime = only.scheduledTime ? new Date(only.scheduledTime) : null;
-                            const endTime = startTime && only.durationMinutes
-                                ? new Date(startTime.getTime() + only.durationMinutes * 60000)
-                                : null;
-
-                            const startLabel = startTime
-                                ? startTime.toLocaleString(undefined, {
-                                    dateStyle: "medium",
-                                    timeStyle: "short",
-                                })
-                                : "";
-
-                            const endLabel = endTime
-                                ? endTime.toLocaleTimeString(undefined, {
-                                    timeStyle: "short",
-                                })
-                                : "";
-
-                            const timeRangeLabel =
-                                startLabel && endLabel ? `${startLabel} - ${endLabel}` : "";
-
+                            const timeRangeLabel = formatFeedbackTimeRange(only.scheduledTime, only.durationMinutes);
                             handleFeedbackSelect(only, timeRangeLabel);
                         }
                     } else {
-                        // Show all feedbacks
                         setFeedbacks(feedbackData);
                     }
                 }
@@ -87,7 +93,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
         if (open) {
             fetchFeedbacks();
         }
-    }, [open, mode]); // handleFeedbackSelect is stable
+    }, [open, mode]);
 
     const handleFeedbackSelect = (feedback, timerange) => {
         setSelectedFeedback(feedback);
@@ -106,56 +112,74 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
     };
 
     const handleSubmit = async () => {
-        if (!selectedFeedback) return;
+        if (!selectedFeedback || submitting) return;
+
+        const normalizedComments = comments.trim();
+        if (!rating || !normalizedComments) {
+            setError("Please provide both a rating and comments before submitting.");
+            return;
+        }
 
         try {
-            setError(''); // Reset error before new submission
+            setError('');
+            setSubmitting(true);
             await callApi({
                 method: METHOD.PUT,
                 endpoint: interviewEndPoints.UPDATE_FEEDBACK(selectedFeedback.feedbackId),
-                arg: { rating: rating, comments: comments },
+                arg: { rating, comments: normalizedComments },
             });
-            
-            // Notify parent component to re-fetch data and check pending status
+
             if (onFeedbackSubmitted) {
                 onFeedbackSubmitted();
             }
 
-            const updatedFeedbacks = feedbacks.filter((fb) => fb.feedbackId !== selectedFeedback.feedbackId).map(fb => fb.feedbackId === selectedFeedback.feedbackId ? {...fb, comments, rating} : fb);
+            const isLastPending = mode === "pending" && feedbacks.length === 1;
+            const updatedFeedbacks = mode === "pending"
+                ? feedbacks.filter((fb) => fb.feedbackId !== selectedFeedback.feedbackId)
+                : feedbacks.map((fb) =>
+                    fb.feedbackId === selectedFeedback.feedbackId
+                        ? { ...fb, comments: normalizedComments, rating }
+                        : fb
+                );
+
             setFeedbacks(updatedFeedbacks);
 
-            // Reset form state
             setSelectedFeedback(null);
             setRating(0);
             setComments('');
+            setFeedbackTimeRange('');
 
-            // If in pending mode and this was the last one, close the modal
-            if (mode === 'pending' && updatedFeedbacks.length === 0) {
+            if (isLastPending) {
                 onClose();
             }
         } catch (error) {
             const errorMessage = error.response?.data?.message || "Failed to update feedback. Please try again.";
             setError(errorMessage);
             console.error("Failed to update feedback:", error.response?.data || error);
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleClose = (event, reason) => {
         const hasPending = mode === 'pending' && feedbacks.length > 0;
         if (hasPending && (reason === 'backdropClick' || reason === 'escapeKeyDown')) {
-            // Prevent closing the modal if there are pending feedbacks
             return;
         }
         onClose();
 
-        // Clear selection and local form state after close
         setSelectedFeedback(null);
         setRating(0);
         setComments('');
         setFeedbackTimeRange('');
+        setError('');
     };
 
     const hasPendingFeedbacks = mode === 'pending' && feedbacks.length > 0;
+    const submitDisabled = useMemo(
+        () => submitting || !rating || comments.trim().length === 0,
+        [submitting, rating, comments]
+    );
 
     return (
         <Modal
@@ -171,60 +195,100 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                     top: "50%",
                     left: "50%",
                     transform: "translate(-50%, -50%)",
-                    width: 480,
+                    width: 560,
                     maxWidth: "90vw",
+                    maxHeight: "88vh",
                     p: 3,
+                    display: "flex",
+                    flexDirection: "column",
                 })}
             >
-                <Typography id="feedback-list-modal" variant="h5" component="h2" sx={{ mb: 1 }}>
-                    {mode === 'pending' ? 'Pending Feedbacks' : 'All Feedbacks'}
-                </Typography>
+                <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1.5} sx={{ mb: 2 }}>
+                    <Box>
+                        <Typography id="feedback-list-modal" variant="h4" component="h2">
+                            {mode === 'pending' ? 'Pending Feedbacks' : 'All Feedbacks'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {feedbacks.length} {feedbacks.length === 1 ? "interview" : "interviews"}
+                        </Typography>
+                    </Box>
+                    {!hasPendingFeedbacks && (
+                        <IconButton
+                            size="small"
+                            onClick={() => handleClose()}
+                            aria-label="Close feedback modal"
+                            sx={{ color: "text.secondary" }}
+                        >
+                            <CloseRoundedIcon fontSize="small" />
+                        </IconButton>
+                    )}
+                </Stack>
+
                 {loading ? (
-                    <Typography color="text.secondary">Loading feedbacks...</Typography>
+                    <Stack direction="row" spacing={1.25} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
+                        <CircularProgress size={20} />
+                        <Typography color="text.secondary">Loading feedbacks...</Typography>
+                    </Stack>
                 ) : (
                     <>
                         {feedbacks.length === 0 ? (
-                            <Typography color="text.secondary" sx={{ mt: 2 }}>{mode === 'pending' ? 'No pending feedbacks.' : 'No feedbacks found.'}</Typography>
+                            <Box
+                                sx={(theme) => ({
+                                    border: `1px dashed ${theme.palette.divider}`,
+                                    borderRadius: 2,
+                                    py: 4,
+                                    px: 2,
+                                    textAlign: "center",
+                                    bgcolor: "background.default",
+                                })}
+                            >
+                                <Typography color="text.secondary">
+                                    {mode === 'pending' ? 'No pending feedbacks.' : 'No feedbacks found.'}
+                                </Typography>
+                            </Box>
                         ) : (
-                            <List>
+                            <Box
+                                sx={(theme) => ({
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    borderRadius: 2,
+                                    bgcolor: "background.default",
+                                    overflowY: "auto",
+                                    maxHeight: 260,
+                                })}
+                            >
+                            <List sx={{ py: 1 }}>
                                 {feedbacks.map((feedback) => {
-                                    const startTime = feedback.scheduledTime ? new Date(feedback.scheduledTime) : null;
-                                    const endTime = startTime && feedback.durationMinutes
-                                        ? new Date(startTime.getTime() + feedback.durationMinutes * 60000)
-                                        : null;
-
-                                    const startLabel = startTime
-                                        ? startTime.toLocaleString(undefined, {
-                                            dateStyle: "medium",
-                                            timeStyle: "short",
-                                        })
-                                        : "";
-
-                                    const endLabel = endTime
-                                        ? endTime.toLocaleTimeString(undefined, {
-                                            timeStyle: "short",
-                                        })
-                                        : "";
-
-                                    const timeRangeLabel =
-                                        startLabel && endLabel ? `${startLabel} - ${endLabel}` : "";
+                                    const timeRangeLabel = formatFeedbackTimeRange(
+                                        feedback.scheduledTime,
+                                        feedback.durationMinutes
+                                    );
+                                    const isSelected = selectedFeedback?.feedbackId === feedback.feedbackId;
 
                                     return (
                                     <ListItem
                                         disablePadding
-                                        key={feedback.id}
+                                        key={feedback.feedbackId}
                                     >
                                         <ListItemButton
                                             onClick={() => handleFeedbackSelect(feedback, timeRangeLabel)}
-                                            selected={selectedFeedback?.id === feedback.id}
-                                            sx={{
-                                                ...(selectedFeedback?.id === feedback.id && {
+                                            selected={isSelected}
+                                            sx={(theme) => ({
+                                                mx: 1,
+                                                borderRadius: 1.5,
+                                                mb: 0.75,
+                                                alignItems: "flex-start",
+                                                border: "1px solid transparent",
+                                                ...(isSelected && {
                                                     bgcolor: 'action.selected',
-                                                })
-                                            }}
+                                                    borderColor: theme.palette.secondary.main,
+                                                }),
+                                                "&:hover": {
+                                                    bgcolor: isSelected ? "action.selected" : "action.hover",
+                                                },
+                                            })}
                                         >
-                                            <ListItemIcon>
-                                                <RateReviewOutlinedIcon />
+                                            <ListItemIcon sx={{ minWidth: 36, mt: 0.25 }}>
+                                                <RateReviewOutlinedIcon color={isSelected ? "primary" : "action"} />
                                             </ListItemIcon>
                                             <ListItemText
                                                 disableTypography
@@ -236,7 +300,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                                                 component="span"
                                                                 sx={{ fontWeight: 600 }}
                                                             >
-                                                                {feedback.coachName}
+                                                                {feedback.coachName || "Unknown coach"}
                                                             </Typography>
                                                         </Typography>
                                                         {timeRangeLabel && (
@@ -256,16 +320,27 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                                         component="span"
                                                         direction="row"
                                                         alignItems="center"
-                                                        spacing={0.5}
+                                                        spacing={0.75}
                                                         sx={{
-                                                            color: feedback.comments ? 'success.main' : 'warning.main',
                                                             display: 'inline-flex',
                                                         }}
                                                     >
-                                                        {feedback.comments ? <CheckCircleOutlineIcon sx={{ fontSize: '1rem' }} /> : <PendingActionsOutlinedIcon sx={{ fontSize: '1rem' }} />}
-                                                        <Typography variant="body2" component="span">
-                                                            {feedback.comments ? `Completed - Rating: ${feedback.rating}/5` : 'Pending'}
-                                                        </Typography>
+                                                        {feedback.comments ? (
+                                                            <CheckCircleOutlineIcon sx={{ fontSize: '1rem', color: "success.main" }} />
+                                                        ) : (
+                                                            <PendingActionsOutlinedIcon sx={{ fontSize: '1rem', color: "warning.main" }} />
+                                                        )}
+                                                        <Chip
+                                                            label={feedback.comments ? "Completed" : "Pending"}
+                                                            size="small"
+                                                            color={feedback.comments ? "success" : "warning"}
+                                                            sx={{ height: 22 }}
+                                                        />
+                                                        {feedback.comments && (
+                                                            <Typography variant="body2" component="span" color="text.secondary">
+                                                                {feedback.rating || 0}/5
+                                                            </Typography>
+                                                        )}
                                                     </Stack>
                                                 }
                                             />
@@ -274,12 +349,14 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                     );
                                 })}
                             </List>
+                            </Box>
                         )}
                     </>
                 )}
 
                 {selectedFeedback && (
                     <Box component="form" mt={2.5} noValidate autoComplete="off">
+                        <Divider sx={{ mb: 2 }} />
                         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
                         <Typography variant="subtitle1">
                             {selectedFeedback.comments
@@ -308,26 +385,36 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                 value={rating}
                                 onChange={handleRatingChange}
                                 readOnly={!!selectedFeedback.comments}
+                                size="large"
                                 sx={{
                                     "& .MuiRating-iconFilled": {
-                                        color: "#EAB308", // Yellow
+                                        color: theme.palette.warning.main,
                                     },
                                     "& .MuiRating-iconEmpty": {
-                                        color: "rgba(148, 163, 184, 0.4)", // Muted slate
+                                        color: "rgba(148, 163, 184, 0.35)",
                                     },
                                 }}
                             />
                             {selectedFeedback.comments ? (
-                                <Typography
-                                    variant="body1"
-                                    sx={{
+                                <Box
+                                    sx={(theme) => ({
                                         mt: 0.5,
-                                        whiteSpace: "pre-wrap",
-                                        color: "text.primary",
-                                    }}
+                                        borderRadius: 1.5,
+                                        p: 1.5,
+                                        bgcolor: "background.default",
+                                        border: `1px solid ${theme.palette.divider}`,
+                                    })}
                                 >
-                                    {selectedFeedback.comments}
-                                </Typography>
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            whiteSpace: "pre-wrap",
+                                            color: "text.primary",
+                                        }}
+                                    >
+                                        {selectedFeedback.comments}
+                                    </Typography>
+                                </Box>
                             ) : (
                                 <TextField
                                     label="Comments"
@@ -340,6 +427,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                     rows={4}
                                     minRows={4}
                                     maxRows={6}
+                                    helperText="Share specific strengths and one key improvement area."
                                 />
                             )}
                             {!selectedFeedback.comments && (
@@ -347,12 +435,14 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                     variant="contained"
                                     color="primary"
                                     onClick={handleSubmit}
+                                    disabled={submitDisabled}
                                     sx={(theme) => ({
                                         ...buttonStyles.primaryCta(theme),
                                         alignSelf: "flex-end",
+                                        minWidth: 160,
                                     })}
                                 >
-                                    Submit Feedback
+                                    {submitting ? "Submitting..." : "Submit Feedback"}
                                 </Button>
                             )}
                         </Stack>
@@ -369,6 +459,11 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                     >
                         Close
                     </Button>
+                )}
+                {hasPendingFeedbacks && !selectedFeedback && !loading && (
+                    <Alert severity="info" sx={{ mt: 2.5 }}>
+                        Select an interview and submit feedback to continue.
+                    </Alert>
                 )}
             </Box>
         </Modal>
