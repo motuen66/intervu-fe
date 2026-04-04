@@ -80,6 +80,7 @@ function InterviewRoomPage() {
         roomId: loading || error ? null : roomId,
         userId: user?.id,
         role: user?.role,
+        userName: user?.fullName, // Map fullName to userName
         callbacks,
     });
 
