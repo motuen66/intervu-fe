@@ -1,0 +1,174 @@
+:root {
+  --coach-accent: #BFFF00;
+  --coach-accent-hover: #a6e000;
+  --coach-bg: #F8FAFC;
+  --coach-card-bg: #FFFFFF;
+  --coach-text-main: #0F172A;
+  --coach-text-muted: #64748B;
+  --coach-border: #E2E8F0;
+  --coach-info-bg: #F1F5F9; /* Màu nền cho các hộp thông tin */
+  --coach-radius: 16px;
+}
+
+.coach-dashboard {
+  background-color: var(--coach-bg) !important;
+  min-height: 100vh;
+  width: 100%;
+  padding-bottom: 60px;
+}
+
+/* Hero Section */
+.coach-banner {
+  height: 180px;
+  background-color: #f1f5f9;
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px) !important;
+  background-size: 20px 20px !important;
+  position: relative;
+  margin-bottom: 60px;
+}
+
+.coach-avatar-wrapper {
+  position: absolute;
+  bottom: -40px;
+  left: 20px;
+  background: white;
+  padding: 4px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.coach-avatar-img {
+  width: 120px !important;
+  height: 120px !important;
+  border-radius: 16px !important;
+  background-color: #8bb1b1 !important; /* Màu nền avatar như mẫu */
+  color: #fff !important;
+  font-weight: 800;
+  font-size: 2rem;
+}
+
+.coach-hero-info {
+  margin-left: 150px;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: calc(100% - 150px);
+}
+
+.coach-hero-title {
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  color: #1E293B;
+  margin-bottom: 0 !important;
+}
+
+.coach-hero-subtitle {
+  font-size: 0.95rem !important;
+  color: var(--coach-text-muted) !important;
+  font-weight: 500 !important;
+}
+
+/* Card & Info Boxes */
+.coach-card {
+  background: var(--coach-card-bg);
+  border: 1px solid var(--coach-border);
+  border-radius: var(--coach-radius);
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.coach-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #1E293B;
+}
+
+.info-box {
+  background: #F8FAFC;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+}
+
+.info-box:last-child {
+  margin-bottom: 0;
+}
+
+.info-box-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.info-box-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1E293B;
+}
+
+/* Edit Inputs within Info Boxes */
+.coach-input-styled {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  width: 100%;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1E293B;
+  outline: none;
+}
+
+/* Add Experience Button */
+.btn-add-exp {
+  background: var(--coach-accent) !important;
+  color: #000 !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+  border-radius: 8px !important;
+  padding: 6px 16px !important;
+  font-size: 0.75rem !important;
+}
+
+/* Trajectory List */
+.trajectory-item {
+  margin-bottom: 24px;
+  display: flex;
+  gap: 16px;
+}
+
+.trajectory-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Floating Footer Update */
+.coach-sticky-footer {
+  position: fixed;
+  bottom: 0px;
+  left: 0;
+  right: 0;
+  background: #1E293B !important;
+  color: white !important;
+  padding: 16px 40px;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  z-index: 1000;
+}
+
+.edit-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 1px solid var(--coach-border);
+  padding: 4px 12px;
+  border-radius: 100px;
+}

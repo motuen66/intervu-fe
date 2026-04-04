@@ -28,8 +28,13 @@ import {
 } from "@mui/material";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import HourglassEmptyRoundedIcon from "@mui/icons-material/HourglassEmptyRounded";
+import AttachMoneyRoundedIcon from "@mui/icons-material/AttachMoneyRounded";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
+import SecondaryButton from "../../../common/components/buttons/SecondaryButton";
 import { interviewEndPoints } from "../../interview/services/interviewRoomApi";
 import { profileEndPoints } from "../../profile/services/profileApi";
 import { formatCurrency } from "../../../common/utils/dateFormatter";
@@ -142,17 +147,22 @@ const sanitizeTransactions = (incoming) => {
 const formatDateSafe = (value) => {
     if (!value) return "—";
     const parsed = new Date(value);
-    return Number.isNaN(parsed.valueOf()) ? "—" : parsed.toLocaleDateString();
+    if (Number.isNaN(parsed.valueOf())) return "—";
+    return parsed.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
 };
 
 const formatDateTimeSafe = (value) => {
     if (!value) return "—";
     const parsed = new Date(value);
     if (Number.isNaN(parsed.valueOf())) return "—";
-    return parsed.toLocaleString("en-US", {
+    return parsed.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
         year: "numeric",
-        month: "short",
-        day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
     });
@@ -271,7 +281,7 @@ const PaymentHistoryPage = () => {
             transactionCount: list.length,
             totalSpent,
             totalPending,
-            average: list.length ? totalSpent / list.length : 0,
+            average: completed.length ? totalSpent / completed.length : 0,
         };
     }, [filteredTransactions]);
 
@@ -315,7 +325,7 @@ const PaymentHistoryPage = () => {
                         </Typography>
                     </Box>
                     <Tooltip title="Refresh">
-                        <IconButton onClick={fetchPaymentHistory} aria-label="refresh payment history" sx={{ border: "1px solid #d6d9e0" }}>
+                        <IconButton onClick={fetchPaymentHistory} aria-label="refresh payment history" sx={{ border: "1px solid #d6d9e0", bgcolor: 'white' }}>
                             <RefreshRoundedIcon />
                         </IconButton>
                     </Tooltip>
@@ -328,53 +338,74 @@ const PaymentHistoryPage = () => {
                 ) : (
                     <>
                         {/* Summary */}
-                        <Stack
-                            direction="row"
-                            spacing={2}
-                            useFlexGap
-                            flexWrap="wrap"
-                            alignItems="stretch"
-                            sx={{ mb: 3 }}
-                        >
-                            <Card sx={{ flex: 1, minWidth: 200, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-                                <CardContent>
-                                    <Typography color="text.secondary" variant="body2" sx={{ mb: 1 }}>
-                                        Total Transactions
-                                    </Typography>
-                                        <Typography variant="h5" fontWeight={700}>{stats.transactionCount}</Typography>
-                                </CardContent>
-                            </Card>
-                            <Card sx={{ flex: 1, minWidth: 200, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-                                <CardContent>
-                                    <Typography color="text.secondary" variant="body2" sx={{ mb: 1 }}>
-                                        Completed Amount
-                                    </Typography>
-                                        <Typography variant="h5" fontWeight={700} sx={{ color: "text.primary" }}>
-                                            {formatAmountDisplay(stats.totalSpent, isCoach).text}
-                                        </Typography>
-                                </CardContent>
-                            </Card>
-                            <Card sx={{ flex: 1, minWidth: 200, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-                                <CardContent>
-                                    <Typography color="text.secondary" variant="body2" sx={{ mb: 1 }}>
-                                        Pending Amount
-                                    </Typography>
-                                        <Typography variant="h5" fontWeight={700} sx={{ color: "text.primary" }}>
-                                            {formatAmountDisplay(stats.totalPending, isCoach).text}
-                                        </Typography>
-                                </CardContent>
-                            </Card>
-                            <Card sx={{ flex: 1, minWidth: 200, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-                                <CardContent>
-                                    <Typography color="text.secondary" variant="body2" sx={{ mb: 1 }}>
-                                        Average Amount
-                                    </Typography>
-                                        <Typography variant="h5" fontWeight={700} sx={{ color: "text.primary" }}>
-                                            {formatAmountDisplay(stats.average, isCoach).text}
-                                        </Typography>
-                                </CardContent>
-                            </Card>
-                        </Stack>
+                        <Grid container spacing={3} sx={{ mb: 4 }}>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Box sx={{ p: 3, bgcolor: 'white', borderRadius: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{ bgcolor: '#e3f2fd', color: '#2196f3', p: 1.5, borderRadius: 2, display: 'flex' }}>
+                                            <ReceiptLongRoundedIcon />
+                                        </Box>
+                                        <Box>
+                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                Total Transactions
+                                            </Typography>
+                                            <Typography variant="h5" fontWeight={700}>{stats.transactionCount}</Typography>
+                                        </Box>
+                                    </Stack>
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Box sx={{ p: 3, bgcolor: 'white', borderRadius: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{ bgcolor: '#e8f5e9', color: '#4caf50', p: 1.5, borderRadius: 2, display: 'flex' }}>
+                                            <CheckCircleRoundedIcon />
+                                        </Box>
+                                        <Box>
+                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                Completed Amount
+                                            </Typography>
+                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#2e7d32' }}>
+                                                {formatCurrency(stats.totalSpent)}
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Box sx={{ p: 3, bgcolor: 'white', borderRadius: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{ bgcolor: '#fff3e0', color: '#ff9800', p: 1.5, borderRadius: 2, display: 'flex' }}>
+                                            <HourglassEmptyRoundedIcon />
+                                        </Box>
+                                        <Box>
+                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                Pending Amount
+                                            </Typography>
+                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#ed6c02' }}>
+                                                {formatCurrency(stats.totalPending)}
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Box sx={{ p: 3, bgcolor: 'white', borderRadius: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{ bgcolor: '#f3e5f5', color: '#9c27b0', p: 1.5, borderRadius: 2, display: 'flex' }}>
+                                            <AttachMoneyRoundedIcon />
+                                        </Box>
+                                        <Box>
+                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                Average Amount
+                                            </Typography>
+                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#7b1fa2' }}>
+                                                {formatCurrency(stats.average)}
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </Box>
+                            </Grid>
+                        </Grid>
 
                         {/* Filters */}
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
@@ -383,7 +414,7 @@ const PaymentHistoryPage = () => {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 size="small"
-                                sx={{ flex: 1 }}
+                                sx={{ flex: 1, bgcolor: 'white', borderRadius: 2 }}
                                 variant="outlined"
                             />
                             <TextField
@@ -392,7 +423,7 @@ const PaymentHistoryPage = () => {
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
                                 size="small"
-                                sx={{ minWidth: 160 }}
+                                sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2 }}
                             >
                                 <MenuItem value="ALL">All Status</MenuItem>
                                 <MenuItem value="COMPLETED">Completed</MenuItem>
@@ -403,23 +434,33 @@ const PaymentHistoryPage = () => {
                         </Stack>
 
                         {/* Table */}
-                        <Paper sx={{ boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
-                            <Table>
-                                <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Interview/Coach</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Amount</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Action</TableCell>
+                        <Box sx={{ mt: 2 }}>
+                            <Table sx={{ borderCollapse: 'separate', borderSpacing: '0 12px' }}>
+                                <TableHead>
+                                    <TableRow sx={{ '& .MuiTableCell-root': { borderBottom: 'none', color: 'text.secondary', fontWeight: 600, px: 3 } }}>
+                                        <TableCell>Date</TableCell>
+                                        <TableCell>Interview/Coach</TableCell>
+                                        <TableCell>Amount</TableCell>
+                                        <TableCell>Status</TableCell>
+                                        <TableCell align="right">Action</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {(Array.isArray(filteredTransactions) ? filteredTransactions : []).map((transaction, index) => {
                                         const statusConfig = getStatusConfig(transaction.status);
                                         return (
-                                            <TableRow key={transaction.id || transaction.interviewId || index}>
-                                                <TableCell>{formatDateSafe(transaction.createdAt)}</TableCell>
+                                            <TableRow 
+                                                key={transaction.id || transaction.interviewId || index}
+                                                sx={{ 
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                                    bgcolor: 'white',
+                                                    '&:hover': { boxShadow: '0 8px 16px rgba(0,0,0,0.06)' },
+                                                    '& .MuiTableCell-root': { border: 'none', py: 2.5, px: 3 }
+                                                }}
+                                            >
+                                                <TableCell sx={{ fontWeight: 600, borderTopLeftRadius: 16, borderBottomLeftRadius: 16 }}>
+                                                    {formatDateSafe(transaction.startTime)}
+                                                </TableCell>
                                                 <TableCell>
                                                     <Typography variant="body2" fontWeight={600}>{transaction.coachName}</Typography>
                                                 </TableCell>
@@ -434,7 +475,7 @@ const PaymentHistoryPage = () => {
                                                             display: "inline-block",
                                                             px: 2,
                                                             py: 0.5,
-                                                            borderRadius: 1,
+                                                            borderRadius: 1.5,
                                                             backgroundColor: statusConfig.bgColor,
                                                             color: statusConfig.color,
                                                             fontWeight: 600,
@@ -444,16 +485,14 @@ const PaymentHistoryPage = () => {
                                                         {statusConfig.label}
                                                     </Box>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Button
+                                                <TableCell align="right" sx={{ borderTopRightRadius: 16, borderBottomRightRadius: 16 }}>
+                                                    <SecondaryButton
                                                         size="small"
-                                                        variant="outlined"
-                                                        startIcon={<VisibilityOutlinedIcon fontSize="small" />}
                                                         onClick={() => setSelectedTransaction(transaction)}
-                                                        sx={{ textTransform: "none", minWidth: 110 }}
+                                                        sx={{ py: 0.5, px: 2 }}
                                                     >
                                                         View details
-                                                    </Button>
+                                                    </SecondaryButton>
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -466,7 +505,7 @@ const PaymentHistoryPage = () => {
                                     <Typography color="text.secondary">No transactions found</Typography>
                                 </Box>
                             )}
-                        </Paper>
+                        </Box>
 
                         <Dialog
                             open={Boolean(selectedTransaction)}
