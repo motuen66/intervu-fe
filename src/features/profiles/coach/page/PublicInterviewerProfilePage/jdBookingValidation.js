@@ -1,6 +1,21 @@
 const MIN_GAP_MS = 15 * 60 * 1000; // 15 minutes in milliseconds
 
 /**
+ * Validates if a string is a valid fully-qualified http, https, or ftp URL.
+ * @param {string} urlString
+ * @returns {boolean}
+ */
+export const isValidUrl = (urlString) => {
+    if (!urlString) return false;
+    try {
+        const url = new URL(urlString);
+        return ["http:", "https:", "ftp:"].includes(url.protocol);
+    } catch {
+        return false;
+    }
+};
+
+/**
  * Validates JD multi-round booking rounds against available free slots.
  *
  * @param {Array<{serviceId: string, startTime: Date, durationMinutes: number}>} selectedRounds

@@ -345,10 +345,16 @@ function InterviewCard({
 
         // SCHEDULED: Show Reschedule + Cancel buttons (future interviews)
         if (room.status === INTERVIEW_ROOM_STATUS.SCHEDULED) {
+            const now = new Date();
+            const scheduledTime = new Date(room.scheduledTime);
+            const hoursUntil = (scheduledTime - now) / (1000 * 60 * 60);
+            const isPast = hoursUntil <= 0;
+            const canCancel = room.canCancel ?? !isPast;
+
             return (
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
-                    {/* Cancel Button - Only for Candidate */}
-                    {user?.role === ROLES.CANDIDATE && (
+                    {/* Cancel Button - hidden if scheduled time has passed */}
+                    {canCancel && (
                         <SecondaryButton
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -359,8 +365,8 @@ function InterviewCard({
                         </SecondaryButton>
                     )}
 
-                    {/* Reschedule Button - Only for Candidate */}
-                    {user?.role === ROLES.CANDIDATE && (
+                    {/* Reschedule Button - only for candidates, hidden entirely if past */}
+                    {user?.role === ROLES.CANDIDATE && !isPast && (
                         canReschedule ? (
                             <PrimaryButton
                                 onClick={(e) => {

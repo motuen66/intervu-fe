@@ -367,7 +367,7 @@ function InterviewerProfilePage() {
     const headlineCompany = companiesDisplay[0] || "Independent Coach";
     const headlineTitle = years != null ? `${years}+ years interviewing` : "Interview Coach";
 
-    const truncatedBio = React.useMemo(() => {
+    const truncatedBio = useMemo(() => {
         if (!bio) return "";
         if (bio.length <= 240) return bio;
         return expandedBio ? bio : bio.slice(0, 240) + "...";
