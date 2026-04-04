@@ -29,6 +29,7 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status";
 import { formattedDateTime } from "../../../../common/utils/dateFormatter";
+import { interviewEndPoints } from "../../services/interviewRoomApi";
 
 function InterviewPrecheckPage() {
     const { roomId } = useParams();
@@ -114,7 +115,7 @@ function InterviewPrecheckPage() {
                 setSelectedSpeaker(speakers[0].deviceId);
             }
         } catch (err) {
-            // Ignore enumerate errors because getUserMedia result is still enough for this pre-check flow.
+            // Ignore enumerate errors
         }
     }, [selectedCam, selectedMic, selectedSpeaker]);
 
@@ -215,24 +216,29 @@ function InterviewPrecheckPage() {
 
     const runDeviceChecks = useCallback(async () => {
         setIsTesting(true);
+        // Execute hardware tests concurrently to save time
         await Promise.allSettled([testCamera(), testMic(), testSpeaker()]);
         await loadDeviceLists();
         setIsTesting(false);
     }, [loadDeviceLists, testCamera, testMic, testSpeaker]);
 
     const fetchRoomAndValidate = useCallback(async ({ showPageLoading = true } = {}) => {
-        if (showPageLoading) {
-            setPageLoading(true);
-        }
+        if (showPageLoading) setPageLoading(true);
         setPageError("");
 
         try {
-            const res = await callApi({
+            // Concurrent task: fetch room data while listing devices
+            const roomPromise = callApi({
                 method: METHOD.GET,
-                endpoint: "/interviewroom",
+                endpoint: interviewEndPoints.GET_ROOM_BY_ID(roomId),
             });
 
-            const foundRoom = res.data?.find((item) => item.id === roomId);
+            const [res] = await Promise.all([
+                roomPromise,
+                showPageLoading ? loadDeviceLists() : Promise.resolve()
+            ]);
+
+            const foundRoom = res?.data;
             if (!foundRoom) {
                 setPageError("Interview room was not found. Redirecting...");
                 setTimeout(() => navigate("/interview"), 1800);
@@ -249,19 +255,12 @@ function InterviewPrecheckPage() {
             }
 
             setRoom(foundRoom);
-            if (showPageLoading) {
-                await loadDeviceLists();
-            }
         } catch (err) {
-            if (!showPageLoading) {
-                return;
-            }
+            if (!showPageLoading) return;
             setPageError("Failed to load interview pre-check information. Redirecting...");
             setTimeout(() => navigate("/interview"), 1800);
         } finally {
-            if (showPageLoading) {
-                setPageLoading(false);
-            }
+            if (showPageLoading) setPageLoading(false);
         }
     }, [loadDeviceLists, navigate, roomId]);
 
@@ -286,9 +285,7 @@ function InterviewPrecheckPage() {
     }, [fetchRoomAndValidate, stopCameraPreview, stopMicCapture]);
 
     useEffect(() => {
-        if (!roomId) {
-            return undefined;
-        }
+        if (!roomId) return;
 
         const intervalId = setInterval(() => {
             fetchRoomAndValidate({ showPageLoading: false });
@@ -298,9 +295,7 @@ function InterviewPrecheckPage() {
     }, [fetchRoomAndValidate, roomId]);
 
     useEffect(() => {
-        if (pageLoading || !room || hasAutoTestedRef.current) {
-            return;
-        }
+        if (pageLoading || !room || hasAutoTestedRef.current) return;
 
         hasAutoTestedRef.current = true;
         runDeviceChecks();

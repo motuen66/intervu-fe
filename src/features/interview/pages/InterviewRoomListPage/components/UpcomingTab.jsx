@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
     Box,
     Typography,
@@ -11,8 +11,6 @@ import InterviewCard from "./InterviewCard";
 import RecentInterviewItem from "./RecentInterviewItem";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
-const ITEMS_PER_PAGE = 6;
-
 function UpcomingTab({ 
     rooms, 
     recentRooms = [],
@@ -23,12 +21,12 @@ function UpcomingTab({
     onJoin,
     onReviewQuestions,
     onViewFeedback,
-    rescheduleRequests = []
+    rescheduleRequests = [],
+    page,
+    totalItems,
+    pageSize,
+    onPageChange
 }) {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [filterValue, setFilterValue] = useState("");
-    const [page, setPage] = useState(1);
-
     // Helper to check if room has pending reschedule request
     const hasPendingRescheduleRequest = (room) => {
         if (room?.rounds?.length > 1) {
@@ -39,25 +37,9 @@ function UpcomingTab({
         return rescheduleRequests.some((req) => req.interviewRoomId === room?.id && req.status === 0);
     };
 
-    // Filter and search logic (Simplified: removed search/filter bar)
-    const filteredRooms = useMemo(() => {
-        return [...rooms];
-    }, [rooms]);
-
-    // Pagination logic
-    const totalPages = Math.ceil(filteredRooms.length / ITEMS_PER_PAGE);
-    const paginatedRooms = filteredRooms.slice(
-        (page - 1) * ITEMS_PER_PAGE,
-        page * ITEMS_PER_PAGE
-    );
-
-    const handlePageChange = (event, value) => {
-        setPage(value);
-    };
+    const totalPages = Math.ceil(totalItems / pageSize);
 
     const handleCardClick = (room) => {
-        // For ONGOING interviews, only Join button should navigate
-        // Card click does nothing for ONGOING status
         if (room.status === INTERVIEW_ROOM_STATUS.ON_GOING) {
             return;
         }
@@ -80,7 +62,7 @@ function UpcomingTab({
         }
     };
 
-    if (loading) {
+    if (loading && rooms.length === 0) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                 <CommonLoader />
@@ -90,7 +72,7 @@ function UpcomingTab({
 
     return (
         <Box>
-            {paginatedRooms.length === 0 ? (
+            {rooms.length === 0 ? (
                 <Box
                     sx={{
                         py: 6,
@@ -121,7 +103,7 @@ function UpcomingTab({
                         width: "100%",
                     }}
                 >
-                    {paginatedRooms.map((room) => (
+                    {rooms.map((room) => (
                         <Box key={room.id} sx={{ display: "flex", width: "100%" }}>
                             <InterviewCard
                                 room={room}
@@ -140,7 +122,7 @@ function UpcomingTab({
             )}
 
             {/* Pagination */}
-            {filteredRooms.length > 0 && (
+            {totalItems > 0 && (
                 <Stack
                     direction="row"
                     justifyContent="space-between"
@@ -148,14 +130,14 @@ function UpcomingTab({
                     sx={{ mt: 2.25, pt: 2, borderTop: "1px solid", borderColor: "divider" }}
                 >
                     <Typography variant="body2" color="text.secondary">
-                        Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                        {Math.min(page * ITEMS_PER_PAGE, filteredRooms.length)} of{" "}
-                        {filteredRooms.length} results
+                        Showing {(page - 1) * pageSize + 1} to{" "}
+                        {Math.min(page * pageSize, totalItems)} of{" "}
+                        {totalItems} results
                     </Typography>
                     <Pagination
                         count={totalPages}
                         page={page}
-                        onChange={handlePageChange}
+                        onChange={onPageChange}
                         color="primary"
                         shape="rounded"
                         showFirstButton

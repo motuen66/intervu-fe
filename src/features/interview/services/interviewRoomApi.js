@@ -1,5 +1,6 @@
 export const interviewEndPoints = {
     INTERVIEW_ROOMS: "/interviewroom",
+    GET_ROOM_BY_ID: (id) => `/interviewroom/${id}`,
     GET_FEEDBACKS: `/Feedbacks`,
     UPDATE_FEEDBACK: (id) => `/Feedbacks/${id}`,
 

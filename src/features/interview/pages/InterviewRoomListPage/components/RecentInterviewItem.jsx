@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Avatar, Stack, Button, Tooltip, IconButton } from "@mui/material";
+import { Box, Typography, Avatar, Stack, Button, Tooltip } from "@mui/material";
 import { MessageSquare } from "lucide-react";
 import { ROLES } from "../../../../../common/constants/common";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
-import { useNavigate } from "react-router-dom";
 
 function RecentInterviewItem({ room, user, onClick }) {
-    const navigate = useNavigate();
     const [participantAvatarUrl, setParticipantAvatarUrl] = useState(null);
 
     const participantId = user?.role === ROLES.CANDIDATE
@@ -36,16 +34,6 @@ function RecentInterviewItem({ room, user, onClick }) {
         return "Participant";
     };
 
-    const getParticipantAvatar = () => {
-        if (user?.role === ROLES.CANDIDATE) {
-            return room.coachAvatar || room.coachProfilePicture || room.coach?.profilePicture || room.coach?.avatar || room.coach?.avatarUrl || room.coach?.imageUrl || room.interviewer?.profilePicture || room.interviewer?.avatar || room.interviewer?.avatarUrl;
-        }
-        if (user?.role === ROLES.INTERVIEWER) {
-            return room.candidateAvatar || room.candidateProfilePicture || room.candidate?.profilePicture || room.candidate?.avatar || room.candidate?.avatarUrl || room.candidate?.imageUrl;
-        }
-        return undefined;
-    };
-
     const getInitials = (name) => {
         if (!name) return "?";
         return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -70,10 +58,9 @@ function RecentInterviewItem({ room, user, onClick }) {
 
     const statusColor = isCompleted ? "success.main" : isCancelled ? "error.main" : "text.secondary";
     const statusText = isCompleted ? "Completed" : isCancelled ? "Cancelled" : "Past Session";
-    const buttonText = isCompleted ? "View Feedback" : "View Details";
 
     const name = getParticipantName();
-    const avatar = participantAvatarUrl || getParticipantAvatar();
+    const avatar = participantAvatarUrl;
 
     return (
         <Box

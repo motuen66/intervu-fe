@@ -7,6 +7,7 @@ import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 import { ROLES } from "../../../../common/constants/common.js";
+import { interviewEndPoints } from "../../services/interviewRoomApi";
 
 import QuestionPanel from "./QuestionPanel";
 import VideoPanel from "./VideoPanel";
@@ -35,17 +36,24 @@ function InterviewRoomPage() {
     const { roomId } = useParams();
     const navigate = useNavigate();
 
-    // ── Gate ──────────────────────────────────────────────────────────────────
+    // --- State for Room Loading and Validation ---
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [roomInfo, setRoomInfo] = useState(null);
 
+    /**
+     * Callback: checkRoomStatus
+     * Fetches room details and validates its status. Redirects if invalid.
+     */
     const checkRoomStatus = useCallback(async () => {
         if (!user) return;
         try {
             setLoading(true);
-            const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom` });
-            const room = res.data.find((item) => item.id === roomId);
+            const res = await callApi({ 
+                method: METHOD.GET, 
+                endpoint: interviewEndPoints.GET_ROOM_BY_ID(roomId) 
+            });
+            const room = res.data;
             if (room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && room?.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
                 setError("This interview is not in progress. You will be redirected.");
                 setTimeout(() => navigate("/interview"), 3000);
@@ -60,31 +68,38 @@ function InterviewRoomPage() {
         }
     }, [roomId, navigate, user]);
 
+    /**
+     * Effect: Initial Room Status Check
+     * Runs once on component mount to validate the interview room.
+     */
     useEffect(() => {
         if (user) checkRoomStatus();
     }, [user, checkRoomStatus]);
 
-    // ── Video refs (passed to <video> elements inside VideoPanel) ─────────────
+    // --- Refs for Video Elements ---
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
-    // ── Callback bag: stable ref bridging SignalR → WebRTC / CodeSync ─────────
+    // --- Callback Bag for SignalR ---
+    // This ref holds callbacks that bridge SignalR events to WebRTC/CodeSync logic.
     // useInterviewSignalR reads callbacks.current when events fire (async),
     // so by the time any hub event arrives the bag is populated.
     const callbacks = useRef({});
 
-    // ── SignalR hook — must come first so connectionId is available below ────────
-    // sendSignal is a stable callback (reads connRef inside the hook) so it is
+    // --- useInterviewSignalR Hook ---
+    // Manages the SignalR connection and peer signaling.
+    // `sendSignal` is a stable callback (reads connRef inside the hook) so it is
     // safe to pass straight to useCodeSync / useWebRTC without wrapping.
     const { connectionId, peers, sendSignal, leaveRoom } = useInterviewSignalR({
         roomId: loading || error ? null : roomId,
         userId: user?.id,
         role: user?.role,
-        userName: user?.fullName, // Map fullName to userName
+        userName: user?.fullName,
         callbacks,
     });
 
-    // ── Code sync hook (isolated from WebRTC) ─────────────────────────────────
+    // --- useCodeSync Hook ---
+    // Manages code editor state, language changes, execution, and synchronization.
     const {
         editorRef,
         language,
@@ -105,10 +120,8 @@ function InterviewRoomPage() {
         initFromRoomState,
     } = useCodeSync({ sendSignal, roomId, user });
 
-    // ── WebRTC hook ────────────────────────────────────────────────────────────
-    // Pass connectionId so the polite/impolite tie-breaking (selfId < targetId)
-    // uses the real id.  On the first render connectionId is null; the hook's
-    // internal useEffect updates selfIdRef when connectionId resolves.
+    // --- useWebRTC Hook ---
+    // Manages WebRTC peer connections, local/remote media streams, and camera/mic controls.
     const {
         localStream,
         remoteStream,
@@ -125,24 +138,26 @@ function InterviewRoomPage() {
         handleIceCandidate,
     } = useWebRTC({ signalingSender: sendSignal, selfId: connectionId });
 
-    // ── Audio Recording ────────────────────────────────────────────────────────
-    // We record chunks for processing (Interviewer and Candidate)
-    // Recording is now tied to the user's mic state.
+    // --- useAudioRecorder Hook ---
+    // Manages audio recording for transcription/analysis purposes.
     useAudioRecorder({
         roomId,
         isEnabled: !loading && !error && (user?.role === ROLES.INTERVIEWER || user?.role === ROLES.CANDIDATE),
-        isMicOn, // only record if mic is on
+        isMicOn,
         chunkIntervalMs: 15000
     });
 
-    // ── Remote peer media state (camera/mic indicators for late-joiners) ─────
+    // --- State for Remote Peer Media Status ---
     const [remoteCameraOn, setRemoteCameraOn] = useState(false);
     const [remoteMicOn, setRemoteMicOn] = useState(false);
 
-    // ── Wire callbacks bag ─────────────────────────────────────────────────────
-    // This runs every render but is cheap (just ref assignment).
+    /**
+     * Callback Bag Wiring
+     * This runs every render but is cheap (just ref assignment).
+     * It ensures that SignalR events can trigger the correct WebRTC/CodeSync actions.
+     */
     callbacks.current = {
-        // WebRTC
+        // WebRTC Callbacks
         onOffer: handleOffer,
         onAnswer: handleAnswer,
         onIce: handleIceCandidate,
@@ -152,12 +167,11 @@ function InterviewRoomPage() {
             setRemoteCameraOn(false);
             setRemoteMicOn(false);
         },
-        // Code sync
+        // Code Sync Callbacks
         onReceiveCode: applyExternalCode,
         onReceiveLanguage: applyExternalLanguage,
         onReceiveFullState: (state) => {
             initFromRoomState(state);
-            // Hydrate problem state for Interviewers
             if (state) {
                 setProblemDescription(state.problemDescription ?? "");
                 setProblemShortName(state.problemShortName ?? "");
@@ -196,7 +210,7 @@ function InterviewRoomPage() {
             setTestResults(results);
             setIsRunning(false);
         },
-        // Remote media state
+        // Remote Media State Callbacks
         onReceiveCameraState: (_fromId, isOn) => {
             setRemoteCameraOn(isOn);
         },
@@ -205,11 +219,18 @@ function InterviewRoomPage() {
         },
     };
 
-    // ── Wire video streams to <video> elements ─────────────────────────────────
+    /**
+     * Effect: Wire Local Video Stream
+     * Connects the local WebRTC stream to the local video element.
+     */
     useEffect(() => {
         if (localVideoRef.current) localVideoRef.current.srcObject = localStream ?? null;
     }, [localStream]);
 
+    /**
+     * Effect: Wire Remote Video Stream
+     * Connects the remote WebRTC stream to the remote video element.
+     */
     useEffect(() => {
         if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream ?? null;
@@ -219,44 +240,59 @@ function InterviewRoomPage() {
         }
     }, [remoteStream]);
 
-    // Broadcast camera/mic state changes to the server so late-joiners see them
+    /**
+     * Effect: Broadcast Local Camera State
+     * Sends local camera status to other peers via SignalR.
+     */
     useEffect(() => {
         if (!connectionId || !roomId) return;
         sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => {});
     }, [isCameraOn, connectionId, roomId, sendSignal]);
 
+    /**
+     * Effect: Broadcast Local Mic State
+     * Sends local microphone status to other peers via SignalR.
+     */
     useEffect(() => {
         if (!connectionId || !roomId) return;
         sendSignal("SendMicState", roomId, isMicOn).catch?.(() => {});
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
-    // ── Leave room ─────────────────────────────────────────────────────────────
+    /**
+     * Callback: handleLeaveRoom
+     * Disconnects from the interview room and navigates away.
+     */
     const handleLeaveRoom = useCallback(() => {
         leaveRoom();
         navigate("/interview");
     }, [leaveRoom, navigate]);
 
-    // ── Problem / test-case state (Interviewer editing) ───────────────────────
+    // --- State for Problem Description and Test Cases (Interviewer editing) ---
     const [problemDescription, setProblemDescription] = useState("");
     const [problemShortName, setProblemShortName] = useState("");
     const [testCases, setTestCases] = useState([{ inputs: [{ name: "", value: "" }], expectedOutputs: [""] }]);
-    const [receivedProblem, setReceivedProblem] = useState(null);
+    const [receivedProblem, setReceivedProblem] = useState(null); // For Candidate view
     const [activeTestCaseTab, setActiveTestCaseTab] = useState(0);
     const [isEditingProblem, setIsEditingProblem] = useState(false);
     const [problemTab, setProblemTab] = useState(0);
 
+    // Memoized problem data for rendering (Interviewer edits vs. Candidate view)
     const problemData =
         user?.role === ROLES.INTERVIEWER
             ? { description: problemDescription, shortName: problemShortName, testCases }
             : receivedProblem;
 
+    /**
+     * Callback: sendProblem
+     * Sends problem description and test cases to other peers via SignalR.
+     */
     const sendProblem = useCallback(() => {
         sendSignal("SendProblem", roomId, problemDescription, problemShortName, testCases)
             .then(() => setIsEditingProblem(false))
             .catch(console.error);
     }, [sendSignal, roomId, problemDescription, problemShortName, testCases]);
 
-    // Test-case helpers (pure state mutations, no WebRTC/SignalR involvement)
+    // --- Test-case Helper Callbacks (pure state mutations) ---
     const handleTestCaseInputChange = (tcIdx, inIdx, field, fieldVal) => {
         setTestCases((prev) => {
             const next = JSON.parse(JSON.stringify(prev));
@@ -322,11 +358,15 @@ function InterviewRoomPage() {
         });
     };
 
-    // ── Resizable layout ───────────────────────────────────────────────────────
+    // --- Resizable Layout Logic ---
     const containerRef = useRef(null);
-    const [cols, setCols] = useState([25, 35, 40]);
-    const [dragging, setDragging] = useState(null);
+    const [cols, setCols] = useState([25, 35, 40]); // Initial column widths
+    const [dragging, setDragging] = useState(null); // State for drag operation
 
+    /**
+     * Callback: startDrag
+     * Initiates column resizing when a resizer handle is moused down.
+     */
     const startDrag = (e, index) => {
         e.preventDefault();
         if (!containerRef.current) return;
@@ -334,34 +374,38 @@ function InterviewRoomPage() {
         setDragging({ index, startX: e.clientX, startCols: [...cols], containerWidth: rect.width });
     };
 
+    /**
+     * Effect: Handle Column Dragging
+     * Attaches/detaches mousemove/mouseup listeners for resizing columns.
+     */
     useEffect(() => {
         if (!dragging) return;
-        const MIN_COL = 10;
+        const MIN_COL = 10; // Minimum column width in percentage
         const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
         const onMove = (e) => {
             const deltaPct = ((e.clientX - dragging.startX) / dragging.containerWidth) * 100;
             const [l0, m0, r0] = dragging.startCols;
-            if (dragging.index === 0) {
+            if (dragging.index === 0) { // Dragging first resizer (between left and middle)
                 const d = clamp(deltaPct, -(l0 - MIN_COL), m0 - MIN_COL);
                 setCols([l0 + d, m0 - d, r0]);
-            } else {
+            } else { // Dragging second resizer (between middle and right)
                 const d = clamp(deltaPct, -(m0 - MIN_COL), r0 - MIN_COL);
                 setCols([l0, m0 + d, r0 - d]);
             }
         };
-        const onUp = () => setDragging(null);
+        const onUp = () => setDragging(null); // End drag operation
         document.addEventListener("mousemove", onMove);
         document.addEventListener("mouseup", onUp);
         return () => {
             document.removeEventListener("mousemove", onMove);
             document.removeEventListener("mouseup", onUp);
         };
-    }, [dragging]);
+    }, [dragging]); // Re-run effect only when dragging state changes
 
     const resizerStyle = { width: 6, cursor: "col-resize", background: "#e5e7eb", userSelect: "none" };
 
-    // ── Gate render ───────────────────────────────────────────────────────────
+    // --- Conditional Render: Loading/Error State ---
     if (loading || error) {
         return (
             <Box
@@ -381,11 +425,11 @@ function InterviewRoomPage() {
         );
     }
 
-    // ── Main render ───────────────────────────────────────────────────────────
+    // --- Main Render: Interview Room Layout ---
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
             <Box ref={containerRef} style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
-                {/* ── Left: Question Panel ── */}
+                {/* Left Panel: Question Panel */}
                 <Box
                     sx={{
                         width: `${cols[0]}%`,
@@ -424,7 +468,7 @@ function InterviewRoomPage() {
 
                 <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 0)} />
 
-                {/* ── Middle: Code Editor Panel ── */}
+                {/* Middle Panel: Code Editor Panel */}
                 <Box
                     sx={{
                         width: `${cols[1]}%`,
@@ -454,7 +498,7 @@ function InterviewRoomPage() {
 
                 <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 1)} />
 
-                {/* ── Right: Video Panel ── */}
+                {/* Right Panel: Video Panel */}
                 <Box sx={{ width: `${cols[2]}%`, minWidth: 0, overflow: "auto", padding: 1.5 }}>
                     <VideoPanel
                         myId={connectionId}
