@@ -16,6 +16,7 @@ import { BE_BASE_URL } from "../../../common/constants/env";
 //   roomId            – string
 //   userId            – string | undefined
 //   role              – string | undefined
+//   userName          - string | undefined
 //   callbacks         – React.MutableRefObject<{
 //       // WebRTC bridge
 //       onOffer:           (fromId, sdp) => void
@@ -39,7 +40,7 @@ import { BE_BASE_URL } from "../../../common/constants/env";
 //   sendSignal    – async (method, ...args) => void
 //   leaveRoom     – () => void
 // ---------------------------------------------------------------------------
-export function useInterviewSignalR({ roomId, userId, role, callbacks }) {
+export function useInterviewSignalR({ roomId, userId, role, userName, callbacks }) {
   const [connectionId, setConnectionId] = useState(null);
   const [peers, setPeers] = useState([]);
   const [roomState, setRoomState] = useState(null);
@@ -59,16 +60,21 @@ export function useInterviewSignalR({ roomId, userId, role, callbacks }) {
   const leaveRoom = useCallback(() => {
     const conn = connRef.current;
     if (!conn) return;
-    conn.invoke("LeaveRoom", roomId).catch(() => {});
+    const safeRole = role ?? "";
+    const safeUserName = userName ?? "Unknown";
+    conn.invoke("LeaveRoom", roomId, userId, safeRole, safeUserName).catch(() => {});
     conn.stop();
-  }, [roomId]);
+  }, [roomId, userId, role, userName]);
 
   useEffect(() => {
     if (!roomId || !userId) return;
 
+    const safeRole = role ?? "";
+    const safeUserName = userName ?? "Unknown";
+
     const conn = new signalR.HubConnectionBuilder()
       .withUrl(
-        `${BE_BASE_URL}/hubs/interviewroom?userId=${userId}&role=${role ?? ""}`,
+        `${BE_BASE_URL}/hubs/interviewroom?userId=${userId}&role=${safeRole}`,
         { withCredentials: false }
       )
       .withAutomaticReconnect([0, 1000, 2000, 5000])
@@ -82,7 +88,7 @@ export function useInterviewSignalR({ roomId, userId, role, callbacks }) {
     conn.onreconnected((newId) => {
       console.log("[SignalR] Reconnected, new id:", newId);
       setConnectionId(newId ?? null);
-      conn.invoke("JoinRoom", roomId).catch(console.error);
+      conn.invoke("JoinRoom", roomId, userId, safeRole, safeUserName).catch(console.error);
     });
 
     conn.onclose(() => {
@@ -178,7 +184,7 @@ export function useInterviewSignalR({ roomId, userId, role, callbacks }) {
         const id = conn.connectionId;
         console.log("[SignalR] Connected, id:", id);
         setConnectionId(id ?? null);
-        return conn.invoke("JoinRoom", roomId);
+        return conn.invoke("JoinRoom", roomId, userId, safeRole, safeUserName);
       })
       .catch(console.error);
 
@@ -198,12 +204,12 @@ export function useInterviewSignalR({ roomId, userId, role, callbacks }) {
       conn.off("ReceiveCameraState");
       conn.off("ReceiveMicState");
 
-      conn.invoke("LeaveRoom", roomId).catch(() => {});
+      conn.invoke("LeaveRoom", roomId, userId, safeRole, safeUserName).catch(() => {});
       conn.stop();
       connRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, userId, role]); // callbacks ref is stable; not needed in deps
+  }, [roomId, userId, role, userName]); // Added userName to deps
 
   return {
     connectionId,
