@@ -6,9 +6,14 @@ import {
     CircularProgress,
     Dialog,
     DialogContent,
+    FormControl,
     IconButton,
+    LinearProgress,
+    MenuItem,
+    Select,
     Stack,
     Typography,
+    useTheme,
 } from "@mui/material";
 import {
     Close,
@@ -24,21 +29,169 @@ import {
     PlayArrow,
     ArrowForward,
     Settings,
+    ErrorOutline,
 } from "@mui/icons-material";
 import usePrecheckDevices from "./usePrecheckDevices";
+import { STATUS_MSG } from "../../constants/mediaConfig";
 
+// ─── Volume Meter Bar ────────────────────────────────────────────────────────
+function VolumeMeter({ level, isActive }) {
+    const theme = useTheme();
+    return (
+        <Box sx={{ width: "100%", mt: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+                <Mic sx={{ fontSize: 16, color: isActive ? "success.main" : "text.disabled" }} />
+                <Box sx={{ flex: 1 }}>
+                    <LinearProgress
+                        variant="determinate"
+                        value={isActive ? level : 0}
+                        sx={{
+                            height: 8,
+                            borderRadius: 4,
+                            bgcolor: theme.palette.action.disabledBackground,
+                            "& .MuiLinearProgress-bar": {
+                                borderRadius: 4,
+                                bgcolor:
+                                    level > 70
+                                        ? theme.palette.success.main
+                                        : level > 30
+                                          ? theme.palette.secondary.dark
+                                          : theme.palette.text.disabled,
+                                transition: "transform 0.08s linear",
+                            },
+                        }}
+                    />
+                </Box>
+                <Typography variant="caption" sx={{ minWidth: 28, textAlign: "right", color: "text.secondary" }}>
+                    {isActive ? `${level}%` : "—"}
+                </Typography>
+            </Stack>
+        </Box>
+    );
+}
+
+// ─── Device Selector Dropdown ────────────────────────────────────────────────
+function DeviceSelector({ label, devices, value, onChange, disabled }) {
+    const theme = useTheme();
+    if (!devices.length) return null;
+
+    return (
+        <FormControl size="small" fullWidth>
+            <Typography
+                sx={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    color: "text.disabled",
+                    mb: 0.5,
+                }}
+            >
+                {label}
+            </Typography>
+            <Select
+                value={value || ""}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
+                displayEmpty
+                sx={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    bgcolor: theme.palette.background.paper,
+                    "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: theme.palette.divider,
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: theme.palette.text.secondary,
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: theme.palette.primary.main,
+                    },
+                }}
+            >
+                {devices.map((d) => (
+                    <MenuItem key={d.deviceId} value={d.deviceId} sx={{ fontSize: 13 }}>
+                        {d.label || `Device ${d.deviceId.slice(0, 8)}…`}
+                    </MenuItem>
+                ))}
+            </Select>
+        </FormControl>
+    );
+}
+
+// ─── Permission Denied Banner ────────────────────────────────────────────────
+function PermissionBanner({ type }) {
+    const theme = useTheme();
+    const label = type === "camera" ? "Camera" : "Microphone";
+    return (
+        <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{
+                px: 1.5,
+                py: 1,
+                borderRadius: 2,
+                bgcolor: `${theme.palette.error.main}10`,
+                border: `1px solid ${theme.palette.error.light}`,
+                mt: 1,
+            }}
+        >
+            <ErrorOutline sx={{ fontSize: 18, color: "error.main" }} />
+            <Typography variant="caption" sx={{ color: "error.main", fontWeight: 600 }}>
+                {label} permission denied. Allow access in your browser settings and reload.
+            </Typography>
+        </Stack>
+    );
+}
+
+// ─── Status Row ──────────────────────────────────────────────────────────────
+function StatusRow({ icon: Icon, label, status, action }) {
+    return (
+        <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ py: 1.25, px: 0.5 }}
+        >
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+                <Icon sx={{ fontSize: 20, color: "text.secondary" }} />
+                <Typography variant="body2" fontWeight={600}>
+                    {label}
+                </Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" spacing={1}>
+                {action}
+                {status.message === STATUS_MSG.CHECKING || status.message === STATUS_MSG.NOT_TESTED ? (
+                    <CircularProgress size={18} sx={{ color: "text.disabled" }} />
+                ) : status.ok ? (
+                    <CheckCircle sx={{ fontSize: 20, color: "success.main" }} />
+                ) : (
+                    <Warning sx={{ fontSize: 20, color: "warning.main" }} />
+                )}
+            </Stack>
+        </Stack>
+    );
+}
+
+// ─── Main Modal ──────────────────────────────────────────────────────────────
 function PrecheckModal({ open, onClose, room }) {
     const navigate = useNavigate();
+    const theme = useTheme();
     const hasRunRef = useRef(false);
 
     const {
         videoRef,
         cameraStatus,
         isCameraPreviewOn,
+        selectedCam,
+        setSelectedCam,
         toggleCameraPreview,
         micStatus,
         isMicOn,
+        selectedMic,
+        setSelectedMic,
         toggleMic,
+        volumeLevel,
         speakerStatus,
         testSpeaker,
         networkStatus,
@@ -47,6 +200,7 @@ function PrecheckModal({ open, onClose, room }) {
         runAllChecks,
         stopAll,
         reset,
+        permissionDenied,
     } = usePrecheckDevices();
 
     // Auto-run checks when modal opens
@@ -67,8 +221,6 @@ function PrecheckModal({ open, onClose, room }) {
             reset();
         }
     }, [open, stopAll, reset]);
-
-    const allChecksReady = cameraStatus.ok && micStatus.ok && networkStatus.ok;
 
     const handleJoinRoom = () => {
         stopAll();
@@ -97,35 +249,6 @@ function PrecheckModal({ open, onClose, room }) {
         ? scheduledDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
         : "—";
     const durationLabel = `${room?.durationMinutes || 60}m`;
-
-    const selectedCamLabel = devices.cameras.find((d) => d.deviceId === (devices.cameras[0]?.deviceId || ""))?.label || "Camera";
-    const selectedMicLabel = devices.microphones.find((d) => d.deviceId === (devices.microphones[0]?.deviceId || ""))?.label || "Microphone";
-
-    const StatusRow = ({ icon: Icon, label, status, action }) => (
-        <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ py: 1.25, px: 0.5 }}
-        >
-            <Stack direction="row" alignItems="center" spacing={1.25}>
-                <Icon sx={{ fontSize: 20, color: "text.secondary" }} />
-                <Typography variant="body2" fontWeight={600}>
-                    {label}
-                </Typography>
-            </Stack>
-            <Stack direction="row" alignItems="center" spacing={1}>
-                {action}
-                {status.message === "Checking..." || status.message === "Not tested" ? (
-                    <CircularProgress size={18} sx={{ color: "text.disabled" }} />
-                ) : status.ok ? (
-                    <CheckCircle sx={{ fontSize: 20, color: "success.main" }} />
-                ) : (
-                    <Warning sx={{ fontSize: 20, color: "warning.main" }} />
-                )}
-            </Stack>
-        </Stack>
-    );
 
     return (
         <Dialog
@@ -167,14 +290,15 @@ function PrecheckModal({ open, onClose, room }) {
 
             <DialogContent sx={{ px: 3, pb: 3, pt: 1.5 }}>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                    {/* LEFT COLUMN — Camera Preview */}
+                    {/* LEFT COLUMN — Camera Preview + Device Selectors */}
                     <Box sx={{ flex: 1.2 }}>
+                        {/* Video preview */}
                         <Box
                             sx={{
                                 position: "relative",
                                 width: "100%",
                                 aspectRatio: "16 / 9",
-                                bgcolor: "#020617",
+                                bgcolor: theme.palette.primary.dark,
                                 borderRadius: 3,
                                 overflow: "hidden",
                             }}
@@ -192,6 +316,7 @@ function PrecheckModal({ open, onClose, room }) {
                                 }}
                             />
 
+                            {/* Camera-off / Permission-denied overlay */}
                             {!cameraStatus.ok && (
                                 <Stack
                                     spacing={0.5}
@@ -200,35 +325,57 @@ function PrecheckModal({ open, onClose, room }) {
                                     sx={{
                                         position: "absolute",
                                         inset: 0,
-                                        color: "#94a3b8",
+                                        color: theme.palette.text.disabled,
                                     }}
                                 >
-                                    <VideocamOff sx={{ fontSize: 36 }} />
-                                    <Typography variant="caption">Camera preview unavailable</Typography>
+                                    {permissionDenied.camera ? (
+                                        <>
+                                            <ErrorOutline sx={{ fontSize: 36 }} />
+                                            <Typography variant="caption" sx={{ color: theme.palette.error.light }}>
+                                                Camera access denied
+                                            </Typography>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <VideocamOff sx={{ fontSize: 36 }} />
+                                            <Typography variant="caption">Camera preview unavailable</Typography>
+                                        </>
+                                    )}
                                 </Stack>
                             )}
 
                             {/* LIVE badge */}
-                            <Box
-                                sx={{
-                                    position: "absolute",
-                                    left: 12,
-                                    top: 12,
-                                    px: 1,
-                                    py: 0.3,
-                                    borderRadius: 999,
-                                    bgcolor: "rgba(15,23,42,0.6)",
-                                    border: "1px solid rgba(255,255,255,0.15)",
-                                    backdropFilter: "blur(6px)",
-                                }}
-                            >
-                                <Stack direction="row" spacing={0.5} alignItems="center">
-                                    <FiberManualRecord sx={{ color: "#a3e635", fontSize: 10 }} />
-                                    <Typography variant="caption" sx={{ color: "#f8fafc", fontWeight: 700, fontSize: 11 }}>
-                                        LIVE
-                                    </Typography>
-                                </Stack>
-                            </Box>
+                            {cameraStatus.ok && (
+                                <Box
+                                    sx={{
+                                        position: "absolute",
+                                        left: 12,
+                                        top: 12,
+                                        px: 1,
+                                        py: 0.3,
+                                        borderRadius: 999,
+                                        bgcolor: "rgba(15,23,42,0.6)",
+                                        border: "1px solid rgba(255,255,255,0.15)",
+                                        backdropFilter: "blur(6px)",
+                                    }}
+                                >
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                        <FiberManualRecord
+                                            sx={{ color: theme.palette.secondary.dark, fontSize: 10 }}
+                                        />
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                color: theme.palette.primary.contrastText,
+                                                fontWeight: 700,
+                                                fontSize: 11,
+                                            }}
+                                        >
+                                            LIVE
+                                        </Typography>
+                                    </Stack>
+                                </Box>
+                            )}
 
                             {/* Camera / Mic toggle pill */}
                             <Stack
@@ -249,30 +396,44 @@ function PrecheckModal({ open, onClose, room }) {
                                 <IconButton
                                     size="small"
                                     onClick={toggleCameraPreview}
+                                    disabled={permissionDenied.camera}
                                     sx={{
                                         width: 44,
                                         height: 34,
                                         borderRadius: 1.8,
-                                        color: "#f8fafc",
-                                        bgcolor: isCameraPreviewOn ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)",
+                                        color: theme.palette.primary.contrastText,
+                                        bgcolor: isCameraPreviewOn
+                                            ? "rgba(16,185,129,0.25)"
+                                            : `${theme.palette.error.main}40`,
                                         "&:hover": {
-                                            bgcolor: isCameraPreviewOn ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)",
+                                            bgcolor: isCameraPreviewOn
+                                                ? "rgba(16,185,129,0.4)"
+                                                : `${theme.palette.error.main}66`,
                                         },
                                     }}
                                 >
-                                    {isCameraPreviewOn ? <Videocam fontSize="small" /> : <VideocamOff fontSize="small" />}
+                                    {isCameraPreviewOn ? (
+                                        <Videocam fontSize="small" />
+                                    ) : (
+                                        <VideocamOff fontSize="small" />
+                                    )}
                                 </IconButton>
                                 <IconButton
                                     size="small"
                                     onClick={toggleMic}
+                                    disabled={permissionDenied.mic}
                                     sx={{
                                         width: 44,
                                         height: 34,
                                         borderRadius: 1.8,
-                                        color: "#f8fafc",
-                                        bgcolor: isMicOn ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)",
+                                        color: theme.palette.primary.contrastText,
+                                        bgcolor: isMicOn
+                                            ? "rgba(16,185,129,0.25)"
+                                            : `${theme.palette.error.main}40`,
                                         "&:hover": {
-                                            bgcolor: isMicOn ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)",
+                                            bgcolor: isMicOn
+                                                ? "rgba(16,185,129,0.4)"
+                                                : `${theme.palette.error.main}66`,
                                         },
                                     }}
                                 >
@@ -281,43 +442,32 @@ function PrecheckModal({ open, onClose, room }) {
                             </Stack>
                         </Box>
 
-                        {/* Device name chips */}
+                        {/* Volume Meter */}
+                        <VolumeMeter level={volumeLevel} isActive={isMicOn} />
+
+                        {/* Permission Denied Banners */}
+                        {permissionDenied.camera && <PermissionBanner type="camera" />}
+                        {permissionDenied.mic && <PermissionBanner type="mic" />}
+
+                        {/* Device Selection Dropdowns */}
                         <Stack direction="row" spacing={1.5} sx={{ mt: 1.5 }}>
-                            <Box
-                                sx={{
-                                    flex: 1,
-                                    px: 1.5,
-                                    py: 1,
-                                    borderRadius: 2,
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                    bgcolor: "background.paper",
-                                }}
-                            >
-                                <Typography sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "text.disabled", mb: 0.25 }}>
-                                    CAMERA
-                                </Typography>
-                                <Typography variant="body2" fontWeight={600} noWrap>
-                                    {selectedCamLabel}
-                                </Typography>
+                            <Box sx={{ flex: 1 }}>
+                                <DeviceSelector
+                                    label="CAMERA"
+                                    devices={devices.cameras}
+                                    value={selectedCam}
+                                    onChange={setSelectedCam}
+                                    disabled={permissionDenied.camera}
+                                />
                             </Box>
-                            <Box
-                                sx={{
-                                    flex: 1,
-                                    px: 1.5,
-                                    py: 1,
-                                    borderRadius: 2,
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                    bgcolor: "background.paper",
-                                }}
-                            >
-                                <Typography sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "text.disabled", mb: 0.25 }}>
-                                    MIC
-                                </Typography>
-                                <Typography variant="body2" fontWeight={600} noWrap>
-                                    {selectedMicLabel}
-                                </Typography>
+                            <Box sx={{ flex: 1 }}>
+                                <DeviceSelector
+                                    label="MICROPHONE"
+                                    devices={devices.microphones}
+                                    value={selectedMic}
+                                    onChange={setSelectedMic}
+                                    disabled={permissionDenied.mic}
+                                />
                             </Box>
                         </Stack>
                     </Box>
@@ -366,7 +516,7 @@ function PrecheckModal({ open, onClose, room }) {
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 0.25,
-                                            color: "#a3e635",
+                                            color: theme.palette.secondary.dark,
                                             fontWeight: 700,
                                             fontSize: 12,
                                             p: 0,
@@ -386,7 +536,7 @@ function PrecheckModal({ open, onClose, room }) {
                         <Box
                             sx={{
                                 mt: 2,
-                                bgcolor: "#0f172a",
+                                bgcolor: theme.palette.primary.main,
                                 borderRadius: 2.5,
                                 px: 2.25,
                                 py: 2,
@@ -397,8 +547,8 @@ function PrecheckModal({ open, onClose, room }) {
                                     sx={{
                                         width: 40,
                                         height: 40,
-                                        bgcolor: "#334155",
-                                        color: "#f8fafc",
+                                        bgcolor: theme.palette.primary.light,
+                                        color: theme.palette.primary.contrastText,
                                         fontWeight: 700,
                                         fontSize: 16,
                                     }}
@@ -406,40 +556,56 @@ function PrecheckModal({ open, onClose, room }) {
                                     {coachInitial}
                                 </Avatar>
                                 <Box>
-                                    <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: 14 }}>
+                                    <Typography
+                                        sx={{
+                                            color: theme.palette.primary.contrastText,
+                                            fontWeight: 700,
+                                            fontSize: 14,
+                                        }}
+                                    >
                                         {coachName}
                                     </Typography>
-                                    <Typography sx={{ color: "#a3e635", fontWeight: 700, fontSize: 10, letterSpacing: "0.08em" }}>
+                                    <Typography
+                                        sx={{
+                                            color: theme.palette.secondary.dark,
+                                            fontWeight: 700,
+                                            fontSize: 10,
+                                            letterSpacing: "0.08em",
+                                        }}
+                                    >
                                         INTERVIEW COACH
                                     </Typography>
                                 </Box>
                             </Stack>
 
                             <Stack direction="row" spacing={2} sx={{ mt: 1.75 }}>
-                                <Box>
-                                    <Typography sx={{ fontSize: 9, fontWeight: 600, color: "#64748b", letterSpacing: "0.08em" }}>
-                                        DATE
-                                    </Typography>
-                                    <Typography sx={{ color: "#f8fafc", fontSize: 13, fontWeight: 600 }}>
-                                        {dateLabel}
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography sx={{ fontSize: 9, fontWeight: 600, color: "#64748b", letterSpacing: "0.08em" }}>
-                                        TIME
-                                    </Typography>
-                                    <Typography sx={{ color: "#f8fafc", fontSize: 13, fontWeight: 600 }}>
-                                        {timeLabel}
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography sx={{ fontSize: 9, fontWeight: 600, color: "#64748b", letterSpacing: "0.08em" }}>
-                                        DUR
-                                    </Typography>
-                                    <Typography sx={{ color: "#f8fafc", fontSize: 13, fontWeight: 600 }}>
-                                        {durationLabel}
-                                    </Typography>
-                                </Box>
+                                {[
+                                    { title: "DATE", value: dateLabel },
+                                    { title: "TIME", value: timeLabel },
+                                    { title: "DUR", value: durationLabel },
+                                ].map(({ title, value }) => (
+                                    <Box key={title}>
+                                        <Typography
+                                            sx={{
+                                                fontSize: 9,
+                                                fontWeight: 600,
+                                                color: theme.palette.text.secondary,
+                                                letterSpacing: "0.08em",
+                                            }}
+                                        >
+                                            {title}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                color: theme.palette.primary.contrastText,
+                                                fontSize: 13,
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            {value}
+                                        </Typography>
+                                    </Box>
+                                ))}
                             </Stack>
                         </Box>
 
@@ -454,8 +620,9 @@ function PrecheckModal({ open, onClose, room }) {
                                 py: 1.5,
                                 border: "none",
                                 borderRadius: 2,
-                                bgcolor: "#a3e635",
-                                color: "#0f172a",
+                                bgcolor: theme.palette.secondary.dark,
+                                color: theme.palette.secondary.contrastText,
+                                fontFamily: "inherit",
                                 fontWeight: 800,
                                 fontSize: 16,
                                 cursor: isTesting ? "not-allowed" : "pointer",
@@ -466,7 +633,7 @@ function PrecheckModal({ open, onClose, room }) {
                                 opacity: isTesting ? 0.6 : 1,
                                 transition: "opacity 150ms, background-color 150ms",
                                 "&:hover:not(:disabled)": {
-                                    bgcolor: "#bef264",
+                                    bgcolor: theme.palette.secondary.main,
                                 },
                             }}
                         >
