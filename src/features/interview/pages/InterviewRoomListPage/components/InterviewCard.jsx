@@ -353,8 +353,8 @@ function InterviewCard({
 
             return (
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
-                    {/* Cancel Button - hidden if scheduled time has passed */}
-                    {canCancel && (
+                    {/* Cancel Button - only for candidates, hidden if past */}
+                    {user?.role === ROLES.CANDIDATE && canCancel && (
                         <SecondaryButton
                             onClick={(e) => {
                                 e.stopPropagation();

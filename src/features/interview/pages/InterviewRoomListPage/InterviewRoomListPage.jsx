@@ -133,6 +133,8 @@ function InterviewRoomListPage() {
     }, [activeTab]); // Refetch when tab changes
 
     const groupRoomsByBooking = (roomsList) => {
+        if (!Array.isArray(roomsList)) return [];
+
         const grouped = {};
         const standalone = [];
 
@@ -188,7 +190,7 @@ function InterviewRoomListPage() {
                 method: METHOD.GET,
                 endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
             });
-            const allRoomsData = allRoomsRes?.data || [];
+            const allRoomsData = allRoomsRes?.data?.items || allRoomsRes?.data || [];
 
             // Group rooms
             const groupedRooms = groupRoomsByBooking(allRoomsData);
@@ -291,9 +293,9 @@ function InterviewRoomListPage() {
                 method: METHOD.GET,
                 endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=1000`, // Increased limit to find rounds
             });
-            const rooms = res?.data || [];
+            const rooms = res?.data?.items || res?.data || [];
             
-            // For multi-round interviews, we need to check ALL individual rooms,
+            if (!Array.isArray(rooms)) return;
             // not just the ones currently marked as 'COMPLETED' in the top-level grouping.
             const pendingRoom = rooms.find(
                 (room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED && room.isEvaluationCompleted === false,

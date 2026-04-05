@@ -4,7 +4,6 @@ import { authRoutes } from "./authRoutes";
 import { interviewerRoutes } from "./coachRoutes.jsx";
 import { candidateRoutes } from "./candidateRoutes.jsx";
 import { Navigate } from "react-router-dom";
-import PublicInterviewerProfilePage from "../../features/profiles/coach/page/PublicInterviewerProfilePage/PublicInterviewerProfilePage.jsx";
 import EmptyLayout from "../layouts/EmptyLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
@@ -13,6 +12,7 @@ import LandingPage from "../../features/landing/pages/LandingPage";
 import RootPage from "./RootPage";
 import InterviewerProfilePage from "../../features/profiles/coach/page/InterviewerProfilePage.jsx";
 import CandidateProfilePage from "../../features/profiles/candidate/page/CandidateProfilePage.jsx";
+import PublicCandidateProfilePage from "../../features/profiles/candidate/page/PublicCandidateProfilePage.jsx";
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
@@ -25,6 +25,7 @@ import InterviewQuestionsPage from "../../features/interviewQuestions/page/Inter
 import QuestionDetailPage from "../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx";
 import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx";
 import SavedQuestionsPage from "../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx";
+import PublicProfilePage from "../../features/profiles/page/PublicProfilePage.jsx";
 
 export const routes = [
     { path: "/", element: <RootPage /> },
@@ -105,7 +106,7 @@ export const routes = [
     // Public routes
     {
         element: <MainLayout />,
-        children: [{ path: "/profile/:slugProfileUrl", element: <PublicInterviewerProfilePage /> }],
+        children: [{ path: "/profile/:slugProfileUrl", element: <PublicProfilePage /> }],
     },
 
     // Candidate specific routes
@@ -115,11 +116,15 @@ export const routes = [
                 <MainLayout />
             </ProtectedRoute>
         ),
-        children: [
-            ...candidateRoutes,
-            { path: "/candidate/profile", element: <CandidateProfilePage /> },
-            { path: "/candidate/profile/:profileUrl", element: <CandidateProfilePage /> },
-        ],
+        children: [...candidateRoutes, { path: "/candidate/profile", element: <CandidateProfilePage /> }],
+    },
+    {
+        element: (
+            <ProtectedRoute allowedRoles={[ROLES.CANDIDATE, ROLES.INTERVIEWER]}>
+                <MainLayout />
+            </ProtectedRoute>
+        ),
+        children: [{ path: "/candidate/profile/:profileUrl", element: <PublicCandidateProfilePage /> }],
     },
     {
         element: (
