@@ -127,6 +127,7 @@ const PublicInterviewerProfilePage = () => {
         });
         if (data && data.status === TRANSACTION_STATUS.PAID) {
             toast.success("Interview booked successfully!");
+            navigate("/booking-requests", { replace: true });
         }
     };
 
@@ -136,7 +137,7 @@ const PublicInterviewerProfilePage = () => {
     };
 
     const handleBooking = async ({ slot, service, startTime }) => {
-        const returnUrl = window.location.origin + window.location.pathname;
+        const returnUrl = window.location.origin + "/booking-requests";
         // try {
         const { data } = await callApi({
             method: METHOD.POST,
@@ -154,6 +155,7 @@ const PublicInterviewerProfilePage = () => {
             window.location.href = data.checkOutUrl;
         } else {
             toast.success("Interview booked successfully!");
+            navigate("/booking-requests");
         }
         // } catch (err) {
         //     // toast.error("Booking failed. Please try again.");

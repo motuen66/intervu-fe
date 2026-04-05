@@ -100,9 +100,7 @@ export default function BookingRequestListPage() {
                     Your Bookings
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {isCoach
-                        ? "Manage incoming bookings from candidates."
-                        : "Track your bookings to coaches."}
+                    {isCoach ? "Manage incoming bookings from candidates." : "Track your bookings to coaches."}
                 </Typography>
             </Box>
 
@@ -161,8 +159,8 @@ export default function BookingRequestListPage() {
                         {typeFilter || statusFilter
                             ? "Try adjusting your filters."
                             : isCoach
-                                ? "You have no incoming bookings yet."
-                                : "You haven't submitted any bookings yet."}
+                              ? "You have no incoming bookings yet."
+                              : "You haven't submitted any bookings yet."}
                     </Typography>
                 </Box>
             ) : (
@@ -201,10 +199,7 @@ export default function BookingRequestListPage() {
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
-                                            <StatusChip
-                                                label={BOOKING_REQUEST_TYPE_LABELS[req.type] || "Unknown"}
-                                                color="default"
-                                            />
+                                            <StatusChip label={BOOKING_REQUEST_TYPE_LABELS[req.type]} color="default" />
                                         </TableCell>
                                         <TableCell>
                                             <Typography fontSize={13}>
