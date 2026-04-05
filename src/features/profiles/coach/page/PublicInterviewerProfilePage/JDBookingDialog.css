@@ -398,19 +398,54 @@
         transform: translateX(0);
     }
 }
-/* Fix FullCalendar background event opacity (stop 'graying out' dark colors) */
-.fc-bg-event,
-.fc-daygrid-bg-event,
-.fc-timegrid-bg-event {
-  opacity: 1 !important;
+/* ── Calendly-style Time Slot List ── */
+
+.calendly-timeslot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
-/* Masterpiece Liquid/Glass Slot Styling */
-.fc-bg-event.liquid-slot {
-  background-color: rgba(190, 242, 100, 0.15) !important;
-  border-left: 3px solid #bef264 !important;
-  backdrop-filter: blur(4px) !important;
-  transition: all 0.3s ease !important;
+.calendly-timeslot-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.calendly-timeslot-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.calendly-timeslot {
+  padding: 14px 20px;
+  border: 1.5px solid #3b82f6;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #3b82f6;
+  background: #fff;
+}
+
+.calendly-timeslot:hover {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: #2563eb;
+}
+
+.calendly-timeslot.selected {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.calendly-timeslot.selected .MuiTypography-root {
+  color: #fff;
+}
+
+.calendly-timeslot .MuiTypography-root {
+  color: inherit;
 }
 
 /* Masterpiece Price Dashboard Card */

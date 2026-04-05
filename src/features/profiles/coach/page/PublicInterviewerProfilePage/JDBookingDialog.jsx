@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Dialog from "@mui/material/Dialog";
 import Grow from "@mui/material/Grow";
@@ -12,9 +12,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
-import Chip from "@mui/material/Chip";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
@@ -25,9 +23,8 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckIcon from "@mui/icons-material/Check";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import LanguageIcon from "@mui/icons-material/Language";
 import CircularProgress from "@mui/material/CircularProgress";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import {
     Link,
     FileUser,
@@ -36,9 +33,8 @@ import {
     Search,
     Terminal,
     CheckCircle,
-    AlertCircle,
     Edit2,
-} from 'lucide-react';
+} from "lucide-react";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Grow ref={ref} {...props} timeout={500} />;
@@ -53,11 +49,7 @@ import {
     arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import { addDays, addMonths, addMinutes, format, startOfDay } from "date-fns";
+import { addMonths, format, startOfDay } from "date-fns";
 import { AIM_LEVEL_LABELS } from "../../../../../common/constants/status";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import { createJDBookingRequest, payBookingRequest } from "../../../../interview/services/bookingRequestApi";
@@ -67,35 +59,46 @@ import { validateJDBookingRounds } from "./jdBookingValidation";
 import toast from "react-hot-toast";
 import { useTheme } from "@mui/material/styles";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
+import CalendlyCalendar from "../../../../../common/components/CalendlyCalendar";
 import "./JDBookingDialog.css";
 
 const STEPS = ["Job Details & Rounds", "Schedule Rounds"];
-const ROUND_COLORS = ["#d4ff3d", "#3b82f6", "#fb7247", "#818cf8", "#f472b6", "#c084fc"];
-const getTodayStart = () => startOfDay(new Date());
-const getRollingSevenDayRange = () => {
-    const start = getTodayStart();
-    return { start, end: addDays(start, 7) };
-};
+const BLOCK_MINUTES = 30;
 
 let nextRoundId = 1;
-const createRound = () => ({ id: `round-${nextRoundId++}`, coachInterviewServiceId: "", startTime: null });
+const createRound = () => ({
+    id: `round-${nextRoundId++}`,
+    coachInterviewServiceId: "",
+    startTime: null,
+    availabilityIds: [],
+});
 
-// ─── Sortable Round Card ──
-function SortableRoundCard({
-    round,
-    index,
-    isActive,
-    onActivate,
-    onRemove,
-    onServiceChange,
-    services,
-    canDelete,
-    allRounds,
-}) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging, setActivatorNodeRef } = useSortable({
-        id: round.id,
-    });
+/**
+ * Given a starting block, find N consecutive blocks from the available pool.
+ */
+function findConsecutiveBlocks(startBlock, requiredCount, availableBlocks) {
+    if (requiredCount <= 0) return [];
+    const sorted = [...availableBlocks].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
+    const startIdx = sorted.findIndex((b) => String(b.id) === String(startBlock.id));
+    if (startIdx === -1) return null;
+
+    const chain = [sorted[startIdx]];
+    for (let i = startIdx + 1; i < sorted.length && chain.length < requiredCount; i++) {
+        const prevEnd = new Date(chain[chain.length - 1].endTime).getTime();
+        const currStart = new Date(sorted[i].startTime).getTime();
+        if (currStart === prevEnd) {
+            chain.push(sorted[i]);
+        } else {
+            break;
+        }
+    }
+    return chain.length === requiredCount ? chain : null;
+}
+
+// ─── Sortable Round Card (Step 1) ──
+function SortableRoundCard({ round, index, isActive, onActivate, onRemove, onServiceChange, services, canDelete, allRounds }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: round.id });
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -114,78 +117,39 @@ function SortableRoundCard({
             {...attributes}
             {...listeners}
             onClick={onActivate}
-            className={`jd-round-card-stitch ${isActive ? 'active' : ''}`}
+            className={`jd-round-card-stitch ${isActive ? "active" : ""}`}
             sx={{
-                width: 280,
-                height: 170,
-                p: 2.5,
-                flexShrink: 0,
-                cursor: 'pointer',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 12px 24px -10px rgba(15, 23, 42, 0.12)',
-                    borderColor: '#94a3b8'
-                }
+                width: 280, height: 170, p: 2.5, flexShrink: 0,
+                cursor: "pointer", position: "relative",
+                display: "flex", flexDirection: "column", justifyContent: "space-between",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 12px 24px -10px rgba(15, 23, 42, 0.12)", borderColor: "#94a3b8" },
             }}
         >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <Box className="jd-card-icon-wrap jd-card-icon-wrap--dark">
                     <IconComponent size={18} color="#e2e8f0" />
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     {canDelete && (
-                        <IconButton
-                            size="small"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onRemove();
-                            }}
-                            sx={{
-                                color: "#94a3b8",
-                                bgcolor: 'rgba(241, 245, 249, 0.5)',
-                                p: 0.5,
-                                "&:hover": { color: "#ef4444", bgcolor: 'rgba(239, 68, 68, 0.1)' }
-                            }}
-                        >
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                            sx={{ color: "#94a3b8", bgcolor: "rgba(241, 245, 249, 0.5)", p: 0.5, "&:hover": { color: "#ef4444", bgcolor: "rgba(239, 68, 68, 0.1)" } }}>
                             <DeleteIcon sx={{ fontSize: 14 }} />
                         </IconButton>
                     )}
-                    <Box className="jd-round-badge" sx={{ position: 'relative', top: 0, right: 0 }}>
-                        ROUND {String(index + 1).padStart(2, '0')}
+                    <Box className="jd-round-badge" sx={{ position: "relative", top: 0, right: 0 }}>
+                        ROUND {String(index + 1).padStart(2, "0")}
                     </Box>
                 </Box>
             </Box>
-
             <Box>
-                <Typography className="jd-label-mini" sx={{ mb: 1, color: '#94a3b8', fontSize: '0.65rem' }}>SERVICE TYPE</Typography>
-                <TextField
-                    fullWidth
-                    select
-                    size="small"
-                    value={round.coachInterviewServiceId}
-                    onChange={(e) => {
-                        e.stopPropagation();
-                        onServiceChange(e.target.value);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    variant="outlined"
-                    InputProps={{
-                        sx: {
-                            borderRadius: '10px',
-                            bgcolor: '#f8fafc',
-                            fontWeight: 700,
-                            fontSize: '0.8rem',
-                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' }
-                        }
-                    }}
-                >
+                <Typography className="jd-label-mini" sx={{ mb: 1, color: "#94a3b8", fontSize: "0.65rem" }}>SERVICE TYPE</Typography>
+                <TextField fullWidth select size="small" value={round.coachInterviewServiceId}
+                    onChange={(e) => { e.stopPropagation(); onServiceChange(e.target.value); }}
+                    onClick={(e) => e.stopPropagation()} variant="outlined"
+                    InputProps={{ sx: { borderRadius: "10px", bgcolor: "#f8fafc", fontWeight: 700, fontSize: "0.8rem", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e2e8f0" } } }}>
                     {services.map((s) => {
-                        const isAlreadySelected = allRounds.some(r => r.id !== round.id && r.coachInterviewServiceId === s.id);
+                        const isAlreadySelected = allRounds.some((r) => r.id !== round.id && r.coachInterviewServiceId === s.id);
                         return (
                             <MenuItem key={s.id} value={s.id} disabled={isAlreadySelected}>
                                 <Typography variant="body2" fontWeight={700}>
@@ -200,19 +164,9 @@ function SortableRoundCard({
     );
 }
 
-function RoundScheduleTimelineItem({
-    round,
-    index,
-    isActive,
-    service,
-    disabled,
-    blockedByRoundNumber,
-    isLast,
-    onActivate,
-}) {
+// ─── Round Schedule Timeline Item (Step 2 sidebar) ──
+function RoundScheduleTimelineItem({ round, index, isActive, service, disabled, blockedByRoundNumber, isLast, onActivate }) {
     const handleClick = () => {
-        // If it's already done OR it's the current one being scheduled, allowed to click
-        // If it's blocked by a previous one, then check disabled
         if (disabled && !isDone) {
             toast.error(`Please set a time for Round ${index} first.`);
             return;
@@ -220,94 +174,43 @@ function RoundScheduleTimelineItem({
         onActivate();
     };
 
-    const isDone = Boolean(round.startTime);
+    const isDone = Boolean(round.startTime && round.availabilityIds?.length > 0);
     const isPending = !isDone && disabled;
     const statusClassName = isDone ? "done" : isPending ? "pending" : "current";
 
     let subtitle = "Selecting time...";
     if (isDone) {
-        subtitle = format(round.startTime, "MMM dd 'at' HH:mm");
+        const blockCount = round.availabilityIds?.length || 0;
+        subtitle = `${format(round.startTime, "MMM dd 'at' HH:mm")} (${blockCount} block${blockCount > 1 ? "s" : ""})`;
     } else if (isPending) {
         subtitle = blockedByRoundNumber ? `Complete Round ${blockedByRoundNumber} first` : "Pending";
     }
 
     return (
-        <Box
-            onClick={handleClick}
+        <Box onClick={handleClick}
             className={`jd-schedule-item ${statusClassName} ${isActive ? "active" : ""} ${disabled && !isDone ? "disabled" : ""}`}
-            sx={{ cursor: (disabled && !isDone) ? "not-allowed" : "pointer" }}
-        >
+            sx={{ cursor: disabled && !isDone ? "not-allowed" : "pointer" }}>
             <Box className="jd-schedule-marker-wrap">
                 <Box className="jd-schedule-marker">
                     {isDone ? <CheckIcon sx={{ fontSize: 12 }} /> : <Typography>{index + 1}</Typography>}
                 </Box>
                 {!isLast && <Box className="jd-schedule-line" />}
             </Box>
-
             <Box className="jd-schedule-content">
-                <Box sx={{
-                    display: 'inline-flex',
-                    px: 1,
-                    py: 0.25,
-                    borderRadius: '4px',
-                    bgcolor: 'rgba(99, 102, 241, 0.08)',
-                    border: '1px solid rgba(99, 102, 241, 0.12)',
-                    mb: 0.75
-                }}>
-                    <Typography
-                        className="jd-schedule-round"
-                        sx={{
-                            fontFamily: 'inherit',
-                            fontWeight: 900,
-                            fontSize: "0.6rem",
-                            color: "#4f46e5",
-                            letterSpacing: '0.08em',
-                            textTransform: 'uppercase'
-                        }}
-                    >
+                <Box sx={{ display: "inline-flex", px: 1, py: 0.25, borderRadius: "4px", bgcolor: "rgba(99, 102, 241, 0.08)", border: "1px solid rgba(99, 102, 241, 0.12)", mb: 0.75 }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: "0.6rem", color: "#4f46e5", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                         ROUND {index + 1}
                     </Typography>
                 </Box>
-                <Typography className="jd-schedule-title" component="p" sx={{ fontFamily: 'inherit', fontSize: '0.95rem', fontWeight: 700, color: '#1e293b' }}>
+                <Typography component="p" sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#1e293b" }}>
                     {service?.interviewTypeName || "Select Service..."}
                 </Typography>
-                <Typography className="jd-schedule-subtitle" component="p">
-                    {subtitle}
-                </Typography>
+                <Typography className="jd-schedule-subtitle" component="p">{subtitle}</Typography>
             </Box>
-
             {isActive && (
-                <Box
-                    sx={{
-                        position: "absolute",
-                        top: 10,
-                        right: 12,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                        px: 1,
-                        py: 0.4,
-                        bgcolor: "rgba(245, 158, 11, 0.12)",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(245, 158, 11, 0.2)",
-                    }}
-                >
-                    <Edit2
-                        size={10}
-                        color="#b45309"
-                        strokeWidth={4}
-                    />
-                    <Typography
-                        sx={{
-                            fontSize: "0.55rem",
-                            fontWeight: 900,
-                            color: "#b45309",
-                            letterSpacing: "0.05em",
-                            lineHeight: 1
-                        }}
-                    >
-                        EDITING
-                    </Typography>
+                <Box sx={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.4, bgcolor: "rgba(245, 158, 11, 0.12)", borderRadius: "6px", border: "1px solid rgba(245, 158, 11, 0.2)" }}>
+                    <Edit2 size={10} color="#b45309" strokeWidth={4} />
+                    <Typography sx={{ fontSize: "0.55rem", fontWeight: 900, color: "#b45309", letterSpacing: "0.05em", lineHeight: 1 }}>EDITING</Typography>
                 </Box>
             )}
         </Box>
@@ -317,7 +220,6 @@ function RoundScheduleTimelineItem({
 export default function JDBookingDialog({ open, onClose, coachId }) {
     const theme = useTheme();
     const navigate = useNavigate();
-    const calendarRef = useRef(null);
 
     const [activeStep, setActiveStep] = useState(0);
     const [form, setForm] = useState({ jobDescriptionUrl: "", cvUrl: "", aimLevel: "" });
@@ -329,19 +231,17 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const [activeRoundIndex, setActiveRoundIndex] = useState(0);
     const [stepTransitionClass, setStepTransitionClass] = useState("jd-step-enter-forward");
 
+    // Calendly-style state
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(null);
+
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
-
-    useEffect(() => {
-        if (!open || activeStep !== 1 || !calendarRef.current) return;
-        const calendarApi = calendarRef.current.getApi();
-        calendarApi.changeView("rollingSevenDay", getTodayStart());
-    }, [open, activeStep]);
 
     useEffect(() => {
         if (open && coachId) {
@@ -353,6 +253,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             setForm({ jobDescriptionUrl: "", cvUrl: "", aimLevel: "" });
             setRounds([createRound(), createRound()]);
             setActiveRoundIndex(0);
+            setSelectedDate(null);
+            setCurrentMonth(new Date());
             setError("");
         }
     }, [open, coachId]);
@@ -401,154 +303,120 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     };
 
     const addRound = () => {
-        if (rounds.length >= 5) {
-            toast.error("You can add a maximum of 5 rounds for a single JD booking.");
-            return;
-        }
+        if (rounds.length >= 5) { toast.error("Maximum of 5 rounds allowed."); return; }
         setRounds((prev) => [...prev, createRound()]);
     };
 
     const removeRound = (index) => {
-        if (rounds.length <= 2) {
-            toast.error("JD booking requires at least 2 interview rounds.");
-            return;
-        }
+        if (rounds.length <= 1) { toast.error("At least 1 round is required."); return; }
         setRounds((prev) => prev.filter((_, i) => i !== index));
-        if (activeRoundIndex >= rounds.length - 1) {
-            setActiveRoundIndex(Math.max(0, rounds.length - 2));
-        }
+        if (activeRoundIndex >= rounds.length - 1) setActiveRoundIndex(Math.max(0, rounds.length - 2));
     };
 
     const updateRoundService = (index, serviceId) => {
-        setRounds((prev) => prev.map((r, i) => (i === index ? { ...r, coachInterviewServiceId: serviceId, startTime: null } : r)));
+        setRounds((prev) => prev.map((r, i) => (i === index ? { ...r, coachInterviewServiceId: serviceId, startTime: null, availabilityIds: [] } : r)));
     };
 
     const getServiceForRound = (round) => services.find((s) => s.id === round.coachInterviewServiceId);
-    const getRoundColor = (index) => ROUND_COLORS[index % ROUND_COLORS.length];
     const getTotalPrice = () => rounds.reduce((sum, r) => sum + (getServiceForRound(r)?.price || 0), 0);
     const getTotalDurationMinutes = () => rounds.reduce((sum, r) => sum + (getServiceForRound(r)?.durationMinutes || 0), 0);
     const hasScheduledPreviousRounds = (index) => rounds.slice(0, index).every((r) => r.startTime);
 
+    // Block IDs used by OTHER rounds (not the active one)
+    const otherUsedBlockIds = useMemo(() => {
+        const ids = new Set();
+        rounds.forEach((r, i) => {
+            if (i !== activeRoundIndex) r.availabilityIds.forEach((id) => ids.add(String(id)));
+        });
+        return ids;
+    }, [rounds, activeRoundIndex]);
 
-    const calendarEvents = useMemo(() => {
+    // Available dates that have slots (excluding other rounds' used blocks)
+    const availableDates = useMemo(() => {
+        const dates = new Set();
         const now = new Date();
-        const bgEvents = freeSlots.filter((slot) => new Date(slot.endTime) > now).map((slot) => ({
-            id: `bg-${slot.id}-${slot.startTime}`,
-            start: slot.startTime,
-            end: slot.endTime,
-            display: "background",
-            className: "liquid-slot",
-            groupId: "availability",
-            editable: false,
-        }));
-        const roundEvents = rounds.map((round, index) => {
-            if (!round.startTime || !round.coachInterviewServiceId) return null;
-            const svc = getServiceForRound(round);
-            if (!svc) return null;
-            return {
-                id: `round-${index}`,
-                title: `R${index + 1}: ${svc.interviewTypeName || "Interview"}`,
-                start: round.startTime.toISOString(),
-                end: addMinutes(round.startTime, svc.durationMinutes).toISOString(),
-                backgroundColor: getRoundColor(index),
-                borderColor: getRoundColor(index),
-                textColor: index === 0 ? "#0f172a" : "#fff", // Black text for Lime (Round 1), white for others
-                editable: true,
-            };
-        }).filter(Boolean);
-        return [...bgEvents, ...roundEvents];
-    }, [freeSlots, rounds, services]);
+        freeSlots.forEach((slot) => {
+            if (new Date(slot.endTime) > now && !otherUsedBlockIds.has(String(slot.id))) {
+                dates.add(format(new Date(slot.startTime), "yyyy-MM-dd"));
+            }
+        });
+        return dates;
+    }, [freeSlots, otherUsedBlockIds]);
 
-    const handleCalendarDateClick = useCallback((info) => {
+    // All selectable 30-minute blocks for current round on selected date
+    const dayTimeBlocks = useMemo(() => {
+        const currentRound = rounds[activeRoundIndex];
+        if (!selectedDate || !currentRound?.coachInterviewServiceId) return [];
+
+        const dateStr = format(selectedDate, "yyyy-MM-dd");
+        const now = new Date();
+        const minStartTime = now.getTime() + 3 * 60 * 60 * 1000;
+
+        const uniqueSlots = new Map();
+        freeSlots.forEach((slot) => {
+            const start = new Date(slot.startTime);
+            const slotDate = format(start, "yyyy-MM-dd");
+            if (slotDate !== dateStr) return;
+            if (new Date(slot.endTime) <= now) return;
+            if (start.getTime() < minStartTime) return;
+            if (otherUsedBlockIds.has(String(slot.id))) return;
+            uniqueSlots.set(start.getTime(), slot);
+        });
+
+        return [...uniqueSlots.values()].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    }, [selectedDate, rounds, activeRoundIndex, freeSlots, otherUsedBlockIds]);
+
+    const handleDateSelect = (date) => {
+        setSelectedDate(date);
+    };
+
+    const handleTimeSelect = useCallback((slotBlock) => {
         const currentRound = rounds[activeRoundIndex];
         if (!hasScheduledPreviousRounds(activeRoundIndex)) {
             toast.error("Please complete scheduling previous rounds first.");
             return;
         }
-        const svc = getServiceForRound(currentRound);
-        if (!svc) {
-            toast.error(`Please select a service for Round ${activeRoundIndex + 1} first`);
+
+        const selectedService = services.find((s) => s.id === currentRound?.coachInterviewServiceId);
+        if (!selectedService) {
+            toast.error("Please select a service for this round first.");
             return;
         }
 
-        const clickedTime = info.date;
-        const now = new Date();
-        if (clickedTime.getTime() - now.getTime() < 3 * 60 * 60 * 1000) {
-            toast.error("Please select a time at least 3 hours from now");
+        const requiredBlocks = Math.max(
+            1,
+            Math.ceil((selectedService.durationMinutes || BLOCK_MINUTES) / BLOCK_MINUTES)
+        );
+        const chain = findConsecutiveBlocks(slotBlock, requiredBlocks, dayTimeBlocks);
+        if (!chain) {
+            toast.error(`Need ${requiredBlocks} consecutive 30-minute slots for this ${selectedService.durationMinutes}-minute service.`);
             return;
         }
 
-        const snappedTime = new Date(clickedTime);
-        snappedTime.setMinutes(Math.floor(snappedTime.getMinutes() / 15) * 15, 0, 0);
-        const endTime = addMinutes(snappedTime, svc.durationMinutes);
-
-        const matchingSlot = freeSlots.find((slot) => (snappedTime >= new Date(slot.startTime) && endTime <= new Date(slot.endTime)));
-        if (!matchingSlot) {
-            toast.error(`This time doesn't have enough availability for ${svc.durationMinutes} minutes.`);
-            return;
-        }
-
-        const gapMs = 15 * 60 * 1000;
-        if (activeRoundIndex > 0) {
-            const prev = rounds[activeRoundIndex - 1];
-            const prevEnd = addMinutes(prev.startTime, getServiceForRound(prev)?.durationMinutes || 0);
-            if (snappedTime.getTime() < prevEnd.getTime() + gapMs) {
-                toast.error(`Round ${activeRoundIndex + 1} must start at least 15 minutes after Round ${activeRoundIndex} ends.`);
-                return;
-            }
-        }
-
+        const selectedIds = chain.map((b) => b.id);
         setRounds((prev) =>
-            prev.map((r, i) => (i === activeRoundIndex ? { ...r, startTime: snappedTime } : r))
+            prev.map((r, i) => (i === activeRoundIndex ? { ...r, startTime: new Date(slotBlock.startTime), availabilityIds: selectedIds } : r))
         );
 
+        // Auto-advance to next unscheduled round
         const nextRoundIndex = rounds.findIndex((r, i) => i > activeRoundIndex && !r.startTime);
         if (nextRoundIndex !== -1) {
             setActiveRoundIndex(nextRoundIndex);
+            setSelectedDate(null);
         }
-    }, [activeRoundIndex, rounds, services, freeSlots]);
-
-    const handleEventDrop = useCallback((info) => {
-        const { event } = info;
-        if (!event.id?.startsWith("round-")) { info.revert(); return; }
-        const roundIndex = parseInt(event.id.replace("round-", ""), 10);
-        const targetRound = rounds[roundIndex];
-        const svc = getServiceForRound(targetRound);
-        if (!svc || !hasScheduledPreviousRounds(roundIndex)) { info.revert(); return; }
-
-        const newStart = event.start;
-        const now = new Date();
-        if (newStart.getTime() - now.getTime() < 3 * 60 * 60 * 1000) { toast.error("Too soon"); info.revert(); return; }
-
-        const snappedTime = new Date(newStart);
-        snappedTime.setMinutes(Math.floor(snappedTime.getMinutes() / 15) * 15, 0, 0);
-        const endTime = addMinutes(snappedTime, svc.durationMinutes);
-
-        const matchingSlot = freeSlots.find(s => snappedTime >= new Date(s.startTime) && endTime <= new Date(s.endTime));
-        if (!matchingSlot) { info.revert(); return; }
-
-        setRounds(prev => prev.map((r, i) => i === roundIndex ? { ...r, startTime: snappedTime } : r));
-    }, [rounds, services, freeSlots]);
-
-    const handleFocusNextRound = () => {
-        const nextIndex = rounds.findIndex((r, i) => i > activeRoundIndex && !r.startTime);
-        if (nextIndex === -1) {
-            const firstEmpty = rounds.findIndex(r => !r.startTime);
-            if (firstEmpty !== -1) setActiveRoundIndex(firstEmpty);
-            else toast.success("All rounds are already scheduled.");
-        } else {
-            setActiveRoundIndex(nextIndex);
-        }
-    };
+    }, [activeRoundIndex, rounds, services, dayTimeBlocks]);
 
     const handleSubmit = async () => {
         setError("");
         const selectedRounds = rounds.map((r) => ({
             serviceId: r.coachInterviewServiceId,
-            startTime: r.startTime,
+            availabilityIds: r.availabilityIds,
             durationMinutes: getServiceForRound(r)?.durationMinutes || 0,
         }));
-        const validation = validateJDBookingRounds(selectedRounds, freeSlots.map(s => ({ ...s, startTime: new Date(s.startTime), endTime: new Date(s.endTime) })));
+        const validation = validateJDBookingRounds(
+            selectedRounds,
+            freeSlots.map((s) => ({ ...s, startTime: new Date(s.startTime), endTime: new Date(s.endTime) }))
+        );
         if (!validation.isValid) { setError(validation.errorMsg); return; }
 
         setSaving(true);
@@ -557,8 +425,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 coachId,
                 jobDescriptionUrl: form.jobDescriptionUrl.trim(),
                 cvUrl: form.cvUrl.trim(),
-                rounds: rounds.map((r) => ({ coachInterviewServiceId: r.coachInterviewServiceId, startTime: r.startTime.toISOString() })),
-                aimLevel: form.aimLevel === "" ? undefined : Number(form.aimLevel)
+                rounds: rounds.map((r) => ({ coachInterviewServiceId: r.coachInterviewServiceId, availabilityIds: r.availabilityIds })),
+                aimLevel: form.aimLevel === "" ? undefined : Number(form.aimLevel),
             };
             const booking = await createJDBookingRequest(payload);
             const payResult = await payBookingRequest(booking.id, { returnUrl: window.location.origin + window.location.pathname });
@@ -575,14 +443,14 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
         }
     };
 
-    const canProceedStep1 = form.jobDescriptionUrl.trim() && form.cvUrl.trim() && rounds.every(r => r.coachInterviewServiceId);
-    const allRoundsConfigured = rounds.every(r => r.coachInterviewServiceId && r.startTime);
-    const completedRoundCount = rounds.filter(r => !!r.startTime).length;
+    const canProceedStep1 = form.jobDescriptionUrl.trim() && form.cvUrl.trim() && rounds.every((r) => r.coachInterviewServiceId);
+    const allRoundsConfigured = rounds.every((r) => r.coachInterviewServiceId && r.startTime && r.availabilityIds.length > 0);
 
     const handleNextStep = () => {
         if (activeStep === 0 && canProceedStep1) {
             setActiveStep(1);
             setActiveRoundIndex(0);
+            setSelectedDate(null);
             setStepTransitionClass("jd-step-enter-forward");
         }
     };
@@ -596,25 +464,28 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
     const handleClose = () => onClose();
 
+    const userTimezone = useMemo(() => {
+        try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, " ");
+        } catch {
+            return "Local Time";
+        }
+    }, []);
+
+    const activeRound = rounds[activeRoundIndex];
+    const activeService = activeRound ? getServiceForRound(activeRound) : null;
+
     return (
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            maxWidth="xl"
-            fullWidth
-            TransitionComponent={Transition}
-            PaperProps={{
-                className: "jd-booking-dialog-paper",
-                sx: { ...dialogStyles.paper(theme), borderRadius: "20px", overflow: "hidden" },
-            }}
-        >
+        <Dialog open={open} onClose={handleClose} maxWidth="xl" fullWidth TransitionComponent={Transition}
+            PaperProps={{ className: "jd-booking-dialog-paper", sx: { ...dialogStyles.paper(theme), borderRadius: "20px", overflow: "hidden" } }}>
+
             <DialogTitle sx={{ p: 4, pb: 2, pr: 7, position: "relative" }}>
                 <Box sx={{ textAlign: "left", maxWidth: "100%" }}>
                     <Typography sx={{ fontFamily: theme.typography.h3.fontFamily, fontWeight: 800, fontSize: "1.5rem", color: "text.primary", mb: 1, letterSpacing: "-0.02em" }}>
                         JD Multi-Round Interview Booking
                     </Typography>
                     <Typography sx={{ fontSize: "0.9375rem", color: "text.secondary", lineHeight: 1.55, maxWidth: 560 }}>
-                        Submit details and build your assessment workflow. Scheduling occurs in the next step.
+                        {activeStep === 0 ? "Submit details and build your assessment workflow." : "Select dates and times for each round."}
                     </Typography>
                 </Box>
                 <IconButton onClick={handleClose} size="small" aria-label="Close" sx={{ position: "absolute", right: 20, top: 20, color: "text.secondary" }}>
@@ -627,65 +498,46 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     <Box sx={{ maxWidth: "900px", mx: "auto", mb: 4 }}>
                         <Stepper activeStep={activeStep}>
                             {STEPS.map((label) => (
-                                <Step key={label}>
-                                    <StepLabel sx={{ "& .MuiStepLabel-label": { fontWeight: 600 } }}>{label}</StepLabel>
-                                </Step>
+                                <Step key={label}><StepLabel sx={{ "& .MuiStepLabel-label": { fontWeight: 600 } }}>{label}</StepLabel></Step>
                             ))}
                         </Stepper>
                     </Box>
                 )}
 
-                {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setError("")}>{error}</Alert>}
+                {error && <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }} onClose={() => setError("")}>{error}</Alert>}
 
                 <Box key={activeStep} className={`jd-step-transition ${stepTransitionClass}`}>
+                    {/* ═══ STEP 1: Job Details & Rounds ═══ */}
                     {activeStep === 0 && (
-                        <Box sx={{ width: '100%' }}>
+                        <Box sx={{ width: "100%" }}>
                             <Stack spacing={5}>
                                 <Box className="jd-url-section">
-                                    <Grid
-                                        container
-                                        spacing={2}
-                                        sx={{ width: "100%", mx: 0 }}
-                                    >
+                                    <Grid container spacing={2} sx={{ width: "100%", mx: 0 }}>
                                         <Grid item xs={12} md={4} sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
                                             <Typography className="jd-label-mini">Job url</Typography>
                                             <Box className="jd-input-stitch">
                                                 <Link size={18} color="#94a3b8" aria-hidden />
-                                                <TextField
-                                                    fullWidth
-                                                    variant="standard"
-                                                    placeholder="https://company.com/role"
-                                                    value={form.jobDescriptionUrl}
-                                                    onChange={(e) => setForm({ ...form, jobDescriptionUrl: e.target.value })}
+                                                <TextField fullWidth variant="standard" placeholder="https://company.com/role"
+                                                    value={form.jobDescriptionUrl} onChange={(e) => setForm({ ...form, jobDescriptionUrl: e.target.value })}
                                                     InputProps={{ disableUnderline: true }}
-                                                    sx={{ "& .MuiInputBase-input": { py: 0.5, fontSize: "0.95rem", fontWeight: 600, color: "#0f172a" } }}
-                                                />
+                                                    sx={{ "& .MuiInputBase-input": { py: 0.5, fontSize: "0.95rem", fontWeight: 600, color: "#0f172a" } }} />
                                             </Box>
                                         </Grid>
                                         <Grid item xs={12} md={4} sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
                                             <Typography className="jd-label-mini">CV url</Typography>
                                             <Box className="jd-input-stitch">
                                                 <FileUser size={18} color="#94a3b8" aria-hidden />
-                                                <TextField
-                                                    fullWidth
-                                                    variant="standard"
-                                                    placeholder="https://drive.google.com/cv.pdf"
-                                                    value={form.cvUrl}
-                                                    onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
+                                                <TextField fullWidth variant="standard" placeholder="https://drive.google.com/cv.pdf"
+                                                    value={form.cvUrl} onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
                                                     InputProps={{ disableUnderline: true }}
-                                                    sx={{ "& .MuiInputBase-input": { py: 0.5, fontSize: "0.95rem", fontWeight: 600, color: "#0f172a" } }}
-                                                />
+                                                    sx={{ "& .MuiInputBase-input": { py: 0.5, fontSize: "0.95rem", fontWeight: 600, color: "#0f172a" } }} />
                                             </Box>
                                         </Grid>
                                         <Grid item xs={12} md={4} sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
                                             <Typography className="jd-label-mini">Target</Typography>
                                             <Box className="jd-input-stitch">
                                                 <Target size={18} color="#94a3b8" aria-hidden />
-                                                <TextField
-                                                    fullWidth
-                                                    select
-                                                    variant="standard"
-                                                    value={form.aimLevel}
+                                                <TextField fullWidth select variant="standard" value={form.aimLevel}
                                                     onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
                                                     InputProps={{ disableUnderline: true }}
                                                     SelectProps={{
@@ -695,16 +547,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                             return AIM_LEVEL_LABELS[selected] ?? selected;
                                                         },
                                                     }}
-                                                    sx={{
-                                                        "& .MuiSelect-select": {
-                                                            py: 0.5,
-                                                            fontSize: "0.95rem",
-                                                            fontWeight: 600,
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                        },
-                                                    }}
-                                                >
+                                                    sx={{ "& .MuiSelect-select": { py: 0.5, fontSize: "0.95rem", fontWeight: 600, display: "flex", alignItems: "center" } }}>
                                                     <MenuItem value=""><em>Not specified</em></MenuItem>
                                                     {Object.entries(AIM_LEVEL_LABELS).map(([val, label]) => (
                                                         <MenuItem key={val} value={val}>{label}</MenuItem>
@@ -721,14 +564,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             <Typography fontWeight={800} fontSize="1.3rem" color="#0f172a">Build Your Interview Sequence</Typography>
                                             <Typography variant="caption" color="text.secondary">Define the logical flow of your assessment process</Typography>
                                         </Box>
-                                        <Button
-                                            size="medium"
-                                            variant="contained"
-                                            color="secondary"
-                                            startIcon={<AddIcon />}
-                                            onClick={addRound}
-                                            sx={{ borderRadius: "8px", px: 2.5, fontWeight: 700, textTransform: "none" }}
-                                        >
+                                        <Button size="medium" variant="contained" color="secondary" startIcon={<AddIcon />} onClick={addRound}
+                                            sx={{ borderRadius: "8px", px: 2.5, fontWeight: 700, textTransform: "none" }}>
                                             Add Round
                                         </Button>
                                     </Stack>
@@ -736,7 +573,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                     <Box className="jd-sequence-panel-stitch">
                                         <Box className="jd-track-stitch" sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 2 }}>
                                             {rounds.map((round, index) => {
-                                                const service = services.find(s => s.id === round.coachInterviewServiceId);
+                                                const service = services.find((s) => s.id === round.coachInterviewServiceId);
                                                 return (
                                                     <React.Fragment key={round.id}>
                                                         <Box className="jd-bubble-stitch">
@@ -749,9 +586,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                             </Box>
                                                         </Box>
                                                         {index < rounds.length - 1 && (
-                                                            <Box className="jd-arrow-stitch" aria-hidden>
-                                                                <ArrowRight size={20} />
-                                                            </Box>
+                                                            <Box className="jd-arrow-stitch" aria-hidden><ArrowRight size={20} /></Box>
                                                         )}
                                                     </React.Fragment>
                                                 );
@@ -760,29 +595,23 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                     </Box>
 
                                     {loadingServices ? (
-                                        <Box display="flex" justifyContent="center" py={8}><CircularProgress size={40} thickness={5} sx={{ color: 'var(--ep-accent)' }} /></Box>
+                                        <Box display="flex" justifyContent="center" py={8}><CircularProgress size={40} thickness={5} sx={{ color: "var(--ep-accent)" }} /></Box>
                                     ) : (
                                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => {
                                             const { active, over } = e;
                                             if (over && active.id !== over.id) {
-                                                setRounds((prev) => arrayMove(prev, prev.findIndex(r => r.id === active.id), prev.findIndex(r => r.id === over.id)));
+                                                setRounds((prev) => arrayMove(prev, prev.findIndex((r) => r.id === active.id), prev.findIndex((r) => r.id === over.id)));
                                             }
                                         }}>
-                                            <SortableContext items={rounds.map(r => r.id)} strategy={verticalListSortingStrategy}>
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 4, mt: 2 }}>
+                                            <SortableContext items={rounds.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+                                                <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 4, mt: 2 }}>
                                                     {rounds.map((round, index) => (
-                                                        <SortableRoundCard
-                                                            key={round.id}
-                                                            round={round}
-                                                            index={index}
-                                                            isActive={activeRoundIndex === index}
-                                                            canDelete={rounds.length > 2}
+                                                        <SortableRoundCard key={round.id} round={round} index={index}
+                                                            isActive={activeRoundIndex === index} canDelete={rounds.length > 1}
                                                             onActivate={() => setActiveRoundIndex(index)}
                                                             onRemove={() => removeRound(index)}
                                                             onServiceChange={(val) => updateRoundService(index, val)}
-                                                            services={services}
-                                                            allRounds={rounds}
-                                                        />
+                                                            services={services} allRounds={rounds} />
                                                     ))}
                                                 </Box>
                                             </SortableContext>
@@ -793,82 +622,130 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                         </Box>
                     )}
 
+                    {/* ═══ STEP 2: Calendly-style Schedule Rounds ═══ */}
                     {activeStep === 1 && (
                         <Stack direction={{ xs: "column", md: "row" }} spacing={4}>
-                            <Box sx={{ flex: 1, position: 'relative' }} className="jd-calendar-container animate__animated animate__fadeIn">
-                                {loadingSlots && <Box sx={{ position: "absolute", inset: 0, display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "rgba(255,255,255,0.7)", zIndex: 10, borderRadius: "16px" }}><CircularProgress /></Box>}
-                                <FullCalendar
-                                    ref={calendarRef}
-                                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                    initialView="rollingSevenDay"
-                                    views={{ rollingSevenDay: { type: "timeGrid", duration: { days: 7 }, buttonText: "7 Days", visibleRange: getRollingSevenDayRange } }}
-                                    headerToolbar={{
-                                        left: "prev,next today",
-                                        center: "title",
-                                        right: "rollingSevenDay,timeGridDay",
-                                    }}
-                                    events={calendarEvents}
-                                    dateClick={handleCalendarDateClick}
-                                    eventDrop={handleEventDrop}
-                                    eventConstraint="availability"
-                                    nowIndicator={true}
-                                    height="650px"
-                                    timeZone="local"
-                                    slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-                                    slotMinTime="07:00:00"
-                                    slotMaxTime="22:00:00"
-                                />
+                            {/* Left: Calendar + Time Slots */}
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                {loadingSlots ? (
+                                    <Box display="flex" justifyContent="center" py={10}><CircularProgress /></Box>
+                                ) : (
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={0} sx={{ minHeight: 400 }}>
+                                        {/* Calendar */}
+                                        <Box sx={{ flex: "0 0 auto", width: { xs: "100%", sm: 300 }, pr: { sm: 3 }, pb: { xs: 3, sm: 0 }, borderRight: { sm: "1px solid" }, borderColor: { sm: "divider" } }}>
+                                            {/* Active round indicator */}
+                                            <Box sx={{ mb: 2, px: 1.5, py: 1, borderRadius: "8px", bgcolor: "rgba(99, 102, 241, 0.08)", border: "1px solid rgba(99, 102, 241, 0.15)" }}>
+                                                <Typography sx={{ fontSize: "0.65rem", fontWeight: 800, color: "#4f46e5", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                                                    Scheduling Round {activeRoundIndex + 1}
+                                                </Typography>
+                                                <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "text.primary", mt: 0.25 }}>
+                                                    {activeService?.interviewTypeName || "Select service..."}{" "}
+                                                    {activeService && <span style={{ color: "#64748b", fontWeight: 500 }}>({activeService.durationMinutes} min)</span>}
+                                                </Typography>
+                                            </Box>
 
-                                <Stack direction="row" spacing={3} sx={{ mt: 2, px: 2 }}>
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                        <Box sx={{ width: 14, height: 14, borderRadius: "4px", bgcolor: "rgba(190, 242, 100, 0.15)", borderLeft: "3px solid #bef264", border: "1px solid #d9f99d" }} />
-                                        <Typography variant="caption" fontWeight={700} color="#64748b">Available Time</Typography>
+                                            <CalendlyCalendar
+                                                currentMonth={currentMonth}
+                                                onPrevMonth={() => setCurrentMonth((m) => addMonths(m, -1))}
+                                                onNextMonth={() => setCurrentMonth((m) => addMonths(m, 1))}
+                                                selectedDate={selectedDate}
+                                                onDateSelect={handleDateSelect}
+                                                availableDates={availableDates}
+                                            />
+
+                                            <Box sx={{ mt: 2.5, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
+                                                <Typography sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.secondary", mb: 0.5 }}>Time zone</Typography>
+                                                <Stack direction="row" alignItems="center" spacing={0.75}>
+                                                    <LanguageIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                                                    <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary" }}>{userTimezone}</Typography>
+                                                </Stack>
+                                            </Box>
+                                        </Box>
+
+                                        {/* Time Slots */}
+                                        <Box sx={{ flex: 1, pl: { sm: 3 }, minWidth: 0 }}>
+                                            {!selectedDate ? (
+                                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 300 }}>
+                                                    <Typography sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.95rem" }}>
+                                                        Select a date to see available times
+                                                    </Typography>
+                                                </Box>
+                                            ) : !activeService ? (
+                                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 300 }}>
+                                                    <Typography sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.95rem" }}>
+                                                        Select a service for this round first
+                                                    </Typography>
+                                                </Box>
+                                            ) : (
+                                                <>
+                                                    <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary", mb: 2.5 }}>
+                                                        {format(selectedDate, "EEEE, MMMM d")}
+                                                    </Typography>
+                                                    {dayTimeBlocks.length === 0 ? (
+                                                        <Box sx={{ textAlign: "center", py: 6 }}>
+                                                            <Typography color="text.secondary" fontSize="0.9rem">
+                                                                No available 30-minute slots on this date.
+                                                            </Typography>
+                                                        </Box>
+                                                    ) : (
+                                                        <Box className="calendly-timeslot-list">
+                                                            {dayTimeBlocks.map((slot) => {
+                                                                const isSelected = activeRound?.availabilityIds?.includes(slot.id);
+                                                                const startTime = new Date(slot.startTime);
+                                                                const endTime = new Date(slot.endTime);
+                                                                return (
+                                                                    <Box key={slot.id}
+                                                                        className={`calendly-timeslot ${isSelected ? "selected" : ""}`}
+                                                                        onClick={() => handleTimeSelect(slot)}>
+                                                                        <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>
+                                                                            {format(startTime, "HH:mm")} — {format(endTime, "HH:mm")}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                );
+                                                            })}
+                                                        </Box>
+                                                    )}
+                                                </>
+                                            )}
+                                        </Box>
                                     </Stack>
-                                    {rounds.map((_, i) => (
-                                        <Stack key={i} direction="row" spacing={1} alignItems="center">
-                                            <Box sx={{ width: 14, height: 14, borderRadius: "4px", bgcolor: getRoundColor(i) }} />
-                                            <Typography variant="caption" fontWeight={600} color="#64748b">Round {i + 1}</Typography>
-                                        </Stack>
-                                    ))}
-                                </Stack>
+                                )}
                             </Box>
 
-                            <Box sx={{ width: { xs: "100%", md: 360 }, flexShrink: 0 }}>
+                            {/* Right: Round Schedule Panel */}
+                            <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0 }}>
                                 <Stack spacing={3} className="jd-schedule-panel animate__animated animate__fadeInRight">
                                     <Box>
                                         <Typography fontWeight={800} fontSize="1.1rem" color="#0f172a">Schedule rounds in order</Typography>
-                                        <Typography variant="caption" color="text.secondary">Pick available slots on the calendar for each round</Typography>
+                                        <Typography variant="caption" color="text.secondary">Pick available slots for each round</Typography>
                                     </Box>
 
                                     <Stack spacing={1.5}>
                                         {rounds.map((round, index) => (
-                                            <RoundScheduleTimelineItem
-                                                key={round.id}
-                                                round={round}
-                                                index={index}
+                                            <RoundScheduleTimelineItem key={round.id} round={round} index={index}
                                                 isActive={activeRoundIndex === index}
                                                 service={getServiceForRound(round)}
                                                 disabled={!hasScheduledPreviousRounds(index) && index !== 0}
                                                 blockedByRoundNumber={index > 0 && !rounds[index - 1].startTime ? index : undefined}
                                                 isLast={index === rounds.length - 1}
-                                                onActivate={() => setActiveRoundIndex(index)}
+                                                onActivate={() => { setActiveRoundIndex(index); setSelectedDate(null); }}
                                             />
                                         ))}
                                     </Stack>
 
                                     <Box className="jd-summary-card-stitch">
-                                        <Typography variant="overline" color="#64748b" fontWeight={800} sx={{ letterSpacing: '0.1em' }}>Booking Overview</Typography>
-                                        <Divider sx={{ my: 1.5, borderColor: 'rgba(0,0,0,0.06)' }} />
+                                        <Typography variant="overline" color="#64748b" fontWeight={800} sx={{ letterSpacing: "0.1em" }}>Booking Overview</Typography>
+                                        <Divider sx={{ my: 1.5, borderColor: "rgba(0,0,0,0.06)" }} />
                                         <Stack spacing={2.5}>
-                                            <Box sx={{ p: 2, borderRadius: '16px', border: '1px dashed #cbd5e1', bgcolor: 'rgba(0,0,0,0.02)' }}>
-                                                <Typography variant="overline" color="#94a3b8" fontWeight={700} sx={{ mb: 1.5, display: 'block', fontSize: '0.65rem' }}>Pipeline Summary</Typography>
+                                            <Box sx={{ p: 2, borderRadius: "16px", border: "1px dashed #cbd5e1", bgcolor: "rgba(0,0,0,0.02)" }}>
+                                                <Typography variant="overline" color="#94a3b8" fontWeight={700} sx={{ mb: 1.5, display: "block", fontSize: "0.65rem" }}>Pipeline Summary</Typography>
                                                 <Stack spacing={1.5}>
                                                     {rounds.map((r, i) => {
                                                         const svc = getServiceForRound(r);
                                                         return (
                                                             <Stack key={r.id} direction="row" justifyContent="space-between" alignItems="flex-start">
                                                                 <Box>
-                                                                    <Typography variant="caption" fontWeight={800} color="#1e293b" sx={{ display: 'block' }}>
+                                                                    <Typography variant="caption" fontWeight={800} color="#1e293b" sx={{ display: "block" }}>
                                                                         {i + 1}. {svc?.interviewTypeName || "Unset"}
                                                                     </Typography>
                                                                     <Typography variant="caption" color={r.startTime ? "#10b981" : "#94a3b8"} fontWeight={r.startTime ? 700 : 500}>
@@ -885,14 +762,14 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             <Box className="jd-price-dashboard-stitch">
                                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                                     <Box>
-                                                        <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.6)', fontWeight: 800, fontSize: '0.65rem' }}>Total Price</Typography>
+                                                        <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.6)", fontWeight: 800, fontSize: "0.65rem" }}>Total Price</Typography>
                                                         <Typography variant="caption" className="duration-badge">
                                                             {getTotalDurationMinutes()} mins total
                                                         </Typography>
                                                     </Box>
-                                                    <Box sx={{ textAlign: 'right' }}>
-                                                        <Typography variant="h4" className="price-vibrant" sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-                                                            {getTotalPrice().toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#d4ff3d' }}>VND</span>
+                                                    <Box sx={{ textAlign: "right" }}>
+                                                        <Typography variant="h4" className="price-vibrant" sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                                                            {getTotalPrice().toLocaleString()} <span style={{ fontSize: "0.8rem", fontWeight: 900, color: "#d4ff3d" }}>VND</span>
                                                         </Typography>
                                                     </Box>
                                                 </Stack>
@@ -910,44 +787,22 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 <Stack direction="row" spacing={1.5} alignItems="center">
                     <Stack direction="row" sx={{ "& > *": { ml: -1, border: "2.5px solid #fff" } }}>
                         {[...Array(2)].map((_, i) => (
-                            <Box
-                                key={i}
-                                sx={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: "50%",
-                                    bgcolor: "#e2e8f0",
-                                    display: "grid",
-                                    placeItems: "center",
-                                    overflow: "hidden",
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-                                }}
-                            >
-
-                            </Box>
+                            <Box key={i} sx={{ width: 32, height: 32, borderRadius: "50%", bgcolor: "#e2e8f0", display: "grid", placeItems: "center", overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.08)" }} />
                         ))}
                     </Stack>
                 </Stack>
 
                 <Stack direction="row" spacing={2} alignItems="center">
                     {activeStep === 1 && (
-                        <Button startIcon={<ArrowBackIcon />} onClick={handleBackStep} sx={{ fontWeight: 700, textTransform: "none", color: "text.secondary" }}>
-                            Back
-                        </Button>
+                        <Button startIcon={<ArrowBackIcon />} onClick={handleBackStep} sx={{ fontWeight: 700, textTransform: "none", color: "text.secondary" }}>Back</Button>
                     )}
-                    <Button onClick={handleClose} sx={{ color: "text.secondary", fontWeight: 700, textTransform: "none" }}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        className="jd-btn-next-footer"
+                    <Button onClick={handleClose} sx={{ color: "text.secondary", fontWeight: 700, textTransform: "none" }}>Cancel</Button>
+                    <Button variant="contained" color="primary" className="jd-btn-next-footer"
                         onClick={activeStep === 0 ? handleNextStep : handleSubmit}
-                        disabled={activeStep === 0 ? !canProceedStep1 : (!allRoundsConfigured || saving)}
+                        disabled={activeStep === 0 ? !canProceedStep1 : !allRoundsConfigured || saving}
                         endIcon={!saving && <ArrowRight size={20} strokeWidth={2.25} />}
-                        sx={{ minWidth: { xs: "100%", sm: 240 }, py: 1.25 }}
-                    >
-                        {activeStep === 0 ? "Next: Schedule Rounds" : (saving ? "Confirming & Paying..." : "Confirm & Pay Now")}
+                        sx={{ minWidth: { xs: "100%", sm: 240 }, py: 1.25 }}>
+                        {activeStep === 0 ? "Next: Schedule Rounds" : saving ? "Confirming & Paying..." : "Confirm & Pay Now"}
                     </Button>
                 </Stack>
             </DialogActions>
