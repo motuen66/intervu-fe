@@ -20,6 +20,7 @@ import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
 import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
 import CoachEvaluationModal from "./CoachEvaluationModal.jsx";
+import PrecheckModal from "./PrecheckModal.jsx";
 
 // Import sub-components
 import InterviewStats from "./components/InterviewStats.jsx";
@@ -74,6 +75,9 @@ function InterviewRoomListPage() {
 
     // New state for Generated Questions Modal
     const [genQuestionsModalState, setGenQuestionsModalState] = useState({ open: false, roomId: null });
+
+    // Precheck modal state
+    const [precheckState, setPrecheckState] = useState({ open: false, room: null });
 
     // Helper function to get the label from the type value
     const getRoomTypeLabel = (typeValue) => {
@@ -461,11 +465,7 @@ function InterviewRoomListPage() {
 
     const handleJoinRoom = (room) => {
         if (!room?.id) return;
-        // if (user?.role === ROLES.CANDIDATE && room?.type === INTERVIEW_ROOM_TYPE.WITH_AI) {
-        //     setAiCvModalState({ open: true, room });
-        //     return;
-        // }
-        navigate(`/interview/room/${room.id}`);
+        setPrecheckState({ open: true, room });
     };
 
     // const handleCloseAiCvModal = () => {
@@ -560,7 +560,7 @@ function InterviewRoomListPage() {
                         onRequestReschedule={handleRequestReschedule}
                         onCancelInterview={handleCancelInterview}
                         onViewFeedback={handleViewFeedback}
-                        // onJoin={handleJoinRoom}
+                        onJoin={handleJoinRoom}
                         onReviewQuestions={handleReviewQuestions}
                         rescheduleRequests={rescheduleRequests}
                     />
@@ -632,6 +632,12 @@ function InterviewRoomListPage() {
                 open={genQuestionsModalState.open}
                 onClose={handleCloseGenQuestionsModal}
                 roomId={genQuestionsModalState.roomId}
+            />
+
+            <PrecheckModal
+                open={precheckState.open}
+                onClose={() => setPrecheckState({ open: false, room: null })}
+                room={precheckState.room}
             />
         </Box>
     );
