@@ -44,15 +44,15 @@ function InterviewRoomPage() {
         if (!user) return;
         try {
             setLoading(true);
-            const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom` });
-            const room = res.data.find((item) => item.id === roomId);
-            if (room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && room?.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
-                setError("This interview is not in progress. You will be redirected.");
-                setTimeout(() => navigate("/interview"), 3000);
-            } else {
+            const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom/${roomId}` });
+            const room = res?.data?.data;
+            // if (room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && room?.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
+            //     setError("This interview is not in progress. You will be redirected.");
+            //     setTimeout(() => navigate("/interview"), 3000);
+            // } else {
                 setRoomInfo(room);
                 setLoading(false);
-            }
+            // }
         } catch (err) {
             console.error("Failed to fetch room details:", err);
             setError("Failed to load interview room. You will be redirected.");
