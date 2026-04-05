@@ -12,6 +12,7 @@ import { ROLES } from "../../../../common/constants/common.js";
 import QuestionPanel from "./QuestionPanel";
 import VideoPanel from "./VideoPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
+import CoachEvaluationModal from "../InterviewRoomListPage/CoachEvaluationModal";
 
 import { useWebRTC } from "../../hooks/useWebRTC.js";
 import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
@@ -48,7 +49,7 @@ function InterviewRoomPage() {
         try {
             setLoading(true);
             const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom/${roomId}` });
-            const room = res?.data?.data;
+            const room = res?.data;
             // if (room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && room?.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
             //     setError("This interview is not in progress. You will be redirected.");
             //     setTimeout(() => navigate("/interview"), 3000);
@@ -235,10 +236,30 @@ function InterviewRoomPage() {
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
     // ── Leave room ─────────────────────────────────────────────────────────────
+    const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
+
     const handleLeaveRoom = useCallback(() => {
+        if (user?.role === ROLES.INTERVIEWER) {
+            // Open evaluation modal for interviewer instead of immediate navigation
+            setCoachEvaluationState({ open: true, room: roomInfo });
+        } else {
+            leaveRoom();
+            navigate("/interview");
+        }
+    }, [leaveRoom, navigate, user?.role, roomInfo]);
+
+    const handleCoachEvaluationSubmitted = () => {
+        // Only call leaveRoom and navigate away AFTER submission is successful
         leaveRoom();
+        setCoachEvaluationState({ open: false, room: null });
         navigate("/interview");
-    }, [leaveRoom, navigate]);
+    };
+
+    const handleCloseCoachEvaluation = () => {
+        // Modal has its own internal block if submission is not done,
+        // but if it somehow closes, we reset state.
+        setCoachEvaluationState({ open: false, room: null });
+    };
 
     // ── Problem / test-case state (Interviewer editing) ───────────────────────
     const [problemDescription, setProblemDescription] = useState("");
@@ -521,6 +542,13 @@ function InterviewRoomPage() {
                     />
                 </Box>
             </Box>
+
+            <CoachEvaluationModal
+                open={coachEvaluationState.open}
+                room={coachEvaluationState.room}
+                onClose={handleCloseCoachEvaluation}
+                onSubmitted={handleCoachEvaluationSubmitted}
+            />
         </Box>
     );
 }

@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Modal, Slider, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Modal, Slider, Stack, TextField, Typography, Divider } from "@mui/material";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { buttonStyles, dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [items, setItems] = useState([]);
+    const [otherFeedback, setOtherFeedback] = useState("");
     const [error, setError] = useState("");
     const [isCompleted, setIsCompleted] = useState(false);
 
@@ -40,16 +42,24 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                     alertErrorMessage: true,
                 });
                 const data = res?.data;
-                
-                // Normalize keys to ensure consistency (handles both lowercase and PascalCase from API)
-                const normalizedResults = (data?.evaluationResults || []).map(item => ({
-                    type: item.type || item.Type || "",
-                    question: item.question || item.Question || "",
-                    score: item.score ?? item.Score ?? 0,
-                    answer: item.answer ?? item.Answer ?? ""
-                }));
 
-                setItems(normalizedResults);
+                const allResults = data?.evaluationResults || [];
+                
+                // 1. Filter out "Other" from the main items list
+                const filteredResults = allResults
+                    .filter(r => (r.type || r.Type) !== "Other")
+                    .map(item => ({
+                        type: item.type || item.Type || "",
+                        question: item.question || item.Question || "",
+                        score: item.score ?? item.Score ?? 0,
+                        answer: item.answer ?? item.Answer ?? ""
+                    }));
+
+                setItems(filteredResults);
+                
+                // 2. Always reset other feedback to empty string on load, regardless of database content
+                setOtherFeedback("");
+
                 setIsCompleted(Boolean(data?.isEvaluationCompleted));
             } catch (err) {
                 setError(err?.response?.data?.message || "Failed to load evaluation form.");
@@ -66,9 +76,9 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
             prev.map((item, i) =>
                 i === index
                     ? {
-                          ...item,
-                          [field]: field === "score" ? Number(value) : value,
-                      }
+                        ...item,
+                        [field]: field === "score" ? Number(value) : value,
+                    }
                     : item,
             ),
         );
@@ -77,16 +87,36 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     const handleSubmit = async () => {
         if (!room?.id) return;
         setError("");
+
+        // Validation: Enforce fill in response for the main items
+        if (items.some(item => !item.answer || item.answer.trim() === "")) {
+            setError("Please provide feedback for all evaluation items.");
+            return;
+        }
+
         if (items.some((item) => item.score < 0 || item.score > 10)) {
             setError("Scores must be between 0 and 10.");
             return;
         }
+
         setSubmitting(true);
         try {
+            const resultsToSubmit = [...items];
+            
+            // Append "Other" feedback to the results if provided
+            if (otherFeedback.trim() !== "") {
+                resultsToSubmit.push({
+                    type: "Other",
+                    question: "Overall / Other Feedback",
+                    score: 10, // Default score for other feedback
+                    answer: otherFeedback
+                });
+            }
+
             await callApi({
                 method: METHOD.POST,
                 endpoint: interviewEndPoints.SUBMIT_COACH_EVALUATION(room.id),
-                arg: { results: items },
+                arg: { results: resultsToSubmit },
                 displaySuccessMessage: true,
                 alertErrorMessage: true,
             });
@@ -94,22 +124,26 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
             if (onSubmitted) {
                 onSubmitted();
             }
+            // onClose will be handled by the parent or by calling it here
             if (onClose) {
                 onClose();
             }
         } catch (err) {
-            setError(err?.response?.data?.message || "Failed to submit evaluation.");
+            setError(err?.response?.data?.message || err?.response?.message || "Failed to submit evaluation.");
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleClose = (event, reason) => {
+        // If it's role coach/interviewer leaving room, they MUST submit.
+        // The modal logic for "hasPending" already handles blocking close if not completed.
         const hasPending = !isCompleted && !error;
         if (hasPending) {
             return;
         }
         setItems([]);
+        setOtherFeedback("");
         setError("");
         setIsCompleted(false);
         if (onClose) {
@@ -147,9 +181,10 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                     p: 3,
                 })}
             >
-                <Typography id="coach-evaluation-modal" variant="h5" component="h2" sx={{ mb: 1 }}>
-                    Incomplete Mock Interview Evaluation
+                <Typography id="coach-evaluation-modal" variant="h5" component="h2" sx={{ mb: 1, fontWeight: 700 }}>
+                    Final Interview Evaluation
                 </Typography>
+
                 {room?.candidateName && (
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                         Candidate: <strong>{room.candidateName}</strong>
@@ -160,11 +195,21 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                         {interviewLabel}
                     </Typography>
                 )}
+
+                <Alert
+                    severity="warning"
+                    icon={<WarningAmberIcon />}
+                    sx={{ mb: 2, '& .MuiAlert-message': { fontWeight: 600 } }}
+                >
+                    Note: You can only submit feedback one time. After submission, both you and the candidate will only be able to view it.
+                </Alert>
+
                 {error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
                         {error}
                     </Alert>
                 )}
+
                 {loading ? (
                     <Stack alignItems="center" sx={{ py: 4 }}>
                         <CircularProgress size={28} />
@@ -185,9 +230,10 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                         borderColor: "divider",
                                         borderRadius: 2,
                                         p: 2,
+                                        bgcolor: "#F9FAFB"
                                     }}
                                 >
-                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 700 }}>
                                         {item.question}
                                     </Typography>
                                     <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 0.5 }}>
@@ -217,26 +263,47 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                         </Box>
                                     </Stack>
                                     <TextField
-                                        label="Feedback"
+                                        label="Response / Feedback"
+                                        placeholder="Enter detailed feedback here..."
                                         value={item.answer || ""}
                                         onChange={(e) => handleItemChange(index, "answer", e.target.value)}
                                         multiline
                                         minRows={2}
                                         fullWidth
-                                        sx={(theme) => fieldStyles.outlinedFocus(theme)}
+                                        required
+                                        sx={(theme) => ({ ...fieldStyles.outlinedFocus(theme), bgcolor: "white" })}
                                         margin="dense"
                                     />
                                 </Box>
                             ))
                         )}
-                        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ pt: 1 }}>
+
+                        <Divider sx={{ my: 1 }} />
+
+                        <Box sx={{ p: 2, border: "1px solid", borderColor: "primary.light", borderRadius: 2, bgcolor: "#EFF6FF" }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700, color: "primary.main" }}>
+                                Other / Additional Feedback (Optional)
+                            </Typography>
+                            <TextField
+                                label="Other Comments"
+                                placeholder="Any other observations or closing thoughts..."
+                                value={otherFeedback}
+                                onChange={(e) => setOtherFeedback(e.target.value)}
+                                multiline
+                                minRows={3}
+                                fullWidth
+                                sx={(theme) => ({ ...fieldStyles.outlinedFocus(theme), bgcolor: "white" })}
+                            />
+                        </Box>
+
+                        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ pt: 1, pb: 1 }}>
                             <Button
                                 variant="contained"
                                 disabled={submitting || items.length === 0}
                                 onClick={handleSubmit}
-                                sx={(theme) => ({ ...buttonStyles.primaryCta(theme) })}
+                                sx={(theme) => ({ ...buttonStyles.primaryCta(theme), px: 4, py: 1.5 })}
                             >
-                                {submitting ? "Submitting..." : "Submit"}
+                                {submitting ? "Submitting..." : "Submit and Leave Room"}
                             </Button>
                         </Stack>
                     </Stack>
