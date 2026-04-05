@@ -84,6 +84,7 @@ const initialState = {
     loading: false,
     error: null,
     selectedAvailability: null,
+    latestFetchRequestId: null,
 };
 
 const availabilitySlice = createSlice({
@@ -100,15 +101,22 @@ const availabilitySlice = createSlice({
     extraReducers: (builder) => {
         // Fetch availabilities
         builder
-            .addCase(fetchAvailabilitiesByMonth.pending, (state) => {
+            .addCase(fetchAvailabilitiesByMonth.pending, (state, action) => {
                 state.loading = true;
                 state.error = null;
+                state.latestFetchRequestId = action.meta.requestId;
             })
             .addCase(fetchAvailabilitiesByMonth.fulfilled, (state, action) => {
+                if (state.latestFetchRequestId && state.latestFetchRequestId !== action.meta.requestId) {
+                    return;
+                }
                 state.loading = false;
                 state.availabilities = action.payload;
             })
             .addCase(fetchAvailabilitiesByMonth.rejected, (state, action) => {
+                if (state.latestFetchRequestId && state.latestFetchRequestId !== action.meta.requestId) {
+                    return;
+                }
                 state.loading = false;
                 state.error = action.payload;
             });
@@ -142,10 +150,10 @@ const availabilitySlice = createSlice({
             .addCase(removeAvailability.pending, (state) => {
                 state.error = null;
             })
-            .addCase(removeAvailability.fulfilled, (state, action) => {
-                state.availabilities = state.availabilities.filter(
-                    (a) => String(a.id) !== String(action.payload)
-                );
+            .addCase(removeAvailability.fulfilled, () => {
+                // We rely on a follow-up month re-fetch to refresh the list.
+                // Avoid optimistic removal by id because FE can receive duplicate ids
+                // for different rendered ranges, which can hide unrelated events.
             })
             .addCase(removeAvailability.rejected, (state, action) => {
                 state.error = action.payload;

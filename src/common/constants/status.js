@@ -87,7 +87,7 @@ export const getAvailabilityColors = (status, isPast = false) => {
         PAST: {
             bg: "#D1D5DB", // Neutral Gray — not a direct theme token
             border: palette.text.disabled, // #94A3B8
-            title: "Past Slot",
+            title: "Unavailable",
             textColor: palette.text.secondary, // #64748B
         },
     };

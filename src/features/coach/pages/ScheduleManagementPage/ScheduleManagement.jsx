@@ -36,6 +36,19 @@ const getRollingSevenDayRange = () => {
 
 /** Snap minutes to nearest 30-min boundary */
 const snapTo30 = (minutes) => Math.round(minutes / BLOCK_MINUTES) * BLOCK_MINUTES;
+const toTimestamp = (dateLike) => {
+    const ts = new Date(dateLike).getTime();
+    return Number.isNaN(ts) ? null : ts;
+};
+const buildCalendarEventId = (availability) => {
+    const status = availability.status ?? AVAILABILITY_SLOTS_STATUS.AVAILABLE;
+    const slotId = availability.id ?? "no-id";
+    const startTs = toTimestamp(availability.startTime);
+    const endTs = toTimestamp(availability.endTime);
+    const startKey = startTs ?? String(availability.startTime ?? "");
+    const endKey = endTs ?? String(availability.endTime ?? "");
+    return `${status}-${slotId}-${startKey}-${endKey}`;
+};
 
 const ScheduleManagement = () => {
     const dispatch = useDispatch();
@@ -63,6 +76,7 @@ const ScheduleManagement = () => {
     // For showing booked slot details
     const [bookedDetailOpen, setBookedDetailOpen] = useState(false);
     const [bookedDetailData, setBookedDetailData] = useState(null);
+    const todayStart = getTodayStart();
 
     const today = new Date();
     const minDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -87,20 +101,36 @@ const ScheduleManagement = () => {
         return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     };
 
+    const getViewAnchorDate = () => {
+        const calendarApi = calendarRef.current?.getApi();
+        const anchorDate = calendarApi?.getDate?.();
+        if (anchorDate instanceof Date && !Number.isNaN(anchorDate.getTime())) {
+            return anchorDate;
+        }
+
+        const viewCurrentStart = calendarApi?.view?.currentStart;
+        if (viewCurrentStart instanceof Date && !Number.isNaN(viewCurrentStart.getTime())) {
+            return viewCurrentStart;
+        }
+        return currentDate;
+    };
+
     const refetchMonth = () => {
         if (!userId) return;
-        const month = currentDate.getMonth() + 1;
-        const year = currentDate.getFullYear();
+        const viewDate = getViewAnchorDate();
+        const month = viewDate.getMonth() + 1;
+        const year = viewDate.getFullYear();
         dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
     };
 
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+
     useEffect(() => {
         if (userId) {
-            const month = currentDate.getMonth() + 1;
-            const year = currentDate.getFullYear();
-            dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month, year }));
+            dispatch(fetchAvailabilitiesByMonth({ interviewerId: userId, month: currentMonth, year: currentYear }));
         }
-    }, [userId, currentDate.getMonth(), currentDate.getFullYear()]);
+    }, [dispatch, userId, currentMonth, currentYear]);
 
     useEffect(() => {
         if (error && error !== "Network Error") {
@@ -175,6 +205,7 @@ const ScheduleManagement = () => {
     const handleDateSelect = (selectInfo) => {
         const start = selectInfo.start;
         const end = selectInfo.end;
+        const isAllDaySelection = selectInfo.allDay || selectInfo.view.type === "dayGridMonth";
 
         if (start < new Date()) {
             toast.error("Cannot create availability in the past");
@@ -189,12 +220,19 @@ const ScheduleManagement = () => {
         const day = String(start.getDate()).padStart(2, "0");
         const localDateStr = `${year}-${month}-${day}`;
 
+        const defaultStartHour = 9;
+        const defaultEndHour = 10;
+        const startHour = isAllDaySelection ? defaultStartHour : start.getHours();
+        const startMinute = isAllDaySelection ? 0 : snapTo30(start.getMinutes());
+        const endHour = isAllDaySelection ? defaultEndHour : end.getHours();
+        const endMinute = isAllDaySelection ? 0 : snapTo30(end.getMinutes());
+
         setFormData({
             date: localDateStr,
-            startHour: start.getHours(),
-            startMinute: snapTo30(start.getMinutes()),
-            endHour: end.getHours(),
-            endMinute: snapTo30(end.getMinutes()),
+            startHour,
+            startMinute,
+            endHour,
+            endMinute,
             duplicateDates: [],
         });
         setOpenModal(true);
@@ -263,7 +301,7 @@ const ScheduleManagement = () => {
         try {
             const result = await dispatch(editAvailability(payload));
             if (editAvailability.fulfilled.match(result)) {
-                toast.success("Availability updated");
+                // toast.success("Availability updated");
                 refetchMonth();
             } else {
                 info.revert();
@@ -400,10 +438,11 @@ const ScheduleManagement = () => {
         }
     };
 
+    const nowTs = Date.now();
     const calendarEvents = availabilities.map((avail) => {
-        const now = new Date().toISOString();
-        const eventEnd = avail.endTime;
-        const isPast = eventEnd < now;
+        const eventEndTs = toTimestamp(avail.endTime);
+        const isPast = eventEndTs !== null && eventEndTs < nowTs;
+        const eventId = buildCalendarEventId(avail);
 
         let classNames = [];
         const status = avail.status ?? AVAILABILITY_SLOTS_STATUS.AVAILABLE;
@@ -414,7 +453,7 @@ const ScheduleManagement = () => {
         const isUnavailable = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
 
         return {
-            id: String(avail.id),
+            id: eventId,
             title: colors.title,
             start: avail.startTime,
             end: avail.endTime,
@@ -424,6 +463,8 @@ const ScheduleManagement = () => {
             classNames,
             editable: !isPast && !isUnavailable,
             extendedProps: {
+                availabilityEventId: eventId,
+                availabilityId: avail.id,
                 isPast,
                 isUnavailable,
                 status: avail.status,
@@ -437,7 +478,7 @@ const ScheduleManagement = () => {
             try {
                 const resultAction = await dispatch(removeAvailability(selectedItem));
                 if (removeAvailability.fulfilled.match(resultAction)) {
-                    toast.success("Availability slot deleted");
+                    // toast.success("Availability slot deleted");
                     refetchMonth();
                 } else {
                     showError(
@@ -515,7 +556,7 @@ const ScheduleManagement = () => {
                                     ref={calendarRef}
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                                     initialDate={getTodayStart()}
-                                    initialView="rollingSevenDay"
+                                    initialView="dayGridMonth"
                                     views={{
                                         rollingSevenDay: {
                                             type: "timeGrid",
@@ -528,9 +569,9 @@ const ScheduleManagement = () => {
                                     headerToolbar={{
                                         left: "today",
                                         center: "title",
-                                        right: "rollingSevenDay,timeGridDay",
+                                        right: "dayGridMonth,rollingSevenDay,timeGridDay",
                                     }}
-                                    buttonText={{ today: "Today", day: "Day" }}
+                                    buttonText={{ today: "Today", month: "Month", day: "Day" }}
                                     events={calendarEvents}
                                     eventClick={(info) => {
                                         if (info.event.extendedProps.isPast) {
@@ -538,9 +579,9 @@ const ScheduleManagement = () => {
                                             return;
                                         }
 
-                                        const avail = availabilities.find(
-                                            (a) => String(a.id) === String(info.event.id),
-                                        );
+                                        const eventKey =
+                                            info.event.extendedProps.availabilityEventId || String(info.event.id);
+                                        const avail = availabilities.find((a) => buildCalendarEventId(a) === eventKey);
                                         if (avail) {
                                             handleEditClick(avail);
                                         }
@@ -548,6 +589,10 @@ const ScheduleManagement = () => {
                                     selectable={true}
                                     selectMirror={true}
                                     select={handleDateSelect}
+                                    selectAllow={(selectInfo) => {
+                                        if (selectInfo.view.type !== "dayGridMonth") return true;
+                                        return startOfDay(selectInfo.start) >= todayStart;
+                                    }}
                                     editable={true}
                                     eventDrop={handleEventChange}
                                     eventResize={handleEventChange}
@@ -565,14 +610,22 @@ const ScheduleManagement = () => {
                                         return true;
                                     }}
                                     datesSet={(info) => {
-                                        setCurrentDate(info.start);
-                                        const calendarApi = calendarRef.current?.getApi();
-                                        if (calendarApi) {
-                                            const view = calendarApi.view;
-                                            if (view.type === "timeGridDay") {
-                                                setSelectedDate(view.currentStart);
-                                            }
+                                        setCurrentDate(info.view.currentStart);
+                                        if (info.view.type === "timeGridDay") {
+                                            setSelectedDate(info.view.currentStart);
                                         }
+                                    }}
+                                    dayCellClassNames={(arg) => {
+                                        if (arg.view.type !== "dayGridMonth") return [];
+
+                                        const classes = [];
+                                        if (startOfDay(arg.date) < todayStart) {
+                                            classes.push("fc-day-past-disabled");
+                                        }
+                                        if (arg.isToday) {
+                                            classes.push("fc-day-today-highlight");
+                                        }
+                                        return classes;
                                     }}
                                     height="auto"
                                     timeZone="local"
@@ -593,7 +646,7 @@ const ScheduleManagement = () => {
                                 />
                             </div>
 
-                            <BaseCard
+                            {/* <BaseCard
                                 sx={{ background: "white", boxShadow: 1, border: "1px solid", borderColor: "grey.200" }}
                             >
                                 <CardContent sx={{ p: 2.5 }}>
@@ -607,7 +660,7 @@ const ScheduleManagement = () => {
                                     </Box>
                                     <StatusLegend />
                                 </CardContent>
-                            </BaseCard>
+                            </BaseCard> */}
 
                             <UpcomingSessionBlog
                                 availabilities={availabilities}
@@ -675,7 +728,15 @@ const ScheduleManagement = () => {
                 <ConfirmModal
                     show={bookedDetailOpen}
                     title="Booked Session Details"
-                    message={`This slot is booked and cannot be edited.\n\nTime: ${parseLocalTime(bookedDetailData.startTime)} - ${parseLocalTime(bookedDetailData.endTime)}\nDate: ${parseLocalDate(bookedDetailData.startTime)}${bookedDetailData.candidateName ? `\nCandidate: ${bookedDetailData.candidateName}` : ""}${bookedDetailData.typeName || bookedDetailData.interviewType ? `\nType: ${bookedDetailData.typeName || bookedDetailData.interviewType}` : ""}`}
+                    message={`This slot is booked and cannot be edited.\n\n
+                        Time: ${parseLocalTime(bookedDetailData.startTime)} - ${parseLocalTime(bookedDetailData.endTime)}\n
+                        Date: ${parseLocalDate(bookedDetailData.startTime)}${
+                            bookedDetailData.candidateName ? `\nCandidate: ${bookedDetailData.candidateName}` : ""
+                        }${
+                            bookedDetailData.typeName || bookedDetailData.interviewType
+                                ? `\nType: ${bookedDetailData.typeName || bookedDetailData.interviewType}`
+                                : ""
+                        }`}
                     confirmText="Close"
                     onConfirm={() => {
                         setBookedDetailOpen(false);

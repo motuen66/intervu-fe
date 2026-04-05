@@ -17,7 +17,11 @@ export const getAvailabilitiesByMonth = async (interviewerId, month, year) => {
         endpoint: `${availabilityEndPoints.GET_AVAILABILITIES}/${interviewerId}?month=${month}&year=${year}`,
     });
 
-    const normalizeTime = (t) => (t && !t.endsWith("Z") ? `${t}Z` : t);
+    const normalizeTime = (t) => {
+        if (!t) return t;
+        const hasTimezone = /[zZ]$|[+-]\d{2}:\d{2}$/.test(t);
+        return hasTimezone ? t : `${t}Z`;
+    };
 
     const schedule = result?.data ?? {};
     const freeSlots = Array.isArray(schedule?.freeSlots) ? schedule.freeSlots : Array.isArray(schedule) ? schedule : [];

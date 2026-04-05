@@ -6,8 +6,8 @@ const StatusLegend = () => {
 
     const items = [
         { label: "Available", color: theme.palette.secondary.main, desc: "Open for booking" },
-        { label: "Unavailable", color: "#F43F5E", desc: "Not available" },
-        { label: "Past Slot", color: "#D1D5DB", desc: "Historical slot", opacity: 0.7 },
+        { label: "Booked", color: theme.palette.primary.main, desc: "Not available" },
+        { label: "Past Slot", color: theme.palette.text.primary, desc: "Historical slot", opacity: 0.7 },
     ];
 
     return (

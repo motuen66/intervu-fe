@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Box, TextField, Typography, Modal, Card, Stack, FormControl, Select, MenuItem, Divider } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
-import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, DangerButton } from "../../../../common/components/buttons";
 import { IoTrash } from "react-icons/io5";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
 
@@ -82,7 +82,7 @@ const UpdateAvailableSlotDialog = ({
                                 Date
                             </Typography>
                             <TextField
-                                type="date"
+                                type="date"         
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 inputProps={{
@@ -178,7 +178,7 @@ const UpdateAvailableSlotDialog = ({
                         </Box>
 
                         {/* Affected 30-min blocks preview */}
-                        {affectedBlocks.length > 0 && (
+                        {/* {affectedBlocks.length > 0 && (
                             <Box>
                                 <Divider sx={{ my: 1 }} />
                                 <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
@@ -200,17 +200,12 @@ const UpdateAvailableSlotDialog = ({
                                     </Typography>
                                 )}
                             </Box>
-                        )}
+                        )} */}
 
                         <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ mt: 3 }}>
-                            <SecondaryButton
-                                color="error"
-                                startIcon={<IoTrash size={16} />}
-                                onClick={handleDelete}
-                                disabled={loading || hasBookedBlocks}
-                            >
-                                Delete
-                            </SecondaryButton>
+                            <DangerButton onClick={handleDelete} disabled={loading || hasBookedBlocks}>
+                                <IoTrash size={16} />
+                            </DangerButton>
                             <Stack direction="row" spacing={2}>
                                 <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
                                 <PrimaryButton onClick={handleSubmit} loading={loading} disabled={hasBookedBlocks}>

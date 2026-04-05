@@ -119,7 +119,30 @@
 }
 
 .fc .fc-daygrid-day.fc-day-today {
-    background-color: #f3f4f6;
+    background-color: #eef2ff;
+}
+
+.fc .fc-daygrid-day.fc-day-past-disabled {
+    background-color: #f9fafb;
+}
+
+.fc .fc-daygrid-day.fc-day-past-disabled:hover {
+    background-color: #f9fafb;
+}
+
+.fc .fc-daygrid-day.fc-day-past-disabled .fc-daygrid-day-number {
+    color: #9ca3af;
+}
+
+.fc .fc-daygrid-day.fc-day-today-highlight .fc-daygrid-day-number {
+    color: #ffffff;
+    background-color: var(--mui-palette-primary-main);
+    border-radius: 999px;
+    width: 1.75rem;
+    height: 1.75rem;
+    text-align: center;
+    margin: 0.25rem;
+    font-weight: 700;
 }
 
 .fc .fc-daygrid-day-number {
