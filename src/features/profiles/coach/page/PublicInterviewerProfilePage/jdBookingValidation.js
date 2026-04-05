@@ -3,6 +3,22 @@ const BLOCK_MINUTES = 30;
 /**
  * Validates JD booking rounds in the block-based model.
  * Each round must have the correct number of consecutive availability block IDs.
+ * Validates if a string is a valid fully-qualified http, https, or ftp URL.
+ * @param {string} urlString
+ * @returns {boolean}
+ */
+export const isValidUrl = (urlString) => {
+    if (!urlString) return false;
+    try {
+        const url = new URL(urlString);
+        return ["http:", "https:", "ftp:"].includes(url.protocol);
+    } catch {
+        return false;
+    }
+};
+
+/**
+ * Validates JD multi-round booking rounds against available free slots.
  *
  * @param {Array<{serviceId: string, availabilityIds: string[], durationMinutes: number}>} selectedRounds
  * @param {Array<{id: string, startTime: Date|string, endTime: Date|string}>} freeSlots - all available blocks

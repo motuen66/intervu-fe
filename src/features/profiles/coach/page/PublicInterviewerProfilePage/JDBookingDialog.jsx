@@ -46,7 +46,7 @@ import { getCoachInterviewServices } from "../../../../coach/services/coachInter
 import { createJDBookingRequest, payBookingRequest } from "../../../../interview/services/bookingRequestApi";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
-import { validateJDBookingRounds } from "./jdBookingValidation";
+import { validateJDBookingRounds, isValidUrl } from "./jdBookingValidation";
 import toast from "react-hot-toast";
 import { useTheme } from "@mui/material/styles";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
@@ -264,6 +264,7 @@ function RoundScheduleTimelineItem({
                 >
                     <Typography
                         sx={{
+                            fontFamily: "inherit",
                             fontWeight: 900,
                             fontSize: "0.6rem",
                             color: "#4f46e5",
@@ -321,6 +322,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
     const [activeStep, setActiveStep] = useState(0);
     const [form, setForm] = useState({ jobDescriptionUrl: "", cvUrl: "", aimLevel: "" });
+    const [formErrors, setFormErrors] = useState({ jobDescriptionUrl: "", cvUrl: "" });
     const [services, setServices] = useState([]);
     const [loadingServices, setLoadingServices] = useState(false);
     const [freeSlots, setFreeSlots] = useState([]);
@@ -349,6 +351,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
         if (!open) {
             setActiveStep(0);
             setForm({ jobDescriptionUrl: "", cvUrl: "", aimLevel: "" });
+            setFormErrors({ jobDescriptionUrl: "", cvUrl: "" });
             setRounds([createRound(), createRound()]);
             setActiveRoundIndex(0);
             setSelectedDate(null);
@@ -555,7 +558,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             };
             const booking = await createJDBookingRequest(payload);
             const payResult = await payBookingRequest(booking.id, {
-                returnUrl: window.location.origin + "/booking-requests",
+                returnUrl: window.location.origin + `/booking-requests/{booking.id}`,
             });
             if (payResult?.checkOutUrl) window.location.href = payResult.checkOutUrl;
             else {
@@ -577,7 +580,31 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     );
 
     const handleNextStep = () => {
-        if (activeStep === 0 && canProceedStep1) {
+        if (activeStep === 0) {
+            const jdUrl = form.jobDescriptionUrl.trim();
+            const cvUrl = form.cvUrl.trim();
+            const newErrors = { jobDescriptionUrl: "", cvUrl: "" };
+            let hasError = false;
+
+            if (!isValidUrl(jdUrl)) {
+                newErrors.jobDescriptionUrl = "Please provide a valid link for the Job Description";
+                hasError = true;
+            }
+            if (!isValidUrl(cvUrl)) {
+                newErrors.cvUrl = "Please provide a valid link for your CV (e.g. Google Drive link)";
+                hasError = true;
+            }
+
+            setFormErrors(newErrors);
+
+            if (hasError) return;
+
+            if (!rounds.every((r) => r.coachInterviewServiceId)) {
+                setError("Please select a service for all interview rounds.");
+                return;
+            }
+
+            setError("");
             setActiveStep(1);
             setActiveRoundIndex(0);
             setSelectedDate(null);
@@ -703,6 +730,19 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     }}
                                                 />
                                             </Box>
+                                            {formErrors.jobDescriptionUrl && (
+                                                <Typography
+                                                    sx={{
+                                                        color: "#ef4444",
+                                                        fontSize: "0.65rem",
+                                                        fontWeight: 700,
+                                                        mt: 0.5,
+                                                        ml: 0.5,
+                                                    }}
+                                                >
+                                                    {formErrors.jobDescriptionUrl}
+                                                </Typography>
+                                            )}
                                         </Grid>
                                         <Grid
                                             item
@@ -718,7 +758,11 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     variant="standard"
                                                     placeholder="https://drive.google.com/cv.pdf"
                                                     value={form.cvUrl}
-                                                    onChange={(e) => setForm({ ...form, cvUrl: e.target.value })}
+                                                    onChange={(e) => {
+                                                        setForm({ ...form, cvUrl: e.target.value });
+                                                        if (formErrors.cvUrl)
+                                                            setFormErrors((prev) => ({ ...prev, cvUrl: "" }));
+                                                    }}
                                                     InputProps={{ disableUnderline: true }}
                                                     sx={{
                                                         "& .MuiInputBase-input": {
@@ -730,6 +774,19 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     }}
                                                 />
                                             </Box>
+                                            {formErrors.cvUrl && (
+                                                <Typography
+                                                    sx={{
+                                                        color: "#ef4444",
+                                                        fontSize: "0.65rem",
+                                                        fontWeight: 700,
+                                                        mt: 0.5,
+                                                        ml: 0.5,
+                                                    }}
+                                                >
+                                                    {formErrors.cvUrl}
+                                                </Typography>
+                                            )}
                                         </Grid>
                                         <Grid
                                             item

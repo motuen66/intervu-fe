@@ -5,7 +5,7 @@ import { METHOD } from "../../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { Check, ArrowRight, Briefcase, FileText, Rocket, Clock, Tag } from "lucide-react";
+import { Check, ArrowRight, Briefcase, FileText, Rocket, Clock, Tag, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
 import { PAYOS_TRANSACTION_STATUS, TRANSACTION_STATUS } from "../../../../../common/constants/status";
 import BookingSlotDialog from "./BookingSlotDialog";
@@ -14,6 +14,7 @@ import CommonLoader from "../../../../../common/components/loaders/CommonLoader"
 import "./EliteCoachProfile.css";
 import { useSelector } from "react-redux";
 import { ROLES } from "../../../../../common/constants/common";
+import { CompanyLogo } from "../../../../../common/utils/logoImageGenerator";
 
 const PublicInterviewerProfilePage = () => {
     const navigate = useNavigate();
@@ -193,6 +194,7 @@ const PublicInterviewerProfilePage = () => {
 
     const currentTitle = profile.jobTitle || "Senior Interviewer";
     const currentCompany = profile.companyName || (profile.companies?.length > 0 ? profile.companies[0].name : "");
+    const displayName = profile?.user?.fullName || profile?.fullName || "Interviewer";
 
     return (
         <div className="elite-profile-container" style={{ paddingTop: "2rem" }}>
@@ -201,18 +203,24 @@ const PublicInterviewerProfilePage = () => {
                 <section className="ep-hero">
                     <div className="ep-hero-avatar-wrap">
                         <img
-                            src={avatarUrl || "https://ui-avatars.com/api/?name=" + profile.user.fullName}
-                            alt={profile.user.fullName}
+                            src={avatarUrl || "https://ui-avatars.com/api/?name=" + encodeURIComponent(displayName)}
+                            alt={displayName}
                             className="ep-hero-avatar"
                         />
                     </div>
                     <div className="ep-hero-content">
-                        <h1 className="ep-hero-name">{profile.user.fullName}</h1>
+                        <h1 className="ep-hero-name">{displayName}</h1>
                         <p className="ep-hero-title">
                             {currentTitle}{" "}
                             {currentCompany && (
                                 <>
-                                    @ <strong>{currentCompany}</strong>
+                                    @{" "}
+                                    <strong>
+                                        <span className="ep-inline-logo">
+                                            <CompanyLogo name={currentCompany} size={22} />
+                                            {currentCompany}
+                                        </span>
+                                    </strong>
                                 </>
                             )}
                         </p>
@@ -238,10 +246,12 @@ const PublicInterviewerProfilePage = () => {
                         <div className="ep-about">
                             <h3 className="ep-about-title">About</h3>
                             <p className="ep-about-text">
-                                {expandedBio
-                                    ? profile.bio
-                                    : `${profile.bio?.slice(0, bioLimit)}${profile.bio?.length > bioLimit ? "..." : ""}`}
-                                {profile.bio?.length > bioLimit && (
+                                {profile.bio
+                                    ? expandedBio
+                                        ? profile.bio
+                                        : `${profile.bio.slice(0, bioLimit)}${profile.bio.length > bioLimit ? "..." : ""}`
+                                    : "No bio provided yet."}
+                                {profile.bio && profile.bio.length > bioLimit && (
                                     <button onClick={() => setExpandedBio(!expandedBio)} className="ep-view-more-btn">
                                         {expandedBio ? "View Less" : "View More"}
                                     </button>
@@ -261,6 +271,7 @@ const PublicInterviewerProfilePage = () => {
                             <div className="ep-skills-wrap">
                                 {profile.skills?.map((skill) => (
                                     <div key={skill.id} className="ep-skill-tag">
+                                        <CompanyLogo name={skill.name} size={18} />
                                         {skill.name}
                                     </div>
                                 ))}
@@ -273,7 +284,10 @@ const PublicInterviewerProfilePage = () => {
                             <div className="ep-track-grid">
                                 {profile.companies?.map((c) => (
                                     <div key={c.id} className="ep-track-card">
-                                        <h4>{c.name}</h4>
+                                        <div className="ep-track-card-head">
+                                            <CompanyLogo name={c.name} size={24} />
+                                            <h4>{c.name}</h4>
+                                        </div>
                                         <p>
                                             {c.role || "Software Engineer"} | {c.years || "2021 - Present"}
                                         </p>

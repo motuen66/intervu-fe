@@ -20,6 +20,7 @@ import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
 import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
 import CoachEvaluationModal from "./CoachEvaluationModal.jsx";
+import PrecheckModal from "./PrecheckModal.jsx";
 
 // Import sub-components
 import InterviewStats from "./components/InterviewStats.jsx";
@@ -75,6 +76,9 @@ function InterviewRoomListPage() {
     // New state for Generated Questions Modal
     const [genQuestionsModalState, setGenQuestionsModalState] = useState({ open: false, roomId: null });
 
+    // Precheck modal state
+    const [precheckState, setPrecheckState] = useState({ open: false, room: null });
+
     // Helper function to get the label from the type value
     const getRoomTypeLabel = (typeValue) => {
         const roomType = INTERVIEW_ROOM_TYPE.find((t) => t.value === typeValue);
@@ -129,6 +133,8 @@ function InterviewRoomListPage() {
     }, [activeTab]); // Refetch when tab changes
 
     const groupRoomsByBooking = (roomsList) => {
+        if (!Array.isArray(roomsList)) return [];
+
         const grouped = {};
         const standalone = [];
 
@@ -184,7 +190,7 @@ function InterviewRoomListPage() {
                 method: METHOD.GET,
                 endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
             });
-            const allRoomsData = allRoomsRes?.data || [];
+            const allRoomsData = allRoomsRes?.data?.items || allRoomsRes?.data || [];
 
             // Group rooms
             const groupedRooms = groupRoomsByBooking(allRoomsData);
@@ -204,11 +210,21 @@ function InterviewRoomListPage() {
 
             // ALWAYS calculate stats based on grouped rooms shown in the list for UI consistency
             const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
-            const evaluatedRooms = completedRooms.filter(r => typeof r.score === 'number');
+            
+            // Calculate avgScore based on role
+            // Candidate: Average of coach evaluation scores (room.score) - scale 10
+            // Coach: Average of candidate feedback ratings (room.rating) - scale 5
+            const evaluatedRooms = completedRooms.filter(r => 
+                user.role === ROLES.CANDIDATE 
+                    ? typeof r.score === 'number' 
+                    : typeof r.rating === 'number'
+            );
 
             let avgScore = null;
             if (evaluatedRooms.length > 0) {
-                const totalScore = evaluatedRooms.reduce((acc, room) => acc + room.score, 0);
+                const totalScore = evaluatedRooms.reduce((acc, room) => 
+                    acc + (user.role === ROLES.CANDIDATE ? room.score : room.rating)
+                , 0);
                 avgScore = (totalScore / evaluatedRooms.length).toFixed(1);
             }
 
@@ -287,9 +303,9 @@ function InterviewRoomListPage() {
                 method: METHOD.GET,
                 endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=1000`, // Increased limit to find rounds
             });
-            const rooms = res?.data || [];
+            const rooms = res?.data?.items || res?.data || [];
             
-            // For multi-round interviews, we need to check ALL individual rooms,
+            if (!Array.isArray(rooms)) return;
             // not just the ones currently marked as 'COMPLETED' in the top-level grouping.
             const pendingRoom = rooms.find(
                 (room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED && room.isEvaluationCompleted === false,
@@ -459,11 +475,7 @@ function InterviewRoomListPage() {
 
     const handleJoinRoom = (room) => {
         if (!room?.id) return;
-        // if (user?.role === ROLES.CANDIDATE && room?.type === INTERVIEW_ROOM_TYPE.WITH_AI) {
-        //     setAiCvModalState({ open: true, room });
-        //     return;
-        // }
-        navigate(`/interview/room/${room.id}`);
+        setPrecheckState({ open: true, room });
     };
 
     // const handleCloseAiCvModal = () => {
@@ -523,6 +535,7 @@ function InterviewRoomListPage() {
                     completedCount={stats.completed}
                     avgScore={stats.avgScore}
                     nextSessionIn={stats.nextSessionIn}
+                    userRole={user?.role}
                 />
 
                 {/* Tabs Navigation */}
@@ -558,7 +571,7 @@ function InterviewRoomListPage() {
                         onRequestReschedule={handleRequestReschedule}
                         onCancelInterview={handleCancelInterview}
                         onViewFeedback={handleViewFeedback}
-                        // onJoin={handleJoinRoom}
+                        onJoin={handleJoinRoom}
                         onReviewQuestions={handleReviewQuestions}
                         rescheduleRequests={rescheduleRequests}
                     />
@@ -630,6 +643,12 @@ function InterviewRoomListPage() {
                 open={genQuestionsModalState.open}
                 onClose={handleCloseGenQuestionsModal}
                 roomId={genQuestionsModalState.roomId}
+            />
+
+            <PrecheckModal
+                open={precheckState.open}
+                onClose={() => setPrecheckState({ open: false, room: null })}
+                room={precheckState.room}
             />
         </Box>
     );

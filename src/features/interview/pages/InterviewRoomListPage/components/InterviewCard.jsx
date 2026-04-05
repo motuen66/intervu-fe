@@ -353,8 +353,8 @@ function InterviewCard({
 
             return (
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
-                    {/* Cancel Button - hidden if scheduled time has passed */}
-                    {canCancel && (
+                    {/* Cancel Button - only for candidates, hidden if past */}
+                    {user?.role === ROLES.CANDIDATE && canCancel && (
                         <SecondaryButton
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -399,7 +399,7 @@ function InterviewCard({
                             if (onJoin) {
                                 onJoin(room);
                             } else {
-                                navigate(`/interview/precheck/${room.id}`);
+                                navigate(`/interview/room/${room.id}`);
                             }
                         }}
                     >
@@ -479,7 +479,9 @@ function InterviewCard({
 
     const formatTypeName = (name) => {
         if (!name) return "";
-        return name.replace(/\s*(INTERVIEW|SESSION)\s*$/i, "").trim() || name;
+        // Remove trailing "Interview" or "Session" words case-insensitively, but don't leave it empty
+        const formatted = name.replace(/\s*(INTERVIEW|SESSION)\s*$/gi, "").trim();
+        return formatted || name;
     };
 
     return (
@@ -617,7 +619,7 @@ function InterviewCard({
 
                 <Stack spacing={0.5} alignItems="flex-end" sx={{ ml: 1, pr: 4.5 }}>
                     {(() => {
-                        const originalName = room.interviewTypeName || "INTERVIEW SESSION";
+                        const originalName = room.interviewTypeName;
                         const displayTypeName = formatTypeName(originalName);
                         const badgeStyle = getInterviewTypeBadgeStyle(originalName);
 

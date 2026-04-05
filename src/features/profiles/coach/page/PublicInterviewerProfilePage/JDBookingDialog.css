@@ -42,6 +42,15 @@
     box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
 }
 
+.jd-input-stitch.error {
+    border-color: #ef4444 !important;
+    background: #fffafa !important;
+}
+
+.jd-input-stitch.error:focus-within {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1) !important;
+}
+
 /* Underline row — matches JD mock (icon + text + bottom rule only) */
 .jd-input-underline {
     display: flex;

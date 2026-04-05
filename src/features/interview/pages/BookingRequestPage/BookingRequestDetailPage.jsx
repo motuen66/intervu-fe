@@ -10,7 +10,6 @@ import {
     BOOKING_REQUEST_STATUS,
     BOOKING_REQUEST_STATUS_LABELS,
     BOOKING_REQUEST_TYPE,
-    BOOKING_REQUEST_TYPE_LABELS,
     AIM_LEVEL_LABELS,
 } from "../../../../common/constants/status";
 import useUser from "../../../../common/hooks/useUser";
@@ -20,32 +19,61 @@ import {
     Typography,
     Stack,
     CircularProgress,
-    DialogActions,
     IconButton,
+    Grid,
     Dialog,
     DialogTitle,
     DialogContent,
+    DialogActions,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { dialogStyles } from "../../../../common/constants/uiStyles";
-import { DangerButton, PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
-import FormTextField from "../../../../common/components/form/FormTextField";
-import StatusChip from "../../../../common/components/StatusChip";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LinkIcon from "@mui/icons-material/Link";
 import CloseIcon from "@mui/icons-material/Close";
-import PaymentIcon from "@mui/icons-material/Payment";
-import CancelIcon from "@mui/icons-material/Cancel";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import toast from "react-hot-toast";
-import "./BookingRequestPage.css";
+import SessionResultSection from "./components/SessionResultSection";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import { SecondaryButton, DangerButton } from "../../../../common/components/buttons";
+import { dialogStyles } from "../../../../common/constants/uiStyles";
+import './BookingRequestPage.css';
 
-const STATUS_COLOR_MAP = {
-    [BOOKING_REQUEST_STATUS.PENDING]: "warning",
-    [BOOKING_REQUEST_STATUS.ACCEPTED]: "success",
-    [BOOKING_REQUEST_STATUS.REJECTED]: "error",
-    [BOOKING_REQUEST_STATUS.PAID]: "info",
-    [BOOKING_REQUEST_STATUS.EXPIRED]: "default",
-    [BOOKING_REQUEST_STATUS.CANCELLED]: "default",
-};
+// UI Helper: Detail Item matching the premium style
+const DetailItem = ({ label, value, statusBadge, color }) => (
+    <Box>
+        <Typography variant="caption" color="#94a3b8" fontWeight={700} sx={{ letterSpacing: '0.08em', display: 'block', mb: 1.5, fontSize: '0.75rem' }}>
+            {label}
+        </Typography>
+        {statusBadge ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <FiberManualRecordIcon sx={{ fontSize: 10, color: color || '#22c55e' }} />
+                <Typography variant="body1" fontWeight={800} color="#111827">
+                    {value}
+                </Typography>
+            </Box>
+        ) : (
+            <Typography variant="body1" fontWeight={800} color={color || "#0f172a"} sx={{ fontSize: '1.05rem', lineHeight: 1.15 }}>
+                {value || '—'}
+            </Typography>
+        )}
+    </Box>
+);
+
+const SectionCard = ({ title, icon: Icon, children, sx }) => (
+    <Box sx={{ bgcolor: 'white', p: 5, borderRadius: '24px', border: '1px solid #f1f5f9', mb: 1, ...sx }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+            {Icon && (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#111827', color: 'white', borderRadius: '50%', p: 0.5 }}>
+                    <Icon sx={{ fontSize: 20 }} />
+                </Box>
+            )}
+            <Typography variant="h6" fontWeight={900} color="#111827" sx={{ letterSpacing: '-0.01em' }}>{title}</Typography>
+        </Stack>
+        {children}
+    </Box>
+);
 
 export default function BookingRequestDetailPage() {
     const { id } = useParams();
@@ -118,7 +146,7 @@ export default function BookingRequestDetailPage() {
     const handlePay = async () => {
         setPaying(true);
         try {
-            const returnUrl = window.location.origin + "/booking-requests";
+            const returnUrl = `${window.location.origin}/booking-requests/${id}`;
             const result = await payBookingRequest(id, { returnUrl });
             if (result?.checkOutUrl) {
                 window.location.href = result.checkOutUrl;
@@ -146,287 +174,255 @@ export default function BookingRequestDetailPage() {
         }
     };
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return "—";
-        return new Date(dateStr).toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
-
     if (loading) {
         return (
-            <Box className="booking-detail-page" display="flex" justifyContent="center" py={8}>
-                <CircularProgress />
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                <CircularProgress size={40} sx={{ color: '#bef264' }} />
             </Box>
         );
     }
 
     if (!detail) {
         return (
-            <Box className="booking-detail-page" textAlign="center" py={8}>
-                <Typography variant="h6" color="text.secondary">
-                    Booking request not found.
-                </Typography>
-                <SecondaryButton sx={{ mt: 2 }} onClick={() => navigate("/booking-requests")}>
-                    Back to list
-                </SecondaryButton>
+            <Box sx={{ textAlign: 'center', py: 10 }}>
+                <Typography variant="h5" color="text.secondary">Booking request not found.</Typography>
+                <SecondaryButton sx={{ mt: 4 }} onClick={() => navigate("/booking-requests")}>Back to list</SecondaryButton>
             </Box>
         );
     }
 
-    const isExternal = detail.type === BOOKING_REQUEST_TYPE.EXTERNAL;
+    const isPaid = detail.status === BOOKING_REQUEST_STATUS.PAID;
     const isPending = detail.status === BOOKING_REQUEST_STATUS.PENDING;
+    const isAccepted = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
 
     return (
-        <Box className="booking-detail-page">
-            {/* Back button */}
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                <IconButton onClick={() => navigate("/booking-requests")} size="small">
-                    <ArrowBackIcon />
-                </IconButton>
-                <Typography variant="h5" fontWeight={700}>
-                    Booking Request Detail
-                </Typography>
-            </Stack>
+        <Box sx={{ minHeight: '100vh', pt: 3, pb: 6, px: { xs: 3, md: 4 } }}>
+            <Box className="booking-detail-page" sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
+                {/* NAVIGATION & TOP ACTIONS */}
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <IconButton
+                            onClick={() => navigate("/booking-requests")}
+                            sx={{
+                                bgcolor: 'white', border: '1px solid #f1f5f9',
+                                '&:hover': { bgcolor: '#f1f5f9' }, p: 1
+                            }}
+                        >
+                            <ArrowBackIosNewIcon sx={{ fontSize: 14, color: '#111827' }} />
+                        </IconButton>
+                        <Box>
+                            <Typography variant="caption" color="#94a3b8" fontWeight={700} sx={{ letterSpacing: '0.05em' }}>RETURN TO LIST</Typography>
+                        </Box>
+                    </Stack>
 
-            {/* Main info card */}
-            <div className="booking-detail-card">
-                <div className="detail-header">
-                    <div>
-                        <Typography variant="h6" fontWeight={700}>
-                            {isExternal ? "External Booking" : "JD Multi-Round Interview"}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                            Created {formatDate(detail.createdAt)}
-                        </Typography>
-                    </div>
-                    <StatusChip
-                        label={BOOKING_REQUEST_STATUS_LABELS[detail.status] || "Unknown"}
-                        color={STATUS_COLOR_MAP[detail.status] || "default"}
-                    />
-                </div>
-
-                <div className="detail-grid">
-                    <div className="detail-item">
-                        <span className="detail-label">Candidate</span>
-                        <span className="detail-value">{detail.candidateName || "—"}</span>
-                    </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Coach</span>
-                        <span className="detail-value">{detail.coachName || "—"}</span>
-                    </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Type</span>
-                        <span className="detail-value">{BOOKING_REQUEST_TYPE_LABELS[detail.type] || "—"}</span>
-                    </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Total Amount</span>
-                        <span className="detail-value" style={{ color: "#4F46E5", fontWeight: 700 }}>
-                            {detail.totalAmount?.toLocaleString()} ₫
-                        </span>
-                    </div>
-
-                    {detail.aimLevel !== null && detail.aimLevel !== undefined && (
-                        <div className="detail-item">
-                            <span className="detail-label">Aim Level</span>
-                            <span className="detail-value">{AIM_LEVEL_LABELS[detail.aimLevel] || "—"}</span>
-                        </div>
-                    )}
-
-                    {isExternal && detail.interviewTypeName && (
-                        <div className="detail-item">
-                            <span className="detail-label">Interview Type</span>
-                            <span className="detail-value">{detail.interviewTypeName}</span>
-                        </div>
-                    )}
-
-                    {isExternal && detail.requestedStartTime && (
-                        <div className="detail-item">
-                            <span className="detail-label">Requested Start Time</span>
-                            <span className="detail-value">{formatDate(detail.requestedStartTime)}</span>
-                        </div>
-                    )}
-
-                    {isExternal && detail.serviceDurationMinutes && (
-                        <div className="detail-item">
-                            <span className="detail-label">Duration</span>
-                            <span className="detail-value">{detail.serviceDurationMinutes} min</span>
-                        </div>
-                    )}
-
-                    {detail.expiresAt && (
-                        <div className="detail-item">
-                            <span className="detail-label">Expires At</span>
-                            <span className="detail-value">{formatDate(detail.expiresAt)}</span>
-                        </div>
-                    )}
-
-                    {detail.respondedAt && (
-                        <div className="detail-item">
-                            <span className="detail-label">Responded At</span>
-                            <span className="detail-value">{formatDate(detail.respondedAt)}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* JD/CV links for Flow C */}
-            {!isExternal && (detail.jobDescriptionUrl || detail.cvUrl) && (
-                <div className="booking-detail-card">
-                    <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-                        Documents
-                    </Typography>
-                    <Stack spacing={1.5}>
-                        {detail.jobDescriptionUrl && (
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                <LinkIcon fontSize="small" sx={{ color: "#64748b" }} />
-                                <Typography variant="body2">
-                                    <a
-                                        href={detail.jobDescriptionUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: "#4F46E5", textDecoration: "none" }}
-                                    >
-                                        Job Description
-                                    </a>
-                                </Typography>
-                            </Stack>
+                    {/* Primary Action Context Dependent */}
+                    <Stack direction="row" spacing={2}>
+                        {isCoach && isPending && (
+                            <>
+                                <SecondaryButton
+                                    onClick={handleAccept}
+                                    loading={responding}
+                                    sx={{ borderRadius: '14px', px: 4, bgcolor: '#bef264', color: '#111827', border: 'none', '&:hover': { bgcolor: '#a3e635' } }}
+                                >
+                                    Accept Request
+                                </SecondaryButton>
+                                <DangerButton onClick={() => setRejectOpen(true)} sx={{ borderRadius: '14px', px: 3 }}>
+                                    Reject
+                                </DangerButton>
+                            </>
                         )}
-                        {detail.cvUrl && (
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                <LinkIcon fontSize="small" sx={{ color: "#64748b" }} />
-                                <Typography variant="body2">
-                                    <a
-                                        href={detail.cvUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: "#4F46E5", textDecoration: "none" }}
+
+                        {!isCoach && (
+                            <>
+                                {isAccepted && (
+                                    <SecondaryButton
+                                        onClick={handlePay}
+                                        loading={paying}
+                                        sx={{ borderRadius: '14px', px: 4, bgcolor: '#bef264', color: '#111827', border: 'none', '&:hover': { bgcolor: '#a3e635' } }}
                                     >
-                                        Candidate CV
-                                    </a>
-                                </Typography>
-                            </Stack>
+                                        Pay {detail.totalAmount?.toLocaleString()} ₫
+                                    </SecondaryButton>
+                                )}
+                                {(isPending || isAccepted) && (
+                                    <DangerButton onClick={handleCancel} loading={cancelling} sx={{ borderRadius: '14px', px: 3 }}>
+                                        Cancel Request
+                                    </DangerButton>
+                                )}
+                            </>
+                        )}
+
+                        {isPaid && (
+                            <SecondaryButton
+                                onClick={() => navigate("/home")}
+                                sx={{ borderRadius: '28px', px: 4, py: 1.1, bgcolor: '#bef264', color: '#0f172a', fontWeight: 900, border: 'none', boxShadow: '0 8px 24px rgba(190,242,100,0.12)', '&:hover': { bgcolor: '#a3e635' } }}
+                            >
+                                Schedule Follow-up
+                            </SecondaryButton>
                         )}
                     </Stack>
-                </div>
-            )}
-
-            {/* Rounds (Flow C) */}
-            {detail.rounds && detail.rounds.length > 0 && (
-                <div className="booking-detail-card">
-                    <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-                        Interview Rounds ({detail.rounds.length})
-                    </Typography>
-                    <div className="booking-rounds-list">
-                        {detail.rounds.map((round) => (
-                            <div key={round.id} className="booking-round-card">
-                                <div className="round-info">
-                                    <div className="round-title">
-                                        Round {round.roundNumber}: {round.interviewTypeName || "Interview"}
-                                        {round.isCoding && <StatusChip label="Coding" color="success" sx={{ ml: 1 }} />}
-                                    </div>
-                                    <div className="round-meta">
-                                        {formatDate(round.startTime)} — {formatDate(round.endTime)}
-                                    </div>
-                                </div>
-                                <div className="round-price">{round.price?.toLocaleString()} ₫</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Rejection reason */}
-            {detail.status === BOOKING_REQUEST_STATUS.REJECTED && detail.rejectionReason && (
-                <div className="booking-detail-card">
-                    <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1, color: "#b91c1c" }}>
-                        Rejection Reason
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "#64748b" }}>
-                        {detail.rejectionReason}
-                    </Typography>
-                </div>
-            )}
-
-            {/* Coach actions */}
-            {isCoach && isPending && (
-                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    <PrimaryButton onClick={handleAccept} loading={responding}>
-                        Accept Request
-                    </PrimaryButton>
-                    <DangerButton disabled={responding} onClick={() => setRejectOpen(true)}>
-                        Reject
-                    </DangerButton>
                 </Stack>
-            )}
 
-            {/* Candidate actions */}
-            {!isCoach && (
-                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    {/* Pay button — only when status is Accepted */}
-                    {detail.status === BOOKING_REQUEST_STATUS.ACCEPTED && (
-                        <PrimaryButton loading={paying} onClick={handlePay} startIcon={<PaymentIcon />}>
-                            {`Pay ${detail.totalAmount?.toLocaleString()} ₫`}
-                        </PrimaryButton>
+                {/* PAGE TITLE */}
+                <Box sx={{ mb: 3 }}>
+                    <Typography fontWeight={900} color="#0f172a" sx={{ letterSpacing: '-0.03em', fontSize: { xs: '2.2rem', md: '3rem' }, lineHeight: 1.1, mb: 1, fontFamily: '"Outfit", "Plus Jakarta Sans", sans-serif' }}>
+                        {isPaid ? 'Interview Results' : 'Booking Details'}
+                    </Typography>
+                    <Typography variant="h6" color="#475569" fontWeight={700} sx={{ fontSize: '1.15rem', opacity: 0.9 }}>
+                        {'Session: '}{detail.interviewTypeName || (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? 'External Session' : 'JD Interview')}{' — '}{new Date(detail.requestedStartTime || detail.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </Typography>
+                </Box>
+
+                {/* CONTENT STACK — vertical alignment of all major blocks */}
+                <Stack spacing={1.5}>
+
+                    {/* Session Details — always full width */}
+                    <SectionCard title="Session Details" icon={InfoOutlinedIcon} sx={{ mb: 0, p: 4 }}>
+                        <Stack direction="row" justifyContent="space-between" sx={{ flexWrap: 'wrap', gap: 3 }}>
+                            <Box sx={{ flex: '1 1 auto', minWidth: '150px' }}>
+                                <DetailItem label="CANDIDATE" value={detail.candidateName} />
+                            </Box>
+                            <Box sx={{ flex: '1 1 auto', minWidth: '150px' }}>
+                                <DetailItem label="COACH" value={detail.coachName} />
+                            </Box>
+                            <Box sx={{ flex: '1 1 auto', minWidth: '180px' }}>
+                                <DetailItem label="SERVICE" value={detail.interviewTypeName || (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? 'External Session' : 'JD Interview')} />
+                            </Box>
+                            <Box sx={{ flex: '1 1 auto', minWidth: '120px' }}>
+                                <DetailItem label="DURATION" value="45 Minutes" />
+                            </Box>
+                            <Box sx={{ flex: '1 1 auto', minWidth: '200px' }}>
+                                <DetailItem label="START TIME (LOCAL TIME)" value={new Date(detail.requestedStartTime || detail.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })} />
+                            </Box>
+                            {detail.rounds?.length > 0 && (
+                                <Box sx={{ flex: '1 1 auto', minWidth: '100px' }}>
+                                    <DetailItem label="ROUNDS" value={`${detail.rounds.length} rounds`} />
+                                </Box>
+                            )}
+                        </Stack>
+                    </SectionCard>
+
+                    {/* Documents — compact horizontal bar below Session Details */}
+                    {(detail.jobDescriptionUrl?.length > 4 || detail.cvUrl?.length > 4) && (
+                        <Box sx={{ bgcolor: 'white', borderRadius: '16px', border: '1px solid #f1f5f9', px: 3, py: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <LinkIcon sx={{ fontSize: 15, color: '#94a3b8' }} />
+                                <Typography variant="caption" color="#94a3b8" fontWeight={700} sx={{ letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
+                                    Documents
+                                </Typography>
+                            </Stack>
+                            {detail.jobDescriptionUrl?.length > 4 && (
+                                <Box sx={{ px: 2, py: 0.75, borderRadius: '8px', bgcolor: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', '&:hover': { bgcolor: '#f1f5f9' } }} onClick={() => window.open(detail.jobDescriptionUrl, '_blank')}>
+                                    <Typography variant="body2" fontWeight={700} color="#0f172a">Job Description</Typography>
+                                    <Typography variant="caption" sx={{ color: '#4F46E5', fontWeight: 800 }}>VIEW ↗</Typography>
+                                </Box>
+                            )}
+                            {detail.cvUrl?.length > 4 && (
+                                <Box sx={{ px: 2, py: 0.75, borderRadius: '8px', bgcolor: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', '&:hover': { bgcolor: '#f1f5f9' } }} onClick={() => window.open(detail.cvUrl, '_blank')}>
+                                    <Typography variant="body2" fontWeight={700} color="#0f172a">Candidate CV</Typography>
+                                    <Typography variant="caption" sx={{ color: '#4F46E5', fontWeight: 800 }}>VIEW ↗</Typography>
+                                </Box>
+                            )}
+                        </Box>
                     )}
 
-                    {/* Cancel button — when Pending or Accepted */}
-                    {(detail.status === BOOKING_REQUEST_STATUS.PENDING ||
-                        detail.status === BOOKING_REQUEST_STATUS.ACCEPTED) && (
-                        <DangerButton loading={cancelling} onClick={handleCancel} startIcon={<CancelIcon />}>
-                            Cancel Request
-                        </DangerButton>
+                    {/* Interview Rounds — show overview for multi-round sessions */}
+                    {detail.rounds?.length > 1 && (
+                        <SectionCard title="Interview Rounds" icon={AssignmentIcon} sx={{ mb: 0, p: 4 }}>
+                            <Grid container spacing={3} alignItems="stretch">
+                                {detail.rounds.map((r, i) => (
+                                    <Grid item key={i} sx={{ display: 'flex' }}>
+                                        <Box sx={{
+                                            p: 4, borderRadius: '24px',
+                                            bgcolor: 'white',
+                                            border: '1px solid #f1f5f9',
+                                            width: '340px', // Rigged width for consistency
+                                            display: 'flex', flexDirection: 'column',
+                                            flexShrink: 0,
+                                            position: 'relative',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                            '&:hover': {
+                                                boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
+                                                transform: 'translateY(-4px)',
+                                                borderColor: '#bef264'
+                                            }
+                                        }}>
+                                            {/* Top identifier */}
+                                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
+                                                <Box>
+                                                    <Typography variant="caption" color="#94a3b8" fontWeight={800} sx={{ letterSpacing: '0.1em', display: 'block', mb: 0.5 }}>ROUND</Typography>
+                                                    <Typography variant="h4" fontWeight={900} color="#0f172a" sx={{ lineHeight: 1 }}>
+                                                        {String(r.roundNumber).padStart(2, '0')}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{ py: 0.6, px: 2, borderRadius: '12px', bgcolor: '#0f172a', border: '1px solid #1e293b' }}>
+                                                    <Typography variant="caption" sx={{ color: '#bef264', fontWeight: 900, fontSize: '0.7rem', letterSpacing: '0.05em' }}>
+                                                        {r.isCoding ? 'TECHNICAL' : 'GENERAL'}
+                                                    </Typography>
+                                                </Box>
+                                            </Stack>
+
+                                            <Box sx={{ mb: 4 }}>
+                                                <Typography variant="h6" fontWeight={800} color="#0f172a" sx={{ mb: 1, lineHeight: 1.2 }}>
+                                                    {r.interviewTypeName}
+                                                </Typography>
+                                                <Stack spacing={1}>
+                                                    <Typography variant="body2" color="#64748b" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <AccessTimeIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                                                        {new Date(r.startTime).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="#64748b" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <AssignmentIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                                                        {r.isCoding ? 'Coding Workspace included' : 'Question set focused'}
+                                                    </Typography>
+                                                </Stack>
+                                            </Box>
+
+                                            <Box sx={{ mt: 'auto', pt: 3, borderTop: '1px dashed #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <Typography variant="body2" color="#94a3b8" fontWeight={700}>Session Price</Typography>
+                                                <Typography variant="h6" fontWeight={900} color="#0f172a">
+                                                    {r.price?.toLocaleString()} ₫
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </SectionCard>
+                    )}
+
+                    {/* Results Section (only if Paid) */}
+                    {isPaid && (
+                        <Box sx={{ mt: 1 }}>
+                            {/* SessionResultSection handles its own internal grid of results */}
+                            <SessionResultSection bookingRequest={detail} />
+                        </Box>
+                    )}
+
+                    {/* Rejection context */}
+                    {detail.status === BOOKING_REQUEST_STATUS.REJECTED && detail.rejectionReason && (
+                        <SectionCard title="Rejection Reason" icon={CloseIcon} sx={{ bgcolor: '#fff1f2', border: '1px solid #fecdd3', p: 4 }}>
+                            <Typography variant="body1" color="#991b1b" fontWeight={500}>{detail.rejectionReason}</Typography>
+                        </SectionCard>
                     )}
                 </Stack>
-            )}
+            </Box>
 
-            {/* Reject dialog */}
-            <Dialog
-                open={rejectOpen}
-                onClose={() => setRejectOpen(false)}
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{ sx: dialogStyles.paper }}
-            >
-                <DialogTitle
-                    sx={{
-                        fontWeight: 700,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
-                    Reject Booking Request
-                    <IconButton onClick={() => setRejectOpen(false)} size="small" sx={{ color: "#6b7280" }}>
-                        <CloseIcon />
-                    </IconButton>
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" sx={{ mb: 2, color: "#64748b" }}>
-                        Please provide a reason for rejecting this booking request.
-                    </Typography>
+            {/* REJECT DIALOG */}
+            <Dialog open={rejectOpen} onClose={() => setRejectOpen(false)} PaperProps={{ sx: { ...dialogStyles.paper, borderRadius: '32px' } }}>
+                <DialogTitle sx={{ fontWeight: 900, px: 4, pt: 4 }}>Reject Request</DialogTitle>
+                <DialogContent sx={{ px: 4 }}>
+                    <Typography variant="body2" color="#64748b" sx={{ mb: 3 }}>Please explain why you cannot accept this session.</Typography>
                     <FormTextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        label="Rejection Reason"
-                        value={rejectionReason}
+                        fullWidth multiline rows={4}
+                        label="Reason" value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder="e.g., Schedule conflict, not available at that time..."
-                        inputProps={{ maxLength: 500 }}
+                        placeholder="e.g., I have a prior commitment at this time..."
                     />
                 </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 3 }}>
-                    <SecondaryButton onClick={() => setRejectOpen(false)} disabled={responding}>
-                        Cancel
-                    </SecondaryButton>
-                    <DangerButton onClick={handleReject} loading={responding}>
-                        Confirm Reject
-                    </DangerButton>
+                <DialogActions sx={{ px: 4, pb: 4 }}>
+                    <SecondaryButton onClick={() => setRejectOpen(false)}>Cancel</SecondaryButton>
+                    <DangerButton onClick={handleReject} loading={responding}>Confirm Reject</DangerButton>
                 </DialogActions>
             </Dialog>
         </Box>
