@@ -27,17 +27,17 @@
 }
 
 .booking-detail-page {
-    padding: 32px;
-    max-width: 1200px;
+    padding: 24px;
+    max-width: 900px;
     margin: 0 auto;
 }
 
 .booking-detail-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 24px;
-    padding: 32px;
-    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
     margin-bottom: 20px;
 }
 

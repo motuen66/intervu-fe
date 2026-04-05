@@ -1,6 +1,5 @@
 import { Box, Stack, Typography } from "@mui/material";
 import { CalendarCheck2, CheckCircle2, Clock3, Star } from "lucide-react";
-import { ROLES } from "../../../../../common/constants/common";
 
 const StatCard = ({ icon, label, value, iconBgColor }) => (
     <Box
@@ -79,10 +78,7 @@ const StatCard = ({ icon, label, value, iconBgColor }) => (
     </Box>
 );
 
-function InterviewStats({ totalCount, upcomingCount, completedCount, avgScore, nextSessionIn, userRole }) {
-    const isCoach = userRole === ROLES.INTERVIEWER;
-    const scale = isCoach ? 5 : 10;
-    
+function InterviewStats({ totalCount, upcomingCount, completedCount, avgScore, nextSessionIn }) {
     return (
         <Stack
             direction={{ xs: "column", sm: "row" }}
@@ -104,7 +100,7 @@ function InterviewStats({ totalCount, upcomingCount, completedCount, avgScore, n
             <StatCard
                 icon={<Star size={20} strokeWidth={1.8} color="var(--mui-palette-warning-main)" />}
                 label="Average Score"
-                value={avgScore ? `${avgScore}/${scale}` : completedCount > 0 ? `0.0/${scale}` : "—"}
+                value={avgScore ? `${avgScore}/10` : completedCount > 0 ? "0.0/10" : "—"}
                 iconBgColor="warning.lighter"
             />
             <StatCard

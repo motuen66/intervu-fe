@@ -524,8 +524,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                     height="600px"
                                     timeZone="local"
                                     allDaySlot={false}
-                                    slotMinTime="00:00:00"
-                                    slotMaxTime="24:00:00"
+                                    slotMinTime="07:00:00"
+                                    slotMaxTime="22:00:00"
                                 />
 
                                 <Stack direction="row" spacing={3} sx={{ mt: 2, px: 2 }}>
