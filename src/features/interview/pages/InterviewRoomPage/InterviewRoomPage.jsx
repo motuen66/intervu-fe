@@ -1,7 +1,6 @@
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Box, CircularProgress, Typography, Chip, Tooltip, Stack } from "@mui/material";
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import { Box, CircularProgress, Typography } from "@mui/material";
 
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -34,9 +33,7 @@ import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
 function InterviewRoomPage() {
     const user = useUser();
     const { roomId } = useParams();
-    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const isViewOnly = searchParams.get("viewOnly") === "true";
 
     // ── Gate ──────────────────────────────────────────────────────────────────
     const [loading, setLoading] = useState(true);
@@ -49,7 +46,7 @@ function InterviewRoomPage() {
             setLoading(true);
             const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom` });
             const room = res.data.find((item) => item.id === roomId);
-            if (!isViewOnly && room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && room?.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
+            if (room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && room?.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
                 setError("This interview is not in progress. You will be redirected.");
                 setTimeout(() => navigate("/interview"), 3000);
             } else {
@@ -80,7 +77,7 @@ function InterviewRoomPage() {
     // sendSignal is a stable callback (reads connRef inside the hook) so it is
     // safe to pass straight to useCodeSync / useWebRTC without wrapping.
     const { connectionId, peers, sendSignal, leaveRoom } = useInterviewSignalR({
-        roomId: loading || error || isViewOnly ? null : roomId,
+        roomId: loading || error ? null : roomId,
         userId: user?.id,
         role: user?.role,
         userName: user?.fullName, // Map fullName to userName
@@ -133,7 +130,7 @@ function InterviewRoomPage() {
     // Recording is now tied to the user's mic state.
     useAudioRecorder({
         roomId,
-        isEnabled: !loading && !error && !isViewOnly && (user?.role === ROLES.INTERVIEWER || user?.role === ROLES.CANDIDATE),
+        isEnabled: !loading && !error && (user?.role === ROLES.INTERVIEWER || user?.role === ROLES.CANDIDATE),
         isMicOn, // only record if mic is on
         chunkIntervalMs: 15000
     });
@@ -386,20 +383,7 @@ function InterviewRoomPage() {
 
     // ── Main render ───────────────────────────────────────────────────────────
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "#f8fafc" }}>
-            {/* ── Top Bar (Review Mode Only) ── */}
-            {isViewOnly && (
-                <Box sx={{ bgcolor: "#0f172a", color: "white", px: 4, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <Chip icon={<VisibilityIcon sx={{ fontSize: '1rem !important', color: 'white !important' }} />} label="VIEW ONLY MODE" sx={{ bgcolor: "rgba(255,255,255,0.1)", color: "white", fontWeight: 800, fontSize: '0.65rem', border: '1px solid rgba(255,255,255,0.2)' }} />
-                        <Typography variant="body2" fontWeight={600}>Reviewing Solution: {roomInfo?.title || 'Coding Session'}</Typography>
-                    </Stack>
-                    <Box sx={{ cursor: 'pointer', opacity: 0.8, '&:hover': { opacity: 1 } }} onClick={() => navigate(-1)}>
-                        <Typography variant="caption" fontWeight={700}>CLOSE REVIEW ✕</Typography>
-                    </Box>
-                </Box>
-            )}
-
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
             <Box ref={containerRef} style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
                 {/* ── Left: Question Panel ── */}
                 <Box
@@ -465,7 +449,6 @@ function InterviewRoomPage() {
                         user={user}
                         languages={LANGUAGE_EXAMPLES}
                         handleEditorMount={handleEditorMount}
-                        readOnly={isViewOnly}
                     />
                 </Box>
 

@@ -479,9 +479,7 @@ function InterviewCard({
 
     const formatTypeName = (name) => {
         if (!name) return "";
-        // Remove trailing "Interview" or "Session" words case-insensitively, but don't leave it empty
-        const formatted = name.replace(/\s*(INTERVIEW|SESSION)\s*$/gi, "").trim();
-        return formatted || name;
+        return name.replace(/\s*(INTERVIEW|SESSION)\s*$/i, "").trim() || name;
     };
 
     return (
@@ -619,7 +617,7 @@ function InterviewCard({
 
                 <Stack spacing={0.5} alignItems="flex-end" sx={{ ml: 1, pr: 4.5 }}>
                     {(() => {
-                        const originalName = room.interviewTypeName;
+                        const originalName = room.interviewTypeName || "INTERVIEW SESSION";
                         const displayTypeName = formatTypeName(originalName);
                         const badgeStyle = getInterviewTypeBadgeStyle(originalName);
 

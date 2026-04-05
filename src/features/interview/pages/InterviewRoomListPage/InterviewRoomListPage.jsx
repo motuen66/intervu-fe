@@ -204,21 +204,11 @@ function InterviewRoomListPage() {
 
             // ALWAYS calculate stats based on grouped rooms shown in the list for UI consistency
             const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
-            
-            // Calculate avgScore based on role
-            // Candidate: Average of coach evaluation scores (room.score) - scale 10
-            // Coach: Average of candidate feedback ratings (room.rating) - scale 5
-            const evaluatedRooms = completedRooms.filter(r => 
-                user.role === ROLES.CANDIDATE 
-                    ? typeof r.score === 'number' 
-                    : typeof r.rating === 'number'
-            );
+            const evaluatedRooms = completedRooms.filter(r => typeof r.score === 'number');
 
             let avgScore = null;
             if (evaluatedRooms.length > 0) {
-                const totalScore = evaluatedRooms.reduce((acc, room) => 
-                    acc + (user.role === ROLES.CANDIDATE ? room.score : room.rating)
-                , 0);
+                const totalScore = evaluatedRooms.reduce((acc, room) => acc + room.score, 0);
                 avgScore = (totalScore / evaluatedRooms.length).toFixed(1);
             }
 
@@ -533,7 +523,6 @@ function InterviewRoomListPage() {
                     completedCount={stats.completed}
                     avgScore={stats.avgScore}
                     nextSessionIn={stats.nextSessionIn}
-                    userRole={user?.role}
                 />
 
                 {/* Tabs Navigation */}
