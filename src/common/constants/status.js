@@ -59,11 +59,13 @@ export const BOOKING_REQUEST_STATUS_LABELS = {
 export const BOOKING_REQUEST_TYPE = {
     EXTERNAL: 0,
     JD_INTERVIEW: 1,
+    SINGLE_INTERVIEW: 2,
 };
 
 export const BOOKING_REQUEST_TYPE_LABELS = {
     [BOOKING_REQUEST_TYPE.EXTERNAL]: "External",
     [BOOKING_REQUEST_TYPE.JD_INTERVIEW]: "JD Interview",
+    [BOOKING_REQUEST_TYPE.SINGLE_INTERVIEW]: "Single Interview",
 };
 
 import { theme } from "./theme";

@@ -363,7 +363,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                         ) : (
                             <Stack direction={{ xs: "column", md: "row" }} spacing={0} sx={{ minHeight: 420 }}>
                                 {/* Left: Calendar */}
-                                <Box sx={{ flex: "0 0 auto", width: { xs: "100%", md: 340 }, pr: { md: 4 }, pb: { xs: 3, md: 0 }, borderRight: { md: "1px solid" }, borderColor: { md: "divider" } }}>
+                                <Box sx={{ flex: "0 0 auto", width: { xs: "100%", md: 470 }, pr: { md: 4 }, pb: { xs: 3, md: 0 }, borderRight: { md: "1px solid" }, borderColor: { md: "divider" } }}>
                                     <CalendlyCalendar
                                         currentMonth={currentMonth}
                                         onPrevMonth={() => setCurrentMonth((m) => addMonths(m, -1))}

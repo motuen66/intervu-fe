@@ -636,7 +636,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
         <Dialog
             open={open}
             onClose={handleClose}
-            maxWidth="xl"
+            maxWidth="lg"
             fullWidth
             TransitionComponent={Transition}
             PaperProps={{
