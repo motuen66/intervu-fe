@@ -29,6 +29,7 @@ function CodeEditorPanel({
     setTestResults,
     user,
     handleEditorMount,
+    readOnly = false,
 }) {
     // Keep a stable ref to editor and its container to drive layout
     const editorRef = useRef(null);
@@ -168,7 +169,7 @@ function CodeEditorPanel({
                     onMount={onEditorMount}
                     onChange={handleCodeChange}
                     options={{
-                        readOnly: user?.role === ROLES.INTERVIEWER,
+                        readOnly: readOnly || user?.role === ROLES.INTERVIEWER,
                         minimap: { enabled: false },
                         scrollbar: { vertical: "auto", horizontal: "auto" },
                         scrollBeyondLastLine: false,
@@ -347,7 +348,7 @@ function CodeEditorPanel({
             >
                 <Stack direction="row" spacing={3}>
                 </Stack>
-                {user?.role === ROLES.CANDIDATE && (
+                {user?.role === ROLES.CANDIDATE && !readOnly && (
                     <Stack direction="row" spacing={2}>
                         <PrimaryButton
                             onClick={runCode}

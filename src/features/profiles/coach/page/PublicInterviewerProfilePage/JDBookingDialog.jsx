@@ -857,8 +857,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                     height="650px"
                                     timeZone="local"
                                     slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-                                    slotMinTime="07:00:00"
-                                    slotMaxTime="22:00:00"
+                                    slotMinTime="00:00:00"
+                                    slotMaxTime="24:00:00"
                                 />
 
                                 <Stack direction="row" spacing={3} sx={{ mt: 2, px: 2 }}>
