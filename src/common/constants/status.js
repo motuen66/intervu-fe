@@ -21,8 +21,7 @@ export const PAYOS_TRANSACTION_STATUS = {
 
 export const AVAILABILITY_SLOTS_STATUS = {
     AVAILABLE: 0,
-    UNAVAILABLE: 1,
-    BOOKED: 2,
+    BOOKED: 1,
 };
 
 export const AIM_LEVEL = {
@@ -79,9 +78,8 @@ export const getAvailabilityColors = (status, isPast = false) => {
             title: "Available",
             textColor: palette.secondary.contrastText, // #0F172A (Navy)
         },
-        // TODO: Consider using theme.error for UNAVAILABLE if it fits the design, or define a custom color in the theme palette for consistency.
-        UNAVAILABLE: {
-            bg: palette.primary.main, // Rose — specific to schedule, not in theme error palette
+        BOOKED: {
+            bg: palette.primary.main, // Deep Navy from theme primary palette
             border: palette.primary.dark,
             title: "Booked",
             textColor: "#ffffff",
@@ -97,9 +95,8 @@ export const getAvailabilityColors = (status, isPast = false) => {
     if (isPast) return colors.PAST;
 
     switch (status) {
-        case AVAILABILITY_SLOTS_STATUS.UNAVAILABLE:
         case AVAILABILITY_SLOTS_STATUS.BOOKED:
-            return colors.UNAVAILABLE;
+            return colors.BOOKED;
         case AVAILABILITY_SLOTS_STATUS.AVAILABLE:
         default:
             return colors.AVAILABLE;

@@ -118,7 +118,7 @@ export default function BookingRequestDetailPage() {
     const handlePay = async () => {
         setPaying(true);
         try {
-            const returnUrl = window.location.origin + "/booking-requests/" + id;
+            const returnUrl = window.location.origin + "/booking-requests";
             const result = await payBookingRequest(id, { returnUrl });
             if (result?.checkOutUrl) {
                 window.location.href = result.checkOutUrl;
@@ -327,13 +327,7 @@ export default function BookingRequestDetailPage() {
                                 <div className="round-info">
                                     <div className="round-title">
                                         Round {round.roundNumber}: {round.interviewTypeName || "Interview"}
-                                        {round.isCoding && (
-                                            <StatusChip
-                                                label="Coding"
-                                                color="success"
-                                                sx={{ ml: 1 }}
-                                            />
-                                        )}
+                                        {round.isCoding && <StatusChip label="Coding" color="success" sx={{ ml: 1 }} />}
                                     </div>
                                     <div className="round-meta">
                                         {formatDate(round.startTime)} — {formatDate(round.endTime)}
@@ -383,10 +377,10 @@ export default function BookingRequestDetailPage() {
                     {/* Cancel button — when Pending or Accepted */}
                     {(detail.status === BOOKING_REQUEST_STATUS.PENDING ||
                         detail.status === BOOKING_REQUEST_STATUS.ACCEPTED) && (
-                            <DangerButton loading={cancelling} onClick={handleCancel} startIcon={<CancelIcon />}>
-                                Cancel Request
-                            </DangerButton>
-                        )}
+                        <DangerButton loading={cancelling} onClick={handleCancel} startIcon={<CancelIcon />}>
+                            Cancel Request
+                        </DangerButton>
+                    )}
                 </Stack>
             )}
 

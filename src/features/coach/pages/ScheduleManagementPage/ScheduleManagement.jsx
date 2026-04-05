@@ -125,7 +125,7 @@ const ScheduleManagement = () => {
 
     const handleEditClick = (availability) => {
         // Only allow editing Available blocks
-        if (Number(availability.status) === AVAILABILITY_SLOTS_STATUS.UNAVAILABLE) {
+        if (Number(availability.status) === AVAILABILITY_SLOTS_STATUS.BOOKED) {
             // Show booked detail instead
             setBookedDetailData(availability);
             setBookedDetailOpen(true);
@@ -267,7 +267,8 @@ const ScheduleManagement = () => {
                 refetchMonth();
             } else {
                 info.revert();
-                const errMsg = typeof result.payload === "string" ? result.payload : result.payload?.message || "Failed to update";
+                const errMsg =
+                    typeof result.payload === "string" ? result.payload : result.payload?.message || "Failed to update";
                 toast.error(errMsg);
             }
         } catch (error) {
@@ -343,11 +344,13 @@ const ScheduleManagement = () => {
                     const dupStart = new Date(dy, dm - 1, dd, startHour, startMinute, 0, 0);
                     const dupEnd = new Date(dy, dm - 1, dd, endHour, endMinute, 0, 0);
 
-                    await dispatch(addAvailability({
-                        coachId: userId,
-                        rangeStartTime: dupStart.toISOString(),
-                        rangeEndTime: dupEnd.toISOString(),
-                    }));
+                    await dispatch(
+                        addAvailability({
+                            coachId: userId,
+                            rangeStartTime: dupStart.toISOString(),
+                            rangeEndTime: dupEnd.toISOString(),
+                        }),
+                    );
                 }
             } else {
                 // Create new ranges for all dates
@@ -361,11 +364,13 @@ const ScheduleManagement = () => {
                         return;
                     }
 
-                    const res = await dispatch(addAvailability({
-                        coachId: userId,
-                        rangeStartTime: rangeStart.toISOString(),
-                        rangeEndTime: rangeEnd.toISOString(),
-                    }));
+                    const res = await dispatch(
+                        addAvailability({
+                            coachId: userId,
+                            rangeStartTime: rangeStart.toISOString(),
+                            rangeEndTime: rangeEnd.toISOString(),
+                        }),
+                    );
 
                     if (!addAvailability.fulfilled.match(res)) {
                         const errMsg = typeof res.payload === "string" ? res.payload : res.payload?.message;
@@ -406,7 +411,7 @@ const ScheduleManagement = () => {
 
         if (isPast) classNames.push("past-event");
 
-        const isUnavailable = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.UNAVAILABLE;
+        const isUnavailable = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
 
         return {
             id: String(avail.id),
@@ -470,7 +475,11 @@ const ScheduleManagement = () => {
                             </Typography>
                         </div>
 
-                        <PrimaryButton startIcon={<IoAdd size={18} />} onClick={handleAddClick} sx={{ py: 1.25, px: 3 }}>
+                        <PrimaryButton
+                            startIcon={<IoAdd size={18} />}
+                            onClick={handleAddClick}
+                            sx={{ py: 1.25, px: 3 }}
+                        >
                             Add Slot
                         </PrimaryButton>
                     </Stack>
@@ -478,15 +487,25 @@ const ScheduleManagement = () => {
                     {/* Main Content */}
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
                         {/* Calendar Section */}
-                        <BaseCard variant="outlined" sx={{ borderColor: "divider", borderRadius: "12px", overflow: "hidden" }}>
+                        <BaseCard
+                            variant="outlined"
+                            sx={{ borderColor: "divider", borderRadius: "12px", overflow: "hidden" }}
+                        >
                             <Box sx={{ p: 3, position: "relative" }}>
                                 {loading && (
                                     <Box
                                         sx={{
                                             position: "absolute",
-                                            top: 0, left: 0, right: 0, bottom: 0,
-                                            display: "flex", justifyContent: "center", alignItems: "center",
-                                            bgcolor: "rgba(255,255,255,0.4)", zIndex: 2, borderRadius: "12px",
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            bgcolor: "rgba(255,255,255,0.4)",
+                                            zIndex: 2,
+                                            borderRadius: "12px",
                                         }}
                                     >
                                         <CircularProgress />
@@ -574,10 +593,15 @@ const ScheduleManagement = () => {
                                 />
                             </div>
 
-                            <BaseCard sx={{ background: "white", boxShadow: 1, border: "1px solid", borderColor: "grey.200" }}>
+                            <BaseCard
+                                sx={{ background: "white", boxShadow: 1, border: "1px solid", borderColor: "grey.200" }}
+                            >
                                 <CardContent sx={{ p: 2.5 }}>
                                     <Box display="flex" justifyContent="space-between" mb={2}>
-                                        <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 600, letterSpacing: 1 }}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{ color: "text.secondary", fontWeight: 600, letterSpacing: 1 }}
+                                        >
                                             Quick Legend
                                         </Typography>
                                     </Box>

@@ -1,16 +1,5 @@
 import React, { useMemo } from "react";
-import {
-    Box,
-    TextField,
-    Typography,
-    Modal,
-    Card,
-    Stack,
-    FormControl,
-    Select,
-    MenuItem,
-    Divider,
-} from "@mui/material";
+import { Box, TextField, Typography, Modal, Card, Stack, FormControl, Select, MenuItem, Divider } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoTrash } from "react-icons/io5";
@@ -54,7 +43,7 @@ const UpdateAvailableSlotDialog = ({
                 const bStart = new Date(b.startTime);
                 return (
                     bStart.getTime() === blockStartDate.getTime() &&
-                    Number(b.status) === AVAILABILITY_SLOTS_STATUS.UNAVAILABLE
+                    Number(b.status) === AVAILABILITY_SLOTS_STATUS.BOOKED
                 );
             });
 
@@ -159,9 +148,7 @@ const UpdateAvailableSlotDialog = ({
                                 <FormControl fullWidth size="small">
                                     <Select
                                         value={formData.endHour}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, endHour: Number(e.target.value) })
-                                        }
+                                        onChange={(e) => setFormData({ ...formData, endHour: Number(e.target.value) })}
                                         sx={{ borderRadius: "8px" }}
                                     >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
@@ -225,14 +212,8 @@ const UpdateAvailableSlotDialog = ({
                                 Delete
                             </SecondaryButton>
                             <Stack direction="row" spacing={2}>
-                                <SecondaryButton onClick={onClose}>
-                                    Cancel
-                                </SecondaryButton>
-                                <PrimaryButton
-                                    onClick={handleSubmit}
-                                    loading={loading}
-                                    disabled={hasBookedBlocks}
-                                >
+                                <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+                                <PrimaryButton onClick={handleSubmit} loading={loading} disabled={hasBookedBlocks}>
                                     Update
                                 </PrimaryButton>
                             </Stack>

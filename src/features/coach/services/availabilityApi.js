@@ -38,7 +38,7 @@ export const getAvailabilitiesByMonth = async (interviewerId, month, year) => {
         coachId: interviewerId,
         startTime: normalizeTime(item.startTime),
         endTime: normalizeTime(item.endTime),
-        status: AVAILABILITY_SLOTS_STATUS.UNAVAILABLE,
+        status: AVAILABILITY_SLOTS_STATUS.BOOKED,
         isBooked: true,
     }));
 
