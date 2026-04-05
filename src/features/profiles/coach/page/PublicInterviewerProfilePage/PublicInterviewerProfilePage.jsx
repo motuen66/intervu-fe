@@ -5,7 +5,7 @@ import { METHOD } from "../../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { Check, ArrowRight, Briefcase, FileText, Rocket, Clock, Tag, ExternalLink } from "lucide-react";
+import { Check, ArrowRight, Briefcase, FileText, Rocket, Clock, Tag, ExternalLink, Award, Globe } from "lucide-react";
 import toast from "react-hot-toast";
 import { PAYOS_TRANSACTION_STATUS, TRANSACTION_STATUS } from "../../../../../common/constants/status";
 import BookingSlotDialog from "./BookingSlotDialog";
@@ -280,20 +280,149 @@ const PublicInterviewerProfilePage = () => {
 
                             <h4 className="ep-sub-title">Working Experience</h4>
                             <div className="ep-track-grid">
-                                {profile.companies?.map((c) => (
-                                    <div key={c.id} className="ep-track-card">
+                                {(profile.workExperiences || profile.companies)?.map((c, idx) => (
+                                    <div key={c.id || idx} className="ep-track-card">
                                         <div className="ep-track-card-head">
-                                            <CompanyLogo name={c.name} size={24} />
-                                            <h4>{c.name}</h4>
+                                            <CompanyLogo name={c.companyName || c.name} size={24} />
+                                            <h4>{c.companyName || c.name}</h4>
                                         </div>
                                         <p>
-                                            {c.role || "Software Engineer"} | {c.years || "2021 - Present"}
+                                            {c.isCurrentWorking
+                                                ? "Current"
+                                                : c.endDate
+                                                  ? new Date(c.endDate).toLocaleDateString()
+                                                  : "Present"}{" "}
+                                            | {new Date(c.startDate).toLocaleDateString()}
                                         </p>
+                                        {c.description && (
+                                            <p
+                                                className="ep-about-text"
+                                                style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}
+                                            >
+                                                {c.description}
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
-                                {(!profile.companies || profile.companies.length === 0) && (
+                                {!profile.workExperiences && (!profile.companies || profile.companies.length === 0) && (
                                     <p className="ep-text-muted">No companies listed.</p>
                                 )}
+                            </div>
+
+                            <h4 className="ep-sub-title">Domain (Industries)</h4>
+                            <div className="ep-skills-wrap" style={{ marginBottom: "3.5rem" }}>
+                                {profile.industries?.map((ind) => (
+                                    <div
+                                        key={ind.id}
+                                        className="ep-skill-tag"
+                                        style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
+                                    >
+                                        <Globe size={16} />
+                                        {ind.name}
+                                    </div>
+                                ))}
+                                {(!profile.industries || profile.industries.length === 0) && (
+                                    <p className="ep-text-muted">No industries listed.</p>
+                                )}
+                            </div>
+
+                            <h4
+                                className="ep-sub-title"
+                                style={{ color: "var(--ep-accent-dark)", marginTop: "0.75rem" }}
+                            >
+                                Certifications
+                            </h4>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                {(profile.certificationLinks || profile.certificates)?.map((link, idx) => {
+                                    const href = typeof link === "string" ? link : link?.link || "";
+                                    const name =
+                                        typeof link === "string"
+                                            ? `Certificate ${idx + 1}`
+                                            : link?.name || link?.Name || `Certificate ${idx + 1}`;
+                                    const issuer = typeof link === "object" ? link?.issuer || link?.Issuer || "" : "";
+                                    const issuedAt =
+                                        typeof link === "object" && (link.issuedAt || link.IssuedAt)
+                                            ? link.issuedAt
+                                            : "";
+                                    const expiryAt =
+                                        typeof link === "object" && (link.expiryAt || link.ExpiryAt)
+                                            ? link.expiryAt
+                                            : "";
+
+                                    let host = name;
+                                    try {
+                                        if (href) {
+                                            const u = new URL(href);
+                                            host = u.hostname.replace("www.", "");
+                                        }
+                                    } catch (e) {}
+
+                                    return (
+                                        <div
+                                            key={idx}
+                                            style={{
+                                                display: "flex",
+                                                gap: "1rem",
+                                                alignItems: "flex-start",
+                                                padding: "1rem",
+                                                background: "white",
+                                                borderRadius: "8px",
+                                                border: "1px solid rgba(0,0,0,0.05)",
+                                            }}
+                                        >
+                                            <div style={{ flexShrink: 0, marginTop: "0.25rem" }}>
+                                                <CompanyLogo name={issuer || host || name} size={40} />
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                {href ? (
+                                                    <a
+                                                        href={href}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: "0.5rem",
+                                                            color: "#347d00",
+                                                            textDecoration: "none",
+                                                            fontWeight: 700,
+                                                            fontSize: "1rem",
+                                                        }}
+                                                    >
+                                                        {name}
+                                                        <ExternalLink size={14} />
+                                                    </a>
+                                                ) : (
+                                                    <div style={{ fontWeight: 700, fontSize: "1rem" }}>{name}</div>
+                                                )}
+                                                {issuer && (
+                                                    <div
+                                                        style={{
+                                                            fontWeight: 600,
+                                                            fontSize: "0.9rem",
+                                                            color: "#333",
+                                                            marginTop: "2px",
+                                                        }}
+                                                    >
+                                                        {issuer}
+                                                    </div>
+                                                )}
+                                                {(issuedAt || expiryAt) && (
+                                                    <div
+                                                        style={{ fontSize: "0.8rem", color: "#666", marginTop: "2px" }}
+                                                    >
+                                                        Issued {issuedAt}{" "}
+                                                        {expiryAt ? `· Expires ${expiryAt}` : "· No expiration"}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {(!profile.certificationLinks || profile.certificationLinks.length === 0) &&
+                                    (!profile.certificates || profile.certificates.length === 0) && (
+                                        <p className="ep-text-muted">No certifications listed.</p>
+                                    )}
                             </div>
                         </section>
 
@@ -324,7 +453,6 @@ const PublicInterviewerProfilePage = () => {
                                                 <Tag size={12} /> One-on-one
                                             </span>
                                         </div>
-                                        {/* Simplified interaction: Whole card is clickable */}
                                         <div className="ep-service-hint">
                                             Select Service <ArrowRight size={14} />
                                         </div>
@@ -337,7 +465,6 @@ const PublicInterviewerProfilePage = () => {
 
                     {/* Sidebar */}
                     <aside className="ep-sidebar">
-                        {/* Availability Card */}
                         <div className="ep-side-card">
                             <span className="ep-slot-tag">
                                 {availableDates.length > 0 ? "Limited Slots" : "Check Schedule"}
