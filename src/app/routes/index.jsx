@@ -16,7 +16,6 @@ import CandidateProfilePage from "../../features/profiles/candidate/page/Candida
 import UserProfilePage from "../../features/profile/pages/UserProfilePage";
 import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
-import InterviewPrecheckPage from "../../features/interview/pages/InterviewPrecheckPage/InterviewPrecheckPage";
 import BookingRequestListPage from "../../features/interview/pages/BookingRequestPage/BookingRequestListPage";
 import BookingRequestDetailPage from "../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
@@ -86,7 +85,6 @@ export const routes = [
                 element: <MainLayout />,
                 children: [{ index: true, element: <InterviewRoomListPage /> }],
             },
-            { path: "/interview/precheck/:roomId", element: <InterviewPrecheckPage /> },
             { path: "/interview/room/:roomId", element: <InterviewRoomPage /> },
         ],
     },

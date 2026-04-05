@@ -399,7 +399,7 @@ function InterviewCard({
                             if (onJoin) {
                                 onJoin(room);
                             } else {
-                                navigate(`/interview/precheck/${room.id}`);
+                                navigate(`/interview/room/${room.id}`);
                             }
                         }}
                     >
