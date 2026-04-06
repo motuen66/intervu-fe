@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -103,7 +103,7 @@ const MainLayout = () => {
         [
             { label: "Dashboard", path: "/admin/dashboard" },
             { label: "Users", path: "/admin/users" },
-            { label: "Reports", path: "/admin/reports/questions" },
+            { label: "Reports", path: "/admin/reports" },
         ],
     ], []);
 
@@ -113,7 +113,6 @@ const MainLayout = () => {
     const [openGroups, setOpenGroups] = useState({
         users: true,
         income: true,
-        reports: true,
         settings: true,
     });
 
@@ -179,15 +178,7 @@ const MainLayout = () => {
                 { label: "Payouts", path: "/admin/income/payouts" },
             ],
         },
-                {
-            label: "Reports",
-            icon: BarChart2,
-            key: "reports",
-            children: [
-                { label: "Question", path: "/admin/reports/questions" },
-                { label: "Room", path: "/admin/reports/rooms" },
-            ],
-        },
+        { label: "Reports", icon: BarChart2, path: "/admin/reports" },
     ];
 
     // ADMIN LAYOUT
@@ -356,6 +347,3 @@ const MainLayout = () => {
 };
 
 export default MainLayout;
-
-
-

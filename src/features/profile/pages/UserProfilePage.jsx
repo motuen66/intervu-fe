@@ -4,182 +4,385 @@ import {
     Box,
     Container,
     Paper,
+    Avatar,
     Typography,
+    TextField,
+    Button,
+    IconButton,
+    Grid,
+    Divider,
     CircularProgress,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Chip
+    Alert
 } from '@mui/material';
+// import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+// import StarIcon from '@mui/icons-material/Star';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { profileEndPoints } from '../services/profileApi';
 import toast from 'react-hot-toast';
+// import UploadCv from "../components/UploadCv.jsx";
 
 export default function UserProfilePage() {
-    return (
-        <Box sx={{ minHeight: "100vh", background: "#f8fafc", py: 6 }}>
-            <Container maxWidth="lg">
-                <Box sx={{ mb: 4 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', mb: 1 }}>
-                        My Interview Reports
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                        Track the status and history of your reported interview issues.
-                    </Typography>
-                </Box>
+    const [loading, setLoading] = useState(true);
+    // const [uploading, setUploading] = useState(false);
+    const [showPasswordForm, setShowPasswordForm] = useState(false);
 
-                <MyReportsTab />
+    // User data from Redux
+    const userData = useSelector(state => state.auth.userData);
+    const userId = userData?.id;
+
+    console.log('🔍 UserProfilePage - userData:', userData);
+    console.log('🔍 UserProfilePage - userId:', userId);
+
+    // Profile state
+    const [profile, setProfile] = useState({
+        firstName: '',
+        lastName: '',
+        username: '',
+        email: '',
+        profilePictureUrl: '',
+        averageRating: 0
+    });
+
+    // Edit mode states
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [editedProfile, setEditedProfile] = useState({
+        firstName: '',
+        lastName: ''
+    });
+
+    // Password state
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
+    // Email state
+    const [email, setEmail] = useState('');
+
+    useEffect(() => {
+        console.log('🔍 useEffect - userId changed:', userId);
+        if (userId) {
+            fetchProfile();
+        } else {
+            console.warn('⚠️ No userId found, skipping profile fetch');
+            setLoading(false);
+        }
+    }, [userId]);
+
+    const fetchProfile = async () => {
+        setLoading(true);
+        const response = await callApi({
+            method: METHOD.GET,
+            endpoint: profileEndPoints.GET_PROFILE(userId),
+        });
+
+        console.log('👤 Profile API Response:', response);
+
+        if (response?.success && response.data && Object.keys(response.data).length > 0) {
+            console.log('✅ Profile data from API:', response.data);
+
+            // Backend may return fullName, so split it into firstName and lastName
+            let firstName = response.data.firstName || '';
+            let lastName = response.data.lastName || '';
+
+            if (!firstName && !lastName && response.data.fullName) {
+                const nameParts = response.data.fullName.split(' ');
+                firstName = nameParts[0] || '';
+                lastName = nameParts.slice(1).join(' ') || '';
+            }
+
+            setProfile({
+                ...response.data,
+                firstName,
+                lastName
+            });
+            setEditedProfile({ firstName, lastName });
+            setEmail(response.data.email || '');
+        } else {
+            // Fallback to Redux userData if API returns empty
+            console.warn('⚠️ API returned empty data, using Redux userData as fallback');
+            const nameParts = (userData?.fullName || '').split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            setProfile({
+                firstName,
+                lastName,
+                username: userData?.username || '',
+                email: userData?.email || '',
+                profilePictureUrl: '',
+                averageRating: 0
+            });
+            setEditedProfile({ firstName, lastName });
+            setEmail(userData?.email || '');
+        }
+        setLoading(false);
+    };
+
+    // const handleEditProfile = () => {
+    //     setIsEditingProfile(true);
+    // };
+
+    // const handleSaveProfile = async () => {
+    //     // Combine firstName and lastName into fullName for backend
+    //     const updateData = {
+    //         fullName: `${editedProfile.firstName} ${editedProfile.lastName}`.trim()
+    //     };
+
+    //     const response = await callApi({
+    //         method: METHOD.PUT,
+    //         endpoint: profileEndPoints.UPDATE_PROFILE(userId),
+    //         arg: updateData,
+    //         displaySuccessMessage: true,
+    //     });
+
+    //     if (response?.success) {
+    //         setProfile(prev => ({
+    //             ...prev,
+    //             firstName: editedProfile.firstName,
+    //             lastName: editedProfile.lastName
+    //         }));
+    //         setIsEditingProfile(false);
+    //     }
+    // };
+
+    // const handleCancelEdit = () => {
+    //     setEditedProfile({
+    //         firstName: profile.firstName,
+    //         lastName: profile.lastName
+    //     });
+    //     setIsEditingProfile(false);
+    // };
+
+    const handleChangePassword = async () => {
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast.error('New password and confirm password do not match');
+            return;
+        }
+
+        if (passwordData.newPassword.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            return;
+        }
+
+        const response = await callApi({
+            method: METHOD.PUT,
+            endpoint: profileEndPoints.UPDATE_PASSWORD(userId),
+            arg: {
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+            },
+            displaySuccessMessage: true,
+            alertErrorMessage: true,
+        });
+
+        if (response?.success) {
+            setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+            });
+        }
+    };
+
+    // const handleAvatarUpload = async (event) => {
+    //     const file = event.target.files[0];
+    //     if (!file) return;
+
+    //     // Validate file type
+    //     if (!file.type.startsWith('image/')) {
+    //         toast.error('Please select an image file');
+    //         return;
+    //     }
+
+    //     // Validate file size (max 5MB)
+    //     if (file.size > 5 * 1024 * 1024) {
+    //         toast.error('Image size must be less than 5MB');
+    //         return;
+    //     }
+
+    //     const formData = new FormData();
+    //     formData.append('profilePicture', file);
+
+    //     setUploading(true);
+
+    //     try {
+    //         const response = await fetch(profileEndPoints.UPDATE_AVATAR(userId), {
+    //             method: 'PUT',
+    //             headers: {
+    //                 'Authorization': `Bearer ${JSON.parse(localStorage.getItem('token'))}`
+    //             },
+    //             body: formData
+    //         });
+
+    //         const data = await response.json();
+
+    //         if (data.success) {
+    //             setProfile(prev => ({
+    //                 ...prev,
+    //                 profilePictureUrl: data.data.profilePictureUrl
+    //             }));
+    //             toast.success('Profile picture updated successfully');
+    //         } else {
+    //             toast.error(data.message || 'Failed to upload image');
+    //         }
+    //     } catch (error) {
+    //         toast.error('Failed to upload image');
+    //     } finally {
+    //         setUploading(false);
+    //     }
+    // };
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{ minHeight: "100vh", background: "#ffffff", py: 4 }}>
+            <Container maxWidth="md">
+
+                <Paper sx={{ p: 4, borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}></Box>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
+                        Settings
+                    </Typography>
+                    {/* Email Section */}
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                            Email
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
+                            Your account is connected through Google. Please create a password with Exponent
+                            before making email changes.
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            value={email}
+                            disabled
+                            variant="outlined"
+                            sx={{ mb: 2, background: "rgba(0,0,0,0.02)" }}
+                        />
+                        <Button
+                            variant="outlined"
+                            disabled
+                            sx={{
+                                borderColor: "rgba(0,0,0,0.2)",
+                                color: "rgba(0,0,0,0.4)",
+                                textTransform: "none",
+                            }}
+                        >
+                            Update email
+                        </Button>
+                    </Box>
+
+                    <Divider sx={{ my: 4 }} />
+
+                    {/* Password Settings */}
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                            Password Settings
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
+                            Click the button below to change your password.
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            onClick={() => setShowPasswordForm(!showPasswordForm)}
+                            sx={{
+                                bgcolor: "primary.main",
+                                "&:hover": {
+                                    bgcolor: "primary.dark",
+                                },
+                                textTransform: "none",
+                                mb: showPasswordForm ? 3 : 0,
+                            }}
+                        >
+                            {showPasswordForm ? "Hide Password Form" : "Change Password"}
+                        </Button>
+
+                        {/* Change Password Form */}
+                        {showPasswordForm && (
+                            <Box sx={{ mt: 3 }}>
+                                <TextField
+                                    fullWidth
+                                    type="password"
+                                    label="Current Password"
+                                    value={passwordData.currentPassword}
+                                    onChange={(e) =>
+                                        setPasswordData((prev) => ({
+                                            ...prev,
+                                            currentPassword: e.target.value,
+                                        }))
+                                    }
+                                    variant="outlined"
+                                    sx={{ mb: 2 }}
+                                />
+                                <TextField
+                                    fullWidth
+                                    type="password"
+                                    label="New Password"
+                                    value={passwordData.newPassword}
+                                    onChange={(e) =>
+                                        setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))
+                                    }
+                                    variant="outlined"
+                                    sx={{ mb: 2 }}
+                                />
+                                <TextField
+                                    fullWidth
+                                    type="password"
+                                    label="Confirm New Password"
+                                    value={passwordData.confirmPassword}
+                                    onChange={(e) =>
+                                        setPasswordData((prev) => ({
+                                            ...prev,
+                                            confirmPassword: e.target.value,
+                                        }))
+                                    }
+                                    variant="outlined"
+                                    sx={{ mb: 2 }}
+                                />
+                                <Button
+                                    variant="contained"
+                                    onClick={handleChangePassword}
+                                    disabled={
+                                        !passwordData.currentPassword ||
+                                        !passwordData.newPassword ||
+                                        !passwordData.confirmPassword
+                                    }
+                                    sx={{
+                                        bgcolor: "primary.main",
+                                        "&:hover": {
+                                            bgcolor: "primary.dark",
+                                        },
+                                        textTransform: "none",
+                                    }}
+                                >
+                                    Update Password
+                                </Button>
+                            </Box>
+                        )}
+                    </Box>
+
+                    <Divider sx={{ my: 4 }} />
+
+                    {/* Notification Settings */}
+                    <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                            Notification Settings
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)" }}>
+                            When would you like to receive an email?
+                        </Typography>
+                    </Box>
+                </Paper>
             </Container>
         </Box>
     );
 }
-
-const MyReportsTab = () => {
-    const [reports, setReports] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchMyReports = async () => {
-            try {
-                const response = await callApi({
-                    method: METHOD.GET,
-                    endpoint: profileEndPoints.GET_MY_REPORTS,
-                });
-                if (response?.success) {
-                    setReports(response.data?.items || []);
-                }
-            } catch (error) {
-                toast.error("Failed to load your reports");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchMyReports();
-    }, []);
-
-    const getStatusChip = (status) => {
-        const configs = {
-            0: { 
-                label: "PENDING", 
-                color: "#f59e0b", 
-                bg: "rgba(245, 158, 11, 0.1)",
-                border: "rgba(245, 158, 11, 0.2)"
-            },
-            1: { 
-                label: "RESOLVED", 
-                color: "#10b981", 
-                bg: "rgba(16, 185, 129, 0.1)",
-                border: "rgba(16, 185, 129, 0.2)"
-            },
-            2: { 
-                label: "REJECTED", 
-                color: "#ef4444", 
-                bg: "rgba(239, 68, 68, 0.1)",
-                border: "rgba(239, 68, 68, 0.2)" 
-            }
-        };
-
-        const config = configs[status] || configs[0];
-
-        return (
-            <Box sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                px: 1.5,
-                py: 0.5,
-                borderRadius: '8px',
-                bgcolor: config.bg,
-                color: config.color,
-                border: '1px solid',
-                borderColor: config.border,
-                fontSize: '11px',
-                fontWeight: 800,
-                letterSpacing: '0.05em',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-            }}>
-                <Box sx={{ 
-                    width: 6, 
-                    height: 6, 
-                    borderRadius: '50%', 
-                    bgcolor: config.color, 
-                    mr: 1,
-                    boxShadow: `0 0 8px ${config.color}`
-                }} />
-                {config.label}
-            </Box>
-        );
-    };
-
-    if (loading) return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', p: 12, gap: 2 }}>
-            <CircularProgress thickness={5} size={50} sx={{ color: 'primary.main' }} />
-            <Typography sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.02em' }}>
-                Fetching your report history...
-            </Typography>
-        </Box>
-    );
-
-    return (
-        <Paper sx={{ 
-            borderRadius: '24px', 
-            overflow: 'hidden', 
-            border: '1px solid', 
-            borderColor: 'divider', 
-            boxShadow: '0 10px 40px -10px rgba(0,0,0,0.04)',
-            background: 'white',
-            position: 'relative'
-        }}>
-            <TableContainer>
-                <Table>
-                    <TableHead sx={{ bgcolor: '#f8fafc' }}>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 800, color: 'text.disabled', fontSize: '11px', letterSpacing: '0.1em', pl: 4 }}>DATE</TableCell>
-                            <TableCell sx={{ fontWeight: 800, color: 'text.disabled', fontSize: '11px', letterSpacing: '0.1em' }}>REASON & DETAILS</TableCell>
-                            <TableCell sx={{ fontWeight: 800, color: 'text.disabled', fontSize: '11px', letterSpacing: '0.1em' }}>STATUS</TableCell>
-                            <TableCell sx={{ fontWeight: 800, color: 'text.disabled', fontSize: '11px', letterSpacing: '0.1em', pr: 4 }}>ADMIN RESPONSE</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {reports.length > 0 ? reports.map((report) => (
-                            <TableRow key={report.id} sx={{ transition: 'all 0.2s', '&:hover': { bgcolor: '#fdfdfd' } }}>
-                                <TableCell sx={{ fontSize: '13px', fontWeight: 600, color: 'text.secondary', pl: 4 }}>
-                                    {new Date(report.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                                </TableCell>
-                                <TableCell sx={{ py: 3 }}>
-                                    <Typography sx={{ fontSize: '15px', fontWeight: 700, color: 'primary.dark', mb: 0.5 }}>
-                                        {report.reason}
-                                    </Typography>
-                                    <Typography sx={{ color: 'text.secondary', fontSize: '13px', lineHeight: 1.5, maxWidth: 400 }}>
-                                        {report.details}
-                                    </Typography>
-                                </TableCell>
-                                <TableCell>{getStatusChip(report.status)}</TableCell>
-                                <TableCell sx={{ pr: 4, fontSize: '13px', fontStyle: 'italic', color: 'text.secondary' }}>
-                                    {report.adminNote || "-"}
-                                </TableCell>
-                            </TableRow>
-                        )) : (
-                            <TableRow>
-                                <TableCell colSpan={4} sx={{ py: 15, textAlign: 'center' }}>
-                                    <Box sx={{ display: 'inline-flex', mb: 2, p: 2, bgcolor: '#f1f5f9', borderRadius: '50%' }}>
-                                        <CircularProgress variant="determinate" value={100} size={40} sx={{ color: 'divider' }} />
-                                    </Box>
-                                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 800, mb: 1, letterSpacing: '-0.01em' }}>
-                                        All Clear!
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', maxWidth: 300, mx: 'auto', fontWeight: 500 }}>
-                                        You haven't reported any issues. Your interview experience looks great!
-                                    </Typography>
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Paper>
-    );
-};

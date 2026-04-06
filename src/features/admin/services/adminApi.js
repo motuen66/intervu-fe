@@ -22,13 +22,4 @@ export const adminEndPoints = {
     GET_QUESTION_REPORTS: `${BE_BASE_URL}/questions/reports`,
     UPDATE_QUESTION_REPORT_STATUS: (reportId) => `${BE_BASE_URL}/questions/reports/${reportId}/status`,
     DELETE_QUESTION: (questionId) => `${BE_BASE_URL}/questions/${questionId}`,
-
-    // Room Reports & Audit Logs
-    GET_ROOM_REPORTS: `${BE_BASE_URL}/InterviewRoom/reports`,
-    GET_AUDIT_LOGS: `${ADMIN_BASE_URL}/audit-log`,
-    GET_ROOM_AUDIT_LOGS: (roomId) => `${ADMIN_BASE_URL}/room-reports/${roomId}/audit-logs`,
-    RESOLVE_ROOM_REPORT: `${ADMIN_BASE_URL}/resolve-room-report`,
 };
-
-
-
