@@ -56,6 +56,7 @@ import { ROLES } from "../../../../common/constants/common";
 import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPage/QuestionCard";
 import "../../coach/page/PublicInterviewerProfilePage/EliteCoachProfile.css";
 import BankSelection from "../../coach/page/BankSelection";
+import { formatMonthYear } from "../../../../common/utils/dateFormatter.js";
 
 const toDateInput = (value) => {
     if (!value) return "";
@@ -120,13 +121,6 @@ const normalizeCandidateProfile = (data) => {
         bio: data?.bio || "",
         currentAmount: data?.currentAmount ?? null,
     };
-};
-
-const formatMonthYear = (value) => {
-    if (!value) return "Present";
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return "Present";
-    return parsed.toLocaleDateString("en-US", { month: "numeric", year: "numeric" });
 };
 
 function SidebarCard({ icon, title, badge, badgeActive, children, sx = {} }) {
@@ -204,6 +198,7 @@ function CandidateProfilePage() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+    const [expandedWorkExp, setExpandedWorkExp] = useState({});
     // editMode chỉ dành cho: fullName, bio, portfolioUrl, skills, industryIds, cvUrl
     const [editMode, setEditMode] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -398,9 +393,6 @@ function CandidateProfilePage() {
         }
     };
 
-    // ─── handleSave: CHỈ save profile fields cơ bản ──────────────────────────
-    // KHÔNG bao gồm workExperiences và certificationLinks
-    // Các trường này được quản lý độc lập qua handleSaveWorkExperience / handleSaveCertificate
     const handleSave = async () => {
         if (!canEdit || !profile) return;
         const ep = candidateProfileEndPoints.UPDATE_CANDIDATE_PROFILE.replace("{id}", profile.id);
@@ -414,7 +406,6 @@ function CandidateProfilePage() {
                 })
                 .filter(Boolean);
 
-            // Chỉ gửi các field thuộc profile chính, KHÔNG gửi workExperiences / certificationLinks
             const payload = {
                 id: profile.id,
                 fullName: profile.user?.fullName || profile.fullName || "",
@@ -1031,182 +1022,233 @@ function CandidateProfilePage() {
                                                     </Box>
                                                     <Stack spacing={2}>
                                                         {(profile?.workExperiences || []).length > 0 ? (
-                                                            (profile.workExperiences || []).map((exp, idx) => (
-                                                                <Paper
-                                                                    key={exp.id || idx}
-                                                                    variant="outlined"
-                                                                    sx={{
-                                                                        p: 2.5,
-                                                                        position: "relative",
-                                                                        bgcolor: "#fff",
-                                                                        borderRadius: 2,
-                                                                    }}
-                                                                >
-                                                                    <Box
+                                                            (profile.workExperiences || []).map((exp, idx) => {
+                                                                const expId = exp.id || idx;
+                                                                const isExpanded = expandedWorkExp[expId];
+                                                                const description = exp.description || "";
+                                                                const descLimit = 200;
+                                                                const shouldShowMore = description.length > descLimit;
+                                                                const displayDescription =
+                                                                    isExpanded || !shouldShowMore
+                                                                        ? description
+                                                                        : `${description.slice(0, descLimit)}...`;
+
+                                                                return (
+                                                                    <Paper
+                                                                        key={expId}
+                                                                        variant="outlined"
                                                                         sx={{
-                                                                            display: "flex",
-                                                                            justifyContent: "space-between",
-                                                                            alignItems: "flex-start",
+                                                                            p: 2.5,
+                                                                            position: "relative",
+                                                                            bgcolor: "#fff",
+                                                                            borderRadius: 2,
                                                                         }}
                                                                     >
                                                                         <Box
                                                                             sx={{
-                                                                                flex: 1,
-                                                                                pr: canEdit && !editMode ? 8 : 0,
+                                                                                display: "flex",
+                                                                                justifyContent: "space-between",
+                                                                                alignItems: "flex-start",
                                                                             }}
                                                                         >
-                                                                            <Typography
-                                                                                variant="h6"
-                                                                                sx={{
-                                                                                    fontSize: "1.1rem",
-                                                                                    fontWeight: 700,
-                                                                                }}
-                                                                            >
-                                                                                {exp.positionTitle ||
-                                                                                    exp.jobTitle ||
-                                                                                    "Role not specified"}
-                                                                            </Typography>
                                                                             <Box
                                                                                 sx={{
-                                                                                    display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    gap: 1,
-                                                                                    mt: 0.5,
+                                                                                    flex: 1,
+                                                                                    pr: canEdit && !editMode ? 8 : 0,
                                                                                 }}
                                                                             >
-                                                                                <CompanyLogo
-                                                                                    name={
-                                                                                        exp.companyName ||
-                                                                                        exp.company ||
-                                                                                        ""
-                                                                                    }
-                                                                                    size={24}
-                                                                                />
                                                                                 <Typography
-                                                                                    variant="subtitle1"
+                                                                                    variant="h6"
                                                                                     sx={{
-                                                                                        fontWeight: 600,
-                                                                                        color: "text.primary",
+                                                                                        fontSize: "1.1rem",
+                                                                                        fontWeight: 700,
                                                                                     }}
                                                                                 >
-                                                                                    {exp.companyName ||
-                                                                                        exp.company ||
-                                                                                        "Company not specified"}
-                                                                                    {exp.employmentType
-                                                                                        ? ` · ${exp.employmentType}`
-                                                                                        : ""}
+                                                                                    {exp.positionTitle ||
+                                                                                        exp.jobTitle ||
+                                                                                        "Role not specified"}
                                                                                 </Typography>
-                                                                            </Box>
-                                                                            <Typography
-                                                                                variant="body2"
-                                                                                color="text.secondary"
-                                                                                sx={{ mt: 0.5 }}
-                                                                            >
-                                                                                {formatMonthYear(exp.startDate)} -{" "}
-                                                                                {exp.isCurrentWorking
-                                                                                    ? "Present"
-                                                                                    : exp.endDate
-                                                                                      ? formatMonthYear(exp.endDate)
-                                                                                      : "Present"}
-                                                                            </Typography>
-                                                                            {(exp.location || exp.locationType) && (
-                                                                                <Typography
-                                                                                    variant="body2"
-                                                                                    color="text.secondary"
-                                                                                >
-                                                                                    {[exp.location, exp.locationType]
-                                                                                        .filter(Boolean)
-                                                                                        .join(" · ")}
-                                                                                </Typography>
-                                                                            )}
-                                                                        </Box>
-                                                                        {/* Nút edit/delete trên item: ẩn khi editMode */}
-                                                                        {canEdit && !editMode && (
-                                                                            <Stack
-                                                                                direction="row"
-                                                                                spacing={0.5}
-                                                                                sx={{
-                                                                                    position: "absolute",
-                                                                                    top: 12,
-                                                                                    right: 12,
-                                                                                }}
-                                                                            >
-                                                                                <IconButton
-                                                                                    size="small"
-                                                                                    onClick={() => {
-                                                                                        setEditingWorkExperience(exp);
-                                                                                        setWorkExperienceModalOpen(
-                                                                                            true,
-                                                                                        );
+                                                                                <Box
+                                                                                    sx={{
+                                                                                        display: "flex",
+                                                                                        alignItems: "center",
+                                                                                        gap: 1,
+                                                                                        mt: 0.5,
                                                                                     }}
                                                                                 >
-                                                                                    <EditIcon size={18} />
-                                                                                </IconButton>
-                                                                                <IconButton
-                                                                                    size="small"
-                                                                                    color="error"
-                                                                                    onClick={() => {
-                                                                                        if (!exp?.id) {
-                                                                                            setError(
-                                                                                                "This work experience cannot be deleted because no id was returned by the API.",
-                                                                                            );
-                                                                                            return;
+                                                                                    <CompanyLogo
+                                                                                        name={
+                                                                                            exp.companyName ||
+                                                                                            exp.company ||
+                                                                                            ""
                                                                                         }
-                                                                                        setPendingDeleteWorkExperience(
-                                                                                            exp.id,
-                                                                                        );
-                                                                                        setShowConfirmWorkDelete(true);
-                                                                                    }}
-                                                                                >
-                                                                                    <DeleteIcon size={18} />
-                                                                                </IconButton>
-                                                                            </Stack>
-                                                                        )}
-                                                                    </Box>
-                                                                    {exp.description && (
-                                                                        <Typography
-                                                                            variant="body2"
-                                                                            sx={{
-                                                                                mt: 1.5,
-                                                                                whiteSpace: "pre-wrap",
-                                                                                color: "text.secondary",
-                                                                            }}
-                                                                        >
-                                                                            {exp.description}
-                                                                        </Typography>
-                                                                    )}
-                                                                    {exp.skillIds?.length > 0 && (
-                                                                        <Stack
-                                                                            direction="row"
-                                                                            flexWrap="wrap"
-                                                                            gap={1}
-                                                                            sx={{ mt: 2 }}
-                                                                        >
-                                                                            {exp.skillIds.map((sid) => {
-                                                                                const skill = allSkills.find(
-                                                                                    (s) => s.id === sid,
-                                                                                );
-                                                                                return skill ? (
-                                                                                    <Box
-                                                                                        key={sid}
+                                                                                        size={24}
+                                                                                    />
+                                                                                    <Typography
+                                                                                        variant="subtitle1"
                                                                                         sx={{
-                                                                                            bgcolor: "#f0f2f5",
-                                                                                            px: 1.5,
-                                                                                            py: 0.5,
-                                                                                            borderRadius: 4,
-                                                                                            fontSize: "0.75rem",
                                                                                             fontWeight: 600,
                                                                                             color: "text.primary",
                                                                                         }}
                                                                                     >
-                                                                                        {skill.name}
-                                                                                    </Box>
-                                                                                ) : null;
-                                                                            })}
-                                                                        </Stack>
-                                                                    )}
-                                                                </Paper>
-                                                            ))
+                                                                                        {exp.companyName ||
+                                                                                            exp.company ||
+                                                                                            "Company not specified"}
+                                                                                        {exp.employmentType
+                                                                                            ? ` · ${exp.employmentType}`
+                                                                                            : ""}
+                                                                                    </Typography>
+                                                                                </Box>
+                                                                                <Typography
+                                                                                    variant="body2"
+                                                                                    color="text.secondary"
+                                                                                    sx={{ mt: 0.5 }}
+                                                                                >
+                                                                                    {formatMonthYear(exp.startDate)} -{" "}
+                                                                                    {exp.isCurrentWorking
+                                                                                        ? "Present"
+                                                                                        : exp.endDate
+                                                                                          ? formatMonthYear(exp.endDate)
+                                                                                          : "Present"}
+                                                                                </Typography>
+                                                                                {(exp.location || exp.locationType) && (
+                                                                                    <Typography
+                                                                                        variant="body2"
+                                                                                        color="text.secondary"
+                                                                                    >
+                                                                                        {[
+                                                                                            exp.location,
+                                                                                            exp.locationType,
+                                                                                        ]
+                                                                                            .filter(Boolean)
+                                                                                            .join(" · ")}
+                                                                                    </Typography>
+                                                                                )}
+                                                                            </Box>
+                                                                            {/* Nút edit/delete trên item: ẩn khi editMode */}
+                                                                            {canEdit && !editMode && (
+                                                                                <Stack
+                                                                                    direction="row"
+                                                                                    spacing={0.5}
+                                                                                    sx={{
+                                                                                        position: "absolute",
+                                                                                        top: 12,
+                                                                                        right: 12,
+                                                                                    }}
+                                                                                >
+                                                                                    <IconButton
+                                                                                        size="small"
+                                                                                        onClick={() => {
+                                                                                            setEditingWorkExperience(
+                                                                                                exp,
+                                                                                            );
+                                                                                            setWorkExperienceModalOpen(
+                                                                                                true,
+                                                                                            );
+                                                                                        }}
+                                                                                    >
+                                                                                        <EditIcon size={18} />
+                                                                                    </IconButton>
+                                                                                    <IconButton
+                                                                                        size="small"
+                                                                                        color="error"
+                                                                                        onClick={() => {
+                                                                                            if (!exp?.id) {
+                                                                                                setError(
+                                                                                                    "This work experience cannot be deleted because no id was returned by the API.",
+                                                                                                );
+                                                                                                return;
+                                                                                            }
+                                                                                            setPendingDeleteWorkExperience(
+                                                                                                exp.id,
+                                                                                            );
+                                                                                            setShowConfirmWorkDelete(
+                                                                                                true,
+                                                                                            );
+                                                                                        }}
+                                                                                    >
+                                                                                        <DeleteIcon size={18} />
+                                                                                    </IconButton>
+                                                                                </Stack>
+                                                                            )}
+                                                                        </Box>
+                                                                        {description && (
+                                                                            <Box sx={{ mt: 1.5 }}>
+                                                                                <Typography
+                                                                                    variant="body2"
+                                                                                    sx={{
+                                                                                        whiteSpace: "pre-wrap",
+                                                                                        color: "text.secondary",
+                                                                                    }}
+                                                                                >
+                                                                                    {displayDescription}
+                                                                                </Typography>
+                                                                                {shouldShowMore && (
+                                                                                    <Typography
+                                                                                        variant="caption"
+                                                                                        onClick={() => {
+                                                                                            setExpandedWorkExp(
+                                                                                                (prev) => ({
+                                                                                                    ...prev,
+                                                                                                    [expId]:
+                                                                                                        !prev[expId],
+                                                                                                }),
+                                                                                            );
+                                                                                        }}
+                                                                                        sx={{
+                                                                                            display: "flex",
+                                                                                            justifyContent: "end",
+                                                                                            background: "none",
+                                                                                            border: "none",
+                                                                                            color: "var(--ep-accent-dark)",
+                                                                                            cursor: "pointer",
+                                                                                            padding: 0,
+                                                                                            marginTop: "10px",
+                                                                                            marginLeft: "auto",
+                                                                                            fontSize: "0.85rem",
+                                                                                            fontWeight: 600,
+                                                                                        }}
+                                                                                    >
+                                                                                        {isExpanded
+                                                                                            ? "View Less"
+                                                                                            : "View More"}
+                                                                                    </Typography>
+                                                                                )}
+                                                                            </Box>
+                                                                        )}
+                                                                        {exp.skillIds?.length > 0 && (
+                                                                            <Stack
+                                                                                direction="row"
+                                                                                flexWrap="wrap"
+                                                                                gap={1}
+                                                                                sx={{ mt: 2 }}
+                                                                            >
+                                                                                {exp.skillIds.map((sid) => {
+                                                                                    const skill = allSkills.find(
+                                                                                        (s) => s.id === sid,
+                                                                                    );
+                                                                                    return skill ? (
+                                                                                        <Box
+                                                                                            key={sid}
+                                                                                            sx={{
+                                                                                                bgcolor: "#f0f2f5",
+                                                                                                px: 1.5,
+                                                                                                py: 0.5,
+                                                                                                borderRadius: 4,
+                                                                                                fontSize: "0.75rem",
+                                                                                                fontWeight: 600,
+                                                                                                color: "text.primary",
+                                                                                            }}
+                                                                                        >
+                                                                                            {skill.name}
+                                                                                        </Box>
+                                                                                    ) : null;
+                                                                                })}
+                                                                            </Stack>
+                                                                        )}
+                                                                    </Paper>
+                                                                );
+                                                            })
                                                         ) : (
                                                             <Typography
                                                                 variant="body2"
@@ -1598,7 +1640,7 @@ function CandidateProfilePage() {
                                                 </Typography>
                                             </Box>
 
-                                            {editMode && canManageBank && (
+                                            {/* {editMode && canManageBank && (
                                                 <Box
                                                     sx={{
                                                         mt: 3,
@@ -1626,7 +1668,7 @@ function CandidateProfilePage() {
                                                         }
                                                     />
                                                 </Box>
-                                            )}
+                                            )} */}
                                         </SidebarCard>
 
                                         {isSelf && (
@@ -1722,7 +1764,6 @@ function CandidateProfilePage() {
                 )}
             </Box>
 
-            {/* ── Modals (WE và Cert hoàn toàn độc lập với editMode) ── */}
             <WorkExperienceModal
                 open={workExperienceModalOpen}
                 onClose={() => {

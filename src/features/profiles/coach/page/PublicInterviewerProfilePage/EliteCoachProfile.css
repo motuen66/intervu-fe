@@ -287,7 +287,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.85rem;
-    margin-bottom: 3rem;
+    /* margin-bottom: 3rem; */
 }
 
 .ep-skill-tag {
