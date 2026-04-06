@@ -11,7 +11,18 @@ export const interviewerProfileEndPoints = {
     CREATE_INTERVIEWER_PROFILE: BE_BASE_URL + "/coach-profile",
     UPDATE_INTERVIEWER_PROFILE: BE_BASE_URL + `/coach-profile/{id}`,
 
+    // Work experiences (create/update/delete)
+    ADD_WORK_EXPERIENCE: BE_BASE_URL + `/coach-profile/{profileId}/work-experiences`,
+    UPDATE_WORK_EXPERIENCE: BE_BASE_URL + `/coach-profile/{profileId}/work-experiences/{workExperienceId}`,
+    DELETE_WORK_EXPERIENCE: BE_BASE_URL + `/coach-profile/{profileId}/work-experiences/{workExperienceId}`,
+
+    // Certificates (create/update/delete)
+    ADD_CERTIFICATE: BE_BASE_URL + `/coach-profile/{profileId}/certificates`,
+    UPDATE_CERTIFICATE: BE_BASE_URL + `/coach-profile/{profileId}/certificates/{certificateId}`,
+    DELETE_CERTIFICATE: BE_BASE_URL + `/coach-profile/{profileId}/certificates/{certificateId}`,
+
     BOOK_INTERVIEW: BE_BASE_URL + `/interview-booking`,
     GET_BOOKING_TRANSACTION: BE_BASE_URL + `/interview-booking/{orderCode}`,
     SAVE_QUESTION: BE_BASE_URL + `/interview-question`,
+    GET_ALL_INDUSTRIES: BE_BASE_URL + "/Industries?page={page}&pageSize={pageSize}",
 };
