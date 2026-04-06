@@ -90,10 +90,10 @@
 }
 
 .admin-card {
-    background: #ffffff;
-    border: 1px solid var(--mui-palette-divider);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 8px 20px rgba(17, 24, 39, 0.04);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
     padding: 12px 14px;
 }
 

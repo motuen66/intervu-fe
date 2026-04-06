@@ -270,17 +270,20 @@ export default function UserManagementPage() {
     const getRoleLabel = (role) => {
         if (typeof role === 'number') {
             if (role === 2) return 'ADMIN';
-            if (role === 1) return 'INTERVIEWER';
+            if (role === 1) return 'COACH';
             return 'CANDIDATE';
         }
-        return (role || '').toString();
+
+        const normalized = (role || '').toString().trim().toUpperCase();
+        if (normalized === 'INTERVIEWER') return 'COACH';
+        return normalized;
     };
 
     const getRoleColor = (role) => {
         switch (getRoleLabel(role).toUpperCase()) {
             case 'ADMIN':
                 return 'rgba(248,113,113,0.3)';
-            case 'INTERVIEWER':
+            case 'COACH':
                 return 'rgba(59,130,246,0.3)';
             case 'CANDIDATE':
                 return 'rgba(34,197,94,0.3)';
@@ -405,9 +408,8 @@ export default function UserManagementPage() {
                             >
                                 <MenuItem value="all" sx={{ fontSize: '12px', minHeight: 32 }}>All roles</MenuItem>
                                 <MenuItem value="Candidate" sx={{ fontSize: '12px', minHeight: 32 }}>Candidate</MenuItem>
-                                <MenuItem value="Interviewer" sx={{ fontSize: '12px', minHeight: 32 }}>Interviewer</MenuItem>
+                                <MenuItem value="Interviewer" sx={{ fontSize: '12px', minHeight: 32 }}>Coach</MenuItem>
                                 <MenuItem value="Admin" sx={{ fontSize: '12px', minHeight: 32 }}>Admin</MenuItem>
-                                <MenuItem value="Coach" sx={{ fontSize: '12px', minHeight: 32 }}>Coach</MenuItem>
                             </Select>
                         </FormControl>
                     </div>

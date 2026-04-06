@@ -13,6 +13,8 @@
 
 .admin-sidebar {
     width: 240px;
+    min-width: 240px;
+    flex: 0 0 240px;
     background: #ffffff;
     border-right: 1px solid var(--mui-palette-divider);
     display: flex;
@@ -86,6 +88,12 @@
     font-size: 20px;
 }
 
+.sidebar-item-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .sidebar-item-arrow {
     margin-left: auto;
     display: inline-flex;
@@ -128,6 +136,7 @@
 
 .admin-content {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     min-height: 100vh;

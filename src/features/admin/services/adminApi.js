@@ -19,6 +19,7 @@ export const adminEndPoints = {
     ACTIVATE_USER: (id) => `${ADMIN_BASE_URL}/users/${id}/activate`,
 
     // Question Reports Endpoints
+    GET_QUESTIONS: `${BE_BASE_URL}/questions`,
     GET_QUESTION_REPORTS: `${BE_BASE_URL}/questions/reports`,
     UPDATE_QUESTION_REPORT_STATUS: (reportId) => `${BE_BASE_URL}/questions/reports/${reportId}/status`,
     DELETE_QUESTION: (questionId) => `${BE_BASE_URL}/questions/${questionId}`,
