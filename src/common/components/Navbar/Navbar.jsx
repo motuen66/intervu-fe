@@ -27,7 +27,8 @@ import {
     X,
     FileCode,
     Layers,
-    Terminal
+    Terminal,
+    AlertTriangle
 } from "lucide-react";
 import { ROLES } from "../../constants/common";
 import { setUserData } from "../../store/authSlice";
@@ -367,6 +368,11 @@ const Navbar = () => {
                                                 <Link to={userData.role === ROLES.INTERVIEWER ? "/interviewer/profile" : "/candidate/profile"} className="dropdown-item">
                                                     <User size={16} /> My Profile
                                                 </Link>
+                                                {userData.role === ROLES.CANDIDATE && (
+                                                    <Link to="/settings?tab=reports" className="dropdown-item">
+                                                        <AlertTriangle size={16} /> My Reports
+                                                    </Link>
+                                                )}
                                                 <Link to="/payment-history" className="dropdown-item">
                                                     <CreditCard size={16} /> Payment History
                                                 </Link>

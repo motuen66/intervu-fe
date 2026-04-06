@@ -1,4 +1,4 @@
-import {
+﻿import {
     Box,
     Typography,
     Stack,
@@ -10,7 +10,11 @@ import { Videocam, VideocamOff, Mic, MicOff } from "@mui/icons-material";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 import CreateIcon from "@mui/icons-material/Create";
+import FlagIcon from "@mui/icons-material/Flag";
+import ReportRoomModal from "./ReportRoomModal";
+import toast from "react-hot-toast";
 import { ROLES } from "../../../../common/constants/common.js";
+
 import { useEffect, useState } from "react";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
@@ -32,12 +36,17 @@ function VideoPanel({
     onLeaveRoom,
     user,
     roomInfo,
+    roomId,
 }) {
+
     const isCandidate = user?.role === ROLES.CANDIDATE;
     const remotePeerName = roomInfo ? (isCandidate ? roomInfo.coachName || "Coach" : roomInfo.candidateName || "Candidate") : "Peer";
     const remotePeerRole = isCandidate ? "Coach" : "Candidate";
 
     const [fetchedRemoteAvatar, setFetchedRemoteAvatar] = useState(null);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [isReporting, setIsReporting] = useState(false);
+
 
     useEffect(() => {
         const participantId = roomInfo ? (isCandidate ? roomInfo.coachId : roomInfo.candidateId) : null;
@@ -50,6 +59,32 @@ function VideoPanel({
             })
             .catch(() => { /* ignore */ });
     }, [roomInfo, isCandidate]);
+
+    const handleReportSubmit = async ({ reason, details }) => {
+        setIsReporting(true);
+        try {
+            await callApi({
+                method: METHOD.POST,
+                endpoint: "/interviewroom/report",
+                arg: {
+                    interviewRoomId: roomInfo?.id || roomId,
+                    reason,
+                    details
+                }
+            });
+
+
+            toast.success("Report submitted successfully. Admin will review it.");
+            return true;
+        } catch (err) {
+            console.error(err);
+            toast.error(err.message || "Failed to submit report");
+            return false;
+        } finally {
+            setIsReporting(false);
+        }
+    };
+
 
     const remoteAvatar = fetchedRemoteAvatar || (roomInfo ? (isCandidate
         ? (roomInfo.coachAvatar || roomInfo.coachProfilePicture || roomInfo.coach?.profilePicture || roomInfo.coach?.avatarUrl || roomInfo.coach?.avatar || roomInfo.interviewer?.profilePicture || roomInfo.interviewer?.avatar || roomInfo.interviewer?.avatarUrl || roomInfo.interviewerAvatar)
@@ -218,7 +253,20 @@ function VideoPanel({
                 </Fab>
                 <Fab
                     size="medium"
+                    onClick={() => setReportModalOpen(true)}
+                    sx={{
+                        bgcolor: "#FFFFFF",
+                        color: "#EF4444",
+                        border: "1px solid #E5E7EB",
+                        "&:hover": { bgcolor: "#F3F4F6" }
+                    }}
+                >
+                    <FlagIcon />
+                </Fab>
+                <Fab
+                    size="medium"
                     onClick={onLeaveRoom}
+
                     sx={{
                         bgcolor: "#EF4444",
                         color: "#FFFFFF",
@@ -260,8 +308,17 @@ function VideoPanel({
                     }}
                 />
             </Box>
+
+            <ReportRoomModal
+                open={reportModalOpen}
+                onClose={() => setReportModalOpen(false)}
+                onSubmit={handleReportSubmit}
+                isSubmitting={isReporting}
+            />
         </Box>
+
     );
 }
 
 export default VideoPanel;
+

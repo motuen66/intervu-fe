@@ -19,14 +19,14 @@ import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
 
 // ---------------------------------------------------------------------------
-// InterviewRoomPage — Clean Orchestrator
+// InterviewRoomPage â€” Clean Orchestrator
 //
 // This component owns:
-//   • Room status gate (redirect if not ON_GOING / COMPLETED)
-//   • Resizable 3-column layout
-//   • Video element refs (wired to streams from useWebRTC)
-//   • Problem / test-case editing state (Interviewer only)
-//   • Callback-bag ref that bridges useInterviewSignalR ↔ useWebRTC / useCodeSync
+//   â€¢ Room status gate (redirect if not ON_GOING / COMPLETED)
+//   â€¢ Resizable 3-column layout
+//   â€¢ Video element refs (wired to streams from useWebRTC)
+//   â€¢ Problem / test-case editing state (Interviewer only)
+//   â€¢ Callback-bag ref that bridges useInterviewSignalR â†” useWebRTC / useCodeSync
 //
 // It does NOT contain any WebRTC, SignalR, or Monaco formatting logic.
 // ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ function InterviewRoomPage() {
     const navigate = useNavigate();
     const isViewOnly = searchParams.get("viewOnly") === "true";
 
-    // ── Gate ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [roomInfo, setRoomInfo] = useState(null);
@@ -48,7 +48,7 @@ function InterviewRoomPage() {
         try {
             setLoading(true);
             const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom/${roomId}` });
-            const room = res?.data?.data;
+            const room = res?.data;
             // if (room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && room?.status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
             //     setError("This interview is not in progress. You will be redirected.");
             //     setTimeout(() => navigate("/interview"), 3000);
@@ -67,16 +67,16 @@ function InterviewRoomPage() {
         if (user) checkRoomStatus();
     }, [user, checkRoomStatus]);
 
-    // ── Video refs (passed to <video> elements inside VideoPanel) ─────────────
+    // â”€â”€ Video refs (passed to <video> elements inside VideoPanel) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
-    // ── Callback bag: stable ref bridging SignalR → WebRTC / CodeSync ─────────
+    // â”€â”€ Callback bag: stable ref bridging SignalR â†’ WebRTC / CodeSync â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // useInterviewSignalR reads callbacks.current when events fire (async),
     // so by the time any hub event arrives the bag is populated.
     const callbacks = useRef({});
 
-    // ── SignalR hook — must come first so connectionId is available below ────────
+    // â”€â”€ SignalR hook â€” must come first so connectionId is available below â”€â”€â”€â”€â”€â”€â”€â”€
     // sendSignal is a stable callback (reads connRef inside the hook) so it is
     // safe to pass straight to useCodeSync / useWebRTC without wrapping.
     const { connectionId, peers, sendSignal, leaveRoom } = useInterviewSignalR({
@@ -87,7 +87,7 @@ function InterviewRoomPage() {
         callbacks,
     });
 
-    // ── Code sync hook (isolated from WebRTC) ─────────────────────────────────
+    // â”€â”€ Code sync hook (isolated from WebRTC) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const {
         editorRef,
         language,
@@ -108,7 +108,7 @@ function InterviewRoomPage() {
         initFromRoomState,
     } = useCodeSync({ sendSignal, roomId, user });
 
-    // ── WebRTC hook ────────────────────────────────────────────────────────────
+    // â”€â”€ WebRTC hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Pass connectionId so the polite/impolite tie-breaking (selfId < targetId)
     // uses the real id.  On the first render connectionId is null; the hook's
     // internal useEffect updates selfIdRef when connectionId resolves.
@@ -128,7 +128,7 @@ function InterviewRoomPage() {
         handleIceCandidate,
     } = useWebRTC({ signalingSender: sendSignal, selfId: connectionId });
 
-    // ── Audio Recording ────────────────────────────────────────────────────────
+    // â”€â”€ Audio Recording â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // We record chunks for processing (Interviewer and Candidate)
     // Recording is now tied to the user's mic state.
     useAudioRecorder({
@@ -139,11 +139,11 @@ function InterviewRoomPage() {
         chunkIntervalMs: 15000,
     });
 
-    // ── Remote peer media state (camera/mic indicators for late-joiners) ─────
+    // â”€â”€ Remote peer media state (camera/mic indicators for late-joiners) â”€â”€â”€â”€â”€
     const [remoteCameraOn, setRemoteCameraOn] = useState(false);
     const [remoteMicOn, setRemoteMicOn] = useState(false);
 
-    // ── Wire callbacks bag ─────────────────────────────────────────────────────
+    // â”€â”€ Wire callbacks bag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // This runs every render but is cheap (just ref assignment).
     callbacks.current = {
         // WebRTC
@@ -209,7 +209,7 @@ function InterviewRoomPage() {
         },
     };
 
-    // ── Wire video streams to <video> elements ─────────────────────────────────
+    // â”€â”€ Wire video streams to <video> elements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     useEffect(() => {
         if (localVideoRef.current) localVideoRef.current.srcObject = localStream ?? null;
     }, [localStream]);
@@ -234,13 +234,13 @@ function InterviewRoomPage() {
         sendSignal("SendMicState", roomId, isMicOn).catch?.(() => {});
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
-    // ── Leave room ─────────────────────────────────────────────────────────────
+    // â”€â”€ Leave room â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleLeaveRoom = useCallback(() => {
         leaveRoom();
         navigate("/interview");
     }, [leaveRoom, navigate]);
 
-    // ── Problem / test-case state (Interviewer editing) ───────────────────────
+    // â”€â”€ Problem / test-case state (Interviewer editing) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [problemDescription, setProblemDescription] = useState("");
     const [problemShortName, setProblemShortName] = useState("");
     const [testCases, setTestCases] = useState([{ inputs: [{ name: "", value: "" }], expectedOutputs: [""] }]);
@@ -326,7 +326,7 @@ function InterviewRoomPage() {
         });
     };
 
-    // ── Resizable layout ───────────────────────────────────────────────────────
+    // â”€â”€ Resizable layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const containerRef = useRef(null);
     const [cols, setCols] = useState([25, 35, 40]);
     const [dragging, setDragging] = useState(null);
@@ -365,7 +365,7 @@ function InterviewRoomPage() {
 
     const resizerStyle = { width: 6, cursor: "col-resize", background: "#e5e7eb", userSelect: "none" };
 
-    // ── Gate render ───────────────────────────────────────────────────────────
+    // â”€â”€ Gate render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (loading || error) {
         return (
             <Box
@@ -385,10 +385,10 @@ function InterviewRoomPage() {
         );
     }
 
-    // ── Main render ───────────────────────────────────────────────────────────
+    // â”€â”€ Main render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "#f8fafc" }}>
-            {/* ── Top Bar (Review Mode Only) ── */}
+            {/* â”€â”€ Top Bar (Review Mode Only) â”€â”€ */}
             {isViewOnly && (
                 <Box
                     sx={{
@@ -422,14 +422,14 @@ function InterviewRoomPage() {
                         onClick={() => navigate(-1)}
                     >
                         <Typography variant="caption" fontWeight={700}>
-                            CLOSE REVIEW ✕
+                            CLOSE REVIEW âœ•
                         </Typography>
                     </Box>
                 </Box>
             )}
 
             <Box ref={containerRef} style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
-                {/* ── Left: Question Panel ── */}
+                {/* â”€â”€ Left: Question Panel â”€â”€ */}
                 <Box
                     sx={{
                         width: `${cols[0]}%`,
@@ -468,7 +468,7 @@ function InterviewRoomPage() {
 
                 <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 0)} />
 
-                {/* ── Middle: Code Editor Panel ── */}
+                {/* â”€â”€ Middle: Code Editor Panel â”€â”€ */}
                 <Box
                     sx={{
                         width: `${cols[1]}%`,
@@ -499,9 +499,10 @@ function InterviewRoomPage() {
 
                 <div style={resizerStyle} onMouseDown={(e) => startDrag(e, 1)} />
 
-                {/* ── Right: Video Panel ── */}
+                {/* â”€â”€ Right: Video Panel â”€â”€ */}
                 <Box sx={{ width: `${cols[2]}%`, minWidth: 0, overflow: "auto", padding: 1.5 }}>
                     <VideoPanel
+                        roomId={roomId}
                         myId={connectionId}
                         peers={peers}
                         onCall={initiatePeerConnection}
@@ -526,3 +527,4 @@ function InterviewRoomPage() {
 }
 
 export default InterviewRoomPage;
+
