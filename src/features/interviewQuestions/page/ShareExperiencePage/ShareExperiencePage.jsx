@@ -5,6 +5,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { callApi } from "../../../../common/utils/apiConnector";
+import { trackContributeQuestion } from "../../../../utils/analytics";
 import { htmlToPlainText, isQuillEmpty } from "../../../../common/utils/richTextHelper";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewExperienceEndPoints } from "../../service/interviewExperienceApi";
@@ -135,7 +136,7 @@ export default function ShareExperiencePage() {
         try {
             setSubmitting(true);
 
-            await callApi({
+            const { data: res } = await callApi({
                 method: METHOD.POST,
                 endpoint: interviewExperienceEndPoints.CREATE,
                 arg: {
@@ -148,6 +149,19 @@ export default function ShareExperiencePage() {
                     questions: payloadQuestions,
                 },
             });
+
+            try {
+                // Emit contribute_question events for analytics (one per question)
+                payloadQuestions.forEach((q) => {
+                    try {
+                        trackContributeQuestion(q.linkedQuestionId ?? null, q.category ?? null, q.level ?? null);
+                    } catch (err) {
+                        console.warn("trackContributeQuestion failed", err);
+                    }
+                });
+            } catch (err) {
+                /* ignore analytics errors */
+            }
 
             toast.success("Experience shared successfully!");
             navigate("/questions");
