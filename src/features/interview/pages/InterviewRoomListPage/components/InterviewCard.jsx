@@ -1,16 +1,16 @@
+import { Box, Typography, Avatar, Stack, Chip, Divider, Tooltip, IconButton, Menu, MenuItem } from "@mui/material";
 import {
-    Box,
-    Typography,
-    Avatar,
-    Stack,
-    Chip,
-    Divider,
-    Tooltip,
-    IconButton,
-    Menu,
-    MenuItem,
-} from "@mui/material";
-import { Calendar, Clock, Star, Video, CheckCircle2, CircleDot, Circle, XCircle, Code, ClipboardList } from "lucide-react";
+    Calendar,
+    Clock,
+    Star,
+    Video,
+    CheckCircle2,
+    CircleDot,
+    Circle,
+    XCircle,
+    Code,
+    ClipboardList,
+} from "lucide-react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
@@ -35,7 +35,7 @@ function InterviewCard({
     onJoin,
     onReviewQuestions,
     showActions = true,
-    hasPendingReschedule = false
+    hasPendingReschedule = false,
 }) {
     const FIXED_CARD_HEIGHT = 380;
 
@@ -47,9 +47,7 @@ function InterviewCard({
     const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null);
 
     // Determine which participant to show (opposite role)
-    const participantId = user?.role === ROLES.CANDIDATE
-        ? room.coachId
-        : room.candidateId;
+    const participantId = user?.role === ROLES.CANDIDATE ? room.coachId : room.candidateId;
 
     useEffect(() => {
         if (!participantId) return;
@@ -59,29 +57,28 @@ function InterviewCard({
                 if (!cancelled) {
                     const profile = res?.data;
                     const url =
-                        profile?.profilePicture ||
-                        profile?.avatarUrl ||
-                        profile?.imageUrl ||
-                        profile?.avatar ||
-                        null;
+                        profile?.profilePicture || profile?.avatarUrl || profile?.imageUrl || profile?.avatar || null;
                     setParticipantAvatarUrl(url);
                     setParticipantProfile(profile || null);
                 }
             })
-            .catch(() => { /* silently ignore */ });
-        return () => { cancelled = true; };
+            .catch(() => {
+                /* silently ignore */
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [participantId]);
-
 
     // Check if reschedule is available
     const hasMultipleRounds = Array.isArray(room.rounds) && room.rounds.length > 1;
     const multiRoundEligibleCount = hasMultipleRounds
         ? room.rounds.filter(
-            (round) =>
-                round.status === INTERVIEW_ROOM_STATUS.SCHEDULED &&
-                round.canReschedule &&
-                !round.hasPendingReschedule,
-        ).length
+              (round) =>
+                  round.status === INTERVIEW_ROOM_STATUS.SCHEDULED &&
+                  round.canReschedule &&
+                  !round.hasPendingReschedule,
+          ).length
         : 0;
     const isRescheduled = room.rescheduleAttemptCount >= 1;
     const canReschedule = hasMultipleRounds
@@ -287,17 +284,17 @@ function InterviewCard({
             [INTERVIEW_ROOM_TYPE.NORMAL]: {
                 label: "Normal",
                 color: "default",
-                sx: { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#616161" }
+                sx: { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#616161" },
             },
             [INTERVIEW_ROOM_TYPE.WITH_AI]: {
                 label: "With AI",
                 color: "secondary",
-                sx: { bgcolor: "rgba(156, 39, 176, 0.12)", color: "#7b1fa2" }
+                sx: { bgcolor: "rgba(156, 39, 176, 0.12)", color: "#7b1fa2" },
             },
             [INTERVIEW_ROOM_TYPE.PEER]: {
                 label: "Peer",
                 color: "info",
-                sx: { bgcolor: "rgba(2, 136, 209, 0.12)", color: "#0277bd" }
+                sx: { bgcolor: "rgba(2, 136, 209, 0.12)", color: "#0277bd" },
             },
         };
 
@@ -351,6 +348,21 @@ function InterviewCard({
             const isPast = hoursUntil <= 0;
             const canCancel = room.canCancel ?? !isPast;
 
+            const getRescheduleDisabledReason = () => {
+                if (isPast) return "Cannot reschedule because the interview time has passed.";
+                if (hasPendingReschedule) return "A pending reschedule request already exists.";
+                if (isRescheduled) return "This interview has already been rescheduled once.";
+                if (!canReschedule) {
+                    return hasMultipleRounds
+                        ? "No eligible round to reschedule (already rescheduled, pending, or within restricted time)."
+                        : "This interview cannot be rescheduled (likely within 12 hours or max attempts reached).";
+                }
+                return "";
+            };
+
+            const rescheduleDisabledReason = getRescheduleDisabledReason();
+            const disableReschedule = Boolean(rescheduleDisabledReason) || !canReschedule;
+
             return (
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
                     {/* Cancel Button - only for candidates, hidden if past */}
@@ -365,22 +377,23 @@ function InterviewCard({
                         </SecondaryButton>
                     )}
 
-                    {/* Reschedule Button - only for candidates, hidden entirely if past */}
-                    {user?.role === ROLES.CANDIDATE && !isPast && (
-                        canReschedule ? (
-                            <PrimaryButton
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRequestReschedule?.(room);
-                                }}
-                            >
-                                Reschedule
-                            </PrimaryButton>
-                        ) : (
-                            <PrimaryButton disabled>
-                                Reschedule
-                            </PrimaryButton>
-                        )
+                    {/* Reschedule Button - always visible for candidate; disabled with reason tooltip when unavailable */}
+                    {user?.role === ROLES.CANDIDATE && (
+                        <Tooltip title={rescheduleDisabledReason} arrow disableHoverListener={!disableReschedule}>
+                            <span>
+                                <PrimaryButton
+                                    disabled={disableReschedule}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (!disableReschedule) {
+                                            onRequestReschedule?.(room);
+                                        }
+                                    }}
+                                >
+                                    Reschedule
+                                </PrimaryButton>
+                            </span>
+                        </Tooltip>
                     )}
                 </Stack>
             );
@@ -390,7 +403,6 @@ function InterviewCard({
         if (room.status === INTERVIEW_ROOM_STATUS.ON_GOING) {
             return (
                 <Stack direction="row" justifyContent="flex-end" alignItems="center" sx={{ width: "100%" }}>
-
                     {/* Join Session on the RIGHT */}
                     <SuccessButton
                         startIcon={<Video size={16} strokeWidth={2} />}
@@ -438,7 +450,7 @@ function InterviewCard({
                                 border: "1px solid",
                                 borderColor: (theme) => alpha(theme.palette.error.main, 0.5),
                                 opacity: 1,
-                            }
+                            },
                         }}
                     >
                         Cancelled
@@ -567,8 +579,14 @@ function InterviewCard({
                         height: 72,
                         fontSize: "0.95rem",
                         fontWeight: 600,
-                        bgcolor: (participantAvatarUrl || getParticipantAvatar()) ? "transparent" : "var(--mui-palette-secondary-main)",
-                        color: (participantAvatarUrl || getParticipantAvatar()) ? "inherit" : "var(--mui-palette-primary-main)",
+                        bgcolor:
+                            participantAvatarUrl || getParticipantAvatar()
+                                ? "transparent"
+                                : "var(--mui-palette-secondary-main)",
+                        color:
+                            participantAvatarUrl || getParticipantAvatar()
+                                ? "inherit"
+                                : "var(--mui-palette-primary-main)",
                     }}
                 >
                     {!(participantAvatarUrl || getParticipantAvatar()) ? getInitials(getParticipantName()) : null}
@@ -594,9 +612,9 @@ function InterviewCard({
                         sx={{
                             mt: 0.25,
                             fontWeight: 500,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                         }}
                     >
                         {getParticipantHeadline()}
@@ -604,7 +622,12 @@ function InterviewCard({
 
                     {typeof getParticipantRating() === "number" && (
                         <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mt: 0.6 }}>
-                            <Star size={16} strokeWidth={1.9} color="var(--mui-palette-primary-main)" fill="var(--mui-palette-primary-main)" />
+                            <Star
+                                size={16}
+                                strokeWidth={1.9}
+                                color="var(--mui-palette-primary-main)"
+                                fill="var(--mui-palette-primary-main)"
+                            />
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>
                                 {Number(getParticipantRating()).toFixed(1)}
                             </Typography>
@@ -677,7 +700,7 @@ function InterviewCard({
             <Divider sx={{ my: 1, borderColor: "var(--mui-palette-divider)" }} />
 
             {/* Session Type + Join State */}
-            <Stack spacing={1} sx={{ mb: 1.5, height: 86, width: '100%', minHeight: 86 }}>
+            <Stack spacing={1} sx={{ mb: 1.5, height: 86, width: "100%", minHeight: 86 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography
                         variant="body2"
@@ -687,16 +710,21 @@ function InterviewCard({
                             fontWeight: 800,
                             fontSize: "0.75rem",
                             color: "var(--mui-palette-text-secondary)",
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                         }}
                     >
-                        {hasMultipleRounds ? "Interview Progress" : formatTypeName(room.interviewTypeName || "Interview Session")}
+                        {hasMultipleRounds
+                            ? "Interview Progress"
+                            : formatTypeName(room.interviewTypeName || "Interview Session")}
                     </Typography>
-                    <Box sx={{ height: 24, display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ height: 24, display: "flex", alignItems: "center" }}>
                         {hasMultipleRounds ? (
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--mui-palette-text-secondary)" }}>
+                            <Typography
+                                variant="caption"
+                                sx={{ fontWeight: 700, color: "var(--mui-palette-text-secondary)" }}
+                            >
                                 Round {room.currentRound || 1} of {room.rounds.length}
                             </Typography>
                         ) : (
@@ -714,27 +742,43 @@ function InterviewCard({
                     >
                         {room.rounds.map((round, index) => {
                             const isEntirelyCompleted = room.status === INTERVIEW_ROOM_STATUS.COMPLETED;
-                            const isCompleted = isEntirelyCompleted || index + 1 < (room.currentRound || 1) || round.status === 'COMPLETED';
+                            const isCompleted =
+                                isEntirelyCompleted ||
+                                index + 1 < (room.currentRound || 1) ||
+                                round.status === "COMPLETED";
                             const isCurrent = !isEntirelyCompleted && index + 1 === (room.currentRound || 1);
                             const isUpcoming = !isCurrent && !isCompleted;
-                            const roundDisplayName = formatTypeName(round.interviewTypeName || round.name || `Round ${index + 1}`);
+                            const roundDisplayName = formatTypeName(
+                                round.interviewTypeName || round.name || `Round ${index + 1}`,
+                            );
 
                             return (
                                 <Box key={index} sx={{ flex: 1, minWidth: 0 }}>
                                     <Tooltip
                                         title={
                                             <Box sx={{ p: 0.5 }}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.75, color: '#1E293B' }}>{roundDisplayName}</Typography>
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{ fontWeight: 700, mb: 0.75, color: "#1E293B" }}
+                                                >
+                                                    {roundDisplayName}
+                                                </Typography>
                                                 <Stack spacing={0.5}>
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         <Calendar size={14} color="#4F46E5" strokeWidth={2} />
-                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#475569' }}>
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{ fontWeight: 600, color: "#475569" }}
+                                                        >
                                                             {getDisplayDate(round.scheduledTime)}
                                                         </Typography>
                                                     </Stack>
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         <Clock size={14} color="#4F46E5" strokeWidth={2} />
-                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#475569' }}>
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{ fontWeight: 600, color: "#475569" }}
+                                                        >
                                                             {getDisplayTime(round.scheduledTime)}
                                                         </Typography>
                                                     </Stack>
@@ -746,52 +790,70 @@ function InterviewCard({
                                         slotProps={{
                                             tooltip: {
                                                 sx: {
-                                                    bgcolor: 'rgba(255, 255, 255, 0.95)',
-                                                    backdropFilter: 'blur(8px)',
-                                                    color: 'text.primary',
-                                                    boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-                                                    border: '1px solid rgba(0, 0, 0, 0.04)',
-                                                    borderRadius: '12px',
+                                                    bgcolor: "rgba(255, 255, 255, 0.95)",
+                                                    backdropFilter: "blur(8px)",
+                                                    color: "text.primary",
+                                                    boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
+                                                    border: "1px solid rgba(0, 0, 0, 0.04)",
+                                                    borderRadius: "12px",
                                                     p: 1.25,
-                                                    '& .MuiTooltip-arrow': {
-                                                        color: 'rgba(255, 255, 255, 0.95)',
-                                                    }
-                                                }
-                                            }
+                                                    "& .MuiTooltip-arrow": {
+                                                        color: "rgba(255, 255, 255, 0.95)",
+                                                    },
+                                                },
+                                            },
                                         }}
                                     >
-                                        <Box sx={{ width: '100%', cursor: 'pointer', transition: 'opacity 0.2s', '&:hover': { opacity: 0.85 } }}>
+                                        <Box
+                                            sx={{
+                                                width: "100%",
+                                                cursor: "pointer",
+                                                transition: "opacity 0.2s",
+                                                "&:hover": { opacity: 0.85 },
+                                            }}
+                                        >
                                             {/* Progress Bar Segment */}
                                             <Box
                                                 sx={{
                                                     height: 8,
-                                                    borderRadius: index === 0
-                                                        ? "999px 0 0 999px"
-                                                        : (index === room.rounds.length - 1 ? "0 999px 999px 0" : "0"),
-                                                    bgcolor: room.status === INTERVIEW_ROOM_STATUS.CANCELLED
-                                                        ? "error.main"
-                                                        : isCompleted
-                                                            ? "success.main"
-                                                            : isCurrent
+                                                    borderRadius:
+                                                        index === 0
+                                                            ? "999px 0 0 999px"
+                                                            : index === room.rounds.length - 1
+                                                              ? "0 999px 999px 0"
+                                                              : "0",
+                                                    bgcolor:
+                                                        room.status === INTERVIEW_ROOM_STATUS.CANCELLED
+                                                            ? "error.main"
+                                                            : isCompleted
+                                                              ? "success.main"
+                                                              : isCurrent
                                                                 ? "secondary.main"
                                                                 : "action.disabledBackground",
                                                     mb: 1.25,
-                                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                    position: 'relative',
-                                                    ...(isCurrent && room.status !== INTERVIEW_ROOM_STATUS.CANCELLED && {
-                                                        boxShadow: (theme) => `0 0 10px ${alpha(theme.palette.secondary.main, 0.5)}`,
-                                                        animation: 'pulse-lime 2s infinite ease-in-out',
-                                                        '@keyframes pulse-lime': {
-                                                            '0%': { opacity: 1 },
-                                                            '50%': { opacity: 0.75 },
-                                                            '100%': { opacity: 1 },
-                                                        }
-                                                    })
+                                                    transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                                                    position: "relative",
+                                                    ...(isCurrent &&
+                                                        room.status !== INTERVIEW_ROOM_STATUS.CANCELLED && {
+                                                            boxShadow: (theme) =>
+                                                                `0 0 10px ${alpha(theme.palette.secondary.main, 0.5)}`,
+                                                            animation: "pulse-lime 2s infinite ease-in-out",
+                                                            "@keyframes pulse-lime": {
+                                                                "0%": { opacity: 1 },
+                                                                "50%": { opacity: 0.75 },
+                                                                "100%": { opacity: 1 },
+                                                            },
+                                                        }),
                                                 }}
                                             />
 
                                             {/* Icon & Label */}
-                                            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ px: 0.2, overflow: 'hidden' }}>
+                                            <Stack
+                                                direction="row"
+                                                spacing={0.75}
+                                                alignItems="center"
+                                                sx={{ px: 0.2, overflow: "hidden" }}
+                                            >
                                                 {room.status === INTERVIEW_ROOM_STATUS.CANCELLED ? (
                                                     <XCircle
                                                         size={14}
@@ -799,14 +861,20 @@ function InterviewCard({
                                                         strokeWidth={2.5}
                                                         style={{ flexShrink: 0 }}
                                                     />
-                                                ) : isCompleted && (
-                                                    <CheckCircle2
-                                                        size={14}
-                                                        color="var(--mui-palette-success-main)"
-                                                        fill={isEntirelyCompleted ? "var(--mui-palette-success-main)" : "none"}
-                                                        strokeWidth={2.5}
-                                                        style={{ flexShrink: 0 }}
-                                                    />
+                                                ) : (
+                                                    isCompleted && (
+                                                        <CheckCircle2
+                                                            size={14}
+                                                            color="var(--mui-palette-success-main)"
+                                                            fill={
+                                                                isEntirelyCompleted
+                                                                    ? "var(--mui-palette-success-main)"
+                                                                    : "none"
+                                                            }
+                                                            strokeWidth={2.5}
+                                                            style={{ flexShrink: 0 }}
+                                                        />
+                                                    )
                                                 )}
                                                 {isCurrent && room.status !== INTERVIEW_ROOM_STATUS.CANCELLED && (
                                                     <CircleDot
@@ -828,14 +896,26 @@ function InterviewCard({
                                                 <Typography
                                                     variant="caption"
                                                     sx={{
-                                                        fontSize: '0.7rem',
-                                                        fontWeight: isCurrent || isCompleted || room.status === INTERVIEW_ROOM_STATUS.CANCELLED ? 750 : 600,
-                                                        color: room.status === INTERVIEW_ROOM_STATUS.CANCELLED ? "error.dark" : (isCompleted ? "success.dark" : (isUpcoming ? "text.disabled" : "text.primary")),
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
+                                                        fontSize: "0.7rem",
+                                                        fontWeight:
+                                                            isCurrent ||
+                                                            isCompleted ||
+                                                            room.status === INTERVIEW_ROOM_STATUS.CANCELLED
+                                                                ? 750
+                                                                : 600,
+                                                        color:
+                                                            room.status === INTERVIEW_ROOM_STATUS.CANCELLED
+                                                                ? "error.dark"
+                                                                : isCompleted
+                                                                  ? "success.dark"
+                                                                  : isUpcoming
+                                                                    ? "text.disabled"
+                                                                    : "text.primary",
+                                                        whiteSpace: "nowrap",
+                                                        overflow: "hidden",
+                                                        textOverflow: "ellipsis",
                                                         letterSpacing: 0.1,
-                                                        minWidth: 0
+                                                        minWidth: 0,
                                                     }}
                                                 >
                                                     {roundDisplayName}
@@ -855,16 +935,17 @@ function InterviewCard({
                                     flex: 1,
                                     height: 8,
                                     borderRadius: "999px",
-                                    bgcolor: room.status === INTERVIEW_ROOM_STATUS.CANCELLED
-                                        ? "error.main"
-                                        : room.status === INTERVIEW_ROOM_STATUS.COMPLETED
-                                            ? "success.main"
-                                            : "secondary.main",
-                                    transition: 'all 0.3s ease',
+                                    bgcolor:
+                                        room.status === INTERVIEW_ROOM_STATUS.CANCELLED
+                                            ? "error.main"
+                                            : room.status === INTERVIEW_ROOM_STATUS.COMPLETED
+                                              ? "success.main"
+                                              : "secondary.main",
+                                    transition: "all 0.3s ease",
                                     ...(room.status === INTERVIEW_ROOM_STATUS.ON_GOING && {
-                                        animation: 'pulse-lime 2s infinite ease-in-out',
+                                        animation: "pulse-lime 2s infinite ease-in-out",
                                         boxShadow: (theme) => `0 0 10px ${alpha(theme.palette.secondary.main, 0.4)}`,
-                                    })
+                                    }),
                                 }}
                             />
                         </Stack>
@@ -886,28 +967,25 @@ function InterviewCard({
                                 />
                             )}
                             {room.status === INTERVIEW_ROOM_STATUS.ON_GOING && (
-                                <CircleDot
-                                    size={14}
-                                    color="var(--mui-palette-secondary-dark)"
-                                    strokeWidth={3}
-                                />
+                                <CircleDot size={14} color="var(--mui-palette-secondary-dark)" strokeWidth={3} />
                             )}
                             {room.status === INTERVIEW_ROOM_STATUS.SCHEDULED && (
-                                <Circle
-                                    size={14}
-                                    color="var(--mui-palette-text-disabled)"
-                                    strokeWidth={2}
-                                />
+                                <Circle size={14} color="var(--mui-palette-text-disabled)" strokeWidth={2} />
                             )}
                             <Typography
                                 variant="caption"
                                 sx={{
-                                    fontSize: '0.7rem',
+                                    fontSize: "0.7rem",
                                     fontWeight: 750,
-                                    color: room.status === INTERVIEW_ROOM_STATUS.CANCELLED ? "error.dark" : (room.status === INTERVIEW_ROOM_STATUS.COMPLETED ? "success.dark" : "text.primary"),
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
+                                    color:
+                                        room.status === INTERVIEW_ROOM_STATUS.CANCELLED
+                                            ? "error.dark"
+                                            : room.status === INTERVIEW_ROOM_STATUS.COMPLETED
+                                              ? "success.dark"
+                                              : "text.primary",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
                                     letterSpacing: 0.1,
                                 }}
                             >
@@ -923,18 +1001,18 @@ function InterviewCard({
                 <Typography
                     variant="caption"
                     sx={{
-                        color: '#475569',
+                        color: "#475569",
                         fontWeight: 800,
-                        fontSize: '0.68rem',
-                        letterSpacing: '0.05em',
-                        textTransform: 'uppercase',
-                        display: 'flex',
-                        alignItems: 'center',
+                        fontSize: "0.68rem",
+                        letterSpacing: "0.05em",
+                        textTransform: "uppercase",
+                        display: "flex",
+                        alignItems: "center",
                         gap: 0.5,
-                        opacity: 0.8
+                        opacity: 0.8,
                     }}
                 >
-                    <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: 'currentColor' }} />
+                    <div style={{ width: 4, height: 4, borderRadius: "50%", backgroundColor: "currentColor" }} />
                     {hasMultipleRounds ? "Time shown for upcoming session" : "One-time interview session"}
                 </Typography>
             </Box>

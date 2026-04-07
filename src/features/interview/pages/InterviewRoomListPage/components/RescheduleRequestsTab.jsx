@@ -81,6 +81,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
 
     // Determine if this request was sent BY me or TO me
     const isSentByMe = request.requestedBy === user?.id;
+    // TODO: Re-enable approve/reject when approval flow is implemented — currently auto-approved
     // If request is NOT sent by me and is pending, I need to respond
     const isWaitingForMyResponse = !isSentByMe && request.status === 0;
 
@@ -92,9 +93,9 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
     const duration = interviewRoom?.durationMinutes || 60;
     const interviewType = interviewRoom?.problemShortName || interviewRoom?.title || interviewRoom?.interviewTypeName || "Interview Session";
 
-    // Get times from availability objects
-    const originalTime = request.currentAvailability?.startTime;
-    const proposedTime = request.proposedAvailability?.startTime;
+    // Get times — prefer new fields, fallback to old availability objects for backward compat
+    const originalTime = request.interviewRoom?.scheduledTime || request.currentAvailability?.startTime;
+    const proposedTime = request.proposedStartTime || request.proposedAvailability?.startTime;
 
     const statusInfo = getStatusInfo(request.status);
 

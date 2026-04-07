@@ -356,7 +356,7 @@ function InterviewRoomListPage() {
                 endpoint: interviewEndPoints.CREATE_RESCHEDULE_REQUEST,
                 arg: {
                     roomId: data.roomId,
-                    proposedAvailabilityId: data.proposedAvailabilityId,
+                    newStartTime: data.newStartTime,
                     reason: data.reason,
                 },
             });
