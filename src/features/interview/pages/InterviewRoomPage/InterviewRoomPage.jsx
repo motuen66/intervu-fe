@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Box, CircularProgress, Typography, Chip, Tooltip, Stack } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
@@ -137,15 +137,57 @@ function InterviewRoomPage() {
         handleIceCandidate,
     } = useWebRTC({ signalingSender: sendSignal, selfId: connectionId });
 
+    // ── Audio Mixing Logic (Interviewer only) ──────────────────────────────────
+    const [mixedStream, setMixedStream] = useState(null);
+    const audioContextRef = useRef(null);
+
+    useEffect(() => {
+        // Only the interviewer records the mixed stream
+        if (user?.role !== ROLES.INTERVIEWER || !localStream) {
+            setMixedStream(null);
+            return;
+        }
+
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioContext();
+            audioContextRef.current = ctx;
+
+            const dest = ctx.createMediaStreamDestination();
+            
+            // Local (Interviewer) Audio
+            const localSource = ctx.createMediaStreamSource(localStream);
+            localSource.connect(dest);
+
+            // Remote (Candidate) Audio - if available
+            let remoteSource = null;
+            if (remoteStream && remoteStream.getAudioTracks().length > 0) {
+                remoteSource = ctx.createMediaStreamSource(remoteStream);
+                remoteSource.connect(dest);
+            }
+
+            setMixedStream(dest.stream);
+
+            return () => {
+                if (ctx.state !== 'closed') {
+                    ctx.close();
+                }
+            };
+        } catch (err) {
+            console.error("Failed to initialize audio mixing:", err);
+        }
+    }, [user?.role, localStream, remoteStream]);
+
     // ── Audio Recording ────────────────────────────────────────────────────────
-    // We record chunks for processing (Interviewer and Candidate)
-    // Recording is now tied to the user's mic state.
+    // We record chunks for processing (Interviewer only)
+    // Recording is now tied to the user's mic state and the mixed stream.
     useAudioRecorder({
         roomId,
         isEnabled:
-            !loading && !error && !isViewOnly && (user?.role === ROLES.INTERVIEWER || user?.role === ROLES.CANDIDATE),
+            !loading && !error && !isViewOnly && user?.role === ROLES.INTERVIEWER,
         isMicOn, // only record if mic is on
         chunkIntervalMs: 15000,
+        audioStream: mixedStream,
     });
 
     // ── Remote peer media state (camera/mic indicators for late-joiners) ─────
