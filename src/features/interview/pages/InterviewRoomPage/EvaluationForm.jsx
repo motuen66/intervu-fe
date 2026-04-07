@@ -174,17 +174,24 @@ function EvaluationForm({ roomId }) {
                 </Box>
             ))}
             
-            <Button
-                variant="contained"
-                fullWidth
-                size="large"
-                onClick={saveDraft}
-                disabled={savingDraft || !hasUnsavedChanges.current}
-                startIcon={<SaveIcon />}
-                sx={(theme) => ({ ...buttonStyles.primaryCta(theme), py: 1.5, textTransform: 'none' })}
-            >
-                {savingDraft ? "Saving Draft..." : "Save Evaluation Draft"}
-            </Button>
+            <Stack alignItems="center">
+                <Button
+                    variant="contained"
+                    size="medium"
+                    onClick={saveDraft}
+                    disabled={savingDraft || !hasUnsavedChanges.current}
+                    startIcon={<SaveIcon />}
+                    sx={(theme) => ({
+                        ...buttonStyles.primaryCta(theme),
+                        px: 4,
+                        py: 1,
+                        textTransform: 'none',
+                        width: 'fit-content'
+                    })}
+                >
+                    {savingDraft ? "Saving..." : "Save Draft"}
+                </Button>
+            </Stack>
             
             <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontStyle: 'italic' }}>
                 Final submission is required after leaving the room to complete the process.
