@@ -1,34 +1,9 @@
-import { useState, useEffect } from "react";
-import { Box, Typography, Avatar, Stack, Button, Tooltip, IconButton } from "@mui/material";
+import { Box, Typography, Avatar, Stack, Button, Tooltip } from "@mui/material";
 import { MessageSquare } from "lucide-react";
 import { ROLES } from "../../../../../common/constants/common";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
-import { callApi } from "../../../../../common/utils/apiConnector";
-import { METHOD } from "../../../../../common/constants/api";
-import { useNavigate } from "react-router-dom";
 
 function RecentInterviewItem({ room, user, onClick }) {
-    const navigate = useNavigate();
-    const [participantAvatarUrl, setParticipantAvatarUrl] = useState(null);
-
-    const participantId = user?.role === ROLES.CANDIDATE
-        ? room.coachId
-        : room.candidateId;
-
-    useEffect(() => {
-        if (!participantId) return;
-        let cancelled = false;
-        callApi({ method: METHOD.GET, endpoint: `/userprofile/${participantId}` })
-            .then((res) => {
-                if (!cancelled) {
-                    const profile = res?.data;
-                    const url = profile?.profilePicture || profile?.avatarUrl || profile?.imageUrl || profile?.avatar || null;
-                    setParticipantAvatarUrl(url);
-                }
-            })
-            .catch(() => { /* silently ignore */ });
-        return () => { cancelled = true; };
-    }, [participantId]);
 
     const getParticipantName = () => {
         if (user?.role === ROLES.CANDIDATE) return room.coachName || "Coach";
@@ -70,10 +45,9 @@ function RecentInterviewItem({ room, user, onClick }) {
 
     const statusColor = isCompleted ? "success.main" : isCancelled ? "error.main" : "text.secondary";
     const statusText = isCompleted ? "Completed" : isCancelled ? "Cancelled" : "Past Session";
-    const buttonText = isCompleted ? "View Feedback" : "View Details";
 
     const name = getParticipantName();
-    const avatar = participantAvatarUrl || getParticipantAvatar();
+    const avatar = getParticipantAvatar();
 
     return (
         <Box
