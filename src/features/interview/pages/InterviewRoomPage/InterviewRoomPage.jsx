@@ -1,6 +1,6 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Box, CircularProgress, Typography, IconButton, Button, Avatar } from "@mui/material";
+import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack } from "@mui/material";
 
 // Icons
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -16,6 +16,7 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import CloseIcon from "@mui/icons-material/Close";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -32,6 +33,9 @@ import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
 import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
 
+// Analytics
+import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -47,7 +51,9 @@ const MAX_VERTICAL_PCT = 85;
 function InterviewRoomPage() {
     const user = useUser();
     const { roomId } = useParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const isViewOnly = searchParams.get("viewOnly") === "true";
 
     // ── Gate ──────────────────────────────────────────────────────────────────
     const [loading, setLoading] = useState(true);
@@ -62,6 +68,11 @@ function InterviewRoomPage() {
             const room = res?.data?.data;
             setRoomInfo(room);
             setLoading(false);
+            try {
+                trackRoomView(room?.id ?? roomId, { title: room?.title ?? room?.name, viewOnly: isViewOnly });
+            } catch (err) {
+                console.warn("trackRoomView failed", err);
+            }
         } catch (err) {
             console.error("Failed to fetch room details:", err);
             setError("Failed to load interview room. You will be redirected.");
@@ -84,7 +95,7 @@ function InterviewRoomPage() {
 
     // ── SignalR ──────────────────────────────────────────────────────────────
     const { connectionId, peers, sendSignal, leaveRoom } = useInterviewSignalR({
-        roomId: loading || error ? null : roomId,
+        roomId: loading || error || isViewOnly ? null : roomId,
         userId: user?.id,
         role: user?.role,
         userName: user?.fullName,
@@ -129,12 +140,52 @@ function InterviewRoomPage() {
         handleIceCandidate,
     } = useWebRTC({ signalingSender: sendSignal, selfId: connectionId });
 
-    // ── Audio Recording ──────────────────────────────────────────────────────
+    // ── Audio Mixing Logic (Interviewer only) ──────────────────────────────────
+    const [mixedStream, setMixedStream] = useState(null);
+    const audioContextRef = useRef(null);
+
+    useEffect(() => {
+        if (user?.role !== ROLES.INTERVIEWER || !localStream) {
+            setMixedStream(null);
+            return;
+        }
+
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioContext();
+            audioContextRef.current = ctx;
+
+            const dest = ctx.createMediaStreamDestination();
+
+            const localSource = ctx.createMediaStreamSource(localStream);
+            localSource.connect(dest);
+
+            let remoteSource = null;
+            if (remoteStream && remoteStream.getAudioTracks().length > 0) {
+                remoteSource = ctx.createMediaStreamSource(remoteStream);
+                remoteSource.connect(dest);
+            }
+
+            setMixedStream(dest.stream);
+
+            return () => {
+                if (ctx.state !== 'closed') {
+                    ctx.close();
+                }
+            };
+        } catch (err) {
+            console.error("Failed to initialize audio mixing:", err);
+        }
+    }, [user?.role, localStream, remoteStream]);
+
+    // ── Audio Recording ────────────────────────────────────────────────────────
     useAudioRecorder({
         roomId,
-        isEnabled: !loading && !error && (user?.role === ROLES.INTERVIEWER || user?.role === ROLES.CANDIDATE),
+        isEnabled:
+            !loading && !error && !isViewOnly && user?.role === ROLES.INTERVIEWER,
         isMicOn,
         chunkIntervalMs: 15000,
+        audioStream: mixedStream,
     });
 
     // Sync full camera view video srcObject via useEffect (not ref callbacks).
@@ -328,8 +379,22 @@ function InterviewRoomPage() {
     // ── Leave room ──────────────────────────────────────────────────────────
     const handleLeaveRoom = useCallback(() => {
         leaveRoom();
+        try {
+            trackLeaveInterviewRoom(roomId);
+        } catch (err) {
+            console.warn("trackLeaveInterviewRoom failed", err);
+        }
         navigate("/interview");
     }, [leaveRoom, navigate]);
+
+    // Ensure we emit leave event on unmount/navigation
+    useEffect(() => {
+        return () => {
+            try {
+                trackLeaveInterviewRoom(roomId);
+            } catch (err) {}
+        };
+    }, [roomId]);
 
     // ── Panel visibility ────────────────────────────────────────────────────
     const [showPanelA, setShowPanelA] = useState(true);
@@ -500,6 +565,46 @@ function InterviewRoomPage() {
     // ── Main render ──────────────────────────────────────────────────────────
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "#F0F4F8" }}>
+            {/* ── Top Bar (Review Mode Only) ── */}
+            {isViewOnly && (
+                <Box
+                    sx={{
+                        bgcolor: "#0f172a",
+                        color: "white",
+                        px: 4,
+                        py: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <Stack direction="row" spacing={2} alignItems="center">
+                        <Chip
+                            icon={<VisibilityIcon sx={{ fontSize: "1rem !important", color: "white !important" }} />}
+                            label="VIEW ONLY MODE"
+                            sx={{
+                                bgcolor: "rgba(255,255,255,0.1)",
+                                color: "white",
+                                fontWeight: 800,
+                                fontSize: "0.65rem",
+                                border: "1px solid rgba(255,255,255,0.2)",
+                            }}
+                        />
+                        <Typography variant="body2" fontWeight={600}>
+                            Reviewing Solution: {roomInfo?.title || "Coding Session"}
+                        </Typography>
+                    </Stack>
+                    <Box
+                        sx={{ cursor: "pointer", opacity: 0.8, "&:hover": { opacity: 1 } }}
+                        onClick={() => navigate(-1)}
+                    >
+                        <Typography variant="caption" fontWeight={700}>
+                            CLOSE REVIEW ✕
+                        </Typography>
+                    </Box>
+                </Box>
+            )}
+
             {/* ═══ Header Bar ═══ */}
             <Box
                 sx={{
@@ -708,6 +813,7 @@ function InterviewRoomPage() {
                                     user={user}
                                     languages={LANGUAGE_EXAMPLES}
                                     handleEditorMount={handleEditorMount}
+                                    readOnly={isViewOnly}
                                 />
                             )}
                             {panelATab === "whiteboard" && (

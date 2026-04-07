@@ -11,8 +11,9 @@ import { interviewEndPoints } from "../services/interviewRoomApi";
  * @param {boolean} isEnabled - Overall feature toggle
  * @param {boolean} isMicOn - Should record only when mic is active
  * @param {number} chunkIntervalMs - Interval between chunks (default 15s)
+ * @param {MediaStream} audioStream - The audio stream to record (usually mixed)
  */
-export function useAudioRecorder({ roomId, isEnabled = false, isMicOn = false, chunkIntervalMs = 15000 }) {
+export function useAudioRecorder({ roomId, isEnabled = false, isMicOn = false, chunkIntervalMs = 15000, audioStream = null }) {
     const mediaRecorderRef = useRef(null);
     const chunkSequenceRef = useRef(0);
     const [isRecording, setIsRecording] = useState(false);
@@ -43,8 +44,7 @@ export function useAudioRecorder({ roomId, isEnabled = false, isMicOn = false, c
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
             // This will trigger the final 'ondataavailable' event
             mediaRecorderRef.current.stop();
-            // Stop all tracks to release the microphone
-            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            // Don't stop tracks here because we are receiving external stream
             mediaRecorderRef.current = null;
             setIsRecording(false);
             console.log("[AudioRecorder] Stopped recording (Mic OFF or Room Left)");
@@ -52,18 +52,15 @@ export function useAudioRecorder({ roomId, isEnabled = false, isMicOn = false, c
     }, []);
 
     const startRecording = useCallback(async () => {
-        if (!isEnabled || !isMicOn || !roomId) return;
+        if (!isEnabled || !isMicOn || !roomId || !audioStream) return;
         
         try {
-            // Request the same stream being used for the interview to avoid conflict
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
             const options = { mimeType: 'audio/webm;codecs=opus' };
             if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                 delete options.mimeType;
             }
 
-            const mediaRecorder = new MediaRecorder(stream, options);
+            const mediaRecorder = new MediaRecorder(audioStream, options);
             mediaRecorderRef.current = mediaRecorder;
 
             mediaRecorder.ondataavailable = async (event) => {
@@ -82,11 +79,11 @@ export function useAudioRecorder({ roomId, isEnabled = false, isMicOn = false, c
         } catch (error) {
             console.error("[AudioRecorder] Could not start recording:", error);
         }
-    }, [isEnabled, isMicOn, roomId, chunkIntervalMs, uploadChunk]);
+    }, [isEnabled, isMicOn, roomId, chunkIntervalMs, uploadChunk, audioStream]);
 
     // Handle Mic ON/OFF or Room Leave
     useEffect(() => {
-        if (isEnabled && isMicOn && roomId) {
+        if (isEnabled && isMicOn && roomId && audioStream) {
             if (!mediaRecorderRef.current) {
                 startRecording();
             }
@@ -95,7 +92,7 @@ export function useAudioRecorder({ roomId, isEnabled = false, isMicOn = false, c
                 stopRecording();
             }
         }
-    }, [isEnabled, isMicOn, roomId, startRecording, stopRecording]);
+    }, [isEnabled, isMicOn, roomId, audioStream, startRecording, stopRecording]);
 
     // Cleanup on unmount
     useEffect(() => {

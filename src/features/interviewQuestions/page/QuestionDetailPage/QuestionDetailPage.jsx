@@ -35,6 +35,7 @@ import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
+import { trackCreateComment } from "../../../../utils/analytics";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
 import { commentEndPoints } from "../../service/commentApi";
@@ -272,17 +273,24 @@ export default function QuestionDetailPage() {
 
     /* ── Add comment ── */
     const handleAddComment = async () => {
-        if (!answerInput.trim()) return;
+        const content = answerInput.trim();
+        if (!content) return;
         setSubmittingAnswer(true);
         try {
-            await callApi({
+            const { data: res } = await callApi({
                 method: METHOD.POST,
                 endpoint: commentEndPoints.ADD_COMMENT(id),
-                arg: { content: answerInput.trim() },
+                arg: { content },
             });
             setAnswerInput("");
             setCommentPage(1);
             await fetchComments(1);
+
+            try {
+                trackCreateComment(id, res?.id ?? null, content.length);
+            } catch (err) {
+                console.warn("trackCreateComment failed", err);
+            }
         } catch (err) {
             toast.error(err?.response?.data?.message ?? "Failed to add comment");
         } finally {

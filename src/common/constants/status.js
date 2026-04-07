@@ -21,7 +21,7 @@ export const PAYOS_TRANSACTION_STATUS = {
 
 export const AVAILABILITY_SLOTS_STATUS = {
     AVAILABLE: 0,
-    UNAVAILABLE: 1,
+    BOOKED: 1,
 };
 
 export const AIM_LEVEL = {
@@ -59,11 +59,13 @@ export const BOOKING_REQUEST_STATUS_LABELS = {
 export const BOOKING_REQUEST_TYPE = {
     EXTERNAL: 0,
     JD_INTERVIEW: 1,
+    SINGLE_INTERVIEW: 2,
 };
 
 export const BOOKING_REQUEST_TYPE_LABELS = {
     [BOOKING_REQUEST_TYPE.EXTERNAL]: "External",
     [BOOKING_REQUEST_TYPE.JD_INTERVIEW]: "JD Interview",
+    [BOOKING_REQUEST_TYPE.SINGLE_INTERVIEW]: "Single Interview",
 };
 
 import { theme } from "./theme";
@@ -78,9 +80,8 @@ export const getAvailabilityColors = (status, isPast = false) => {
             title: "Available",
             textColor: palette.secondary.contrastText, // #0F172A (Navy)
         },
-        // TODO: Consider using theme.error for UNAVAILABLE if it fits the design, or define a custom color in the theme palette for consistency.
-        UNAVAILABLE: {
-            bg: palette.primary.main, // Rose — specific to schedule, not in theme error palette
+        BOOKED: {
+            bg: palette.primary.main, // Deep Navy from theme primary palette
             border: palette.primary.dark,
             title: "Booked",
             textColor: "#ffffff",
@@ -88,7 +89,7 @@ export const getAvailabilityColors = (status, isPast = false) => {
         PAST: {
             bg: "#D1D5DB", // Neutral Gray — not a direct theme token
             border: palette.text.disabled, // #94A3B8
-            title: "Past Slot",
+            title: "Unavailable",
             textColor: palette.text.secondary, // #64748B
         },
     };
@@ -96,8 +97,8 @@ export const getAvailabilityColors = (status, isPast = false) => {
     if (isPast) return colors.PAST;
 
     switch (status) {
-        case AVAILABILITY_SLOTS_STATUS.UNAVAILABLE:
-            return colors.UNAVAILABLE;
+        case AVAILABILITY_SLOTS_STATUS.BOOKED:
+            return colors.BOOKED;
         case AVAILABILITY_SLOTS_STATUS.AVAILABLE:
         default:
             return colors.AVAILABLE;

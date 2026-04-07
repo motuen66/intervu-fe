@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Box, CardContent, Typography, IconButton, Stack } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
 
 const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }) => {
     const [displayDate, setDisplayDate] = useState(new Date());
@@ -17,10 +18,12 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
         return { daysInMonth, startingDayOfWeek, year, month };
     }, [displayDate]);
 
-    // Group availabilities by date
+    // Group BOOKED availabilities by date
     const availabilitiesByDate = useMemo(() => {
         const map = {};
         availabilities.forEach((avail) => {
+            if (Number(avail.status) !== AVAILABILITY_SLOTS_STATUS.BOOKED) return;
+
             // Only count future/current slots
             const startDate = new Date(avail.startTime);
             const endDate = new Date(avail.endTime);
@@ -63,7 +66,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                             width: "4px",
                             height: "4px",
                             borderRadius: "50%",
-                            backgroundColor: "secondary.main",
+                            backgroundColor: "primary.main",
                         }}
                     />
                 ))}
@@ -73,7 +76,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         sx={{
                             fontSize: "8px",
                             fontWeight: 600,
-                            color: "secondary.dark",
+                            color: "primary.dark",
                             lineHeight: 1,
                         }}
                     >
@@ -88,7 +91,9 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
     // Get selected date string for comparison
-    const selectedDateStr = selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}` : null;
+    const selectedDateStr = selectedDate
+        ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`
+        : null;
 
     // Generate calendar grid
     const calendarDays = [];
@@ -116,9 +121,9 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         justifyContent: "center",
                         cursor: "pointer",
                         borderRadius: "8px",
-                        border: isToday ? "2px solid" : (isSelected ? "1.5px solid" : "none"),
-                        borderColor: isToday ? "primary.main" : (isSelected ? "primary.light" : "transparent"),
-                        backgroundColor: isToday ? "primary.main" : (isSelected ? "transparent" : "transparent"),
+                        border: isToday ? "2px solid" : isSelected ? "1.5px solid" : "none",
+                        borderColor: isToday ? "primary.main" : isSelected ? "primary.light" : "transparent",
+                        backgroundColor: isToday ? "primary.main" : isSelected ? "transparent" : "transparent",
                         transition: "all 0.2s",
                         "&:hover": {
                             backgroundColor: isToday ? "primary.light" : "action.hover",
@@ -129,15 +134,15 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                     <Typography
                         variant="body2"
                         sx={{
-                            fontWeight: isToday ? 700 : (isSelected ? 600 : 500),
-                            color: isToday ? "primary.contrastText" : (isSelected ? "primary.main" : "text.primary"),
+                            fontWeight: isToday ? 700 : isSelected ? 600 : 500,
+                            color: isToday ? "primary.contrastText" : isSelected ? "primary.main" : "text.primary",
                             fontSize: "0.875rem",
                         }}
                     >
                         {dayNumber}
                     </Typography>
                     {renderDots(slotsCount)}
-                </Box>
+                </Box>,
             );
         } else {
             calendarDays.push(<Box key={i} />);
@@ -145,8 +150,18 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     }
 
     const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
     ];
 
     return (
@@ -205,23 +220,6 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                     }}
                 >
                     {calendarDays}
-                </Box>
-
-                {/* Legend */}
-                <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
-                    <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
-                        <Box
-                            sx={{
-                                width: "6px",
-                                height: "6px",
-                                borderRadius: "50%",
-                                backgroundColor: "secondary.main",
-                            }}
-                        />
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem" }}>
-                            = 1 slot
-                        </Typography>
-                    </Stack>
                 </Box>
             </CardContent>
         </BaseCard>
