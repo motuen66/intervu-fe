@@ -303,7 +303,6 @@ export default function UserManagementPage() {
     };
 
     const usersColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
         { field: 'fullName', headerName: 'Full Name', width: 200 },
         { field: 'email', headerName: 'Email', width: 250 },
         {
@@ -417,7 +416,6 @@ export default function UserManagementPage() {
                 <DataTable
                     title="Users Management"
                     showHeader={false}
-                    showIndex
                     columns={usersColumns}
                     data={users}
                     totalItems={totalItems}

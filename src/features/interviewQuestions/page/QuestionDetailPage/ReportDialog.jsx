@@ -42,8 +42,8 @@ export default function ReportDialog({ open, onClose, questionId, questionTitle,
                 method: METHOD.POST,
                 endpoint: interactionEndPoints.REPORT_QUESTION(questionId),
                 arg: { reason: trimmedReason },
+                displaySuccessMessage: true,
             });
-            toast.success("Question reported");
             setReason("");
             onClose();
         } catch (error) {

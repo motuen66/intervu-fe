@@ -1,4 +1,4 @@
-﻿import {
+import {
     Box,
     Typography,
     Stack,
@@ -70,11 +70,9 @@ function VideoPanel({
                     interviewRoomId: roomInfo?.id || roomId,
                     reason,
                     details
-                }
+                },
+                displaySuccessMessage: true
             });
-
-
-            toast.success("Report submitted successfully. Admin will review it.");
             return true;
         } catch (err) {
             console.error(err);
@@ -140,7 +138,7 @@ function VideoPanel({
                         <Box sx={{
                             position: "absolute", inset: 0,
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            bgcolor: "#1F2937",
+                            bgcolor: "grey.200",
                         }}>
                             <Avatar src={remoteAvatar} sx={{ width: 64, height: 64, fontSize: 28 }}>
                                 {remotePeerName?.[0] || "?"}
@@ -187,7 +185,7 @@ function VideoPanel({
                         <Box sx={{
                             position: "absolute", inset: 0,
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            bgcolor: "#374151",
+                            bgcolor: "grey.300",
                         }}>
                             <Avatar src={localAvatar} sx={{ width: 56, height: 56, fontSize: 24 }}>
                                 {localPeerName?.[0] || "?"}

@@ -12,11 +12,6 @@ export default function CompanyManagementPage() {
     const [loading, setLoading] = useState(false);
     const [companiesData, setCompaniesData] = useState({ data: [], total: 0, page: 0, pageSize: 10 });
 
-    const handleCopyId = (id) => {
-        navigator.clipboard.writeText(id);
-        toast.success('ID copied!');
-    };
-
     const fetchCompanies = async (page = 0, pageSize = 10) => {
         setLoading(true);
         const response = await callApi({
@@ -40,33 +35,6 @@ export default function CompanyManagementPage() {
     }, [companiesData.page, companiesData.pageSize]);
 
     const companiesColumns = [
-        {
-            field: 'id',
-            headerName: 'ID',
-            width: 120,
-            render: (value) => (
-                <Tooltip title={value} arrow placement="top">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                        <span sx={{ fontSize: '12px', fontFamily: 'monospace', color: '#6b7280' }}>
-                            {value?.substring(0, 8)}...
-                        </span>
-                        <IconButton
-                            size="small"
-                            onClick={() => handleCopyId(value)}
-                            sx={{
-                                opacity: 0,
-                                transition: 'opacity 0.2s',
-                                '&:hover': { opacity: 1 },
-                                p: 0.5,
-                                color: '#4F46E5'
-                            }}
-                        >
-                            <ContentCopyIcon sx={{ fontSize: '14px' }} />
-                        </IconButton>
-                    </Box>
-                </Tooltip>
-            )
-        },
         {
             field: 'logoPath',
             headerName: 'Logo',
@@ -103,7 +71,6 @@ export default function CompanyManagementPage() {
                 <DataTable
                     title="Companies Management"
                     showHeader={false}
-                    showIndex
                     columns={companiesColumns}
                     data={companiesData.data}
                     totalItems={companiesData.total}

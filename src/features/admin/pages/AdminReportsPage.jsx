@@ -46,15 +46,15 @@ const normalizeStatusKey = (status) => {
     if (status === null || status === undefined) return "";
 
     if (typeof status === "number") {
-        if (status === 0) return REPORT_STATUSES.PENDING;
-        if (status === 1) return REPORT_STATUSES.REVIEWED;
-        if (status === 2) return REPORT_STATUSES.DISMISSED;
+        if (status === 1) return REPORT_STATUSES.PENDING;
+        if (status === 2) return REPORT_STATUSES.REVIEWED;
+        if (status === 3) return REPORT_STATUSES.DISMISSED;
     }
 
     const normalized = status.toString().trim().toLowerCase();
-    if (normalized === "0") return REPORT_STATUSES.PENDING;
-    if (normalized === "1") return REPORT_STATUSES.REVIEWED;
-    if (normalized === "2") return REPORT_STATUSES.DISMISSED;
+    if (normalized === "1") return REPORT_STATUSES.PENDING;
+    if (normalized === "2") return REPORT_STATUSES.REVIEWED;
+    if (normalized === "3") return REPORT_STATUSES.DISMISSED;
 
     return normalized;
 };
@@ -64,9 +64,9 @@ const getRawStatus = (raw) => raw?.status ?? raw?.reportStatus ?? raw?.state ?? 
 const toStatusValueForRequest = (targetStatus, currentStatus) => {
     const normalizedTarget = normalizeStatusKey(targetStatus);
     const numberMap = {
-        [REPORT_STATUSES.PENDING]: 0,
-        [REPORT_STATUSES.REVIEWED]: 1,
-        [REPORT_STATUSES.DISMISSED]: 2,
+        [REPORT_STATUSES.PENDING]: 1,
+        [REPORT_STATUSES.REVIEWED]: 2,
+        [REPORT_STATUSES.DISMISSED]: 3,
     };
 
     const currentIsNumeric =
@@ -184,10 +184,10 @@ export default function AdminReportsPage() {
                 method: METHOD.PUT,
                 endpoint: adminEndPoints.UPDATE_QUESTION_REPORT_STATUS(reportId),
                 arg: { status: toStatusValueForRequest(status, currentStatus) },
+                displaySuccessMessage: true,
             });
 
             if (response?.success) {
-                toast.success("Updated report status successfully");
 
                 setReports((prev) =>
                     prev.map((item) =>
@@ -232,10 +232,10 @@ export default function AdminReportsPage() {
             const response = await callApi({
                 method: METHOD.DELETE,
                 endpoint: adminEndPoints.DELETE_QUESTION(questionId),
+                displaySuccessMessage: true,
             });
 
             if (response?.success) {
-                toast.success("Question deleted successfully");
                 fetchReports();
             }
         } catch (error) {
@@ -456,7 +456,6 @@ export default function AdminReportsPage() {
 
                 <DataTable
                     showHeader={false}
-                    showIndex
                     actions={false}
                     columns={columns}
                     data={reports}
