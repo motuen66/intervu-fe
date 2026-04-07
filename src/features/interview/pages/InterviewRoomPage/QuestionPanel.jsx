@@ -6,9 +6,8 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
 import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button, Tooltip, IconButton, Chip } from "@mui/material";
+import QuizIcon from "@mui/icons-material/Quiz";
 import { ROLES } from "../../../../common/constants/common.js";
-import DescriptionIcon from "@mui/icons-material/Description";
-import TuneIcon from "@mui/icons-material/Tune";
 
 function QuestionPanel({
     user,
@@ -46,27 +45,48 @@ function QuestionPanel({
         ],
     };
 
-    return (
-        <Box>
-            {user?.role === ROLES.INTERVIEWER && (
-                <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={isEditingProblem ? <VisibilityIcon /> : <EditIcon />}
-                        onClick={() => setIsEditingProblem(!isEditingProblem)}
-                    >
-                        {isEditingProblem ? "View Problem" : "Edit Problem"}
-                    </Button>
-                </Stack>
-            )}
+    const editButton = user?.role === ROLES.INTERVIEWER ? (
+        <Button
+            size="small"
+            startIcon={isEditingProblem ? <VisibilityIcon sx={{ fontSize: 14 }} /> : <EditIcon sx={{ fontSize: 14 }} />}
+            onClick={() => setIsEditingProblem(!isEditingProblem)}
+            sx={{
+                ml: "auto",
+                mr: 1,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                minHeight: 32,
+                px: 1.5,
+                flexShrink: 0,
+            }}
+        >
+            {isEditingProblem ? "Preview" : "Edit"}
+        </Button>
+    ) : null;
 
+    return (
+        <Box sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {isEditingProblem && user?.role === ROLES.INTERVIEWER ? (
                 // EDITING VIEW (Role 1 only)
-                <Box sx={{ display: "flex", flexDirection: "column", border: "1px solid #E5E7EB", borderRadius: 2, p: 2, bgcolor: "white" }}>
-                    <Typography variant="h6" gutterBottom>
-                        Problem Setup
-                    </Typography>
+                <>
+                    {/* Header row with Edit toggle */}
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        sx={{
+                            borderBottom: "1px solid #E5E7EB",
+                            minHeight: 40,
+                            flexShrink: 0,
+                            pl: 1.5,
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#111827" }}>
+                            Problem Setup
+                        </Typography>
+                        {editButton}
+                    </Stack>
+                <Box sx={{ flex: 1, overflow: "auto", p: 2, display: "flex", flexDirection: "column" }}>
                     <TextField
                         label="Function Name (e.g., twoSum)"
                         value={problemShortName}
@@ -211,74 +231,69 @@ function QuestionPanel({
                         Send Problem to Candidate
                     </Button>
                 </Box>
+                </>
             ) : (
                 // DISPLAY VIEW (Both roles)
-                <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "white", borderRadius: 2, border: "1px solid #E5E7EB", overflow: "hidden" }}>
-                    <Box sx={{ px: 3, pt: 3, pb: 1, borderBottom: "1px solid #F3F4F6", overflow: "hidden" }}>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "#8B5CF6", mb: 2 }}>
-                            <DescriptionIcon fontSize="small" />
-                            <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1 }}>PROBLEM STATEMENT</Typography>
-                        </Stack>
-                        <Typography 
-                            variant="h5" 
-                            sx={{ 
-                                fontWeight: 700, 
-                                color: "#111827", 
-                                mb: 2,
-                                wordBreak: "break-word",
-                                overflowWrap: "anywhere"
-                            }}
-                        >
-                            {problemData?.shortName || "No Problem Assigned Yet"}
-                        </Typography>
-                        {!problemData && (
-                            <Typography variant="body2" sx={{ color: "#64748B", fontStyle: 'italic' }}>
-                                Wait for the coach to post a question for you...
-                            </Typography>
-                        )}
-                    </Box>
-                    <Tabs
-                        value={problemTab}
-                        onChange={(e, newValue) => setProblemTab(newValue)}
-                        variant="scrollable"
-                        scrollButtons="auto"
-                        allowScrollButtonsMobile
+                <>
+                    {/* Tab row with Edit button inline */}
+                    <Stack
+                        direction="row"
+                        alignItems="center"
                         sx={{
-                            borderBottom: "1px solid #F3F4F6",
-                            px: 1,
-                            '& .MuiTabs-scrollButtons': { width: 28 },
-                            '& .MuiTab-root': {
-                                minWidth: 'auto',
-                                px: 2,
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                minHeight: 48
-                            }
+                            borderBottom: "1px solid #E5E7EB",
+                            minHeight: 40,
+                            flexShrink: 0,
                         }}
                     >
-                        <Tab label="Description" />
-                        <Tab label={
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <TuneIcon fontSize="small" />
-                                <span>Test cases</span>
-                            </Stack>
-                        } disabled={!problemData} />
-                    </Tabs>
-                    <Box sx={{ p: problemTab === 0 ? 3 : 2, bgcolor: "transparent" }}>
+                        <Tabs
+                            value={problemTab}
+                            onChange={(e, newValue) => setProblemTab(newValue)}
+                            variant="scrollable"
+                            scrollButtons="auto"
+                            sx={{
+                                minHeight: 40,
+                                flex: 1,
+                                "& .MuiTab-root": {
+                                    minWidth: "auto",
+                                    px: 1.5,
+                                    py: 0,
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    fontSize: "0.75rem",
+                                    minHeight: 40,
+                                },
+                            }}
+                        >
+                            <Tab label={problemData?.shortName || "Problem"} />
+                            <Tab label="Test Cases" disabled={!problemData} />
+                        </Tabs>
+                        {editButton}
+                    </Stack>
+                    <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
                         {problemTab === 0 && (
-                            <Box className="ql-snow">
-                                <Box className="ql-editor" sx={{ p: 0, whiteSpace: "pre-wrap", fontFamily: "body" }}>
-                                    {problemData ? (
+                            problemData ? (
+                                <Box className="ql-snow">
+                                    <Box className="ql-editor" sx={{ p: 0, whiteSpace: "pre-wrap", fontFamily: "body" }}>
                                         <div
                                             dangerouslySetInnerHTML={{
                                                 __html: DOMPurify.sanitize(problemData.description),
                                             }}
                                         />
-                                    ) : (
-                                        "No problem description provided yet."
-                                    )}
+                                    </Box>
                                 </Box>
-                            </Box>
+                            ) : (
+                                <Stack alignItems="center" justifyContent="center" spacing={1.5} sx={{ py: 6, color: "#9CA3AF" }}>
+                                    <QuizIcon sx={{ fontSize: 40, color: "#D1D5DB" }} />
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#6B7280" }}>
+                                        No Problem Assigned Yet
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "#9CA3AF", textAlign: "center", maxWidth: 280 }}>
+                                        {user?.role === ROLES.INTERVIEWER
+                                            ? "Click \"Edit\" to create and send a problem to the candidate."
+                                            : "Please wait for the interviewer to assign a problem."}
+                                    </Typography>
+                                </Stack>
+                            )
                         )}
                         {problemTab === 1 && problemData && (
                             <Stack spacing={2}>
@@ -324,7 +339,7 @@ function QuestionPanel({
                             </Stack>
                         )}
                     </Box>
-                </Box>
+                </>
             )}
         </Box>
     );
