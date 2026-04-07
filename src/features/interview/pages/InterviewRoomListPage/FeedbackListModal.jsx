@@ -23,6 +23,7 @@ import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import { useTranslation } from "react-i18next";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
@@ -51,6 +52,7 @@ const formatFeedbackTimeRange = (scheduledTime, durationMinutes) => {
 };
 
 function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending' }) {
+    const { t } = useTranslation();
     const theme = useTheme();
     const [feedbacks, setFeedbacks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -116,7 +118,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
 
         const normalizedComments = comments.trim();
         if (!rating || !normalizedComments) {
-            setError("Please provide both a rating and comments before submitting.");
+            setError(t("interview.list.feedback_modal.error_required"));
             return;
         }
 
@@ -153,7 +155,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                 onClose();
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Failed to update feedback. Please try again.";
+            const errorMessage = error.response?.data?.message || t("interview.list.feedback_modal.error_failed");
             setError(errorMessage);
             console.error("Failed to update feedback:", error.response?.data || error);
         } finally {
@@ -206,10 +208,12 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                 <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1.5} sx={{ mb: 2 }}>
                     <Box>
                         <Typography id="feedback-list-modal" variant="h4" component="h2">
-                            {mode === 'pending' ? 'Pending Feedbacks' : 'All Feedbacks'}
+                            {mode === 'pending' 
+                                ? t("interview.list.feedback_modal.title_pending") 
+                                : t("interview.list.feedback_modal.title_all")}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            {feedbacks.length} {feedbacks.length === 1 ? "interview" : "interviews"}
+                            {t(feedbacks.length === 1 ? "interview.list.feedback_modal.count_interviews" : "interview.list.feedback_modal.count_interviews_plural", { count: feedbacks.length })}
                         </Typography>
                     </Box>
                     {!hasPendingFeedbacks && (
@@ -227,7 +231,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                 {loading ? (
                     <Stack direction="row" spacing={1.25} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
                         <CircularProgress size={20} />
-                        <Typography color="text.secondary">Loading feedbacks...</Typography>
+                        <Typography color="text.secondary">{t("interview.list.feedback_modal.loading")}</Typography>
                     </Stack>
                 ) : (
                     <>
@@ -243,7 +247,9 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                 })}
                             >
                                 <Typography color="text.secondary">
-                                    {mode === 'pending' ? 'No pending feedbacks.' : 'No feedbacks found.'}
+                                    {mode === 'pending' 
+                                        ? t("interview.list.feedback_modal.empty_pending") 
+                                        : t("interview.list.feedback_modal.empty_all")}
                                 </Typography>
                             </Box>
                         ) : (
@@ -295,12 +301,12 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                                 primary={
                                                     <>
                                                         <Typography component="span" display="block">
-                                                            {"Interview with: "}
+                                                            {t("interview.list.feedback_modal.interview_with")}
                                                             <Typography
                                                                 component="span"
                                                                 sx={{ fontWeight: 600 }}
                                                             >
-                                                                {feedback.coachName || "Unknown coach"}
+                                                                {feedback.coachName || t("interview.list.feedback_modal.unknown_coach")}
                                                             </Typography>
                                                         </Typography>
                                                         {timeRangeLabel && (
@@ -331,7 +337,9 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                                             <PendingActionsOutlinedIcon sx={{ fontSize: '1rem', color: "warning.main" }} />
                                                         )}
                                                         <Chip
-                                                            label={feedback.comments ? "Completed" : "Pending"}
+                                                            label={feedback.comments 
+                                                                ? t("interview.list.feedback_modal.status_completed") 
+                                                                : t("interview.list.feedback_modal.status_pending")}
                                                             size="small"
                                                             color={feedback.comments ? "success" : "warning"}
                                                             sx={{ height: 22 }}
@@ -360,8 +368,8 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
                         <Typography variant="subtitle1">
                             {selectedFeedback.comments
-                                ? "View feedback for interview with: "
-                                : "Submit feedback for interview with: "}
+                                ? t("interview.list.feedback_modal.view_feedback_with")
+                                : t("interview.list.feedback_modal.submit_feedback_with")}
                             <Typography
                                 component="span"
                                 sx={{ fontWeight: 600 }}
@@ -417,7 +425,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                 </Box>
                             ) : (
                                 <TextField
-                                    label="Comments"
+                                    label={t("interview.list.feedback_modal.label_comments")}
                                     multiline
                                     fullWidth
                                     value={comments}
@@ -427,7 +435,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                     rows={4}
                                     minRows={4}
                                     maxRows={6}
-                                    helperText="Share specific strengths and one key improvement area."
+                                    helperText={t("interview.list.feedback_modal.helper_comments")}
                                 />
                             )}
                             {!selectedFeedback.comments && (
@@ -442,7 +450,9 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                         minWidth: 160,
                                     })}
                                 >
-                                    {submitting ? "Submitting..." : "Submit Feedback"}
+                                    {submitting 
+                                        ? t("interview.list.feedback_modal.btn_submitting") 
+                                        : t("interview.list.feedback_modal.btn_submit")}
                                 </Button>
                             )}
                         </Stack>
@@ -457,12 +467,12 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                             width: "100%",
                         })}
                     >
-                        Close
+                        {t("interview.list.feedback_modal.btn_close")}
                     </Button>
                 )}
                 {hasPendingFeedbacks && !selectedFeedback && !loading && (
                     <Alert severity="info" sx={{ mt: 2.5 }}>
-                        Select an interview and submit feedback to continue.
+                        {t("interview.list.feedback_modal.info_select")}
                     </Alert>
                 )}
             </Box>

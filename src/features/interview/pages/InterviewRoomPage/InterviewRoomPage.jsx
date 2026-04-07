@@ -1,6 +1,7 @@
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+﻿import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Box, CircularProgress, Typography, Chip, Tooltip, Stack } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import useUser from "../../../../common/hooks/useUser";
@@ -32,6 +33,7 @@ import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
 // ---------------------------------------------------------------------------
 
 function InterviewRoomPage() {
+    const { t } = useTranslation();
     const user = useUser();
     const { roomId } = useParams();
     const [searchParams] = useSearchParams();
@@ -58,7 +60,7 @@ function InterviewRoomPage() {
             // }
         } catch (err) {
             console.error("Failed to fetch room details:", err);
-            setError("Failed to load interview room. You will be redirected.");
+            setError(t("interview.room.error_load"));
             setTimeout(() => navigate("/interview"), 3000);
         }
     }, [roomId, navigate, user]);
@@ -226,12 +228,12 @@ function InterviewRoomPage() {
     // Broadcast camera/mic state changes to the server so late-joiners see them
     useEffect(() => {
         if (!connectionId || !roomId) return;
-        sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => {});
+        sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => { });
     }, [isCameraOn, connectionId, roomId, sendSignal]);
 
     useEffect(() => {
         if (!connectionId || !roomId) return;
-        sendSignal("SendMicState", roomId, isMicOn).catch?.(() => {});
+        sendSignal("SendMicState", roomId, isMicOn).catch?.(() => { });
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
     // ── Leave room ─────────────────────────────────────────────────────────────
@@ -379,7 +381,7 @@ function InterviewRoomPage() {
             >
                 {loading && !error && <CircularProgress />}
                 <Typography variant="h6" sx={{ mt: 2 }}>
-                    {error ?? "Verifying interview status..."}
+                    {error ?? t("interview.room.loading_verify")}
                 </Typography>
             </Box>
         );
@@ -404,7 +406,7 @@ function InterviewRoomPage() {
                     <Stack direction="row" spacing={2} alignItems="center">
                         <Chip
                             icon={<VisibilityIcon sx={{ fontSize: "1rem !important", color: "white !important" }} />}
-                            label="VIEW ONLY MODE"
+                            label={t("interview.room.view_only_mode")}
                             sx={{
                                 bgcolor: "rgba(255,255,255,0.1)",
                                 color: "white",
@@ -414,7 +416,7 @@ function InterviewRoomPage() {
                             }}
                         />
                         <Typography variant="body2" fontWeight={600}>
-                            Reviewing Solution: {roomInfo?.title || "Coding Session"}
+                            {t("interview.room.reviewing_solution", { title: roomInfo?.title || "Coding Session" })}
                         </Typography>
                     </Stack>
                     <Box
@@ -423,6 +425,7 @@ function InterviewRoomPage() {
                     >
                         <Typography variant="caption" fontWeight={700}>
                             CLOSE REVIEW ✕
+                            {t("interview.room.btn_close_review")}
                         </Typography>
                     </Box>
                 </Box>

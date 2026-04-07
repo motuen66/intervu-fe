@@ -10,6 +10,7 @@ import {
     Menu,
     MenuItem,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { Calendar, Clock, Star, Video, CheckCircle2, CircleDot, Circle, XCircle, Code, ClipboardList } from "lucide-react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
@@ -37,6 +38,7 @@ function InterviewCard({
     showActions = true,
     hasPendingReschedule = false
 }) {
+    const { t } = useTranslation();
     const FIXED_CARD_HEIGHT = 380;
 
     const navigate = useNavigate();
@@ -91,7 +93,7 @@ function InterviewCard({
     const getDisplayDate = (dateTime) => {
         const date = new Date(dateTime);
         if (Number.isNaN(date.getTime())) return formattedDateTime(dateTime);
-        return date.toLocaleDateString("en-US", {
+        return date.toLocaleDateString(t("common.date_locale") || "en-US", {
             month: "short",
             day: "2-digit",
             year: "numeric",
@@ -101,7 +103,7 @@ function InterviewCard({
     const getDisplayTime = (dateTime) => {
         const date = new Date(dateTime);
         if (Number.isNaN(date.getTime())) return "";
-        return date.toLocaleTimeString("en-US", {
+        return date.toLocaleTimeString(t("common.date_locale") || "en-US", {
             hour: "2-digit",
             minute: "2-digit",
         });
@@ -109,12 +111,12 @@ function InterviewCard({
 
     const getParticipantName = () => {
         if (user?.role === ROLES.CANDIDATE) {
-            return room.coachName || "AI Coach";
+            return room.coachName || t("interview.list.card.ai_coach") || "AI Coach";
         }
         if (user?.role === ROLES.INTERVIEWER) {
-            return room.candidateName || "Candidate";
+            return room.candidateName || t("interview.list.card.participant_default");
         }
-        return "Participant";
+        return t("interview.list.card.participant_default");
     };
 
     const getParticipantAvatar = () => {
@@ -148,18 +150,18 @@ function InterviewCard({
         if (user?.role === ROLES.CANDIDATE) {
             const title = room.coachTitle || room.coachPosition || room.coachJobTitle || room.coachRole;
             const company = room.coachCompanyName || room.coachCompany || room.companyName;
-            if (title && company) return `${title} at ${company}`;
-            return title || company || "Interview Coach";
+            if (title && company) return t("interview.list.card.headline_at", { title, company });
+            return title || company || t("interview.list.card.headline_coach");
         }
 
         if (user?.role === ROLES.INTERVIEWER) {
             const title = room.candidateTitle || room.candidatePosition || room.candidateJobTitle;
             const company = room.candidateCompanyName || room.candidateCompany;
-            if (title && company) return `${title} at ${company}`;
-            return title || company || "Interview Candidate";
+            if (title && company) return t("interview.list.card.headline_at", { title, company });
+            return title || company || t("interview.list.card.headline_candidate");
         }
 
-        return "Interview Participant";
+        return t("interview.list.card.headline_participant");
     };
 
     const getParticipantRating = () => {
@@ -285,17 +287,17 @@ function InterviewCard({
     const getTypeChip = () => {
         const typeConfig = {
             [INTERVIEW_ROOM_TYPE.NORMAL]: {
-                label: "Normal",
+                label: t("interview.list.type.normal"),
                 color: "default",
                 sx: { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#616161" }
             },
             [INTERVIEW_ROOM_TYPE.WITH_AI]: {
-                label: "With AI",
+                label: t("interview.list.type.with_ai"),
                 color: "secondary",
                 sx: { bgcolor: "rgba(156, 39, 176, 0.12)", color: "#7b1fa2" }
             },
             [INTERVIEW_ROOM_TYPE.PEER]: {
-                label: "Peer",
+                label: t("interview.list.type.peer"),
                 color: "info",
                 sx: { bgcolor: "rgba(2, 136, 209, 0.12)", color: "#0277bd" }
             },
@@ -338,7 +340,7 @@ function InterviewCard({
                     }}
                     sx={{ fontSize: "0.8rem", px: 2 }}
                 >
-                    Questions
+                    {t("interview.list.btn_view_questions")}
                 </SecondaryButton>
             ) : null;
         }
@@ -352,17 +354,29 @@ function InterviewCard({
             const canCancel = room.canCancel ?? !isPast;
 
             return (
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
+                <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ width: "100%" }}>
+                    {/* View Details - ALWAYS for everyone */}
+                    <SecondaryButton
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick?.(room);
+                        }}
+                    >
+                        {t("interview.list.btn_view_details")}
+                    </SecondaryButton>
+
                     {/* Cancel Button - only for candidates, hidden if past */}
                     {user?.role === ROLES.CANDIDATE && canCancel && (
-                        <SecondaryButton
+                        <DangerButton
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onCancel?.(room);
                             }}
+                            variant="outlined"
+                            sx={{ border: "1px solid", borderColor: "error.main", color: "error.main" }}
                         >
-                            Cancel
-                        </SecondaryButton>
+                            {t("interview.list.btn_cancel")}
+                        </DangerButton>
                     )}
 
                     {/* Reschedule Button - only for candidates, hidden entirely if past */}
@@ -374,11 +388,11 @@ function InterviewCard({
                                     onRequestReschedule?.(room);
                                 }}
                             >
-                                Reschedule
+                                {t("interview.list.btn_reschedule")}
                             </PrimaryButton>
                         ) : (
                             <PrimaryButton disabled>
-                                Reschedule
+                                {t("interview.list.btn_reschedule")}
                             </PrimaryButton>
                         )
                     )}
@@ -403,7 +417,7 @@ function InterviewCard({
                             }
                         }}
                     >
-                        Join Session
+                        {t("interview.list.btn_join")}
                     </SuccessButton>
                 </Stack>
             );
@@ -419,7 +433,7 @@ function InterviewCard({
                             onClick?.(room);
                         }}
                     >
-                        View Feedback
+                        {t("interview.list.btn_view_feedback")}
                     </SecondaryButton>
                 </Stack>
             );
@@ -441,7 +455,7 @@ function InterviewCard({
                             }
                         }}
                     >
-                        Cancelled
+                        {t("interview.list.status.cancelled")}
                     </DangerButton>
                 </Stack>
             );
@@ -459,7 +473,7 @@ function InterviewCard({
                     }}
                     sx={{ fontSize: "0.8rem", px: 2 }}
                 >
-                    Questions
+                    {t("interview.list.btn_view_questions")}
                 </SecondaryButton>
             );
         }
@@ -553,7 +567,7 @@ function InterviewCard({
                     onClick={(event) => event.stopPropagation()}
                 >
                     <MenuItem onClick={handleViewProfile} disabled={!getParticipantSlug()}>
-                        View profile
+                        {t("interview.list.card.menu_view_profile")}
                     </MenuItem>
                 </Menu>
             </Box>
@@ -610,7 +624,7 @@ function InterviewCard({
                             </Typography>
                             {getParticipantReviewCount() ? (
                                 <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
-                                    ({getParticipantReviewCount()} reviews)
+                                    {t("interview.list.card.reviews_count", { count: getParticipantReviewCount() })}
                                 </Typography>
                             ) : null}
                         </Stack>
@@ -692,12 +706,12 @@ function InterviewCard({
                             whiteSpace: 'nowrap'
                         }}
                     >
-                        {hasMultipleRounds ? "Interview Progress" : formatTypeName(room.interviewTypeName || "Interview Session")}
+                        {hasMultipleRounds ? t("interview.list.card.interview_progress") : formatTypeName(room.interviewTypeName || t("interview.list.card.session_default"))}
                     </Typography>
                     <Box sx={{ height: 24, display: 'flex', alignItems: 'center' }}>
                         {hasMultipleRounds ? (
                             <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--mui-palette-text-secondary)" }}>
-                                Round {room.currentRound || 1} of {room.rounds.length}
+                                {t("interview.list.card.round_progress", { current: room.currentRound || 1, total: room.rounds.length })}
                             </Typography>
                         ) : (
                             getStatusChip()
@@ -911,7 +925,7 @@ function InterviewCard({
                                     letterSpacing: 0.1,
                                 }}
                             >
-                                {formatTypeName(room.interviewTypeName || room.problemShortName || "Interview Session")}
+                                {formatTypeName(room.interviewTypeName || room.problemShortName || t("interview.list.card.session_default"))}
                             </Typography>
                         </Stack>
                     </Stack>
@@ -935,7 +949,7 @@ function InterviewCard({
                     }}
                 >
                     <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: 'currentColor' }} />
-                    {hasMultipleRounds ? "Time shown for upcoming session" : "One-time interview session"}
+                    {hasMultipleRounds ? t("interview.list.card.time_info_multi") : t("interview.list.card.time_info_one")}
                 </Typography>
             </Box>
             <Stack

@@ -1,10 +1,26 @@
 import { createTheme } from "@mui/material/styles";
 import Grow from "@mui/material/Grow";
 
-const headingFont = '"Outfit", "Plus Jakarta Sans", "Inter", sans-serif';
-const bodyFont = '"Inter", "Roboto", "Helvetica", "Arial", sans-serif';
+const headingFontEn = '"Outfit", "Plus Jakarta Sans", "Inter", sans-serif';
+const bodyFontEn = '"Inter", "Roboto", "Helvetica", "Arial", sans-serif';
 
-export const theme = createTheme({
+const headingFontVi = '"Helvetica", "Arial", sans-serif';
+const bodyFontVi = '"Helvetica", "Arial", sans-serif';
+
+// Function to get fonts based on language
+const getFonts = (language) => {
+  const isVietnamese = language === 'vi';
+  return {
+    headingFont: isVietnamese ? headingFontVi : headingFontEn,
+    bodyFont: isVietnamese ? bodyFontVi : bodyFontEn,
+  };
+};
+
+// Create theme based on language
+const createAppTheme = (language = 'en') => {
+  const { headingFont, bodyFont } = getFonts(language);
+
+  return createTheme({
     cssVariables: true,
     palette: {
         mode: "light",
@@ -331,3 +347,8 @@ export const theme = createTheme({
         },
     },
 });
+};
+
+// Export the function and a default theme
+export { createAppTheme };
+export const theme = createAppTheme('en');

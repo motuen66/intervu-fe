@@ -1,22 +1,24 @@
 import { useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "../../app/layouts/MainLayout.css";
 
 const PublicHeader = ({
     menuItems,
-    primaryActionLabel = "Sign In",
+    primaryActionLabel,
     onPrimaryAction,
     className = "",
-    logoLabel = "INTERVU",
+    logoLabel,
     logoSubLabel,
 }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
 
     const defaultMenuItems = useMemo(() => [
-        { label: "Home", path: "/home" },
-        { label: "Question Bank", path: "/questions" },
-    ], []);
+        { label: t("common.public_header.nav_home"), path: "/home" },
+        { label: t("common.public_header.nav_questions"), path: "/questions" },
+    ], [t]);
 
     const resolvedMenuItems = menuItems ?? defaultMenuItems;
 
@@ -28,7 +30,7 @@ const PublicHeader = ({
                 <div className="navbar-logo" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
                     <div className="navbar-logo-icon">V</div>
                     <div className="navbar-logo-copy">
-                        <h1>{logoLabel}</h1>
+                        <h1>{logoLabel || t("common.public_header.logo")}</h1>
                         {logoSubLabel ? <span>{logoSubLabel}</span> : null}
                     </div>
                 </div>
@@ -52,7 +54,7 @@ const PublicHeader = ({
                         onClick={onPrimaryAction ?? (() => navigate("/login"))}
                         type="button"
                     >
-                        {primaryActionLabel}
+                        {primaryActionLabel || t("common.public_header.btn_signin")}
                     </button>
                 </div>
             </div>

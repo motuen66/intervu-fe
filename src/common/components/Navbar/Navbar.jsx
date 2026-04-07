@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ChevronDown,
+    AlertTriangle,
     LogOut,
     User,
     Settings,
@@ -22,6 +24,7 @@ import {
     Calendar,
     LayoutDashboard,
     Sparkles,
+    
     Gift,
     Menu,
     X,
@@ -35,6 +38,7 @@ import { authEndPoints } from "../../../features/auth/services/authApi";
 import { callApi } from "../../utils/apiConnector";
 import { METHOD } from "../../constants/api";
 import NotificationDropdown from "../../../features/notification/components/NotificationDropdown";
+import LanguageSwitcher from "../LanguageSwitcher";
 import { Avatar, Drawer, Box, Typography, IconButton, Divider, Fade } from "@mui/material";
 import "./Navbar.css";
 
@@ -163,6 +167,7 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
+    const { t } = useTranslation();
     const { userData } = useSelector((state) => state.auth || {});
 
     const [openDropdown, setOpenDropdown] = useState(null);
@@ -198,81 +203,81 @@ const Navbar = () => {
     // Navigation Data
     const navData = {
         GUEST: [
-            { label: "Find Coaches", path: "/home", type: "link", icon: Search, sectionLabel: "DISCOVER" },
+            { label: t("common.navbar.find_coaches"), path: "/home", type: "link", icon: Search, sectionLabel: t("common.navbar.discover") },
             { 
-                label: "Practice", 
+                label: t("common.navbar.practice"), 
                 type: "dropdown", 
                 sections: [
                     {
-                        title: "Question Bank",
+                        title: t("common.navbar.question_bank"),
                         items: [
-                            { label: "All Questions", path: "/questions", icon: Library },
-                            { label: "Saved Questions", path: "/questions/saved", icon: Bookmark, auth: true },
-                            { label: "Suggested for you", path: "/questions", icon: Zap, auth: true },
+                            { label: t("common.navbar.all_questions"), path: "/questions", icon: Library },
+                            { label: t("common.navbar.saved_questions"), path: "/questions/saved", icon: Bookmark, auth: true },
+                            { label: t("common.navbar.suggested_for_you"), path: "/questions", icon: Zap, auth: true },
                         ]
                     },
                     {
-                        title: "Hot Topics",
+                        title: t("common.navbar.hot_topics"),
                         titleIcon: Flame,
                         items: [
-                            { label: "Java Backend", path: "/questions?topic=java", icon: FileCode },
-                            { label: "System Design", path: "/questions?topic=system-design", icon: Layers },
-                            { label: "Frontend", path: "/questions?topic=frontend", icon: Terminal },
+                            { label: t("common.navbar.java_backend"), path: "/questions?topic=java", icon: FileCode },
+                            { label: t("common.navbar.system_design"), path: "/questions?topic=system-design", icon: Layers },
+                            { label: t("common.navbar.frontend"), path: "/questions?topic=frontend", icon: Terminal },
                         ]
                     }
                 ]
             },
-            { label: "Pricing", path: "#", type: "link", icon: CreditCard, sectionLabel: "MEMBERSHIP" },
+            { label: t("common.navbar.pricing"), path: "#", type: "link", icon: CreditCard, sectionLabel: t("common.navbar.membership") },
         ],
         CANDIDATE: [
-            { label: "Find Coaches", path: "/home", type: "link", icon: Search, sectionLabel: "DISCOVER" },
+            { label: t("common.navbar.find_coaches"), path: "/home", type: "link", icon: Search, sectionLabel: t("common.navbar.discover") },
             { 
-                label: "My Journey", 
+                label: t("common.navbar.my_journey"), 
                 type: "dropdown", 
                 items: [
-                    { label: "My Roadmap", path: "/assessment", icon: Milestone },
-                    { label: "My Interviews", path: "/interview", icon: Video },
-                    { label: "Smart Matching", path: "/home?smartMatch=1", icon: Sparkles },
-                    { label: "Booking Requests", path: "/booking-requests", icon: CalendarClock },
+                    { label: t("common.navbar.my_roadmap"), path: "/assessment", icon: Milestone },
+                    { label: t("common.navbar.my_interviews"), path: "/interview", icon: Video },
+                    { label: t("common.navbar.smart_matching"), path: "/home?smartMatch=1", icon: Sparkles },
+                    { label: t("common.navbar.booking_requests"), path: "/booking-requests", icon: CalendarClock },
                 ]
             },
             { 
-                label: "Practice", 
+                label: t("common.navbar.practice"), 
                 type: "dropdown", 
                 sections: [
                     {
-                        title: "Question Bank",
+                        title: t("common.navbar.question_bank"),
                         items: [
-                            { label: "All Questions", path: "/questions", icon: Library },
-                            { label: "Saved Questions", path: "/questions/saved", icon: Bookmark },
-                            { label: "Suggested for you", path: "/questions", icon: Zap },
+                            { label: t("common.navbar.all_questions"), path: "/questions", icon: Library },
+                            { label: t("common.navbar.saved_questions"), path: "/questions/saved", icon: Bookmark },
+                            { label: t("common.navbar.suggested_for_you"), path: "/questions", icon: Zap },
                         ]
                     },
                     {
-                        title: "Hot Topics",
+                        title: t("common.navbar.hot_topics"),
                         titleIcon: Flame,
                         items: [
-                            { label: "Java Backend", path: "/questions?topic=java", icon: FileCode },
-                            { label: "System Design", path: "/questions?topic=system-design", icon: Layers },
-                            { label: "Frontend", path: "/questions?topic=frontend", icon: Terminal },
+                            { label: t("common.navbar.java_backend"), path: "/questions?topic=java", icon: FileCode },
+                            { label: t("common.navbar.system_design"), path: "/questions?topic=system-design", icon: Layers },
+                            { label: t("common.navbar.frontend"), path: "/questions?topic=frontend", icon: Terminal },
                         ]
                     }
                 ]
             },
-            { label: "Pricing", path: "#", type: "link", icon: CreditCard, sectionLabel: "MEMBERSHIP" },
+            { label: t("common.navbar.pricing"), path: "#", type: "link", icon: CreditCard, sectionLabel: t("common.navbar.membership") },
         ],
         COACH: [
-            { label: "Dashboard", path: "/home", type: "link", icon: LayoutDashboard, sectionLabel: "WORKSPACE" },
+            { label: t("common.navbar.dashboard"), path: "/home", type: "link", icon: LayoutDashboard, sectionLabel: t("common.navbar.workspace") },
             {
-                label: "Operations",
+                label: t("common.navbar.operations"),
                 type: "dropdown",
                 items: [
-                    { label: "Booking Requests", path: "/booking-requests", icon: CalendarClock },
-                    { label: "My Services", path: "/my-services", icon: Briefcase },
-                    { label: "Schedule", path: "/schedule", icon: Calendar },
+                    { label: t("common.navbar.booking_requests"), path: "/booking-requests", icon: CalendarClock },
+                    { label: t("common.navbar.my_services"), path: "/my-services", icon: Briefcase },
+                    { label: t("common.navbar.schedule"), path: "/schedule", icon: Calendar },
                 ]
             },
-            { label: "My Interviews", path: "/interview", type: "link", icon: Video, sectionLabel: "RECORDS" },
+            { label: t("common.navbar.my_interviews"), path: "/interview", type: "link", icon: Video, sectionLabel: t("common.navbar.records") },
         ]
     };
 
@@ -293,7 +298,7 @@ const Navbar = () => {
                         <div className="logo-box">V</div>
                         <div className="logo-text">
                             <h1>INTERVU</h1>
-                            <span>PLATFORM</span>
+                            <span>{t("common.navbar.platform")}</span>
                         </div>
                     </Link>
 
@@ -326,11 +331,12 @@ const Navbar = () => {
                     </div>
 
                     {/* Right Section */}
-                    <div className="navbar-right">
-                        {!userData ? (
+                        <div className="navbar-right">
+                            <LanguageSwitcher />
+                            {!userData ? (
                             <div className="auth-buttons">
-                                <Link to="/login" className="nav-item">Login</Link>
-                                <Link to="/signup" className="app-btn">Register</Link>
+                                <Link to="/login" className="nav-item">{t("common.navbar.login")}</Link>
+                                <Link to="/signup" className="app-btn">{t("common.navbar.register")}</Link>
                             </div>
                         ) : (
                             <>
@@ -364,18 +370,23 @@ const Navbar = () => {
                                                     <p className="user-email">{userData.email}</p>
                                                 </div>
                                                 <div className="dropdown-divider" />
-                                                <Link to={userData.role === ROLES.INTERVIEWER ? "/interviewer/profile" : "/candidate/profile"} className="dropdown-item">
-                                                    <User size={16} /> My Profile
+                                                 <Link to={userData.role === ROLES.INTERVIEWER ? "/interviewer/profile" : "/candidate/profile"} className="dropdown-item">
+                                                    <User size={16} /> {t("common.navbar.my_profile")}
                                                 </Link>
+                                                {userData.role === ROLES.CANDIDATE && (
+                                                    <Link to="/interview" className="dropdown-item">
+                                                        <AlertTriangle size={16} /> {t("common.navbar.my_reports")}
+                                                    </Link>
+                                                )}
                                                 <Link to="/payment-history" className="dropdown-item">
-                                                    <CreditCard size={16} /> Payment History
+                                                    <CreditCard size={16} /> {t("common.navbar.payment_history")}
                                                 </Link>
                                                 <Link to="/settings" className="dropdown-item">
-                                                    <Settings size={16} /> Settings
+                                                    <Settings size={16} /> {t("common.navbar.settings")}
                                                 </Link>
                                                 <div className="dropdown-divider" />
                                                 <button className="dropdown-item logout-link" onClick={handleLogout}>
-                                                    <LogOut size={16} /> Logout
+                                                    <LogOut size={16} /> {t("common.navbar.logout")}
                                                 </button>
                                             </motion.div>
                                         )}
@@ -549,8 +560,7 @@ const Navbar = () => {
                                     transition: 'all 0.2s ease',
                                     '&:hover': { bgcolor: 'action.hover', color: 'primary.main' },
                                 }}
-                            >
-                                <Settings size={20} /> Settings
+                            >                                 <Settings size={20} /> {t("common.navbar.settings")}
                             </Box>
                         </Fade>
                         <Fade in={isMobileMenuOpen} style={{ transitionDelay: isMobileMenuOpen ? `${fadeIndex++ * 50}ms` : '0ms' }}>
@@ -565,8 +575,9 @@ const Navbar = () => {
                                     '&:hover': { bgcolor: 'error.light', color: 'error.dark' },
                                 }}
                             >
-                                <LogOut size={20} /> Logout
+                                <LogOut size={20} /> {t("common.navbar.logout")}
                             </Box>
+
                         </Fade>
                     </Box>
                 </>)}

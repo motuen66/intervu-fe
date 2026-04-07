@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "react-i18next";
 import {
   Dna,
   ArrowRight,
@@ -21,7 +22,7 @@ import '../styles/LandingPage.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const kineticWords = ['Train.', 'Refine.', 'Perform.'];
+const kineticWords = ['landing.kinetic.train', 'landing.kinetic.refine', 'landing.kinetic.perform'];
 
 const floatingCards = [
   {
@@ -173,6 +174,7 @@ const moduleStories = [
 ];
 
 function LandingPage() {
+  const { t } = useTranslation();
   const moduleStickyTop = 20;
   const navigate = useNavigate();
   const heroRef = useRef(null);
@@ -569,7 +571,7 @@ function LandingPage() {
           <div className="hero-polished-layout">
             <div className="hero-copy-polished">
               <div className="hero-copy-topline">
-                <span>Interview rehearsal</span>
+                <span>{t("landing.hero.label")}</span>
               </div>
               <div className="kinetic-stack" ref={titleRef}>
                 {kineticWords.map((word, index) => (
@@ -577,17 +579,17 @@ function LandingPage() {
                     key={word}
                     className={index === activeWord ? 'kinetic-word is-active' : 'kinetic-word'}
                   >
-                    {word}
+                    {t(word)}
                   </span>
                 ))}
               </div>
 
               <div className="hero-cta-row">
                 <PrimaryButton onClick={() => navigate('/home')} sx={{ minWidth: 140 }}>
-                  Start now
+                  {t("landing.hero.btn_start")}
                 </PrimaryButton>
                 <SecondaryButton onClick={() => navigate('/questions')} sx={{ minWidth: 140 }}>
-                  Explore bank <ArrowRight size={16} />
+                  {t("landing.hero.btn_explore")} <ArrowRight size={16} />
                 </SecondaryButton>
               </div>
             </div>
@@ -764,7 +766,7 @@ function LandingPage() {
 
       <footer className="landing-footer-simple">
         <div className="landing-shell">
-          <p>&copy; 2026 Intervu. All rights reserved.</p>
+          <p>{t("landing.footer.copyright", { year: 2026 })}</p>
         </div>
       </footer>
     </div>

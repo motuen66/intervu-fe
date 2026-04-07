@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getBookingRequests } from "../../services/bookingRequestApi";
 import {
     BOOKING_REQUEST_STATUS,
@@ -40,6 +41,7 @@ const STATUS_COLOR_MAP = {
 };
 
 export default function BookingRequestListPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const user = useUser();
     const isCoach = user?.role === ROLES.INTERVIEWER;
@@ -64,7 +66,7 @@ export default function BookingRequestListPage() {
             setTotalCount(result.totalCount || 0);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to load booking requests.");
+            toast.error(t("booking.list.toast.load_error"));
         } finally {
             setLoading(false);
         }
@@ -97,10 +99,10 @@ export default function BookingRequestListPage() {
         <Box className="booking-list-page">
             <Box className="page-header">
                 <Typography variant="h5" fontWeight={700}>
-                    Your Bookings
+                    {t("booking.list.title")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {isCoach ? "Manage incoming bookings from candidates." : "Track your bookings to coaches."}
+                    {isCoach ? t("booking.list.subtitle_coach") : t("booking.list.subtitle_candidate")}
                 </Typography>
             </Box>
 
@@ -109,7 +111,7 @@ export default function BookingRequestListPage() {
                 <FormTextField
                     select
                     size="small"
-                    label="Type"
+                    label={t("booking.list.filter.type")}
                     value={typeFilter}
                     onChange={(e) => {
                         setTypeFilter(e.target.value);
@@ -117,7 +119,7 @@ export default function BookingRequestListPage() {
                     }}
                     sx={fieldSx}
                 >
-                    <MenuItem value="">All types</MenuItem>
+                    <MenuItem value="">{t("booking.list.filter.all_types")}</MenuItem>
                     {Object.entries(BOOKING_REQUEST_TYPE_LABELS).map(([val, label]) => (
                         <MenuItem key={val} value={val}>
                             {label}
@@ -128,7 +130,7 @@ export default function BookingRequestListPage() {
                 <FormTextField
                     select
                     size="small"
-                    label="Status"
+                    label={t("booking.list.filter.status")}
                     value={statusFilter}
                     onChange={(e) => {
                         setStatusFilter(e.target.value);
@@ -136,7 +138,7 @@ export default function BookingRequestListPage() {
                     }}
                     sx={fieldSx}
                 >
-                    <MenuItem value="">All statuses</MenuItem>
+                    <MenuItem value="">{t("booking.list.filter.all_statuses")}</MenuItem>
                     {Object.entries(BOOKING_REQUEST_STATUS_LABELS).map(([val, label]) => (
                         <MenuItem key={val} value={val}>
                             {label}
@@ -153,14 +155,14 @@ export default function BookingRequestListPage() {
             ) : items.length === 0 ? (
                 <Box textAlign="center" py={6}>
                     <Typography variant="h6" color="text.secondary">
-                        No booking found
+                        {t("booking.list.empty.title")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                         {typeFilter || statusFilter
-                            ? "Try adjusting your filters."
+                            ? t("booking.list.empty.adjust_filters")
                             : isCoach
-                              ? "You have no incoming bookings yet."
-                              : "You haven't submitted any bookings yet."}
+                              ? t("booking.list.empty.no_incoming")
+                              : t("booking.list.empty.no_submitted")}
                     </Typography>
                 </Box>
             ) : (
@@ -170,13 +172,13 @@ export default function BookingRequestListPage() {
                             <TableHead>
                                 <TableRow sx={{ backgroundColor: "#f8fafc" }}>
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>
-                                        {isCoach ? "Candidate" : "Coach"}
+                                        {isCoach ? t("booking.list.table.candidate") : t("booking.list.table.coach")}
                                     </TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Type</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Interview</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Amount</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Status</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Created</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>{t("booking.list.table.type")}</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>{t("booking.list.table.interview")}</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>{t("booking.list.table.amount")}</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>{t("booking.list.table.status")}</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>{t("booking.list.table.created")}</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }} align="center">
                                         {/* Action */}
                                     </TableCell>
@@ -204,7 +206,7 @@ export default function BookingRequestListPage() {
                                         <TableCell>
                                             <Typography fontSize={13}>
                                                 {req.interviewTypeName ||
-                                                    (req.rounds?.length ? `${req.rounds.length} rounds` : "—")}
+                                                    (req.rounds?.length ? t("booking.list.table.rounds_count", { count: req.rounds.length }) : "—")}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>

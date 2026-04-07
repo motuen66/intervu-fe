@@ -18,6 +18,7 @@ import {
     TableRow,
     TableCell,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import CloseIcon from "@mui/icons-material/Close";
@@ -35,6 +36,7 @@ import { enUS } from "date-fns/locale";
 const DAYS_OF_WEEK = ["S", "M", "T", "W", "T", "F", "S"];
 
 function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
+    const { t } = useTranslation();
     const [availableSlots, setAvailableSlots] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -79,7 +81,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
             setError(null);
 
             if (!coachId) {
-                setError("Cannot find coach information for this interview");
+                setError(t("interview.list.reschedule_modal.no_slots_coach"));
                 setLoading(false);
                 return;
             }
@@ -237,7 +239,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
             handleClose();
         } catch (error) {
             console.error("Failed to submit reschedule request:", error);
-            setError("Failed to submit request. Please try again.");
+            setError(t("interview.list.reschedule_modal.error_failed") || "Failed to submit request. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -280,10 +282,12 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
             >
                 <Box>
                     <Typography variant="h6" fontWeight={600}>
-                        Request Reschedule
+                        {t("interview.list.reschedule_modal.title")}
                     </Typography>
                     <Typography variant="body2" color="primary.main" sx={{ mt: 0.5 }}>
-                        Current: {formattedDateTime(currentSession?.scheduledTime)}
+                        {t("interview.list.reschedule_modal.current_time", {
+                            time: formattedDateTime(currentSession?.scheduledTime),
+                        })}
                     </Typography>
                 </Box>
                 <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
@@ -309,7 +313,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                             {/* LEFT SIDE — CALENDAR */}
                             <Box sx={{ flex: 1 }}>
                                 <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
-                                    Select New Date
+                                    {t("interview.list.reschedule_modal.select_date")}
                                 </Typography>
 
                                 {/* Month Header */}
@@ -424,7 +428,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                 {availableDates.length === 0 && !loading && (
                                     <Paper sx={{ p: 2, mt: 2, textAlign: "center", bgcolor: "grey.50" }}>
                                         <Typography variant="body2" color="text.secondary">
-                                            No available slots from this coach
+                                            {t("interview.list.reschedule_modal.no_slots_coach")}
                                         </Typography>
                                     </Paper>
                                 )}
@@ -435,15 +439,15 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                 <Stack spacing={1.5}>
                                     <Box>
                                         <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
-                                            Select Time Slot
+                                            {t("interview.list.reschedule_modal.select_time")}
                                         </Typography>
                                         {selectedDate ? (
                                             <Typography variant="body2" fontWeight={500} sx={{ mt: 0.5 }}>
-                                                {format(selectedDate, "EEEE, dd MMMM yyyy", { locale: enUS })}
+                                                {format(selectedDate, "EEEE, dd MMMM yyyy")}
                                             </Typography>
                                         ) : (
                                             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                                Select a date first
+                                                {t("interview.list.reschedule_modal.select_date_first")}
                                             </Typography>
                                         )}
                                     </Box>
@@ -525,8 +529,8 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                             <Paper sx={{ p: 2, textAlign: "center", bgcolor: "grey.50" }}>
                                                 <Typography variant="body2" color="text.secondary">
                                                     {selectedDate
-                                                        ? "No available slots for this date"
-                                                        : "Select a date to see available times"}
+                                                        ? t("interview.list.reschedule_modal.no_slots_date")
+                                                        : t("interview.list.reschedule_modal.select_date_to_see_times")}
                                                 </Typography>
                                             </Paper>
                                         )}
@@ -538,7 +542,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                         {/* Reason Section */}
                         <Box>
                             <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
-                                Reason for Rescheduling{" "}
+                                {t("interview.list.reschedule_modal.reason_label")}{" "}
                                 <Typography component="span" color="error.main">
                                     *
                                 </Typography>
@@ -547,7 +551,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                 fullWidth
                                 multiline
                                 rows={3}
-                                placeholder="Why do you want to reschedule? Enter your reason here..."
+                                placeholder={t("interview.list.reschedule_modal.reason_placeholder")}
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 sx={{
@@ -563,7 +567,9 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
 
             {/* Actions */}
             <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-                <SecondaryButton onClick={handleClose}>Cancel</SecondaryButton>
+                <SecondaryButton onClick={handleClose}>
+                    {t("interview.list.reschedule_modal.btn_cancel")}
+                </SecondaryButton>
                 <PrimaryButton
                     onClick={handleSubmit}
                     disabled={!isFormValid || isSubmitting || loading}
@@ -571,7 +577,9 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                     loading={isSubmitting}
                     sx={{ boxShadow: "none" }}
                 >
-                    {isSubmitting ? "Sending..." : "Send Request"}
+                    {isSubmitting
+                        ? t("interview.list.reschedule_modal.btn_sending")
+                        : t("interview.list.reschedule_modal.btn_send")}
                 </PrimaryButton>
             </DialogActions>
         </Dialog>

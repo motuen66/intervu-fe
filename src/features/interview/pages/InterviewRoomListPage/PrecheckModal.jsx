@@ -15,6 +15,7 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import {
     Close,
     FiberManualRecord,
@@ -110,7 +111,7 @@ function DeviceSelector({ label, devices, value, onChange, disabled }) {
             >
                 {devices.map((d) => (
                     <MenuItem key={d.deviceId} value={d.deviceId} sx={{ fontSize: 13 }}>
-                        {d.label || `Device ${d.deviceId.slice(0, 8)}…`}
+                        {d.label || t("interview.list.precheck.device_placeholder", { id: d.deviceId.slice(0, 8) })}
                     </MenuItem>
                 ))}
             </Select>
@@ -120,8 +121,9 @@ function DeviceSelector({ label, devices, value, onChange, disabled }) {
 
 // ─── Permission Denied Banner ────────────────────────────────────────────────
 function PermissionBanner({ type }) {
+    const { t } = useTranslation();
     const theme = useTheme();
-    const label = type === "camera" ? "Camera" : "Microphone";
+    const label = type === "camera" ? t("interview.list.precheck.label_camera") : t("interview.list.precheck.label_microphone");
     return (
         <Stack
             direction="row"
@@ -138,7 +140,7 @@ function PermissionBanner({ type }) {
         >
             <ErrorOutline sx={{ fontSize: 18, color: "error.main" }} />
             <Typography variant="caption" sx={{ color: "error.main", fontWeight: 600 }}>
-                {label} permission denied. Allow access in your browser settings and reload.
+                {t("interview.list.precheck.permission_denied_banner", { type: label })}
             </Typography>
         </Stack>
     );
@@ -175,6 +177,7 @@ function StatusRow({ icon: Icon, label, status, action }) {
 
 // ─── Main Modal ──────────────────────────────────────────────────────────────
 function PrecheckModal({ open, onClose, room }) {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const theme = useTheme();
     const hasRunRef = useRef(false);
@@ -243,10 +246,10 @@ function PrecheckModal({ open, onClose, room }) {
     }, [room?.scheduledTime]);
 
     const dateLabel = scheduledDate
-        ? scheduledDate.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+        ? scheduledDate.toLocaleDateString(t("common.date_locale") || "en-US", { month: "short", day: "2-digit", year: "numeric" })
         : "—";
     const timeLabel = scheduledDate
-        ? scheduledDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+        ? scheduledDate.toLocaleTimeString(t("common.date_locale") || "en-US", { hour: "2-digit", minute: "2-digit" })
         : "—";
     const durationLabel = `${room?.durationMinutes || 60}m`;
 
@@ -276,10 +279,10 @@ function PrecheckModal({ open, onClose, room }) {
                     <Videocam sx={{ fontSize: 22, color: "text.primary" }} />
                     <Box>
                         <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.3 }}>
-                            Pre-check Session
+                            {t("interview.list.precheck.title")}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                            Ensure your devices are ready
+                            {t("interview.list.precheck.subtitle")}
                         </Typography>
                     </Box>
                 </Stack>
@@ -332,13 +335,13 @@ function PrecheckModal({ open, onClose, room }) {
                                         <>
                                             <ErrorOutline sx={{ fontSize: 36 }} />
                                             <Typography variant="caption" sx={{ color: theme.palette.error.light }}>
-                                                Camera access denied
+                                                {t("interview.list.precheck.camera_permission_denied")}
                                             </Typography>
                                         </>
                                     ) : (
                                         <>
                                             <VideocamOff sx={{ fontSize: 36 }} />
-                                            <Typography variant="caption">Camera preview unavailable</Typography>
+                                            <Typography variant="caption">{t("interview.list.precheck.camera_preview_unavailable")}</Typography>
                                         </>
                                     )}
                                 </Stack>
@@ -453,7 +456,7 @@ function PrecheckModal({ open, onClose, room }) {
                         <Stack direction="row" spacing={1.5} sx={{ mt: 1.5 }}>
                             <Box sx={{ flex: 1 }}>
                                 <DeviceSelector
-                                    label="CAMERA"
+                                    label={t("interview.list.precheck.label_camera")}
                                     devices={devices.cameras}
                                     value={selectedCam}
                                     onChange={setSelectedCam}
@@ -462,7 +465,7 @@ function PrecheckModal({ open, onClose, room }) {
                             </Box>
                             <Box sx={{ flex: 1 }}>
                                 <DeviceSelector
-                                    label="MICROPHONE"
+                                    label={t("interview.list.precheck.label_microphone")}
                                     devices={devices.microphones}
                                     value={selectedMic}
                                     onChange={setSelectedMic}
@@ -494,16 +497,16 @@ function PrecheckModal({ open, onClose, room }) {
                                     pb: 0.25,
                                 }}
                             >
-                                STATUS
+                                {t("interview.list.precheck.header_status")}
                             </Typography>
 
-                            <StatusRow icon={Videocam} label="Camera" status={cameraStatus} />
+                            <StatusRow icon={Videocam} label={t("interview.list.precheck.label_camera")} status={cameraStatus} />
                             <Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />
-                            <StatusRow icon={Mic} label="Microphone" status={micStatus} />
+                            <StatusRow icon={Mic} label={t("interview.list.precheck.label_microphone")} status={micStatus} />
                             <Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />
                             <StatusRow
                                 icon={VolumeUp}
-                                label="Speaker"
+                                label={t("interview.list.precheck.label_speaker")}
                                 status={speakerStatus}
                                 action={
                                     <Typography
@@ -524,12 +527,12 @@ function PrecheckModal({ open, onClose, room }) {
                                         }}
                                     >
                                         <PlayArrow sx={{ fontSize: 14 }} />
-                                        TEST
+                                        {t("interview.list.precheck.btn_test")}
                                     </Typography>
                                 }
                             />
                             <Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />
-                            <StatusRow icon={Wifi} label="Network" status={networkStatus} />
+                            <StatusRow icon={Wifi} label={t("interview.list.precheck.label_network")} status={networkStatus} />
                         </Box>
 
                         {/* Room info card */}
@@ -573,16 +576,16 @@ function PrecheckModal({ open, onClose, room }) {
                                             letterSpacing: "0.08em",
                                         }}
                                     >
-                                        INTERVIEW COACH
+                                        {t("interview.list.precheck.label_coach_role")}
                                     </Typography>
                                 </Box>
                             </Stack>
 
                             <Stack direction="row" spacing={2} sx={{ mt: 1.75 }}>
                                 {[
-                                    { title: "DATE", value: dateLabel },
-                                    { title: "TIME", value: timeLabel },
-                                    { title: "DUR", value: durationLabel },
+                                    { title: t("interview.list.precheck.info_date"), value: dateLabel },
+                                    { title: t("interview.list.precheck.info_time"), value: timeLabel },
+                                    { title: t("interview.list.precheck.info_duration"), value: durationLabel },
                                 ].map(({ title, value }) => (
                                     <Box key={title}>
                                         <Typography
@@ -637,7 +640,7 @@ function PrecheckModal({ open, onClose, room }) {
                                 },
                             }}
                         >
-                            Join Room
+                            {t("interview.list.precheck.btn_join")}
                             <ArrowForward sx={{ fontSize: 20 }} />
                         </Box>
 
@@ -651,7 +654,7 @@ function PrecheckModal({ open, onClose, room }) {
                         >
                             <Settings sx={{ fontSize: 13, color: "text.disabled" }} />
                             <Typography variant="caption" color="text.disabled" sx={{ fontSize: 11 }}>
-                                Settings can be adjusted inside
+                                {t("interview.list.precheck.hint_settings")}
                             </Typography>
                         </Stack>
                     </Box>

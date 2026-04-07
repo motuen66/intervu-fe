@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Avatar from "@mui/material/Avatar";
 import { Star } from "lucide-react";
 import "./CoachCard.css";
 
 function CoachCard({ interviewer, isRecommended = false }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { id, user, cvUrl, portfolioUrl } = interviewer;
 
@@ -72,7 +74,7 @@ function CoachCard({ interviewer, isRecommended = false }) {
 
                         {/* Role */}
                         <div className="role-row">
-                            <span className="role-text">Software Engineer</span>
+                            <span className="role-text">{t("home.card.role")}</span>
                         </div>
 
                         {/* Companies */}
@@ -85,20 +87,20 @@ function CoachCard({ interviewer, isRecommended = false }) {
                                             {index < Math.min(companies.length, 2) - 1 && ", "}
                                         </span>
                                     ))}
-                                    {companies.length > 2 && ` +${companies.length - 2} more`}
+                                    {companies.length > 2 && t("home.card.more", { count: companies.length - 2 })}
                                 </span>
                             </div>
                         )}
                     </div>
                 </div>
-                {isRecommended && <span className="recommended-badge">Recommended</span>}
+                {isRecommended && <span className="recommended-badge">{t("home.card.recommended")}</span>}
             </div>
 
             {/* Rating Row */}
             <div className="rating-row">
                 <Star size={18} fill="var(--mui-palette-secondary-main)" stroke="var(--mui-palette-secondary-main)" strokeWidth={2} />
-                <span className="rating-value">{rating.toFixed(1)} rating</span>
-                <span className="sessions-count">({sessionsCount} sessions)</span>
+                <span className="rating-value">{rating.toFixed(1)} {t("home.card.rating")}</span>
+                <span className="sessions-count">({t("home.card.sessions", { count: sessionsCount || 0 })})</span>
             </div>
 
             {/* Bio */}
@@ -112,13 +114,17 @@ function CoachCard({ interviewer, isRecommended = false }) {
                             {typeof skill === "string" ? skill : skill.name}
                         </span>
                     ))}
-                    {skills.length > 3 && <span className="skill-tag more-tag">+ {skills.length - 3} more</span>}
+                    {skills.length > 3 && (
+                        <span className="skill-tag more-tag">
+                            {t("home.card.more", { count: skills.length - 3 })}
+                        </span>
+                    )}
                 </div>
             )}
 
             {/* Book Now Button */}
             <button className="book-btn" onClick={handleBookNow}>
-                Book now →
+                {t("home.card.btn_book_now")} →
             </button>
         </div>
     );

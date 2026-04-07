@@ -1,0 +1,880 @@
+{
+  "common": {
+    "date_locale": "en-US",
+    "public_header": {
+      "logo": "INTERVU",
+      "nav_home": "Home",
+      "nav_questions": "Question Bank",
+      "btn_signin": "Sign In"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "days": {
+      "sun": "S",
+      "mon": "M",
+      "tue": "T",
+      "wed": "W",
+      "thu": "T",
+      "fri": "F",
+      "sat": "S"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} results",
+      "prev": "← Previous",
+      "next": "Next →",
+      "page": "Page {{page}}"
+    },
+    "units": {
+      "days": "d",
+      "hours": "h",
+      "minutes": "m"
+    },
+    "navbar": {
+      "discover": "DISCOVER",
+      "find_coaches": "Find Coaches",
+      "practice": "Practice",
+      "question_bank": "Question Bank",
+      "all_questions": "All Questions",
+      "saved_questions": "Saved Questions",
+      "suggested_for_you": "Suggested for you",
+      "hot_topics": "Hot Topics",
+      "java_backend": "Java Backend",
+      "system_design": "System Design",
+      "frontend": "Frontend",
+      "pricing": "Pricing",
+      "membership": "MEMBERSHIP",
+      "my_journey": "My Journey",
+      "my_roadmap": "My Roadmap",
+      "my_interviews": "My Interviews",
+      "smart_matching": "Smart Matching",
+      "booking_requests": "Booking Requests",
+      "workspace": "WORKSPACE",
+      "dashboard": "Dashboard",
+      "operations": "Operations",
+      "my_services": "My Services",
+      "schedule": "Schedule",
+      "records": "RECORDS",
+      "platform": "PLATFORM",
+      "login": "Login",
+      "register": "Register",
+      "my_profile": "My Profile",
+      "my_reports": "My Reports",
+      "payment_history": "Payment History",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
+    "modals": {
+      "suspended": {
+        "title": "Account Suspended",
+        "message": "Your account has been suspended by the administrator. You are currently restricted from performing any actions on the platform. Please contact us at admin@intervu.com for assistance.",
+        "btn_logout": "Log out"
+      },
+      "session_expired": {
+        "title": "Session Expired",
+        "message": "Your session has expired for security reasons. You will be automatically redirected to the login page in",
+        "message_suffix": "seconds.",
+        "btn_login_now": "Back to Login Now"
+      },
+      "payment_details": {
+        "title": "Paid Interview Details",
+        "btn_close": "Close"
+      },
+      "booking": {
+        "tag_single_focus": "Single-Focus Interview",
+        "step1_title": "Select a Service",
+        "step1_subtitle": "Choose your interview type to see available time slots.",
+        "step2_title": "Select a Date & Time",
+        "step2_subtitle_prefix": "",
+        "empty_services": "This coach hasn't set up any services yet.",
+        "timezone_label": "Time zone",
+        "select_date_prompt": "Select a date to see available times",
+        "duration_suffix": "min",
+        "error_unavailable": "Need {{count}} consecutive 30-minute slots for this {{duration}}-minute service."
+      },
+      "jd_booking": {
+        "title": "JD Multi-Round Interview Booking",
+        "step1_desc": "Submit details and build your assessment workflow.",
+        "step2_desc": "Select dates and times for each round.",
+        "step1_name": "Job Details & Rounds",
+        "step2_name": "Schedule Rounds",
+        "job_url_label": "Job url",
+        "job_url_placeholder": "https://company.com/role",
+        "cv_url_label": "CV url",
+        "cv_url_placeholder": "https://drive.google.com/...",
+        "aim_level_label": "Target AIM Level",
+        "rounds_title": "Build Your Interview Sequence",
+        "rounds_subtitle": "Define the logical flow of your assessment process",
+        "add_round_btn": "Add Round",
+        "round_label": "Round {{number}}",
+        "select_service_label": "Select Service",
+        "error_invalid_job_url": "Please provide a valid link for the Job Description",
+        "error_invalid_cv_url": "Please provide a valid link for your CV (e.g. Google Drive link)",
+        "error_no_service": "Please select a service for all interview rounds.",
+        "error_round_time": "Please set a time for Round {{index}} first.",
+        "schedule_section_title": "Schedule",
+        "pending_label": "Pending",
+        "complete_round_first": "Complete Round {{number}} first",
+        "blocks_label": "block",
+        "blocks_label_plural": "blocks",
+        "next_btn": "Next: Schedule Rounds",
+        "back_btn": "Back",
+        "confirming_paying_btn": "Confirming & Paying...",
+        "submit_btn": "Confirm & Pay Now",
+        "cancel_btn": "Cancel"
+      }
+    }
+  },
+  "landing": {
+    "kinetic": {
+      "train": "Train.",
+      "refine": "Refine.",
+      "perform": "Perform."
+    },
+    "hero": {
+      "label": "Interview rehearsal",
+      "btn_start": "Start now",
+      "btn_explore": "Explore bank"
+    },
+    "footer": {
+      "copyright": "© {{year}} Intervu. All rights reserved."
+    }
+  },
+  "admin": {
+    "user_management": {
+      "title": "User",
+      "subtitle": "Manage user accounts and details.",
+      "btn_create": "Create User",
+      "col_name": "Full Name",
+      "col_email": "Email",
+      "col_role": "Role",
+      "col_status": "Status",
+      "col_actions": "Actions"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "stats_users": "Total Users",
+      "stats_companies": "Total Companies",
+      "stats_interviewers": "Total Interviewers",
+      "stats_payments": "Total Payments",
+      "stats_feedbacks": "Total Feedbacks",
+      "stats_rating": "Avg Rating"
+    }
+  },
+  "profile": {
+    "public": {
+      "loading": "Loading Profile",
+      "loading_sub": "Preparing the coach's details for you...",
+      "not_found": "Coach not found.",
+      "back_home": "Back to Home",
+      "years_exp": "Years Exp",
+      "rating": "Candidate Rating",
+      "mock_interviews": "Mock Interviews",
+      "about": "About",
+      "view_more": "View More",
+      "view_less": "View Less",
+      "no_bio": "No bio provided yet.",
+      "expertise": "Expertise & Experience",
+      "core_skills": "Core Skills",
+      "no_skills": "No skills listed.",
+      "work_exp": "Working Experience",
+      "current": "Current",
+      "present": "Present",
+      "no_companies": "No companies listed.",
+      "domain": "Domain (Industries)",
+      "no_industries": "No industries listed.",
+      "certs": "Certifications",
+      "no_certs": "No certifications listed.",
+      "topics": "Topics",
+      "no_topics": "No topics listed.",
+      "availability": "Quick Availability",
+      "timezone": "Timezone",
+      "select_service": "Select an interview service to book",
+      "no_services": "No interview services available.",
+      "request_session": "Request Session",
+      "select_date": "SELECT A DATE",
+      "select_slot": "SELECT A SLOT ON {{date}}",
+      "available_slots": "AVAILABLE SLOTS",
+      "no_slots": "No slots available on this date. Please pick another.",
+      "booking": "Booking",
+      "booking_desc": "Book a one-off session with {{name}}. You will need to complete payment after this step.",
+      "jd_booking": "JD Multi-Round Booking",
+      "refundable_hint": "Fully refundable if cancelled 24h prior",
+      "match_index": "Coach Match Index",
+      "match_hint": "Based on your background analysis.",
+      "min": "min",
+      "one_on_one": "One-on-one",
+      "limited_slots": "Limited Availability",
+      "check_schedule": "Check schedule",
+      "open_for_bookings": "Open for bookings",
+      "view_free_time": "View free time",
+      "next_available": "Next available",
+      "click_to_see": "Click to see more",
+      "benefit_1": "Get expert 1:1 coaching",
+      "benefit_2": "Receive actionable feedback",
+      "book_slot": "Book a slot",
+      "services": "Interview Services"
+    }
+  },
+  "auth": {
+    "login": {
+      "welcome": "Welcome back",
+      "email": "Email",
+      "email_required": "Email is required",
+      "password": "Password",
+      "password_required": "Password is required",
+      "forgot_password": "Forgot password?",
+      "btn_login": "Login",
+      "or": "OR",
+      "google_not_configured": "Google sign-in is not configured (missing VITE_APP_GOOGLE_CLIENT_ID).",
+      "google_loading": "Loading Google sign-in...",
+      "no_account": "Don't have an account?",
+      "signup": "Sign up",
+      "system_title": "Online Interview Support System",
+      "created_and_operated": "Created and operated by TheSuperTeam"
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Join us to streamline your hiring process",
+      "full_name": "Full Name",
+      "name_required": "Full name is required",
+      "name_min_length": "Name is too short",
+      "email_invalid": "Invalid email format",
+      "password_min_length": "Password must be at least 8 characters",
+      "btn_signup": "Sign up",
+      "already_have_account": "Already have an account?",
+      "signin": "Sign in",
+      "success_toast": "Account created successfully! Please log in."
+    }
+  },
+  "home": {
+    "hero": {
+      "welcome": "Welcome",
+      "subtitle": "Expert coaching, mock interviews, and more",
+      "description": "Connect with an expert in your field to practice mock interviews, review your resume, or create a study plan.",
+      "btn_find": "Find your coach",
+      "rating_text": "{{rating}} rating from over {{count}} reviews"
+    },
+    "browse": {
+      "title": "Browse all coaches",
+      "loading": "Loading interviewers...",
+      "no_results": "No coaches found matching your criteria."
+    },
+    "filters": {
+      "company": "Company",
+      "industry": "Domain/Industry",
+      "more_filters": "More Filters",
+      "hide_filters": "Hide Filters",
+      "search_placeholder": "Search...",
+      "btn_search": "Search",
+      "experience_title": "EXPERIENCE (YEARS)",
+      "price_title": "PRICE / HOUR (VND)",
+      "skills_title": "ADD SKILLS",
+      "select_skill": "Select a skill",
+      "active_label": "ACTIVE:",
+      "smart_match": "Smart Match",
+      "none": "None",
+      "skills_count": "skills",
+      "experience_label": "Experience",
+      "price_label": "Price"
+    },
+    "pagination": {
+      "prev": "← Previous",
+      "next": "Next →"
+    },
+    "card": {
+      "btn_view_profile": "View profile",
+      "btn_book_now": "Book now",
+      "rating": "rating",
+      "sessions": "{{count}} sessions",
+      "recommended": "Recommended",
+      "role": "Software Engineer",
+      "more": "+{{count}} more"
+    }
+  },
+  "interview": {
+    "room": {
+      "title": "Interview Room",
+      "loading": "Connecting to interview...",
+      "error": "Could not connect to the room",
+      "btn_join": "Join Interview",
+      "btn_leave": "Leave Room",
+      "chat": {
+        "title": "Room Chat",
+        "placeholder": "Type a message...",
+        "btn_send": "Send"
+      }
+    },
+    "list": {
+      "title": "My Interviews",
+      "subtitle": "Manage your upcoming and past interview sessions",
+      "stats": {
+        "total": "Total Sessions",
+        "upcoming": "Upcoming",
+        "avg_score": "Average Score",
+        "next_session": "Next Session In"
+      },
+      "tabs": {
+        "upcoming": "Upcoming",
+        "past": "Past History"
+      },
+      "recent_history": "Recent History",
+      "card": {
+        "menu_view_profile": "View Profile",
+        "reviews_count": "{{count}} reviews",
+        "headline_coach": "Coach",
+        "headline_candidate": "Candidate",
+        "participant_default": "Participant",
+        "interview_progress": "Interview Progress",
+        "session_default": "Interview Session",
+        "round_progress": "Round {{current}} of {{total}}",
+        "time_info_multi": "Multi-round Schedule",
+        "time_info_one": "Session Time"
+      },
+      "btn_view_questions": "View Questions",
+      "btn_view_details": "View Details",
+      "btn_cancel": "Cancel",
+      "btn_reschedule": "Reschedule",
+      "btn_join": "Join Now",
+      "btn_view_feedback": "View Feedback",
+      "btn_feedback": "Feedback",
+      "status": {
+        "scheduled": "Scheduled",
+        "ongoing": "Ongoing",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "past": "Past"
+      },
+      "type": {
+        "peer": "Peer-to-peer"
+      },
+      "empty": {
+        "upcoming_title": "No upcoming interviews",
+        "upcoming_subtitle": "Your scheduled interviews will appear here.",
+        "past_title": "No interview history",
+        "past_subtitle": "Your completed and cancelled sessions will appear here."
+      },
+      "cancel_modal": {
+        "title": "Cancel Interview",
+        "message_base": "Are you sure you want to cancel this interview?",
+        "refund_error": "Could not calculate refund amount.",
+        "refund_preview": "You will be refunded {{percent}}% of the session fee.",
+        "btn_confirm": "Yes, Cancel",
+        "btn_cancel": "No, Keep"
+      },
+      "toast": {
+        "cancel_success": "Interview cancelled successfully",
+        "no_feedback": "No feedback yet"
+      },
+      "coach_evaluation": {
+        "title": "Session Feedback & Evaluation",
+        "candidate": "Candidate:",
+        "loading": "Loading evaluation criteria...",
+        "empty": "No evaluation criteria found for this session.",
+        "label_feedback": "Detailed Feedback / Notes",
+        "btn_submit": "Submit Evaluation",
+        "btn_submitting": "Submitting...",
+        "error_load": "Could not load evaluation criteria.",
+        "error_submit": "Could not submit evaluation.",
+        "error_range": "Scores must be between 0 and 10.",
+        "score_very_bad": "Very Bad",
+        "score_bad": "Bad",
+        "score_average": "Average",
+        "score_good": "Good",
+        "score_very_good": "Very Good"
+      }
+    },
+    "reports": {
+      "title": "Reports",
+      "subtitle": "View incident reports you've submitted",
+      "search_placeholder": "Search by room ID...",
+      "status_label": "Status",
+      "all_status": "All Status",
+      "pending": "Pending",
+      "resolved": "Resolved",
+      "rejected": "Rejected",
+      "table": {
+        "date": "Date",
+        "room_id": "Room ID",
+        "reason": "Reason",
+        "status": "Status"
+      },
+      "no_reports": "No reports found",
+      "error_load": "Failed to load reports"
+    }
+  },
+  "question_bank": {
+    "common": {
+      "asked_at": "Asked at {{company}}",
+      "community_question": "Community question",
+      "view_more": "View more",
+      "view_less": "View less",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "delete": "Delete",
+      "edit": "Edit",
+      "user": "User"
+    },
+    "list": {
+      "title": "Interview Questions",
+      "subtitle": "Browse real interview questions shared by candidates and hiring managers.",
+      "subtitle_with_count": "Review this list of {{count}} interview questions and answers verified by hiring managers and candidates.",
+      "share_interview": "Share interview",
+      "empty": "No questions found. Try changing filters.",
+      "per_page": "Per page:"
+    },
+    "sidebar": {
+      "search_placeholder": "Search for questions, companies...",
+      "popular_roles": "Popular roles",
+      "recent_interview_title": "Interviewed recently?",
+      "recent_interview_desc": "Help improve our question database (and earn karma) by telling us about your experience",
+      "share_experience": "+ Share interview experience"
+    },
+    "filters": {
+      "role": "Role",
+      "category": "Category",
+      "company": "Company",
+      "level": "Level",
+      "round": "Round",
+      "any_role": "Any Role",
+      "any_category": "Any Category",
+      "any_level": "Any Level",
+      "any_round": "Any Round"
+    },
+    "sort": {
+      "hot": "Hot",
+      "new": "New",
+      "top": "Top"
+    },
+    "card": {
+      "save": "Save",
+      "save_count": "Save ({{count}})",
+      "save_count_inline": "Save {{count}}",
+      "answers_count_one": "{{count}} answer",
+      "answers_count_other": "{{count}} answers",
+      "i_was_asked_this": "I was asked this"
+    },
+    "detail": {
+      "not_found": "Question not found.",
+      "back_all_questions": "All Questions",
+      "interview_process": "Interview Process",
+      "community_guidelines": "Community guidelines",
+      "top_answer": "TOP ANSWER",
+      "author_badge": "Author",
+      "answer_placeholder": "Add your own answer to this question...",
+      "posting_answer": "Posting...",
+      "post_answer": "Post Answer",
+      "answers_count_one": "{{count}} Answer",
+      "answers_count_other": "{{count}} Answers",
+      "related_questions": "Related Questions",
+      "guidelines": {
+        "stay_on_topic_title": "Stay on topic.",
+        "stay_on_topic_desc": "Use this section for submitting solutions and providing feedback to others.",
+        "be_inclusive_title": "Be inclusive.",
+        "be_inclusive_desc": "Intervu is a diverse community. Please respect others' opinions and beliefs."
+      },
+      "actions": {
+        "share": "Share",
+        "copy_link": "Copy link",
+        "link_copied": "Link copied!",
+        "report": "Report",
+        "like": "Like",
+        "unlike": "Unlike",
+        "like_with_count": "Like {{count}}"
+      },
+      "confirm": {
+        "save_title": "Save changes?",
+        "save_message": "Do you want to update this question?",
+        "delete_question_title": "Delete question?",
+        "delete_question_message": "This action cannot be undone.",
+        "delete_answer_title": "Delete answer?",
+        "delete_answer_message": "This action cannot be undone."
+      },
+      "toast": {
+        "add_answer_failed": "Failed to add answer",
+        "update_answer_failed": "Failed to update answer",
+        "delete_answer_failed": "Failed to delete answer",
+        "delete_question_failed": "Failed to delete question",
+        "question_updated": "Question updated",
+        "update_question_failed": "Failed to update question"
+      },
+      "sidebar": {
+        "interview_details": "Interview Details",
+        "companies": "Companies",
+        "roles": "Roles",
+        "tags": "Tags"
+      }
+    },
+    "roles": {
+      "product_manager": "Product Manager",
+      "software_engineer": "Software Engineer",
+      "data_engineer": "Data Engineer",
+      "data_scientist": "Data Scientist",
+      "technical_program_manager": "Technical Program Manager",
+      "backend_engineer": "Backend Engineer",
+      "frontend_engineer": "Frontend Engineer",
+      "fullstack_engineer": "Full Stack Engineer",
+      "mobile_engineer": "Mobile Engineer",
+      "devops_engineer": "DevOps Engineer",
+      "qa_engineer": "QA Engineer",
+      "ml_engineer": "Machine Learning Engineer",
+      "security_engineer": "Security Engineer",
+      "cloud_engineer": "Cloud Engineer",
+      "uiux_designer": "UI/UX Designer",
+      "business_analyst": "Business Analyst",
+      "solution_architect": "Solution Architect"
+    },
+    "categories": {
+      "behavioral": "Behavioral",
+      "technical": "Technical",
+      "system_design": "System Design",
+      "case_study": "Case Study",
+      "other": "Other",
+      "coding": "Coding",
+      "database": "Database",
+      "networking": "Networking",
+      "oop": "OOP",
+      "algorithms": "Algorithms",
+      "data_structures": "Data Structures",
+      "concurrency": "Concurrency",
+      "distributed_systems": "Distributed Systems",
+      "cloud": "Cloud",
+      "devops": "DevOps"
+    },
+    "levels": {
+      "intern": "Intern",
+      "junior": "Junior",
+      "middle": "Middle",
+      "senior": "Senior",
+      "lead": "Lead",
+      "manager": "Manager",
+      "director": "Director",
+      "expert": "Expert"
+    },
+    "share_experience_page": {
+      "page_title": "Share your interview experience",
+      "page_subtitle": "Help improve the Intervu community by sharing your recent interview experience! Interview questions that are detailed and clearly written will be added to the question database.",
+      "guidelines_link": "Review Community Guidelines.",
+      "company_label": "Company *",
+      "company_placeholder": "Select Company",
+      "companies_loading": "Loading companies...",
+      "role_label": "Role *",
+      "role_placeholder": "Select Role",
+      "level_label": "Level",
+      "level_optional": "(optional)",
+      "level_placeholder": "Select Level",
+      "last_round_label": "Last Round Completed *",
+      "last_round_placeholder": "Select Round",
+      "interview_process_label": "Interview Process *",
+      "interview_process_hint": "Share your interview experience include details about the process, format, and any advice",
+      "interview_process_placeholder": "1. Recruiter screen (30 min)\n2. Online coding assessment (1 hr)\n...",
+      "allow_contact_label": "I'm interested in getting contacted by the Intervu team to share more about my interview experience",
+      "questions_label": "Interview Questions",
+      "questions_hint": "Add the specific questions you were asked to build our interview question database",
+      "add_question_btn": "ADD ANOTHER QUESTION",
+      "submit_btn": "Submit Experience",
+      "submit_btn_loading": "Submitting...",
+      "discard_btn": "Discard and go back",
+      "error_select_company": "Please select a company",
+      "error_select_role": "Please select a role",
+      "error_select_round": "Please select last round completed",
+      "error_add_question": "Please add at least one question",
+      "success_submitted": "Experience shared successfully!",
+      "error_generic": "Something went wrong!"
+    },
+    "question_row": {
+      "remove_btn": "Remove",
+      "question_type_label": "Question Type",
+      "question_type_placeholder": "Select Type",
+      "interview_question_label": "Interview Question",
+      "question_placeholder": "What were you asked? (type to search existing questions)",
+      "word_count": "{{current}} / {{limit}} words",
+      "answer_label": "Answer",
+      "answer_label_optional": "(optional)",
+      "answer_label_linked": "Your Answer",
+      "answer_note_linked": "(will be posted as an answer on the linked question)",
+      "answer_placeholder": "How did you respond? The more detailed, the better.",
+      "linked_indicator_title": "Linked to existing question",
+      "linked_edit_tooltip": "Edit / choose another question",
+      "linked_clear_tooltip": "Clear selection",
+      "answer_count": "{{count}} answer",
+      "answer_count_plural": "{{count}} answers"
+    },
+    "rounds": {
+      "phone_screen": "Phone Screen",
+      "technical_screen": "Technical Screen",
+      "take_home": "Take-home",
+      "onsite_final": "Onsite / Final Round",
+      "other": "Other",
+      "hr_round": "HR Round",
+      "coding_challenge": "Coding Challenge",
+      "live_coding": "Live Coding",
+      "system_design_round": "System Design Round",
+      "behavioral_round": "Behavioral Round",
+      "managerial_round": "Managerial Round"
+    }
+  },
+  "coach": {
+    "schedule": {
+      "title": "Schedule Management",
+      "subtitle": "Manage your availability and upcoming sessions.",
+      "btn_add_slot": "Add Slot",
+      "upcoming": {
+        "title": "Upcoming Sessions",
+        "no_slots": "No sessions found for this day.",
+        "booked_label": "Booked",
+        "focus_general": "General Interview",
+        "focus_jd": "JD Review"
+      },
+      "status": {
+        "booked": "Booked",
+        "reserved": "Reserved",
+        "available": "Available"
+      },
+      "dialog": {
+        "title_edit": "Edit Slot",
+        "field_date": "Date",
+        "field_start_time": "Start Time",
+        "field_end_time": "End Time",
+        "btn_cancel": "Cancel",
+        "btn_update": "Update",
+        "error_main_date": "Please select a date.",
+        "error_already_added": "This slot already exists."
+      },
+      "errors": {
+        "past_slot": "Cannot add slot in the past.",
+        "invalid_end": "End time must be after start time.",
+        "modify_past": "Cannot modify past slots.",
+        "modify_booked": "Cannot modify booked slots.",
+        "move_past": "Cannot move slot to the past.",
+        "min_duration": "Minimum duration is {{minutes}} minutes.",
+        "window_30": "Slots must align with 30-minute intervals.",
+        "date_required": "Date is required.",
+        "invalid_time": "Invalid time selected.",
+        "end_after_start": "End time must be after start time.",
+        "multiple_30": "Slot duration must be a multiple of {{minutes}} minutes."
+      },
+      "calendar": {
+        "btn_7days": "7 Days",
+        "btn_today": "Today",
+        "btn_month": "Month",
+        "btn_day": "Day"
+      },
+      "confirm_delete": {
+        "title": "Delete Slot",
+        "message": "Are you sure you want to delete this availability slot?",
+        "btn_delete": "Delete",
+        "btn_cancel": "Cancel"
+      },
+      "booked_details": {
+        "title": "Session Details",
+        "message_locked": "This slot is booked and cannot be edited.",
+        "time": "Time",
+        "date": "Date",
+        "candidate": "Candidate",
+        "type": "Type",
+        "close": "Close"
+      }
+    },
+    "services": {
+      "title": "My Interview Services",
+      "subtitle": "Manage the interview types you offer and set your own pricing.",
+      "btn_add": "Add Service",
+      "empty_title": "No interview services yet",
+      "empty_subtitle": "Add your first interview service to start accepting bookings from candidates.",
+      "card": {
+        "coding_exercises": "Includes coding exercises",
+        "non_coding": "Non-coding interview",
+        "price": "Price",
+        "duration": "Duration",
+        "min": "min",
+        "type": "Type",
+        "coding": "Coding",
+        "non_coding_label": "Non-Coding",
+        "btn_edit": "Edit",
+        "btn_delete": "Delete"
+      },
+      "delete_modal": {
+        "title": "Delete interview service",
+        "message": "Are you sure you want to remove this interview service? Candidates will no longer be able to book it.",
+        "btn_confirm": "Delete"
+      },
+      "dialog": {
+        "create_title": "Add interview service",
+        "update_title": "Edit interview service",
+        "subtitle": "Select an interview type and set your custom price & duration.",
+        "update_subtitle": "Update pricing & duration for \"{{name}}\".",
+        "update_subtitle_fallback": "Update your service pricing & duration.",
+        "label_type": "Interview Type",
+        "label_price": "Your Price",
+        "label_duration": "Duration (minutes)",
+        "hint_range": "Price range: {{min}} – {{max}} · Suggested duration: {{suggested}} min",
+        "hint_allowed": "Allowed: {{min}} – {{max}}",
+        "hint_duration": "Between 15 and 300 minutes",
+        "btn_add": "Add service",
+        "btn_save": "Save changes",
+        "btn_cancel": "Cancel",
+        "error_select_type": "Please select an interview type.",
+        "error_price_range": "Price must be between {{min}} and {{max}}.",
+        "error_duration": "Duration must be between 15 and 300 minutes."
+      },
+      "toast": {
+        "load_failed": "Failed to load your interview services.",
+        "delete_failed": "Failed to delete service."
+      }
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "tabs": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "empty": "No notifications yet",
+    "empty_unread": "You're all caught up!",
+    "loading": "Loading...",
+    "load_more": "Load more",
+    "mark_all_read": "Mark all as read",
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago_one": "1 minute ago",
+      "minutes_ago_other": "{{count}} minutes ago",
+      "hours_ago_one": "1 hour ago",
+      "hours_ago_other": "{{count}} hours ago",
+      "days_ago_one": "1 day ago",
+      "days_ago_other": "{{count}} days ago",
+      "weeks_ago_one": "1 week ago",
+      "weeks_ago_other": "{{count}} weeks ago"
+    }
+  },
+  "candidate_assessment": {
+    "onboarding_badge": "ONBOARDING AI",
+    "lets_calibrate_title": "Let's calibrate your profile.",
+    "lets_calibrate_subtitle": "Give the AI the role, level, stack, and context you care about most. You can click the quick choices, type your own answers, or mix both.",
+    "processing": "Processing...",
+    "profile_calibrated_intro": "Profile calibrated. I'm generating a focused interview conversation based on your setup.",
+    "choose_real_experience": "Choose the option that best matches your real experience.",
+    "choose_target_level": "Choose the target level you want to reach.",
+    "calibrated_card_title": "Calibrated questions. Cleaner signal. Better assessment.",
+    "setup_fields": {
+      "target_role": {
+        "label": "Target Role",
+        "step": "1.",
+        "helper": "Choose or type the role you want this assessment to optimize for right now.",
+        "placeholder": "Or type your target role",
+        "hover_note": "This should be the role you are targeting now, not every role you have tried before."
+      },
+      "experience_level": {
+        "label": "Experience Level",
+        "step": "2.",
+        "helper": "Pick the level closest to your current working confidence.",
+        "placeholder": "Or describe your current level",
+        "hover_note": "Choose the level that matches your current performance today, not your ideal target yet."
+      },
+      "primary_stack": {
+        "label": "Primary Stack",
+        "step": "3.",
+        "helper": "Add the technologies you want the interview to focus on most.",
+        "placeholder": "Example: TypeScript, React, Node.js",
+        "hover_note": "This is your current focus stack, not every technology you have ever touched or learned."
+      },
+      "industry_domain": {
+        "label": "Industry Domain",
+        "step": "4.",
+        "helper": "This helps the AI tailor scenario questions to the products you care about.",
+        "placeholder": "Example: FinTech, SaaS",
+        "hover_note": "Share the business area you want to move into most, even if your past projects were different.",
+        "optional": "(optional)"
+      },
+      "tell_us_more": {
+        "label": "Tell Us More",
+        "step": "5.",
+        "helper": "You can mention interview goals, strengths, weak spots, or role expectations.",
+        "placeholder": "Highlight specific projects or unique skills...",
+        "hover_note": "Use this to guide the assessment design with context that chips alone cannot capture."
+      }
+    },
+    "buttons": {
+      "skip_for_now": "Skip for now",
+      "continue_assessment": "Continue Assessment",
+      "generating_questions": "Generating Questions..."
+    },
+    "level_score_labels": {
+      "missing": "Missing",
+      "weak": "Weak",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "skill_labels": {
+      "problem_solving": "Problem Solving",
+      "none": "None",
+      "basic": "Basic",
+      "phaseA": "Phase A Skill {{index}}",
+      "phaseB": "Phase B Skill {{index}}"
+    },
+    "phase_a_question": "Phase A question {{index}}",
+    "phase_b_question": "Phase B question {{index}}"
+  },
+  "profile_actions": {
+    "view_public": "View Public Profile"
+  },
+  "payment_history": {
+    "title": "Payment History",
+    "subtitle": "View all your interview booking transactions",
+    "refresh_tooltip": "Refresh",
+    "stats": {
+      "total_transactions": "Total Transactions",
+      "completed_amount": "Completed Amount",
+      "pending_amount": "Pending Amount",
+      "average_amount": "Average Amount"
+    },
+    "filters": {
+      "search_placeholder": "Search by coach, interview ID, or candidate...",
+      "status_label": "Status",
+      "all_status": "All Status",
+      "completed": "Completed",
+      "pending": "Pending",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    },
+    "table": {
+      "date": "Date",
+      "interview_coach": "Interview/Coach",
+      "amount": "Amount",
+      "status": "Status",
+      "action": "Action",
+      "view_details": "View details",
+      "no_transactions": "No transactions found"
+    },
+    "interview_details": {
+      "coach": "Coach",
+      "candidate": "Candidate",
+      "interview_type": "Interview Type",
+      "schedule": "Schedule",
+      "payment_date": "Payment Date",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "interview_types": {
+      "technical_interview": "Technical Interview",
+      "behavioral_interview": "Behavioral Interview",
+      "system_design": "System Design",
+      "coding_interview": "Coding Interview",
+      "mock_interview": "Mock Interview",
+      "interview": "Interview"
+    }
+  }
+}

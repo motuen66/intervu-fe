@@ -6,6 +6,7 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
 import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button, Tooltip, IconButton, Chip } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { ROLES } from "../../../../common/constants/common.js";
 import DescriptionIcon from "@mui/icons-material/Description";
 import TuneIcon from "@mui/icons-material/Tune";
@@ -35,6 +36,7 @@ function QuestionPanel({
     removeTestCase,
     addExpectedOutput,
 }) {
+    const { t } = useTranslation();
     const quillModules = {
         toolbar: [
             [{ header: [1, 2, 3, false] }],
@@ -56,7 +58,7 @@ function QuestionPanel({
                         startIcon={isEditingProblem ? <VisibilityIcon /> : <EditIcon />}
                         onClick={() => setIsEditingProblem(!isEditingProblem)}
                     >
-                        {isEditingProblem ? "View Problem" : "Edit Problem"}
+                        {isEditingProblem ? t("interview.room.question_panel.btn_view") : t("interview.room.question_panel.btn_edit")}
                     </Button>
                 </Stack>
             )}
@@ -65,10 +67,10 @@ function QuestionPanel({
                 // EDITING VIEW (Role 1 only)
                 <Box sx={{ display: "flex", flexDirection: "column", border: "1px solid #E5E7EB", borderRadius: 2, p: 2, bgcolor: "white" }}>
                     <Typography variant="h6" gutterBottom>
-                        Problem Setup
+                        {t("interview.room.question_panel.title_setup")}
                     </Typography>
                     <TextField
-                        label="Function Name (e.g., twoSum)"
+                        label={t("interview.room.question_panel.label_fn_name")}
                         value={problemShortName}
                         onChange={(e) => setProblemShortName(e.target.value)}
                         size="small"
@@ -84,7 +86,7 @@ function QuestionPanel({
                         />
                     </Box>
                     <Typography variant="h6" sx={{ mb: 1 }}>
-                        Test Cases
+                        {t("interview.room.question_panel.title_test_cases")}
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center", borderBottom: 1, borderColor: "divider" }}>
                         <Tabs
@@ -98,7 +100,7 @@ function QuestionPanel({
                                     key={index}
                                     label={
                                         <Stack direction="row" alignItems="center" spacing={1}>
-                                            <Typography variant="body2">Case {index + 1}</Typography>
+                                            <Typography variant="body2">{t("interview.room.question_panel.label_case", { index: index + 1 })}</Typography>
                                             {testCases.length > 1 && (
                                                 <IconButton
                                                     size="small"
@@ -115,7 +117,7 @@ function QuestionPanel({
                                 />
                             ))}
                         </Tabs>
-                        <Tooltip title="Add Test Case">
+                        <Tooltip title={t("interview.room.question_panel.tooltip_add_case")}>
                             <IconButton onClick={addTestCase} size="small">
                                 <AddIcon />
                             </IconButton>
@@ -124,11 +126,11 @@ function QuestionPanel({
                     <Box sx={{ pt: 2 }}>
                         {testCases[activeTestCaseTab] && (
                             <Stack spacing={2}>
-                                <Typography variant="subtitle2">Inputs</Typography>
+                                <Typography variant="subtitle2">{t("interview.room.question_panel.label_inputs")}</Typography>
                                 {testCases[activeTestCaseTab].inputs.map((input, inputIndex) => (
                                     <Stack direction="row" spacing={1} key={inputIndex} alignItems="center">
                                         <TextField
-                                            label="Name"
+                                            label={t("interview.room.question_panel.label_name")}
                                             size="small"
                                             value={input.name}
                                             onChange={(e) =>
@@ -141,7 +143,7 @@ function QuestionPanel({
                                             }
                                         />
                                         <TextField
-                                            label="Value"
+                                            label={t("interview.room.question_panel.label_value")}
                                             size="small"
                                             fullWidth
                                             value={input.value}
@@ -168,16 +170,16 @@ function QuestionPanel({
                                     startIcon={<AddIcon />}
                                     onClick={() => addInputToTestCase(activeTestCaseTab)}
                                 >
-                                    Add Input
+                                    {t("interview.room.question_panel.btn_add_input")}
                                 </Button>
 
                                 <Typography variant="subtitle2" sx={{ mt: 2 }}>
-                                    Expected Outputs
+                                    {t("interview.room.question_panel.label_expected")}
                                 </Typography>
                                 {testCases[activeTestCaseTab].expectedOutputs.map((output, outputIndex) => (
                                     <Stack direction="row" spacing={1} key={outputIndex} alignItems="center">
                                         <TextField
-                                            label={`Valid Answer #${outputIndex + 1}`}
+                                            label={t("interview.room.question_panel.label_answer", { index: outputIndex + 1 })}
                                             fullWidth
                                             value={output}
                                             onChange={(e) =>
@@ -202,13 +204,13 @@ function QuestionPanel({
                                     startIcon={<AddIcon />}
                                     onClick={() => addExpectedOutput(activeTestCaseTab)}
                                 >
-                                    Add Valid Answer
+                                    {t("interview.room.question_panel.btn_add_answer")}
                                 </Button>
                             </Stack>
                         )}
                     </Box>
                     <Button onClick={sendProblem} variant="contained" sx={{ mt: 2, mb: 1 }}>
-                        Send Problem to Candidate
+                        {t("interview.room.question_panel.btn_send")}
                     </Button>
                 </Box>
             ) : (
@@ -217,7 +219,7 @@ function QuestionPanel({
                     <Box sx={{ px: 3, pt: 3, pb: 1, borderBottom: "1px solid #F3F4F6", overflow: "hidden" }}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "#8B5CF6", mb: 2 }}>
                             <DescriptionIcon fontSize="small" />
-                            <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1 }}>PROBLEM STATEMENT</Typography>
+                            <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1 }}>{t("interview.room.question_panel.label_statement")}</Typography>
                         </Stack>
                         <Typography 
                             variant="h5" 
@@ -229,11 +231,11 @@ function QuestionPanel({
                                 overflowWrap: "anywhere"
                             }}
                         >
-                            {problemData?.shortName || "No Problem Assigned Yet"}
+                            {problemData?.shortName || t("interview.room.question_panel.empty_title")}
                         </Typography>
                         {!problemData && (
                             <Typography variant="body2" sx={{ color: "#64748B", fontStyle: 'italic' }}>
-                                Wait for the coach to post a question for you...
+                                {t("interview.room.question_panel.empty_subtitle")}
                             </Typography>
                         )}
                     </Box>
@@ -256,11 +258,11 @@ function QuestionPanel({
                             }
                         }}
                     >
-                        <Tab label="Description" />
+                        <Tab label={t("interview.room.question_panel.tab_description")} />
                         <Tab label={
                             <Stack direction="row" alignItems="center" spacing={1}>
                                 <TuneIcon fontSize="small" />
-                                <span>Test cases</span>
+                                <span>{t("interview.room.question_panel.tab_test_cases")}</span>
                             </Stack>
                         } disabled={!problemData} />
                     </Tabs>
@@ -275,7 +277,7 @@ function QuestionPanel({
                                             }}
                                         />
                                     ) : (
-                                        "No problem description provided yet."
+                                        t("interview.room.question_panel.empty_description")
                                     )}
                                 </Box>
                             </Box>
@@ -285,7 +287,7 @@ function QuestionPanel({
                                 {problemData?.testCases?.map((tc, index) => (
                                     <Paper key={index} elevation={0} sx={{ p: 2, border: "1px solid #E5E7EB" }}>
                                         <Typography variant="subtitle2" gutterBottom>
-                                            Test Case {index + 1}
+                                            {t("interview.room.question_panel.label_case", { index: index + 1 })}
                                         </Typography>
                                         {tc.inputs.map((input, inputIndex) => (
                                             <Box key={inputIndex} sx={{ mb: 1 }}>
@@ -314,11 +316,10 @@ function QuestionPanel({
                                 ))}
                                 <Paper elevation={0} sx={{ p: 2, mt: 2, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 2 }}>
                                     <Typography variant="subtitle2" gutterBottom sx={{ color: "#2C5282" }}>
-                                        Expected Outputs
+                                        {t("interview.room.question_panel.label_expected_footer")}
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: "#2B6CB0" }}>
-                                        The candidate's code output must match one of the valid answers provided by the
-                                        interviewer.
+                                        {t("interview.room.question_panel.hint_expected")}
                                     </Typography>
                                 </Paper>
                             </Stack>

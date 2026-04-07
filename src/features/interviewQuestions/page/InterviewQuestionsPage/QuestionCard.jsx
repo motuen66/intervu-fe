@@ -2,6 +2,7 @@
 import { Avatar, Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
@@ -22,6 +23,7 @@ import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
 export default function QuestionCard({ item, isHot: isHotProp }) {
     const [expanded, setExpanded] = useState(false);
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const currentUser = useSelector((state) => state.auth.userData);
 
     const [likeCount, setLikeCount] = useState(item.likeCount ?? item.vote ?? 0);
@@ -32,7 +34,9 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
 
     /* ── Normalized fields from QuestionListItemDto ── */
     const companyNames = item.companyNames ?? [];
-    const companyLabel = companyNames.length ? `Asked at ${companyNames.join(", ")}` : "Community question";
+    const companyLabel = companyNames.length
+        ? t("question_bank.common.asked_at", { company: companyNames.join(", ") })
+        : t("question_bank.common.community_question");
 
     const roles = item.roles ?? [];
 
@@ -52,18 +56,103 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     const isHot = isHotProp ?? item.isHot ?? false;
 
     /* ── Metadata chips ── */
+    const roleKeyMap = {
+        1: "product_manager",
+        2: "software_engineer",
+        3: "data_engineer",
+        4: "data_scientist",
+        5: "technical_program_manager",
+        6: "backend_engineer",
+        7: "frontend_engineer",
+        8: "fullstack_engineer",
+        9: "mobile_engineer",
+        10: "devops_engineer",
+        11: "qa_engineer",
+        12: "ml_engineer",
+        13: "security_engineer",
+        14: "cloud_engineer",
+        15: "uiux_designer",
+        16: "business_analyst",
+        17: "solution_architect",
+    };
+    const categoryKeyMap = {
+        1: "behavioral",
+        2: "technical",
+        3: "system_design",
+        4: "case_study",
+        5: "other",
+        6: "coding",
+        7: "database",
+        8: "networking",
+        9: "oop",
+        10: "algorithms",
+        11: "data_structures",
+        12: "concurrency",
+        13: "distributed_systems",
+        14: "cloud",
+        15: "devops",
+    };
+    const levelKeyMap = {
+        0: "intern",
+        1: "junior",
+        2: "middle",
+        3: "senior",
+        4: "lead",
+        5: "manager",
+        6: "director",
+        7: "expert",
+    };
+    const roundKeyMap = {
+        1: "phone_screen",
+        2: "technical_screen",
+        3: "take_home",
+        4: "onsite_final",
+        5: "other",
+        6: "hr_round",
+        7: "coding_challenge",
+        8: "live_coding",
+        9: "system_design_round",
+        10: "behavioral_round",
+        11: "managerial_round",
+    };
+
     const roleLabel =
         typeof item.role === "number"
-            ? ROLES.find((r) => r.value === item.role)?.label
+            ? (() => {
+                  const key = roleKeyMap[item.role];
+                  return key ? t(`question_bank.roles.${key}`) : ROLES.find((r) => r.value === item.role)?.label;
+              })()
             : roles[0] && (typeof roles[0] === "string" ? roles[0] : roles[0]?.name);
     const categoryLabel =
         item.category != null
-            ? QUESTION_TYPES.find((t) => t.value === item.category)?.label
+            ? (() => {
+                  const key = categoryKeyMap[item.category];
+                  return key
+                      ? t(`question_bank.categories.${key}`)
+                      : QUESTION_TYPES.find((type) => type.value === item.category)?.label;
+              })()
             : item.questionType != null
-              ? QUESTION_TYPES.find((t) => t.value === item.questionType)?.label
+              ? (() => {
+                    const key = categoryKeyMap[item.questionType];
+                    return key
+                        ? t(`question_bank.categories.${key}`)
+                        : QUESTION_TYPES.find((type) => type.value === item.questionType)?.label;
+                })()
               : null;
-    const levelLabel = item.level != null ? LEVELS.find((l) => l.value === item.level)?.label : null;
-    const roundLabel = item.round != null ? ROUNDS.find((r) => r.value === item.round)?.label : null;
+    const levelLabel =
+        item.level != null
+            ? (() => {
+                  const key = levelKeyMap[item.level];
+                  return key ? t(`question_bank.levels.${key}`) : LEVELS.find((l) => l.value === item.level)?.label;
+              })()
+            : null;
+    const roundLabel =
+        item.round != null
+            ? (() => {
+                  const key = roundKeyMap[item.round];
+                  return key ? t(`question_bank.rounds.${key}`) : ROUNDS.find((r) => r.value === item.round)?.label;
+              })()
+            : null;
 
     const metaChips = [
         roleLabel && { label: roleLabel, color: "secondary" },
@@ -159,13 +248,13 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
             ) : (
                 <BookmarkBorderIcon sx={{ fontSize: 16 }} />
             ),
-            label: saveCount > 0 ? `Save (${saveCount})` : "Save",
+            label: saveCount > 0 ? t("question_bank.card.save_count", { count: saveCount }) : t("question_bank.card.save"),
             onClick: handleSave,
             active: saved,
         },
         {
             icon: <ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />,
-            label: `${answerCount} answer${answerCount !== 1 ? "s" : ""}`,
+            label: t("question_bank.card.answers_count", { count: answerCount }),
         },
         {
             icon: <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />,
@@ -173,7 +262,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         },
         {
             icon: <AddCircleOutlineIcon sx={{ fontSize: 16 }} />,
-            label: "I was asked this",
+            label: t("question_bank.card.i_was_asked_this"),
             onClick: () =>
                 navigate("/questions/share", {
                     state: {
@@ -397,7 +486,9 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                                 }}
                                 sx={{ textTransform: "none", p: 0, minWidth: 0 }}
                             >
-                                {expandedPreview ? "View less" : "View more"}
+                                {expandedPreview
+                                    ? t("question_bank.common.view_less")
+                                    : t("question_bank.common.view_more")}
                             </Button>
                         </Box>
                     )}

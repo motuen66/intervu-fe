@@ -10,6 +10,10 @@ import { Videocam, VideocamOff, Mic, MicOff } from "@mui/icons-material";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 import CreateIcon from "@mui/icons-material/Create";
+import FlagIcon from "@mui/icons-material/Flag";
+import { useTranslation } from "react-i18next";
+import ReportRoomModal from "./ReportRoomModal";
+import toast from "react-hot-toast";
 import { ROLES } from "../../../../common/constants/common.js";
 import { useEffect, useState } from "react";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -33,9 +37,10 @@ function VideoPanel({
     user,
     roomInfo,
 }) {
+    const { t } = useTranslation();
     const isCandidate = user?.role === ROLES.CANDIDATE;
-    const remotePeerName = roomInfo ? (isCandidate ? roomInfo.coachName || "Coach" : roomInfo.candidateName || "Candidate") : "Peer";
-    const remotePeerRole = isCandidate ? "Coach" : "Candidate";
+    const remotePeerName = roomInfo ? (isCandidate ? roomInfo.coachName || t("interview.room.label_coach") : roomInfo.candidateName || t("interview.room.label_candidate")) : t("interview.room.label_participant");
+    const remotePeerRole = isCandidate ? t("interview.room.label_coach") : t("interview.room.label_candidate");
 
     const [fetchedRemoteAvatar, setFetchedRemoteAvatar] = useState(null);
 
@@ -57,7 +62,7 @@ function VideoPanel({
     ) : null);
 
     const localRoleNameInRoom = isCandidate ? roomInfo?.candidateName : roomInfo?.coachName;
-    const localPeerName = user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
+    const localPeerName = user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || t("interview.room.video_panel.label_you");
     const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imagePath || user?.avatar;
 
     return (
@@ -162,7 +167,7 @@ function VideoPanel({
                     <Box sx={{ position: "absolute", bottom: 8, left: 8, bgcolor: "#A3E635", px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Avatar src={localAvatar} sx={{ width: 20, height: 20 }} />
                         <Typography variant="caption" sx={{ fontWeight: 700, color: "#166534" }}>
-                            {localPeerName !== "You" ? `You (${localPeerName})` : "You"}
+                            {localPeerName !== t("interview.room.video_panel.label_you") ? t("interview.room.video_panel.label_you_with_name", { name: localPeerName }) : t("interview.room.video_panel.label_you")}
                         </Typography>
                     </Box>
                 </Box>
@@ -181,64 +186,86 @@ function VideoPanel({
                     "& > *": { flexShrink: 0 }
                 }}
             >
-                <Fab
-                    size="medium"
-                    onClick={onToggleMic}
-                    sx={{
-                        bgcolor: isMicOn ? "#FFFFFF" : "#EF4444",
-                        color: isMicOn ? "#4B5563" : "#FFFFFF",
-                        border: isMicOn ? "1px solid #E5E7EB" : "none",
-                        "&:hover": { bgcolor: isMicOn ? "#F3F4F6" : "#DC2626" }
-                    }}
-                >
-                    {isMicOn ? <Mic /> : <MicOff />}
-                </Fab>
-                <Fab
-                    size="medium"
-                    onClick={onToggleCamera}
-                    sx={{
-                        bgcolor: isCameraOn ? "#FFFFFF" : "#EF4444",
-                        color: isCameraOn ? "#4B5563" : "#FFFFFF",
-                        border: isCameraOn ? "1px solid #E5E7EB" : "none",
-                        "&:hover": { bgcolor: isCameraOn ? "#F3F4F6" : "#DC2626" }
-                    }}
-                >
-                    {isCameraOn ? <Videocam /> : <VideocamOff />}
-                </Fab>
-                <Fab
-                    size="medium"
-                    sx={{
-                        bgcolor: "#FFFFFF",
-                        color: "#4B5563",
-                        border: "1px solid #E5E7EB",
-                        "&:hover": { bgcolor: "#F3F4F6" }
-                    }}
-                >
-                    <ScreenShareIcon />
-                </Fab>
-                <Fab
-                    size="medium"
-                    onClick={onLeaveRoom}
-                    sx={{
-                        bgcolor: "#EF4444",
-                        color: "#FFFFFF",
-                        "&:hover": { bgcolor: "#DC2626" }
-                    }}
-                >
-                    <CallEndIcon />
-                </Fab>
+                <Tooltip title={t("interview.room.video_panel.tooltip_mic")}>
+                    <Fab
+                        size="medium"
+                        onClick={onToggleMic}
+                        sx={{
+                            bgcolor: isMicOn ? "#FFFFFF" : "#EF4444",
+                            color: isMicOn ? "#4B5563" : "#FFFFFF",
+                            border: isMicOn ? "1px solid #E5E7EB" : "none",
+                            "&:hover": { bgcolor: isMicOn ? "#F3F4F6" : "#DC2626" }
+                        }}
+                    >
+                        {isMicOn ? <Mic /> : <MicOff />}
+                    </Fab>
+                </Tooltip>
+                <Tooltip title={t("interview.room.video_panel.tooltip_cam")}>
+                    <Fab
+                        size="medium"
+                        onClick={onToggleCamera}
+                        sx={{
+                            bgcolor: isCameraOn ? "#FFFFFF" : "#EF4444",
+                            color: isCameraOn ? "#4B5563" : "#FFFFFF",
+                            border: isCameraOn ? "1px solid #E5E7EB" : "none",
+                            "&:hover": { bgcolor: isCameraOn ? "#F3F4F6" : "#DC2626" }
+                        }}
+                    >
+                        {isCameraOn ? <Videocam /> : <VideocamOff />}
+                    </Fab>
+                </Tooltip>
+                <Tooltip title={t("interview.room.video_panel.tooltip_share")}>
+                    <Fab
+                        size="medium"
+                        sx={{
+                            bgcolor: "#FFFFFF",
+                            color: "#4B5563",
+                            border: "1px solid #E5E7EB",
+                            "&:hover": { bgcolor: "#F3F4F6" }
+                        }}
+                    >
+                        <ScreenShareIcon />
+                    </Fab>
+                </Tooltip>
+                <Tooltip title={t("interview.room.video_panel.tooltip_report")}>
+                    <Fab
+                        size="medium"
+                        onClick={() => setReportModalOpen(true)}
+                        sx={{
+                            bgcolor: "#FFFFFF",
+                            color: "#EF4444",
+                            border: "1px solid #E5E7EB",
+                            "&:hover": { bgcolor: "#F3F4F6" }
+                        }}
+                    >
+                        <FlagIcon />
+                    </Fab>
+                </Tooltip>
+                <Tooltip title={t("interview.room.video_panel.tooltip_leave")}>
+                    <Fab
+                        size="medium"
+                        onClick={onLeaveRoom}
+                        sx={{
+                            bgcolor: "#EF4444",
+                            color: "#FFFFFF",
+                            "&:hover": { bgcolor: "#DC2626" }
+                        }}
+                    >
+                        <CallEndIcon />
+                    </Fab>
+                </Tooltip>
             </Stack>
 
             {/* Internal Notes */}
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1, flexShrink: 0 }}>
-                    <Typography variant="overline" sx={{ fontWeight: 800, color: "#6B7280", letterSpacing: 1 }}>INTERNAL NOTES</Typography>
+                    <Typography variant="overline" sx={{ fontWeight: 800, color: "#6B7280", letterSpacing: 1 }}>{t("interview.room.video_panel.label_notes")}</Typography>
                     <CreateIcon sx={{ color: "#9CA3AF", fontSize: 18 }} />
                 </Stack>
                 <TextField
                     multiline
                     fullWidth
-                    placeholder="Add your private notes here..."
+                    placeholder={t("interview.room.video_panel.placeholder_notes")}
                     variant="outlined"
                     sx={{
                         flex: 1,

@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useLoading from "../../../../common/hooks/useLoading";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -18,6 +19,7 @@ import { hasSkillGapData } from "../../../profiles/candidate/candidate-assessmen
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 
 function LoginPage() {
+    const { t } = useTranslation();
     const isLoading = useLoading();
     const navigate = useNavigate();
     const location = useLocation();
@@ -272,7 +274,7 @@ function LoginPage() {
                                     fontFamily: theme.typography.fontFamily,
                                 }}
                             >
-                                Welcome back
+                                {t("auth.login.welcome")}
                             </Typography>
                             <div
                                 style={{
@@ -288,7 +290,7 @@ function LoginPage() {
                         <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ position: "relative", zIndex: 1 }}>
                             <div style={{ marginBottom: "16px" }}>
                                 <TextField
-                                    label="Email"
+                                    label={t("auth.login.email")}
                                     type="email"
                                     variant="outlined"
                                     fullWidth
@@ -302,7 +304,7 @@ function LoginPage() {
                                         "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
                                         "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
                                     }}
-                                    {...register("email", { required: "Email is required" })}
+                                    {...register("email", { required: t("auth.login.email_required") })}
                                     error={!!errors.email}
                                     helperText={errors.email?.message}
                                 />
@@ -310,7 +312,7 @@ function LoginPage() {
 
                             <div style={{ marginBottom: "8px" }}>
                                 <TextField
-                                    label="Password"
+                                    label={t("auth.login.password")}
                                     type="password"
                                     variant="outlined"
                                     fullWidth
@@ -324,7 +326,7 @@ function LoginPage() {
                                         "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
                                         "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
                                     }}
-                                    {...register("password", { required: "Password is required" })}
+                                    {...register("password", { required: t("auth.login.password_required") })}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
                                 />
@@ -347,7 +349,7 @@ function LoginPage() {
                                             },
                                         }}
                                     >
-                                        Forgot password?
+                                        {t("auth.login.forgot_password")}
                                     </Typography>
                                 </div>
 
@@ -370,7 +372,7 @@ function LoginPage() {
                                                 },
                                             }}
                                         >
-                                            Login
+                                            {t("auth.login.btn_login")}
                                         </PrimaryButton>
                                     )}
                                 </div>
@@ -391,14 +393,14 @@ function LoginPage() {
                                             letterSpacing: "0.8px",
                                         }}
                                     >
-                                        OR
+                                        {t("auth.login.or")}
                                     </Typography>
                                     <div style={{ flex: 1, height: "1px", background: theme.palette.divider }}></div>
                                 </div>
 
                                 {!GOOGLE_CLIENT_ID ? (
                                     <Typography style={{ fontSize: "12px", color: "#B91C1C", textAlign: "center" }}>
-                                        Google sign-in is not configured (missing VITE_APP_GOOGLE_CLIENT_ID).
+                                        {t("auth.login.google_not_configured")}
                                     </Typography>
                                 ) : (
                                     <div
@@ -424,13 +426,13 @@ function LoginPage() {
                                             marginTop: "6px",
                                         }}
                                     >
-                                        Loading Google sign-in...
+                                        {t("auth.login.google_loading")}
                                     </Typography>
                                 )}
 
                                 <div style={{ textAlign: "center", marginTop: "14px" }}>
                                     <Typography style={{ fontSize: "14px", color: theme.palette.text.secondary }}>
-                                        Don't have an account?{" "}
+                                        {t("auth.login.no_account")}{" "}
                                         <span
                                             onClick={() => navigate("/signup")}
                                             style={{
@@ -440,7 +442,7 @@ function LoginPage() {
                                                 textDecoration: "underline",
                                             }}
                                         >
-                                            Sign up
+                                            {t("auth.login.signup")}
                                         </span>
                                     </Typography>
                                 </div>
@@ -536,7 +538,7 @@ function LoginPage() {
 
                             <div>
                                 <SplitText
-                                    text="Online Interview Support System"
+                                    text={t("auth.login.system_title")}
                                     tag="h2"
                                     className="text-xl"
                                     delay={45}
@@ -566,7 +568,7 @@ function LoginPage() {
                                     lineHeight: "1.6",
                                 }}
                             >
-                                Created and operated by TheSuperTeam
+                                {t("auth.login.created_and_operated")}
                             </div>
                         </div>
                     </div>

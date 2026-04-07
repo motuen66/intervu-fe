@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import "./MainLayout.css";
 import { Container, Avatar } from "@mui/material";
 import { ROLES } from "../../common/constants/common";
@@ -36,6 +37,7 @@ const MainLayout = () => {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
     const { userData, token } = useSelector((state) => state.auth || {});
     const dispatch = useDispatch();
     const [remoteAvatar, setRemoteAvatar] = useState(null);
@@ -162,10 +164,10 @@ const MainLayout = () => {
     }, [userData?.id, dispatch]);
 
     const adminNavItems = [
-        { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
+        { label: t("common.navbar.dashboard"), icon: LayoutDashboard, path: "/admin/dashboard" },
         { label: "Schedules", icon: Calendar, path: "/admin/schedules" },
         { label: "Interviews", icon: Video, path: "/admin/interviews" },
-        { label: "Users", icon: Users, path: "/admin/users" },
+        { label: t("admin.user_management.title"), icon: Users, path: "/admin/users" },
         { label: "Company", icon: Building2, path: "/admin/companies" },
         { label: "Question Bank", icon: HelpCircle, path: "/admin/question-bank" },
         {
@@ -178,7 +180,15 @@ const MainLayout = () => {
                 { label: "Payouts", path: "/admin/income/payouts" },
             ],
         },
-        { label: "Reports", icon: BarChart2, path: "/admin/reports" },
+                {
+            label: "Reports",
+            icon: BarChart2,
+            key: "reports",
+            children: [
+                { label: t("common.navbar.question_bank"), path: "/admin/reports/questions" },
+                { label: "Room", path: "/admin/reports/rooms" },
+            ],
+        },
     ];
 
     // ADMIN LAYOUT
@@ -237,18 +247,18 @@ const MainLayout = () => {
                             })}
                         </div>
                         <div className="sidebar-section">
-                            <div className="sidebar-section-title">Settings</div>
+                            <div className="sidebar-section-title">{t("common.navbar.settings")}</div>
                             <button
                                 className={`sidebar-item ${location.pathname + location.search === "/settings" ? "active" : ""}`}
                                 onClick={() => navigate("/settings")}
                                 type="button"
                             >
                                 <span className="sidebar-item-icon"><Bell size={20} strokeWidth={1.5} color="#64748B" /></span>
-                                <span className="sidebar-item-text">Notification</span>
+                                <span className="sidebar-item-text">{t("common.navbar.settings")}</span>
                             </button>
                             <button className="sidebar-item" onClick={handleLogout} type="button">
                                 <span className="sidebar-item-icon"><LogOut size={20} strokeWidth={1.5} color="#64748B" /></span>
-                                <span className="sidebar-item-text">Log out</span>
+                                <span className="sidebar-item-text">{t("common.navbar.logout")}</span>
                             </button>
                         </div>
                     </nav>
@@ -293,7 +303,7 @@ const MainLayout = () => {
                                                     setIsUserDropdownOpen(false);
                                                 }}
                                             >
-                                                <User size={16} /> My Profile
+                                                <User size={16} /> {t("common.navbar.my_profile")}
                                             </button>
                                             <button
                                                 className="dropdown-item"
@@ -302,11 +312,11 @@ const MainLayout = () => {
                                                     setIsUserDropdownOpen(false);
                                                 }}
                                             >
-                                                <Settings size={16} /> Settings
+                                                <Settings size={16} /> {t("common.navbar.settings")}
                                             </button>
                                             <div className="dropdown-divider" />
                                             <button className="dropdown-item logout-link" onClick={handleLogout}>
-                                                <LogOut size={16} /> Logout
+                                                <LogOut size={16} /> {t("common.navbar.logout")}
                                             </button>
                                         </motion.div>
                                     )}
@@ -338,7 +348,7 @@ const MainLayout = () => {
 
                 <footer className="footer">
                     <div className="footer-container">
-                        <p>&copy; 2026 Intervu. All rights reserved.</p>
+                        <p>{t("landing.footer.copyright", { year: 2026 })}</p>
                     </div>
                 </footer>
             </div>

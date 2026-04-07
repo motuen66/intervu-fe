@@ -34,7 +34,7 @@ export function getNotificationConfig(type) {
     return TYPE_CONFIG[type] || DEFAULT_CONFIG;
 }
 
-export function formatTimeAgo(dateStr) {
+export function formatTimeAgo(dateStr, t) {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now - date;
@@ -44,10 +44,10 @@ export function formatTimeAgo(dateStr) {
     const diffDay = Math.floor(diffHour / 24);
     const diffWeek = Math.floor(diffDay / 7);
 
-    if (diffSec < 60) return "Just now";
-    if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? "s" : ""} ago`;
-    if (diffHour < 24) return `${diffHour} hour${diffHour > 1 ? "s" : ""} ago`;
-    if (diffDay < 7) return `${diffDay} day${diffDay > 1 ? "s" : ""} ago`;
-    if (diffWeek < 4) return `${diffWeek} week${diffWeek > 1 ? "s" : ""} ago`;
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    if (diffSec < 60) return t("notifications.time.just_now");
+    if (diffMin < 60) return t("notifications.time.minutes_ago", { count: diffMin });
+    if (diffHour < 24) return t("notifications.time.hours_ago", { count: diffHour });
+    if (diffDay < 7) return t("notifications.time.days_ago", { count: diffDay });
+    if (diffWeek < 4) return t("notifications.time.weeks_ago", { count: diffWeek });
+    return date.toLocaleDateString(t("common.date_locale"), { month: "short", day: "numeric" });
 }

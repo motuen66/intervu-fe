@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import {
     Box,
     Container,
@@ -31,6 +32,7 @@ import { adminEndPoints } from '../services/adminApi';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [stats, setStats] = useState(null);
@@ -356,7 +358,7 @@ export default function AdminDashboard() {
                 <Grid container spacing={3} sx={{ mb: 2 }}>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
                         <StatsCard
-                            title="Total Users"
+                            title={t("admin.dashboard.stats_users")}
                             value={stats?.totalUsers}
                             icon={PeopleIcon}
                             color="#7B61FF"
@@ -364,7 +366,7 @@ export default function AdminDashboard() {
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
                         <StatsCard
-                            title="Total Companies"
+                            title={t("admin.dashboard.stats_companies")}
                             value={stats?.totalCompanies}
                             icon={BusinessIcon}
                             color="#4ade80"
@@ -372,7 +374,7 @@ export default function AdminDashboard() {
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
                         <StatsCard
-                            title="Total Interviewers"
+                            title={t("admin.dashboard.stats_interviewers")}
                             value={stats?.totalInterviewers}
                             icon={PersonIcon}
                             color="#60a5fa"
@@ -380,7 +382,7 @@ export default function AdminDashboard() {
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
                         <StatsCard
-                            title="Total Payments"
+                            title={t("admin.dashboard.stats_payments")}
                             value={stats?.totalPayments}
                             icon={PaymentIcon}
                             color="#f59e0b"
@@ -388,7 +390,7 @@ export default function AdminDashboard() {
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
                         <StatsCard
-                            title="Total Feedbacks"
+                            title={t("admin.dashboard.stats_feedbacks")}
                             value={stats?.totalFeedbacks}
                             icon={FeedbackIcon}
                             color="#4F46E5"
@@ -396,7 +398,7 @@ export default function AdminDashboard() {
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
                         <StatsCard
-                            title="Avg Rating"
+                            title={t("admin.dashboard.stats_rating")}
                             value={parseFloat(stats?.averageRating ?? stats?.avgRating ?? stats?.ratingAverage ?? 0).toFixed(2)}
                             icon={StarIcon}
                             color="#fbbf24"

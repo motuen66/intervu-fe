@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { Search, Sparkles, X, Filter, ChevronUp } from 'lucide-react';
 import {
@@ -74,6 +75,7 @@ function DualRangeSlider({
 }
 
 function FilterBar({ onOpenSmartMatch }) {
+  const { t } = useTranslation();
   const COMPACT_BAR_HEIGHT = 72;
   const FILTER_TOGGLE_WIDTH = 142;
   const dispatch = useDispatch();
@@ -218,10 +220,10 @@ function FilterBar({ onOpenSmartMatch }) {
         <Stack spacing={2}>
           <Stack direction="row" spacing={2} alignItems="center" flexWrap={{ xs: 'wrap', md: 'nowrap' }}>
             <FormControl size="small" sx={{ width: 190, minWidth: 190, ...fieldStyles.outlinedFocus }}>
-              <InputLabel>Company</InputLabel>
+              <InputLabel>{t("home.filters.company")}</InputLabel>
               <Select
                 value={localFilters.company || ''}
-                label="Company"
+                label={t("home.filters.company")}
                 onChange={(e) => handleLocalFilterChange('company', e.target.value || null)}
                 sx={{
                   "& .MuiSelect-select": {
@@ -253,7 +255,7 @@ function FilterBar({ onOpenSmartMatch }) {
                   }
                 }}
               >
-                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value=""><em>{t("home.filters.none")}</em></MenuItem>
                 {companiesList.map(company => (
                   <MenuItem key={company.id} value={company.id}>{company.name}</MenuItem>
                 ))}
@@ -261,10 +263,10 @@ function FilterBar({ onOpenSmartMatch }) {
             </FormControl>
 
             <FormControl size="small" sx={{ width: 190, minWidth: 190, ...fieldStyles.outlinedFocus }}>
-              <InputLabel>Domain/Industry</InputLabel>
+              <InputLabel>{t("home.filters.industry")}</InputLabel>
               <Select
                 value={localFilters.industry || ''}
-                label="Domain/Industry"
+                label={t("home.filters.industry")}
                 onChange={(e) => handleLocalFilterChange('industry', e.target.value || null)}
                 sx={{
                   "& .MuiSelect-select": {
@@ -296,7 +298,7 @@ function FilterBar({ onOpenSmartMatch }) {
                   }
                 }}
               >
-                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value=""><em>{t("home.filters.none")}</em></MenuItem>
                 {industriesList.map(ind => (
                   <MenuItem key={ind.id} value={ind.id}>{ind.name}</MenuItem>
                 ))}
@@ -318,14 +320,14 @@ function FilterBar({ onOpenSmartMatch }) {
               }}
             >
               {showAdvanced ? <ChevronUp size={16} /> : <Filter size={16} />}
-              {showAdvanced ? 'Hide Filters' : 'More Filters'}
+              {showAdvanced ? t("home.filters.hide_filters") : t("home.filters.more_filters")}
             </SecondaryButton>
 
             <Box sx={{ flexGrow: 1 }} />
 
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
               <FormTextField
-                placeholder="Search..."
+                placeholder={t("home.filters.search_placeholder")}
                 size="small"
                 value={localFilters.searchTerm}
                 onChange={(e) => handleLocalFilterChange('searchTerm', e.target.value)}
@@ -337,11 +339,20 @@ function FilterBar({ onOpenSmartMatch }) {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ width: 280 }}
+                sx={{ minWidth: 180, flex: 1, maxWidth: 300 }}
               />
 
-              <PrimaryButton size="small" onClick={applySearch} sx={{ height: 40 }}>
-                Search
+              <PrimaryButton 
+                size="small" 
+                onClick={applySearch} 
+                sx={{ 
+                  height: 40, 
+                  minWidth: 'fit-content', 
+                  px: 2.5, 
+                  whiteSpace: 'nowrap' 
+                }}
+              >
+                {t("home.filters.btn_search")}
               </PrimaryButton>
 
               <DangerButton
@@ -370,7 +381,7 @@ function FilterBar({ onOpenSmartMatch }) {
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={4}>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', mb: 1.5, display: 'block' }}>
-                    EXPERIENCE (YEARS)
+                    {t("home.filters.experience_title")}
                   </Typography>
                   <DualRangeSlider
                     min={EXP_MIN}
@@ -386,7 +397,7 @@ function FilterBar({ onOpenSmartMatch }) {
 
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', mb: 1.5, display: 'block' }}>
-                    PRICE / HOUR (VND)
+                    {t("home.filters.price_title")}
                   </Typography>
                   <DualRangeSlider
                     min={PRICE_MIN}
@@ -402,7 +413,7 @@ function FilterBar({ onOpenSmartMatch }) {
 
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', mb: 1.5, display: 'block' }}>
-                    ADD SKILLS
+                    {t("home.filters.skills_title")}
                   </Typography>
                   <FormControl size="small" fullWidth sx={{ ...fieldStyles.outlinedFocus, maxWidth: 200 }}>
                     <Select
@@ -436,10 +447,10 @@ function FilterBar({ onOpenSmartMatch }) {
                               msOverflowStyle: 'none'
                              }
                           }
-                        }
+                         }
                       }}
                     >
-                      <MenuItem value="">Select a skill</MenuItem>
+                      <MenuItem value="">{t("home.filters.select_skill")}</MenuItem>
                       {availableSkills.map((skill) => (
                         <MenuItem key={skill.id} value={skill.id}>{skill.name}</MenuItem>
                       ))}
@@ -467,12 +478,12 @@ function FilterBar({ onOpenSmartMatch }) {
 
           <Collapse in={hasActiveFilters}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>ACTIVE:</Typography>
-              {localFilters.company && <div className="summary-pill-simple">Company</div>}
-              {localFilters.industry && <div className="summary-pill-simple">Industry</div>}
-              {(localFilters.skillIds || []).length > 0 && <div className="summary-pill-simple">{(localFilters.skillIds || []).length} skills</div>}
-              {(localFilters.minExperienceYears || localFilters.maxExperienceYears) && <div className="summary-pill-simple">Experience</div>}
-              {(localFilters.minPrice || localFilters.maxPrice) && <div className="summary-pill-simple">Price</div>}
+              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>{t("home.filters.active_label")}</Typography>
+              {localFilters.company && <div className="summary-pill-simple">{t("home.filters.company")}</div>}
+              {localFilters.industry && <div className="summary-pill-simple">{t("home.filters.industry")}</div>}
+              {(localFilters.skillIds || []).length > 0 && <div className="summary-pill-simple">{(localFilters.skillIds || []).length} {t("home.filters.skills_count")}</div>}
+              {(localFilters.minExperienceYears || localFilters.maxExperienceYears) && <div className="summary-pill-simple">{t("home.filters.experience_label")}</div>}
+              {(localFilters.minPrice || localFilters.maxPrice) && <div className="summary-pill-simple">{t("home.filters.price_label")}</div>}
             </Stack>
           </Collapse>
         </Stack>
@@ -485,8 +496,10 @@ function FilterBar({ onOpenSmartMatch }) {
           className="ai-glow-button"
           sx={(theme) => ({
             height: 70, 
-            width: 256,
-            minWidth: 256,
+            width: 'auto',
+            minWidth: 260,
+            px: 4.5,
+            whiteSpace: 'nowrap',
             borderRadius: '12px',
             gap: 1.5,
             fontSize: '1rem',
@@ -495,7 +508,7 @@ function FilterBar({ onOpenSmartMatch }) {
           })}
         >
           <Sparkles size={22} className="ai-sparkle-icon" />
-          <span>Smart Match</span>
+          <span>{t("home.filters.smart_match")}</span>
         </PrimaryButton>
       </Box>
     </Stack>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -14,6 +15,7 @@ import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
 export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdated }) {
+    const { t } = useTranslation();
     const [form, setForm] = useState({
         price: 0,
         durationMinutes: 30,
@@ -34,7 +36,7 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
         if (!item) return;
         setError("");
         if (form.durationMinutes < 15 || form.durationMinutes > 300) {
-            setError("Duration must be between 15 and 300 minutes.");
+            setError(t("coach.services.dialog.error_duration"));
             return;
         }
 
@@ -67,12 +69,12 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
             >
                 <Box>
                     <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#111827" }}>
-                        Edit interview service
+                        {t("coach.services.dialog.update_title")}
                     </Typography>
                     <Typography sx={{ fontSize: "0.85rem", color: "#6b7280", mt: 0.5 }}>
                         {item?.interviewTypeName
-                            ? `Update pricing & duration for "${item.interviewTypeName}".`
-                            : "Update your service pricing & duration."}
+                            ? t("coach.services.dialog.update_subtitle", { name: item.interviewTypeName })
+                            : t("coach.services.dialog.update_subtitle_fallback")}
                     </Typography>
                 </Box>
                 <IconButton
@@ -95,7 +97,7 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
-                                label="Interview Type"
+                                label={t("coach.services.dialog.label_type")}
                                 value={item?.interviewTypeName || ""}
                                 InputProps={{ readOnly: true }}
                             />
@@ -104,7 +106,7 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
-                                label="Your Price"
+                                label={t("coach.services.dialog.label_price")}
                                 type="number"
                                 value={form.price}
                                 onChange={(e) => {
@@ -121,13 +123,13 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
-                                label="Duration (minutes)"
+                                label={t("coach.services.dialog.label_duration")}
                                 type="number"
                                 value={form.durationMinutes}
                                 onChange={(e) => setForm({ ...form, durationMinutes: Number(e.target.value) })}
                                 inputProps={{ min: 15, max: 300 }}
                                 required
-                                helperText="Between 15 and 300 minutes"
+                                helperText={t("coach.services.dialog.hint_duration")}
                             />
                         </Grid>
                     </Grid>
@@ -136,10 +138,10 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
                     <SecondaryButton onClick={handleClose} disabled={saving}>
-                        Cancel
+                        {t("coach.services.dialog.btn_cancel")}
                     </SecondaryButton>
                     <PrimaryButton type="submit" loading={saving}>
-                        Save changes
+                        {t("coach.services.dialog.btn_save")}
                     </PrimaryButton>
                 </DialogActions>
             </form>

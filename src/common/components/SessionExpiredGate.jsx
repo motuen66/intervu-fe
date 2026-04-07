@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Box, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { Clock, LogIn } from "lucide-react";
 
 const SessionExpiredGate = () => {
+    const { t } = useTranslation();
     const [countdown, setCountdown] = useState(5);
     const navigate = useNavigate();
 
@@ -53,11 +55,11 @@ const SessionExpiredGate = () => {
                 <Box sx={{ p: 1, borderRadius: '10px', backgroundColor: 'rgba(79, 70, 229, 0.1)', display: 'flex' }}>
                     <Clock size={20} color="#4F46E5" />
                 </Box>
-                Session Expired
+                {t("common.modals.session_expired.title")}
             </DialogTitle>
             <DialogContent>
                 <DialogContentText id="session-expired-description" sx={{ color: '#64748B', lineHeight: 1.6 }}>
-                    Your session has expired for security reasons. You will be automatically redirected to the login page in{" "}
+                    {t("common.modals.session_expired.message")}{" "}
                     <Typography 
                         component="span" 
                         sx={{ 
@@ -72,7 +74,7 @@ const SessionExpiredGate = () => {
                     >
                         {countdown}
                     </Typography>{" "}
-                    seconds.
+                    {t("common.modals.session_expired.message_suffix")}
                 </DialogContentText>
             </DialogContent>
             <DialogActions sx={{ p: 3, pt: 1 }}>
@@ -93,7 +95,7 @@ const SessionExpiredGate = () => {
                         '&:hover': { backgroundColor: '#1e293b' }
                     }}
                 >
-                    Back to Login Now
+                    {t("common.modals.session_expired.btn_login_now")}
                 </Button>
             </DialogActions>
         </Dialog>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, TextField, Typography, Modal, Card, Stack, FormControl, Select, MenuItem, Chip } from "@mui/material";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
@@ -15,16 +16,17 @@ const CreateAvailableSlotDialog = ({
     minDate,
     maxDate,
 }) => {
+    const { t } = useTranslation();
     const [tempDate, setTempDate] = useState("");
 
     const handleAddDuplicateDate = () => {
         if (!tempDate) return;
         if (formData.date === tempDate) {
-            toast.error("Date already selected as main date");
+            toast.error(t("coach.schedule.dialog.error_main_date"));
             return;
         }
         if (formData.duplicateDates.includes(tempDate)) {
-            toast.error("Date already added");
+            toast.error(t("coach.schedule.dialog.error_already_added"));
             return;
         }
         setFormData({
@@ -57,13 +59,13 @@ const CreateAvailableSlotDialog = ({
             <Card sx={{ width: "90%", maxWidth: "500px", borderRadius: "12px", maxHeight: "90vh", overflowY: "auto" }}>
                 <Box sx={{ p: 3 }}>
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
-                        Set Availability Time
+                        {t("coach.schedule.dialog.title_create")}
                     </Typography>
 
                     <Stack spacing={2.5}>
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
-                                Date
+                                {t("coach.schedule.dialog.field_date")}
                             </Typography>
                             <TextField
                                 type="date"
@@ -87,7 +89,7 @@ const CreateAvailableSlotDialog = ({
 
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
-                                Duplicate to other dates (Optional)
+                                {t("coach.schedule.dialog.field_duplicate")}
                             </Typography>
                             <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
                                 <TextField
@@ -126,7 +128,7 @@ const CreateAvailableSlotDialog = ({
 
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
-                                Start Time
+                                {t("coach.schedule.dialog.field_start_time")}
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
@@ -163,7 +165,7 @@ const CreateAvailableSlotDialog = ({
 
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
-                                End Time
+                                {t("coach.schedule.dialog.field_end_time")}
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
@@ -197,9 +199,9 @@ const CreateAvailableSlotDialog = ({
                         </Box>
 
                         <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
-                            <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+                            <SecondaryButton onClick={onClose}>{t("coach.schedule.dialog.btn_cancel")}</SecondaryButton>
                             <PrimaryButton onClick={handleSubmit} loading={loading}>
-                                Create
+                                {t("coach.schedule.dialog.btn_create")}
                             </PrimaryButton>
                         </Stack>
                     </Stack>

@@ -11,11 +11,24 @@
     --ep-radius-md: 16px;
     --ep-radius-sm: 8px;
     --ep-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.04);
+    --heading-font: "Outfit", "Plus Jakarta Sans", "Inter", sans-serif;
+    --body-font: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
 
     background-color: var(--ep-bg);
     min-height: 100vh;
     color: var(--ep-text-main);
     padding-bottom: 5rem;
+    font-family: var(--body-font);
+}
+
+/* Ensure all headings use the heading font */
+.elite-profile-container h1,
+.elite-profile-container h2,
+.elite-profile-container h3,
+.elite-profile-container h4,
+.elite-profile-container h5,
+.elite-profile-container h6 {
+    font-family: var(--heading-font);
 }
 
 .ep-shell {
@@ -58,6 +71,7 @@
 }
 
 .ep-hero-name {
+    font-family: var(--heading-font);
     font-size: 3.5rem;
     font-weight: 800;
     line-height: 1;
@@ -66,6 +80,7 @@
 }
 
 .ep-hero-title {
+    font-family: var(--body-font);
     font-size: 1.5rem;
     color: var(--ep-text-muted);
     margin-bottom: 2rem;
@@ -98,12 +113,14 @@
 }
 
 .ep-stat-value {
+    font-family: var(--heading-font);
     font-size: 1.75rem;
     font-weight: 800;
     color: var(--ep-text-main);
 }
 
 .ep-stat-label {
+    font-family: var(--heading-font);
     font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -113,6 +130,7 @@
 }
 
 .ep-about-title {
+    font-family: var(--heading-font);
     font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -122,6 +140,7 @@
 }
 
 .ep-about-text {
+    font-family: var(--body-font);
     font-size: 1.15rem;
     line-height: 1.65;
     color: var(--ep-text-muted);
@@ -134,11 +153,7 @@
     color: var(--ep-accent-dark);
     font-size: 0.75rem;
     font-weight: 700;
-    font-family:
-        "Inter",
-        system-ui,
-        -apple-system,
-        sans-serif;
+    font-family: var(--body-font);
     cursor: pointer;
     margin-left: 8px;
     padding: 0;
@@ -258,12 +273,14 @@
 
 /* Expertise Section */
 .ep-section-title {
+    font-family: var(--heading-font);
     font-size: 2rem;
     font-weight: 800;
     margin-bottom: 2rem;
 }
 
 .ep-sub-title {
+    font-family: var(--heading-font);
     font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -291,6 +308,7 @@
 }
 
 .ep-skill-tag {
+    font-family: var(--body-font);
     display: inline-flex;
     align-items: center;
     gap: 0.7rem;
@@ -381,6 +399,7 @@
 }
 
 .ep-track-card h4 {
+    font-family: var(--heading-font);
     font-size: 1.1rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -393,6 +412,7 @@
 }
 
 .ep-track-card p {
+    font-family: var(--body-font);
     font-size: 0.85rem;
     color: var(--ep-text-muted);
     font-weight: 500;
@@ -451,12 +471,14 @@
 }
 
 .ep-service-card h4 {
+    font-family: var(--heading-font);
     font-size: 1.4rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
 }
 
 .ep-service-meta {
+    font-family: var(--body-font);
     display: flex;
     gap: 1.5rem;
     margin-bottom: 2rem;
@@ -507,6 +529,7 @@
 }
 
 .ep-side-card h5 {
+    font-family: var(--heading-font);
     font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -516,6 +539,7 @@
 }
 
 .ep-side-status {
+    font-family: var(--heading-font);
     font-size: 1.75rem;
     font-weight: 800;
     line-height: 1.1;
@@ -523,6 +547,7 @@
 }
 
 .ep-slot-tag {
+    font-family: var(--heading-font);
     background: var(--ep-accent);
     color: var(--ep-text-main);
     font-size: 0.65rem;
@@ -540,6 +565,7 @@
 }
 
 .ep-date-btn {
+    font-family: var(--body-font);
     background: #fff;
     border: 1px solid var(--ep-border);
     padding: 0.6rem;
@@ -561,6 +587,7 @@
 }
 
 .ep-benefit-item {
+    font-family: var(--body-font);
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -581,6 +608,7 @@
 }
 
 .ep-btn-inquire {
+    font-family: var(--heading-font);
     width: 100%;
     background: #1a1a1c;
     color: #fff;
@@ -601,6 +629,7 @@
 }
 
 .ep-btn-secondary {
+    font-family: var(--heading-font);
     width: 100%;
     background: #fff;
     color: #1a1a1c;
@@ -654,6 +683,7 @@
 }
 
 .ep-footer-links a {
+    font-family: var(--heading-font);
     text-decoration: none;
     font-size: 0.7rem;
     font-weight: 800;

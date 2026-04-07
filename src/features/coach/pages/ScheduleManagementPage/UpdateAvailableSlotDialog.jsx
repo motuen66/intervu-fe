@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, TextField, Typography, Modal, Card, Stack, FormControl, Select, MenuItem, Divider } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../../../../common/components/buttons";
@@ -20,6 +21,7 @@ const UpdateAvailableSlotDialog = ({
     maxDate,
     existingBlocks = [],
 }) => {
+    const { t } = useTranslation();
     // Generate the list of affected 30-min blocks based on current form state
     const affectedBlocks = useMemo(() => {
         if (!formData.date) return [];
@@ -73,13 +75,13 @@ const UpdateAvailableSlotDialog = ({
             <Card sx={{ width: "90%", maxWidth: "500px", borderRadius: "12px", maxHeight: "90vh", overflowY: "auto" }}>
                 <Box sx={{ p: 3 }}>
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
-                        Edit Availability Slot
+                        {t("coach.schedule.dialog.title_edit")}
                     </Typography>
 
                     <Stack spacing={2.5}>
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
-                                Date
+                                {t("coach.schedule.dialog.field_date")}
                             </Typography>
                             <TextField
                                 type="date"         
@@ -103,7 +105,7 @@ const UpdateAvailableSlotDialog = ({
 
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
-                                Start Time
+                                {t("coach.schedule.dialog.field_start_time")}
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
@@ -142,7 +144,7 @@ const UpdateAvailableSlotDialog = ({
 
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
-                                End Time
+                                {t("coach.schedule.dialog.field_end_time")}
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
@@ -207,9 +209,9 @@ const UpdateAvailableSlotDialog = ({
                                 <IoTrash size={16} />
                             </DangerButton>
                             <Stack direction="row" spacing={2}>
-                                <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+                                <SecondaryButton onClick={onClose}>{t("coach.schedule.dialog.btn_cancel")}</SecondaryButton>
                                 <PrimaryButton onClick={handleSubmit} loading={loading} disabled={hasBookedBlocks}>
-                                    Update
+                                    {t("coach.schedule.dialog.btn_update")}
                                 </PrimaryButton>
                             </Stack>
                         </Stack>

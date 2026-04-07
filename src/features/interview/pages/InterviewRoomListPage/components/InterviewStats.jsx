@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { CalendarCheck2, CheckCircle2, Clock3, Star } from "lucide-react";
 import { ROLES } from "../../../../../common/constants/common";
 
@@ -80,6 +81,7 @@ const StatCard = ({ icon, label, value, iconBgColor }) => (
 );
 
 function InterviewStats({ totalCount, upcomingCount, completedCount, avgScore, nextSessionIn, userRole }) {
+    const { t } = useTranslation();
     const isCoach = userRole === ROLES.INTERVIEWER;
     const scale = isCoach ? 5 : 10;
     
@@ -91,25 +93,25 @@ function InterviewStats({ totalCount, upcomingCount, completedCount, avgScore, n
         >
             <StatCard
                 icon={<CheckCircle2 size={20} strokeWidth={1.8} color="var(--mui-palette-primary-main)" />}
-                label="Total Conducted"
+                label={t("interview.list.stats.total")}
                 value={totalCount}
                 iconBgColor="primary.lighter"
             />
             <StatCard
                 icon={<CalendarCheck2 size={20} strokeWidth={1.8} color="var(--mui-palette-secondary-main)" />}
-                label="Upcoming Sessions"
+                label={t("interview.list.stats.upcoming")}
                 value={upcomingCount}
                 iconBgColor="secondary.lighter"
             />
             <StatCard
                 icon={<Star size={20} strokeWidth={1.8} color="var(--mui-palette-warning-main)" />}
-                label="Average Score"
+                label={t("interview.list.stats.avg_score")}
                 value={avgScore ? `${avgScore}/${scale}` : completedCount > 0 ? `0.0/${scale}` : "—"}
                 iconBgColor="warning.lighter"
             />
             <StatCard
                 icon={<Clock3 size={20} strokeWidth={1.8} color="var(--mui-palette-info-main)" />}
-                label="Next Session In"
+                label={t("interview.list.stats.next_session")}
                 value={nextSessionIn}
                 iconBgColor="info.lighter"
             />

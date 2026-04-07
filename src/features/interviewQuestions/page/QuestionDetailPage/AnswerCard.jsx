@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Avatar, Box, Button, Chip, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { keyframes } from "@mui/system";
 import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
@@ -27,6 +28,7 @@ export default function AnswerCard({
     onVote,
     onReport,
 }) {
+    const { t } = useTranslation();
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState(comment.content ?? "");
     const [saving, setSaving] = useState(false);
@@ -115,7 +117,7 @@ export default function AnswerCard({
                         fontWeight={700}
                         sx={{ color: "warning.dark", letterSpacing: "0.04em" }}
                     >
-                        TOP ANSWER
+                        {t("question_bank.detail.top_answer")}
                     </Typography>
                 </Stack>
             )}
@@ -127,12 +129,12 @@ export default function AnswerCard({
                 <Box flex={1}>
                     <Stack direction="row" alignItems="center" gap={0.75}>
                         <Typography variant="body2" fontWeight={600}>
-                            {comment.authorName ?? "User"}
+                            {comment.authorName ?? t("question_bank.common.user")}
                         </Typography>
                         {isQuestionAuthor && (
                             <Chip
                                 icon={<StarIcon sx={{ fontSize: 13, color: "#7c3aed !important" }} />}
-                                label="Author"
+                                label={t("question_bank.detail.author_badge")}
                                 size="small"
                                 variant="outlined"
                                 sx={{
@@ -151,7 +153,7 @@ export default function AnswerCard({
                 </Box>
                 <Stack direction="row" alignItems="center" gap={0.5}>
                     {isAuthor && onEdit && !editing && (
-                        <Tooltip title="Edit" placement="top">
+                        <Tooltip title={t("question_bank.common.edit")} placement="top">
                             <IconButton
                                 size="small"
                                 onClick={() => {
@@ -177,7 +179,7 @@ export default function AnswerCard({
                                 "&:hover": { color: "error.main", background: "none" },
                             }}
                         >
-                            Delete
+                            {t("question_bank.common.delete")}
                         </Button>
                     )}
                 </Stack>
@@ -204,7 +206,7 @@ export default function AnswerCard({
                             onClick={handleSave}
                             sx={{ textTransform: "none", borderRadius: 999 }}
                         >
-                            {saving ? "Saving..." : "Save"}
+                            {saving ? t("question_bank.common.saving") : t("question_bank.common.save")}
                         </Button>
                         <Button
                             size="small"
@@ -213,7 +215,7 @@ export default function AnswerCard({
                             onClick={() => setEditing(false)}
                             sx={{ textTransform: "none", borderRadius: 999 }}
                         >
-                            Cancel
+                            {t("question_bank.common.cancel")}
                         </Button>
                     </Stack>
                 </Box>
@@ -262,7 +264,9 @@ export default function AnswerCard({
                                 onClick={() => setExpandedPreview((v) => !v)}
                                 sx={{ textTransform: "none", p: 0, minWidth: 0 }}
                             >
-                                {expandedPreview ? "View less" : "View more"}
+                                {expandedPreview
+                                    ? t("question_bank.common.view_less")
+                                    : t("question_bank.common.view_more")}
                             </Button>
                         </Box>
                     )}
@@ -270,7 +274,7 @@ export default function AnswerCard({
             )}
             {/* Actions */}
             <Stack direction="row" gap={2}>
-                <Tooltip title={voted ? "Unlike" : "Like"} placement="top">
+                <Tooltip title={voted ? t("question_bank.detail.actions.unlike") : t("question_bank.detail.actions.like")} placement="top">
                     <Button
                         size="small"
                         startIcon={
@@ -291,7 +295,7 @@ export default function AnswerCard({
                             "&:hover": { bgcolor: "action.hover" },
                         }}
                     >
-                        Like {voteCount != null ? ` ${voteCount}` : ""}
+                        {t("question_bank.detail.actions.like_with_count", { count: voteCount ?? 0 })}
                     </Button>
                 </Tooltip>
                 <Button
@@ -308,7 +312,7 @@ export default function AnswerCard({
                         "&:hover": { color: "error.main", background: "none" },
                     }}
                 >
-                    Report
+                    {t("question_bank.detail.actions.report")}
                 </Button>
             </Stack>
         </Paper>

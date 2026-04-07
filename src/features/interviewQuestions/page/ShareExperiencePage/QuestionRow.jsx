@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Box,
     Button,
@@ -33,7 +34,23 @@ const labelSx = {
     mb: 0.75,
 };
 
+const renderLabelWithRedAsterisk = (text) => {
+    const parts = text.split("*");
+    if (parts.length === 1) return text;
+    return (
+        <>
+            {parts.map((part, idx) => (
+                <span key={idx}>
+                    {part}
+                    {idx < parts.length - 1 && <span style={{ color: "#ef4444" }}>*</span>}
+                </span>
+            ))}
+        </>
+    );
+};
+
 export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemove, isPreLinked }) {
+    const { t } = useTranslation();
     const [suggestions, setSuggestions] = useState([]);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
@@ -160,7 +177,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                             "&:hover": { color: "error.main" },
                         }}
                     >
-                        Remove
+                        {t("question_bank.question_row.remove_btn")}
                     </Button>
                 </Box>
             )}
@@ -168,7 +185,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
             {/* Question Type — only shown in free-text mode */}
             {!q.linkedQuestion && (
                 <Box mb={1.75}>
-                    <Typography sx={labelSx}>Question Type</Typography>
+                    <Typography sx={labelSx}>{renderLabelWithRedAsterisk(t("question_bank.question_row.question_type_label"))}</Typography>
                     <Select
                         displayEmpty
                         value={q.type}
@@ -180,7 +197,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                 QUESTION_TYPES.find((t) => t.value === v)?.label
                             ) : (
                                 <Box component="span" sx={{ color: "text.disabled" }}>
-                                    Select Type
+                                    {t("question_bank.question_row.question_type_placeholder")}
                                 </Box>
                             )
                         }
@@ -196,7 +213,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
 
             {/* Interview Question — typeahead or locked chip */}
             <Box mb={1.75}>
-                <Typography sx={labelSx}>Interview Question</Typography>
+                <Typography sx={labelSx}>{renderLabelWithRedAsterisk(t("question_bank.question_row.interview_question_label"))}</Typography>
 
                 {/* Search input — hidden when question is pre-linked from navigation */}
                 {!isPreLinked && (
@@ -204,7 +221,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                         <TextField
                             fullWidth
                             size="small"
-                            placeholder="What were you asked? (type to search existing questions)"
+                            placeholder={t("question_bank.question_row.question_placeholder")}
                             value={q.question}
                             onChange={handleInputChange}
                             onKeyDown={handleKeyDown}
@@ -216,7 +233,10 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                             aria-haspopup="listbox"
                             aria-expanded={suggestionsOpen}
                             inputProps={{ "aria-label": "Interview question" }}
-                            helperText={`${(q.question || "").trim().split(/\s+/).filter(Boolean).length} / ${WORD_LIMIT} words`}
+                            helperText={t("question_bank.question_row.word_count", {
+                                current: (q.question || "").trim().split(/\s+/).filter(Boolean).length,
+                                limit: WORD_LIMIT,
+                            })}
                             InputProps={{
                                 endAdornment: searchLoading ? (
                                     <CircularProgress size={14} sx={{ mr: 0.5 }} />
@@ -297,8 +317,10 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                                 )}
                                                 {(s.answerCount ?? s.commentCount) != null && (
                                                     <Typography variant="caption" color="text.disabled">
-                                                        &middot; {s.answerCount ?? s.commentCount} answer
-                                                        {(s.answerCount ?? s.commentCount) !== 1 ? "s" : ""}
+                                                        &middot;{" "}
+                                                        {(s.answerCount ?? s.commentCount) === 1
+                                                            ? t("question_bank.question_row.answer_count", { count: s.answerCount ?? s.commentCount })
+                                                            : t("question_bank.question_row.answer_count_plural", { count: s.answerCount ?? s.commentCount })}
                                                     </Typography>
                                                 )}
                                             </Stack>
@@ -328,7 +350,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                         <LinkIcon sx={{ fontSize: 16, color: "primary.main", mt: "3px", flexShrink: 0 }} />
                         <Box flex={1} minWidth={0}>
                             <Typography variant="body2" fontWeight={600} color="primary.main" mb={0.25}>
-                                Linked to existing question
+                                {t("question_bank.question_row.linked_indicator_title")}
                             </Typography>
                             <Typography
                                 variant="body2"
@@ -361,14 +383,22 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                 )}
                                 {q.linkedQuestion.commentCount != null && (
                                     <Chip
-                                        label={`${q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount} answer${(q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount) !== 1 ? "s" : ""}`}
+                                        label={
+                                            (q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount) === 1
+                                                ? t("question_bank.question_row.answer_count", {
+                                                      count: q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount,
+                                                  })
+                                                : t("question_bank.question_row.answer_count_plural", {
+                                                      count: q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount,
+                                                  })
+                                        }
                                         size="small"
                                         sx={{ fontSize: 11, bgcolor: "grey.100" }}
                                     />
                                 )}
                             </Stack>
                         </Box>
-                        <Tooltip title="Edit / choose another question">
+                        <Tooltip title={t("question_bank.question_row.linked_edit_tooltip")}>
                             <IconButton
                                 size="small"
                                 onClick={editLinked}
@@ -382,7 +412,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                 <EditIcon sx={{ fontSize: 15 }} />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Clear selection">
+                        <Tooltip title={t("question_bank.question_row.linked_clear_tooltip")}>
                             <IconButton
                                 size="small"
                                 onClick={clearLinked}
@@ -405,7 +435,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                 <Typography sx={labelSx}>
                     {q.linkedQuestion ? (
                         <>
-                            Your Answer{" "}
+                            {t("question_bank.question_row.answer_label_linked")}{" "}
                             <Box
                                 component="span"
                                 sx={{
@@ -415,17 +445,17 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                     fontSize: 11,
                                 }}
                             >
-                                (will be posted as an answer on the linked question)
+                                {t("question_bank.question_row.answer_note_linked")}
                             </Box>
                         </>
                     ) : (
                         <>
-                            Answer{" "}
+                            {t("question_bank.question_row.answer_label")}{" "}
                             <Box
                                 component="span"
                                 sx={{ fontWeight: 400, textTransform: "none", color: "text.disabled" }}
                             >
-                                (optional)
+                                {t("question_bank.question_row.answer_label_optional")}
                             </Box>
                         </>
                     )}
@@ -435,7 +465,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                         theme="snow"
                         value={q.answer}
                         onChange={(val) => onUpdateField(idx, "answer", val)}
-                        placeholder="How did you respond? The more detailed, the better."
+                        placeholder={t("question_bank.question_row.answer_placeholder")}
                     />
                 </div>
             </Box>

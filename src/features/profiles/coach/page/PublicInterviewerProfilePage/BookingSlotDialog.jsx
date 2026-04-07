@@ -13,6 +13,7 @@ import {
     IconButton,
     Grow,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import CloseIcon from "@mui/icons-material/Close";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CodeIcon from "@mui/icons-material/Code";
@@ -61,6 +62,7 @@ function findConsecutiveBlocks(startBlock, requiredCount, availableBlocks) {
 }
 
 const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initialService = null }) => {
+    const { t } = useTranslation();
     const [activeStep, setActiveStep] = useState(0);
 
     // Step 1 - Service selection
@@ -206,7 +208,10 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
 
         const chain = findConsecutiveBlocks(slotBlock, requiredBlocks, dayTimeBlocks);
         if (!chain) {
-            toast.error(`Need ${requiredBlocks} consecutive 30-minute slots for this ${selectedService.durationMinutes}-minute service.`);
+            toast.error(t("common.modals.booking.error_unavailable", { 
+                count: requiredBlocks, 
+                duration: selectedService.durationMinutes 
+            }));
             return;
         }
 
@@ -281,14 +286,14 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                     <CloseIcon />
                 </IconButton>
 
-                <span className="booking-header-tag">Single-Focus Interview</span>
+                <span className="booking-header-tag">{t("common.modals.booking.tag_single_focus")}</span>
                 <Typography className="booking-header-title">
-                    {activeStep === 0 ? "Select a Service" : "Select a Date & Time"}
+                    {activeStep === 0 ? t("common.modals.booking.step1_title") : t("common.modals.booking.step2_title")}
                 </Typography>
                 <Typography className="booking-header-subtitle">
                     {activeStep === 0
-                        ? "Choose your interview type to see available time slots."
-                        : `${selectedService?.interviewTypeName || "Interview"} - ${selectedService?.durationMinutes} min`}
+                        ? t("common.modals.booking.step1_subtitle")
+                        : `${selectedService?.interviewTypeName || "Interview"} - ${selectedService?.durationMinutes} ${t("common.modals.booking.duration_suffix")}`}
                 </Typography>
             </Box>
 
@@ -308,7 +313,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                             </Box>
                         ) : services.length === 0 ? (
                             <Paper sx={{ p: 6, textAlign: "center", bgcolor: "background.default", borderRadius: "16px", border: "none" }}>
-                                <Typography color="text.secondary">This coach hasn't set up any services yet.</Typography>
+                                <Typography color="text.secondary">{t("common.modals.booking.empty_services")}</Typography>
                             </Paper>
                         ) : (
                             <Stack spacing={0}>
@@ -376,7 +381,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                     {/* Timezone */}
                                     <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
                                         <Typography sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.secondary", mb: 0.5 }}>
-                                            Time zone
+                                            {t("common.modals.booking.timezone_label")}
                                         </Typography>
                                         <Stack direction="row" alignItems="center" spacing={0.75}>
                                             <LanguageIcon sx={{ fontSize: 16, color: "text.secondary" }} />
@@ -392,7 +397,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                     {!selectedDate ? (
                                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 300 }}>
                                             <Typography sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.95rem" }}>
-                                                Select a date to see available times
+                                                {t("common.modals.booking.select_date_prompt")}
                                             </Typography>
                                         </Box>
                                     ) : (

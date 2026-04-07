@@ -21,6 +21,7 @@ import {
     TableRow,
     Paper,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import StatusChip from "../../../../common/components/StatusChip";
 import { SecondaryButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
@@ -31,6 +32,7 @@ import StarIcon from "@mui/icons-material/Star";
 import CloseIcon from "@mui/icons-material/Close";
 
 function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
+    const { t } = useTranslation();
     const [feedback, setFeedback] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -75,11 +77,11 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                 }
             } else {
                 console.log("No feedback found in response");
-                setError("No feedback available for this interview.");
+                setError(t("interview.list.view_feedback.error_not_found"));
             }
         } catch (err) {
             console.error("Error fetching feedback:", err);
-            setError("Failed to load feedback. Please try again.");
+            setError(t("interview.list.view_feedback.error_load"));
         } finally {
             setLoading(false);
         }
@@ -107,7 +109,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
         >
             <DialogTitle sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }} component="div">
                 <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: "-0.01em" }} component="span">
-                    Performance Feedback
+                    {t("interview.list.view_feedback.title")}
                 </Typography>
                 <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
                     <CloseIcon />
@@ -129,7 +131,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
 
                 {!loading && !error && !feedback && (
                     <Alert severity="info">
-                        No feedback data loaded. Please try again.
+                        {t("interview.list.view_feedback.error_no_data")}
                     </Alert>
                 )}
 
@@ -139,15 +141,15 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                             /* Evaluation Results View (Questions + Scores) */
                             <Box>
                                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                                    Evaluation Details
+                                    {t("interview.list.view_feedback.title_evaluation")}
                                 </Typography>
                                 <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "grey.200", borderRadius: "12px" }}>
                                     <Table size="medium">
                                         <TableHead sx={{ bgcolor: "grey.50" }}>
                                             <TableRow>
-                                                <TableCell sx={{ fontWeight: 700 }}>Critria / Question</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700, width: 100 }}>Score</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Feedback Details</TableCell>
+                                                <TableCell sx={{ fontWeight: 700 }}>{t("interview.list.view_feedback.header_criteria")}</TableCell>
+                                                <TableCell align="center" sx={{ fontWeight: 700, width: 100 }}>{t("interview.list.view_feedback.header_score")}</TableCell>
+                                                <TableCell sx={{ fontWeight: 700 }}>{t("interview.list.view_feedback.header_details")}</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -179,7 +181,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                                     </TableCell>
                                                     <TableCell>
                                                         <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
-                                                            {item.answer || "No specific feedback."}
+                                                            {item.answer || t("interview.list.view_feedback.no_feedback_item")}
                                                         </Typography>
                                                     </TableCell>
                                                 </TableRow>
@@ -191,10 +193,10 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                 <Box sx={{ mt: 3, p: 2, bgcolor: "primary.50", borderRadius: "8px", border: "1px solid", borderColor: "primary.100" }}>
                                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                                         <Typography variant="subtitle2" color="primary.dark">
-                                            Evaluation Status
+                                            {t("interview.list.view_feedback.status_evaluation")}
                                         </Typography>
                                         <StatusChip
-                                            label={feedback.isEvaluationCompleted ? "Fully Evaluated" : "In Progress"}
+                                            label={feedback.isEvaluationCompleted ? t("interview.list.view_feedback.status_fully") : t("interview.list.view_feedback.status_in_progress")}
                                             color={feedback.isEvaluationCompleted ? "success" : "warning"}
                                         />
                                     </Stack>
@@ -206,7 +208,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                 {/* Rating Section */}
                                 <Box>
                                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Overall Rating
+                                        {t("interview.list.view_feedback.label_overall")}
                                     </Typography>
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <Rating
@@ -226,7 +228,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                 {/* Comments Section */}
                                 <Box>
                                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Feedback Comments
+                                        {t("interview.list.view_feedback.label_comments")}
                                     </Typography>
                                     <Box
                                         sx={{
@@ -238,7 +240,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                         }}
                                     >
                                         <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
-                                            {feedback.comments || "No comments provided."}
+                                            {feedback.comments || t("interview.list.view_feedback.no_comments")}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -247,7 +249,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                 {feedback.strengths && (
                                     <Box>
                                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                            Strengths
+                                            {t("interview.list.view_feedback.label_strengths")}
                                         </Typography>
                                         <Box
                                             sx={{
@@ -269,7 +271,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                 {feedback.areasForImprovement && (
                                     <Box>
                                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                            Areas for Improvement
+                                            {t("interview.list.view_feedback.label_improvements")}
                                         </Typography>
                                         <Box
                                             sx={{
@@ -291,10 +293,10 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                 <Box>
                                     <Stack direction="row" spacing={2} alignItems="center">
                                         <Typography variant="subtitle2" color="text.secondary">
-                                            Status:
+                                            {t("interview.list.view_feedback.label_status")}
                                         </Typography>
                                         <StatusChip
-                                            label={feedback.isSubmitted ? "Submitted" : "Draft"}
+                                            label={feedback.isSubmitted ? t("interview.list.view_feedback.status_submitted") : t("interview.list.view_feedback.status_draft")}
                                             color={feedback.isSubmitted ? "success" : "default"}
                                         />
                                     </Stack>
@@ -304,7 +306,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                 {feedback.submittedAt && (
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">
-                                            Submitted on: {new Date(feedback.submittedAt).toLocaleString()}
+                                            {t("interview.list.view_feedback.label_submitted_on")} {new Date(feedback.submittedAt).toLocaleString(t("common.date_locale") || "en-US")}
                                         </Typography>
                                     </Box>
                                 )}
@@ -316,7 +318,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
 
             <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
                 <SecondaryButton onClick={handleClose}>
-                    Close
+                    {t("interview.list.view_feedback.btn_close")}
                 </SecondaryButton>
             </DialogActions>
         </Dialog>

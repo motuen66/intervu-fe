@@ -1,4 +1,5 @@
 import { Box, Button, CircularProgress, IconButton, MenuItem, Paper, Select, Stack, Tooltip, Typography, Divider, ButtonGroup } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import CodeIcon from "@mui/icons-material/Code";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -31,6 +32,7 @@ function CodeEditorPanel({
     handleEditorMount,
     readOnly = false,
 }) {
+    const { t } = useTranslation();
     // Keep a stable ref to editor and its container to drive layout
     const editorRef = useRef(null);
     const editorContainerRef = useRef(null);
@@ -212,16 +214,16 @@ function CodeEditorPanel({
                     sx={{ p: "4px 8px", background: "#f5f5f5", borderBottom: "1px solid #e0e0e0" }}
                 >
                     <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                        Console
+                        {t("interview.room.code_editor.title_console")}
                     </Typography>
                     {consoleOutput && (
                         <Typography variant="caption" sx={{ ml: 2, color: "text.secondary" }}>
                             {consoleOutput.executionTime !== undefined &&
-                                `Executed in ${consoleOutput.executionTime}ms`}
+                                t("interview.room.code_editor.label_executed_in", { time: consoleOutput.executionTime })}
                         </Typography>
                     )}
                     <Box sx={{ flexGrow: 1 }} />
-                    <Tooltip title="Clear Console">
+                    <Tooltip title={t("interview.room.code_editor.tooltip_clear")}>
                         <IconButton
                             size="small"
                             onClick={() => {
@@ -260,23 +262,26 @@ function CodeEditorPanel({
                                             <CancelIcon color="error" fontSize="small" />
                                         )}
                                         <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                                            Test Case {result.testCaseIndex + 1}: {result.passed ? "Passed" : "Failed"}
+                                            {t("interview.room.code_editor.test_case_status", {
+                                                index: result.testCaseIndex + 1,
+                                                status: result.passed ? t("interview.room.code_editor.status_passed") : t("interview.room.code_editor.status_failed")
+                                            })}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: "text.secondary", ml: "auto" }}>
-                                            {`Executed in ${result.executionTime}ms`}
+                                            {t("interview.room.code_editor.label_executed_in", { time: result.executionTime })}
                                         </Typography>
                                     </Stack>
                                     <Typography variant="caption" display="block" sx={{ color: "text.secondary" }}>
-                                        Input: {result.inputSummary}
+                                        {t("interview.room.code_editor.label_input", { summary: result.inputSummary })}
                                     </Typography>
                                     <Typography variant="caption" display="block" sx={{ color: "text.secondary" }}>
-                                        Expected:{" "}
+                                        {t("interview.room.code_editor.label_expected")}{" "}
                                         <Typography component="span" variant="caption" sx={{ fontFamily: "monospace" }}>
                                             {result.expectedOutput.join(" OR ")}
                                         </Typography>
                                     </Typography>
                                     <Typography variant="caption" display="block" sx={{ color: "text.secondary" }}>
-                                        Got:{" "}
+                                        {t("interview.room.code_editor.label_got")}{" "}
                                         <Typography
                                             component="span"
                                             variant="caption"
@@ -293,7 +298,7 @@ function CodeEditorPanel({
                         </Stack>
                     ) : !consoleOutput ? (
                         <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic" }}>
-                            Console output will appear here...
+                            {t("interview.room.code_editor.placeholder_console")}
                         </Typography>
                     ) : (
                         <>
@@ -356,7 +361,7 @@ function CodeEditorPanel({
                             disabled={isRunning}
                             sx={{ textTransform: "none", py: 1, px: 3 }}
                         >
-                            {isRunning ? "Running..." : "Run Code"}
+                            {isRunning ? t("interview.room.code_editor.btn_running") : t("interview.room.code_editor.btn_run")}
                         </PrimaryButton>
                     </Stack>
                 )}

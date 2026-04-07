@@ -45,6 +45,7 @@ import WorkExperienceModal from "../../components/WorkExperienceModal.jsx";
 import CertificateDialog from "../../components/CertificateDialog.jsx";
 import { interactionEndPoints } from "../../../interviewQuestions/service/interactionApi";
 import "./PublicInterviewerProfilePage/EliteCoachProfile.css";
+import { useTranslation } from "react-i18next";
 
 function getRoleFromJwt() {
     try {
@@ -198,6 +199,7 @@ function SidebarCard({ icon, title, badge, badgeActive, children, sx = {} }) {
 }
 
 function InterviewerProfilePage() {
+    const { t } = useTranslation();
     const { id: routeId } = useParams();
     const user = useUser();
     const dispatch = useDispatch();
@@ -653,22 +655,45 @@ function InterviewerProfilePage() {
                     >
                         {/* Nút edit/close CHỈ cho profile fields */}
                         {canEdit && (
-                            <IconButton
-                                onClick={() => setEditMode((v) => !v)}
+                            <Stack
+                                direction="row"
+                                spacing={1.5}
                                 sx={{
                                     position: "absolute",
                                     top: 16,
                                     right: 16,
-                                    bgcolor: "rgba(255,255,255,0.9)",
-                                    "&:hover": { bgcolor: "white" },
+                                    alignItems: "center",
                                 }}
                             >
-                                {editMode ? (
-                                    <CloseIcon size={20} strokeWidth={2} />
-                                ) : (
-                                    <EditIcon size={20} strokeWidth={2} />
+                                {!editMode && profile?.slugProfileUrl && (
+                                    <SecondaryButton
+                                        onClick={() => window.open(`/profile/${profile.slugProfileUrl}`, "_blank")}
+                                        startIcon={<ExternalLinkIcon size={18} />}
+                                        sx={{
+                                            bgcolor: "rgba(255,255,255,0.9)",
+                                            height: 40,
+                                            px: 2,
+                                            fontSize: "0.85rem",
+                                            "&:hover": { bgcolor: "white" },
+                                        }}
+                                    >
+                                        {t("profile_actions.view_public")}
+                                    </SecondaryButton>
                                 )}
-                            </IconButton>
+                                <IconButton
+                                    onClick={() => setEditMode((v) => !v)}
+                                    sx={{
+                                        bgcolor: "rgba(255,255,255,0.9)",
+                                        "&:hover": { bgcolor: "white" },
+                                    }}
+                                >
+                                    {editMode ? (
+                                        <CloseIcon size={20} strokeWidth={2} />
+                                    ) : (
+                                        <EditIcon size={20} strokeWidth={2} />
+                                    )}
+                                </IconButton>
+                            </Stack>
                         )}
                     </Box>
 

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
     TextField,
     Typography,
@@ -17,6 +18,7 @@ function InterviewFilterBar({
     onExport,
     filterOptions = []
 }) {
+    const { t } = useTranslation();
     return (
         <Stack
             direction={{ xs: "column", sm: "row" }}
@@ -27,7 +29,7 @@ function InterviewFilterBar({
         >
             {/* Search Input */}
             <TextField
-                placeholder="Search for interviews..."
+                placeholder={t("interview.list.search_placeholder")}
                 size="small"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
@@ -72,7 +74,7 @@ function InterviewFilterBar({
                     }
                 >
                     <MenuItem value="">
-                        <Typography variant="body2">Filter</Typography>
+                        <Typography variant="body2">{t("interview.list.filter_label")}</Typography>
                     </MenuItem>
                     {filterOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Box, CardContent, Typography, Stack, CircularProgress, Avatar } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import StatusChip from "../../../../common/components/StatusChip";
@@ -6,9 +7,10 @@ import { CheckCircle } from "lucide-react";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
 
 const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLocalTime }) => {
+    const { t } = useTranslation();
     const focusLabel = (focus) => {
-        if (focus === 0) return "General Skills";
-        if (focus === 1) return "Job Description";
+        if (focus === 0) return t("coach.schedule.upcoming.focus_general");
+        if (focus === 1) return t("coach.schedule.upcoming.focus_jd");
         return "";
     };
 
@@ -28,8 +30,7 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
         >
             <CardContent sx={{ p: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "text.primary" }}>
-                    Upcoming Interview Times
-                    {/* ({upcomingSlots.length}) */}
+                    {t("coach.schedule.upcoming.title")}
                 </Typography>
 
                 <Stack spacing={1.5}>
@@ -42,7 +43,7 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
                             variant="body2"
                             sx={{ color: "text.secondary", textAlign: "center", py: 3, fontStyle: "italic" }}
                         >
-                            No upcoming booked slots
+                            {t("coach.schedule.upcoming.no_slots")}
                         </Typography>
                     ) : (
                         upcomingSlots
@@ -99,7 +100,7 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
                                                 {avail.candidateName ||
                                                     avail.candidate?.fullName ||
                                                     avail.candidate?.name ||
-                                                    (avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? "Booked" : "")}
+                                                    (avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? t("coach.schedule.upcoming.booked_label") : "")}
                                             </Typography>
 
                                             <Typography
@@ -117,10 +118,10 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
                                         <StatusChip
                                             label={
                                                 avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED
-                                                    ? "BOOKED"
+                                                    ? t("coach.schedule.status.booked")
                                                     : avail.status === AVAILABILITY_SLOTS_STATUS.RESERVED
-                                                      ? "RESERVED"
-                                                      : "AVAILABLE"
+                                                      ? t("coach.schedule.status.reserved")
+                                                      : t("coach.schedule.status.available")
                                             }
                                             color={
                                                 avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED

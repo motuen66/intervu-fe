@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -15,6 +16,7 @@ import { PrimaryButton, SecondaryButton } from "../../../../common/components/bu
 import { MenuItem } from "@mui/material";
 
 export default function CreateCoachServiceDialog({ open, onClose, onCreated, interviewTypes }) {
+    const { t } = useTranslation();
     if (!interviewTypes) interviewTypes = [];
     const [form, setForm] = useState({
         interviewTypeId: "",
@@ -29,15 +31,15 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
     const handleSubmit = async () => {
         setError("");
         if (!form.interviewTypeId) {
-            setError("Please select an interview type.");
+            setError(t("coach.services.dialog.error_select_type"));
             return;
         }
         if (selectedType && (form.price < selectedType.minPrice || form.price > selectedType.maxPrice)) {
-            setError(`Price must be between ${selectedType.minPrice} and ${selectedType.maxPrice}.`);
+            setError(t("coach.services.dialog.error_price_range", { min: selectedType.minPrice, max: selectedType.maxPrice }));
             return;
         }
         if (form.durationMinutes < 15 || form.durationMinutes > 300) {
-            setError("Duration must be between 15 and 300 minutes.");
+            setError(t("coach.services.dialog.error_duration"));
             return;
         }
 
@@ -79,10 +81,10 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
             >
                 <Box>
                     <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#111827" }}>
-                        Add interview service
+                        {t("coach.services.dialog.create_title")}
                     </Typography>
                     <Typography sx={{ fontSize: "0.85rem", color: "#6b7280", mt: 0.5 }}>
-                        Select an interview type and set your custom price &amp; duration.
+                        {t("coach.services.dialog.subtitle")}
                     </Typography>
                 </Box>
                 <IconButton
@@ -105,7 +107,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                             <FormTextField
                                 fullWidth
                                 select
-                                label="Interview Type"
+                                label={t("coach.services.dialog.label_type")}
                                 value={form.interviewTypeId}
                                 onChange={(e) => {
                                     const typeId = e.target.value;
@@ -122,7 +124,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                                 {console.log(interviewTypes)}
                                 {interviewTypes.map((t) => (
                                     <MenuItem key={t.id} value={t.id}>
-                                        {t.name} {t.isCoding ? "(Coding)" : ""}
+                                        {t.name} {t.isCoding ? `(${t("coach.services.card.coding")})` : ""}
                                     </MenuItem>
                                 ))}
                             </FormTextField>
@@ -139,8 +141,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                                         color: "#4338ca",
                                     }}
                                 >
-                                    Price range: {selectedType.minPrice} – {selectedType.maxPrice} · Suggested duration:{" "}
-                                    {selectedType.suggestedDurationMinutes} min
+                                    {t("coach.services.dialog.hint_range", { min: selectedType.minPrice, max: selectedType.maxPrice, suggested: selectedType.suggestedDurationMinutes })}
                                 </Box>
                             </Grid>
                         )}
@@ -148,7 +149,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
-                                label="Your Price"
+                                label={t("coach.services.dialog.label_price")}
                                 type="number"
                                 value={form.price}
                                 onChange={(e) => {
@@ -160,7 +161,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                                 inputProps={{ min: 0 }}
                                 required
                                 helperText={
-                                    selectedType ? `Allowed: ${selectedType.minPrice} – ${selectedType.maxPrice}` : ""
+                                    selectedType ? t("coach.services.dialog.hint_allowed", { min: selectedType.minPrice, max: selectedType.maxPrice }) : ""
                                 }
                             />
                         </Grid>
@@ -168,13 +169,13 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
-                                label="Duration (minutes)"
+                                label={t("coach.services.dialog.label_duration")}
                                 type="number"
                                 value={form.durationMinutes}
                                 onChange={(e) => setForm({ ...form, durationMinutes: Number(e.target.value) })}
                                 inputProps={{ min: 15, max: 300 }}
                                 required
-                                helperText="Between 15 and 300 minutes"
+                                helperText={t("coach.services.dialog.hint_duration")}
                             />
                         </Grid>
                     </Grid>
@@ -183,10 +184,10 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
                     <SecondaryButton onClick={handleClose} disabled={saving}>
-                        Cancel
+                        {t("coach.services.dialog.btn_cancel")}
                     </SecondaryButton>
                     <PrimaryButton type="submit" loading={saving}>
-                        Add service
+                        {t("coach.services.dialog.btn_add")}
                     </PrimaryButton>
                 </DialogActions>
             </form>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Box,
     Typography,
@@ -25,6 +26,7 @@ function UpcomingTab({
     onViewFeedback,
     rescheduleRequests = []
 }) {
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState("");
     const [filterValue, setFilterValue] = useState("");
     const [page, setPage] = useState(1);
@@ -68,7 +70,7 @@ function UpcomingTab({
                 return;
             }
             if (!room.score) {
-                toast("No feedback available yet.", {
+                toast(t("interview.list.toast.no_feedback"), {
                     style: {
                         borderRadius: "10px",
                         background: "#333",
@@ -102,10 +104,10 @@ function UpcomingTab({
                     }}
                 >
                     <Typography variant="h6" color="text.secondary" gutterBottom>
-                        No upcoming interviews
+                        {t("interview.list.empty.upcoming_title")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Your scheduled interviews will appear here
+                        {t("interview.list.empty.upcoming_subtitle")}
                     </Typography>
                 </Box>
             ) : (
@@ -148,9 +150,11 @@ function UpcomingTab({
                     sx={{ mt: 2.25, pt: 2, borderTop: "1px solid", borderColor: "divider" }}
                 >
                     <Typography variant="body2" color="text.secondary">
-                        Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                        {Math.min(page * ITEMS_PER_PAGE, filteredRooms.length)} of{" "}
-                        {filteredRooms.length} results
+                        {t("common.pagination.showing", {
+                            from: (page - 1) * ITEMS_PER_PAGE + 1,
+                            to: Math.min(page * ITEMS_PER_PAGE, filteredRooms.length),
+                            total: filteredRooms.length,
+                        })}
                     </Typography>
                     <Pagination
                         count={totalPages}
@@ -168,7 +172,7 @@ function UpcomingTab({
             {recentRooms && recentRooms.length > 0 && (
                 <Box sx={{ mt: 6 }}>
                     <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                        Recent History
+                        {t("interview.list.recent_history")}
                     </Typography>
                     <Box sx={{ width: "100%" }}>
                         {recentRooms.slice(0, 3).map((room) => (

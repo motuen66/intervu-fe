@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, Typography, Avatar, Stack, Button, Tooltip, IconButton } from "@mui/material";
 import { MessageSquare } from "lucide-react";
 import { ROLES } from "../../../../../common/constants/common";
@@ -8,6 +9,7 @@ import { METHOD } from "../../../../../common/constants/api";
 import { useNavigate } from "react-router-dom";
 
 function RecentInterviewItem({ room, user, onClick }) {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [participantAvatarUrl, setParticipantAvatarUrl] = useState(null);
 
@@ -31,9 +33,9 @@ function RecentInterviewItem({ room, user, onClick }) {
     }, [participantId]);
 
     const getParticipantName = () => {
-        if (user?.role === ROLES.CANDIDATE) return room.coachName || "Coach";
-        if (user?.role === ROLES.INTERVIEWER) return room.candidateName || "Candidate";
-        return "Participant";
+        if (user?.role === ROLES.CANDIDATE) return room.coachName || t("interview.list.card.headline_coach");
+        if (user?.role === ROLES.INTERVIEWER) return room.candidateName || t("interview.list.card.headline_candidate");
+        return t("interview.list.card.participant_default");
     };
 
     const getParticipantAvatar = () => {
@@ -54,7 +56,7 @@ function RecentInterviewItem({ room, user, onClick }) {
     const getDisplayDate = (dateTime) => {
         const date = new Date(dateTime);
         if (Number.isNaN(date.getTime())) return "";
-        return date.toLocaleDateString("en-US", {
+        return date.toLocaleDateString(t("common.date_locale") || "en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
@@ -62,15 +64,21 @@ function RecentInterviewItem({ room, user, onClick }) {
     };
 
     const getTopic = () => {
-        return room.problemShortName || room.interviewTypeName || "Interview Session";
+        return room.problemShortName || room.interviewTypeName || t("interview.list.card.session_default");
     };
 
     const isCompleted = room.status === INTERVIEW_ROOM_STATUS.COMPLETED;
     const isCancelled = room.status === INTERVIEW_ROOM_STATUS.CANCELLED;
 
     const statusColor = isCompleted ? "success.main" : isCancelled ? "error.main" : "text.secondary";
-    const statusText = isCompleted ? "Completed" : isCancelled ? "Cancelled" : "Past Session";
-    const buttonText = isCompleted ? "View Feedback" : "View Details";
+    const statusText = isCompleted 
+        ? t("interview.list.status.completed") 
+        : isCancelled 
+            ? t("interview.list.status.cancelled") 
+            : t("interview.list.status.past");
+    const buttonText = isCompleted 
+        ? t("interview.list.btn_view_feedback") 
+        : t("interview.list.btn_view_details");
 
     const name = getParticipantName();
     const avatar = participantAvatarUrl || getParticipantAvatar();
@@ -132,7 +140,7 @@ function RecentInterviewItem({ room, user, onClick }) {
 
             <Box sx={{ width: { xs: "100%", md: "15%" }, display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
                 {isCompleted && (
-                    <Tooltip title="View Feedback" arrow>
+                    <Tooltip title={t("interview.list.btn_view_feedback")} arrow>
                         <Button
                             variant="outlined"
                             size="small"
@@ -158,7 +166,7 @@ function RecentInterviewItem({ room, user, onClick }) {
                                 if (onClick) onClick(room);
                             }}
                         >
-                            Feedback
+                            {t("interview.list.btn_feedback")}
                         </Button>
                     </Tooltip>
                 )}

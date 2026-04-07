@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { getMyInterviewServices, deleteCoachInterviewService } from "../../services/coachInterviewServiceApi";
 import { interviewTypeEndPoints } from "../../../admin/services/interviewTypeApi";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -20,6 +21,7 @@ import "./CoachInterviewServicePage.css";
 import { PrimaryButton } from "../../../../common/components/buttons";
 
 export default function CoachInterviewServicePage() {
+    const { t } = useTranslation();
     const [items, setItems] = useState([]);
     const [interviewTypes, setInterviewTypes] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -36,7 +38,7 @@ export default function CoachInterviewServicePage() {
             setItems(data || []);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to load your interview services.");
+            toast.error(t("coach.services.toast.load_failed"));
         } finally {
             setLoading(false);
         }
@@ -91,7 +93,7 @@ export default function CoachInterviewServicePage() {
             fetchItems();
         } catch (err) {
             console.error(err);
-            toast.error("Failed to delete service.");
+            toast.error(t("coach.services.toast.delete_failed"));
         } finally {
             setDeletingId(null);
         }
@@ -102,14 +104,14 @@ export default function CoachInterviewServicePage() {
             <div className="coach-service-panel">
                 <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
                     <Box>
-                        <Typography variant="h6">My Interview Services</Typography>
+                        <Typography variant="h6">{t("coach.services.title")}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Manage the interview types you offer and set your own pricing.
+                            {t("coach.services.subtitle")}
                         </Typography>
                     </Box>
                     <Box>
                         <PrimaryButton onClick={() => setOpenCreate(true)}>
-                            Add Service
+                            {t("coach.services.btn_add")}
                         </PrimaryButton>
                     </Box>
                 </Toolbar>
@@ -120,12 +122,12 @@ export default function CoachInterviewServicePage() {
                     </Box>
                 ) : items.length === 0 ? (
                     <Box className="coach-service-empty">
-                        <div className="coach-service-empty-title">No interview services yet</div>
+                        <div className="coach-service-empty-title">{t("coach.services.empty_title")}</div>
                         <div className="coach-service-empty-subtitle">
-                            Add your first interview service to start accepting bookings from candidates.
+                            {t("coach.services.empty_subtitle")}
                         </div>
                         <PrimaryButton onClick={() => setOpenCreate(true)} sx={{ mt: 1 }}>
-                            Add Service
+                            {t("coach.services.btn_add")}
                         </PrimaryButton>
                     </Box>
                 ) : (
@@ -136,7 +138,7 @@ export default function CoachInterviewServicePage() {
                                     <div>
                                         <div className="coach-service-card-title">{it.interviewTypeName}</div>
                                         <div className="coach-service-card-subtitle">
-                                            {it.isCoding ? "Includes coding exercises" : "Non-coding interview"}
+                                            {it.isCoding ? t("coach.services.card.coding_exercises") : t("coach.services.card.non_coding")}
                                         </div>
                                     </div>
                                     <div className="coach-service-card-actions">
@@ -154,19 +156,19 @@ export default function CoachInterviewServicePage() {
                                 </div>
                                 <div className="coach-service-card-meta">
                                     <div className="meta-item">
-                                        <span className="meta-label">Price</span>
+                                        <span className="meta-label">{t("coach.services.card.price")}</span>
                                         <span className="meta-value">{it.price?.toLocaleString()} ₫</span>
                                     </div>
                                     <div className="meta-item">
-                                        <span className="meta-label">Duration</span>
-                                        <span className="meta-value">{it.durationMinutes} min</span>
+                                        <span className="meta-label">{t("coach.services.card.duration")}</span>
+                                        <span className="meta-value">{it.durationMinutes} {t("coach.services.card.min")}</span>
                                     </div>
                                     <div className="meta-item">
-                                        <span className="meta-label">Type</span>
+                                        <span className="meta-label">{t("coach.services.card.type")}</span>
                                         <span
                                             className={`meta-pill ${it.isCoding ? "pill-coding" : "pill-non-coding"}`}
                                         >
-                                            {it.isCoding ? "Coding" : "Non-Coding"}
+                                            {it.isCoding ? t("coach.services.card.coding") : t("coach.services.card.non_coding_label")}
                                         </span>
                                     </div>
                                 </div>
@@ -194,12 +196,12 @@ export default function CoachInterviewServicePage() {
 
             <ConfirmModal
                 show={confirmOpen}
-                title="Delete interview service"
-                message="Are you sure you want to remove this interview service? Candidates will no longer be able to book it."
+                title={t("coach.services.delete_modal.title")}
+                message={t("coach.services.delete_modal.message")}
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setConfirmOpen(false)}
-                confirmText="Delete"
-                cancelText="Cancel"
+                confirmText={t("coach.services.delete_modal.btn_confirm")}
+                cancelText={t("coach.services.dialog.btn_cancel")}
             />
         </Box>
     );

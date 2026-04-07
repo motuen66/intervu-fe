@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import {
     Container,
     Typography,
+    Box,
+    Avatar,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -27,6 +30,7 @@ import UserFormModal from '../components/UserFormModal';
 import DataTable from '../components/DataTable';
 import ConfirmModal from '../../../common/components/ConfirmModal';
 import { PrimaryButton } from '../../../common/components/buttons';
+import { useUserAvatarCache } from '../../../common/hooks/useUserAvatarCache';
 import './AdminDashboard.css';
 
 function RowActionsMenu({ user, onEdit, onDeactivate, onActivate }) {
@@ -74,6 +78,7 @@ function RowActionsMenu({ user, onEdit, onDeactivate, onActivate }) {
 }
 
 export default function UserManagementPage() {
+    const { t } = useTranslation();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
@@ -89,6 +94,7 @@ export default function UserManagementPage() {
     const [openActivateDialog, setOpenActivateDialog] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [formMode, setFormMode] = useState('create');
+    const avatars = useUserAvatarCache(users.map((user) => user.id));
     useEffect(() => {
         fetchUsers();
     }, [page, pageSize, roleFilter, searchTerm]);
@@ -299,27 +305,61 @@ export default function UserManagementPage() {
         return 'success';
     };
 
+    const getUserInitials = (name) => {
+        const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return 'U';
+
+        return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+    };
+
     const usersColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
-        { field: 'fullName', headerName: 'Full Name', width: 200 },
-        { field: 'email', headerName: 'Email', width: 250 },
+        {
+            field: 'fullName',
+            headerName: t('admin.user_management.col_name'),
+            width: 240,
+            render: (value, row) => {
+                const avatarUrl = avatars[String(row?.id)] || row?.profilePicture || row?.avatarUrl || row?.avatar || '';
+
+                return (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                        <Avatar
+                            src={avatarUrl}
+                            sx={{
+                                width: 32,
+                                height: 32,
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                bgcolor: 'primary.main',
+                                color: '#fff'
+                            }}
+                        >
+                            {getUserInitials(value || row?.email)}
+                        </Avatar>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 600, color: 'text.primary' }}>
+                            {value || row?.email || 'Unknown user'}
+                        </Typography>
+                    </Box>
+                );
+            }
+        },
+        { field: 'email', headerName: t('admin.user_management.col_email'), width: 250 },
         {
             field: 'role',
-            headerName: 'Role',
+            headerName: t('admin.user_management.col_role'),
             type: 'chip',
             render: (val) => getRoleLabel(val),
             chipColor: (val) => getRoleColor(val)
         },
         {
             field: 'status',
-            headerName: 'Status',
+            headerName: t('admin.user_management.col_status'),
             type: 'chip',
             render: (val) => getStatusLabel(val),
             chipColor: (val) => getStatusColor(val)
         },
         {
             field: 'actions',
-            headerName: 'Actions',
+            headerName: t('admin.user_management.col_actions'),
             render: (_, row) => (
                 <RowActionsMenu 
                     user={row} 
@@ -335,8 +375,8 @@ export default function UserManagementPage() {
         <Container maxWidth="xl" className="admin-page">
             <div className="admin-page-header">
                 <div>
-                    <h2 className="admin-page-title">User</h2>
-                    <p className="admin-page-subtitle">Manage user accounts and details.</p>
+                    <h2 className="admin-page-title">{t('admin.user_management.title')}</h2>
+                    <p className="admin-page-subtitle">{t('admin.user_management.subtitle')}</p>
                 </div>
                 <PrimaryButton
                     startIcon={<AddIcon />}
@@ -350,7 +390,7 @@ export default function UserManagementPage() {
                         fontWeight: 600,
                     }}
                 >
-                    Create User
+                    {t('admin.user_management.btn_create')}
                 </PrimaryButton>
             </div>
 

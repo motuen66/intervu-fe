@@ -15,6 +15,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import BlockIcon from "@mui/icons-material/Block";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import toast from "react-hot-toast";
 import DataTable from "../components/DataTable";
 import StatusChip from "../../../common/components/StatusChip";
@@ -363,13 +365,20 @@ export default function AdminReportsPage() {
     };
 
     return (
-        <Container maxWidth="xl" className="admin-page">
-            <div className="admin-page-header">
-                <div>
-                    <h2 className="admin-page-title">Reports</h2>
-                    <p className="admin-page-subtitle">Review and resolve question reports.</p>
-                </div>
-            </div>
+        <Container maxWidth="xl" sx={{ py: 4 }} className="admin-page">
+            <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box>
+                    <Typography
+                        variant="h4"
+                        sx={{ fontWeight: 800, color: "text.primary", letterSpacing: "-0.02em", mb: 0.5 }}
+                    >
+                        Question Reports
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                        Monitor and resolve reports submitted for interview questions.
+                    </Typography>
+                </Box>
+            </Box>
 
             <div className="admin-card">
                 <div className="admin-table-toolbar">

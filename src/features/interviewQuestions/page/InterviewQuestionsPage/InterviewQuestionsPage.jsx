@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Box, Button, CircularProgress, MenuItem, Pagination, Select, Stack, Typography } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -12,6 +13,7 @@ import QuestionSidebar from "./QuestionSidebar";
 
 export default function InterviewQuestionsPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
@@ -118,12 +120,12 @@ export default function InterviewQuestionsPage() {
             <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 3.5, gap: 2 }}>
                 <Box>
                     <Typography variant="h4" mb={0.75}>
-                        Interview Questions
+                        {t("question_bank.list.title")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520 }}>
                         {totalCount != null
-                            ? `Review this list of ${totalCount.toLocaleString()} interview questions and answers verified by hiring managers and candidates.`
-                            : "Browse real interview questions shared by candidates and hiring managers."}
+                            ? t("question_bank.list.subtitle_with_count", { count: totalCount.toLocaleString() })
+                            : t("question_bank.list.subtitle")}
                     </Typography>
                 </Box>
                 <Button
@@ -132,7 +134,7 @@ export default function InterviewQuestionsPage() {
                     onClick={() => navigate("/questions/share")}
                     sx={{ whiteSpace: "nowrap", px: 2.5 }}
                 >
-                    Share interview
+                    {t("question_bank.list.share_interview")}
                 </Button>
             </Box>
 
@@ -148,7 +150,7 @@ export default function InterviewQuestionsPage() {
                         </Box>
                     ) : questions.length === 0 ? (
                         <Typography align="center" color="text.secondary" py={7.5}>
-                            No questions found. Try changing filters.
+                            {t("question_bank.list.empty")}
                         </Typography>
                     ) : (
                         <>
@@ -178,7 +180,7 @@ export default function InterviewQuestionsPage() {
                                 />
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <Typography variant="body2" color="text.secondary" noWrap>
-                                        Per page:
+                                        {t("question_bank.list.per_page")}
                                     </Typography>
                                     <Select
                                         size="small"

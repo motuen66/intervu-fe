@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
     Avatar,
     Box,
@@ -51,6 +52,7 @@ import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
 export default function QuestionDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const currentUser = useSelector((state) => state.auth.userData);
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -93,8 +95,8 @@ export default function QuestionDetailPage() {
         open: false,
         title: "",
         message: "",
-        confirmText: "Confirm",
-        cancelText: "Cancel",
+        confirmText: t("question_bank.common.confirm"),
+        cancelText: t("question_bank.common.cancel"),
         onConfirm: null,
     });
 
@@ -108,8 +110,8 @@ export default function QuestionDetailPage() {
             open: true,
             title,
             message,
-            confirmText: confirmText ?? "Confirm",
-            cancelText: cancelText ?? "Cancel",
+            confirmText: confirmText ?? t("question_bank.common.confirm"),
+            cancelText: cancelText ?? t("question_bank.common.cancel"),
             onConfirm,
         });
 
@@ -284,7 +286,7 @@ export default function QuestionDetailPage() {
             setCommentPage(1);
             await fetchComments(1);
         } catch (err) {
-            toast.error(err?.response?.data?.message ?? "Failed to add comment");
+            toast.error(err?.response?.data?.message ?? t("question_bank.detail.toast.add_answer_failed"));
         } finally {
             setSubmittingAnswer(false);
         }
@@ -300,7 +302,7 @@ export default function QuestionDetailPage() {
             });
             setAnswers((prev) => prev.map((a) => (a.id === commentId ? { ...a, content: newContent } : a)));
         } catch (err) {
-            toast.error(err?.response?.data?.message ?? "Failed to update comment");
+            toast.error(err?.response?.data?.message ?? t("question_bank.detail.toast.update_answer_failed"));
             throw err;
         }
     };
@@ -316,7 +318,7 @@ export default function QuestionDetailPage() {
             setAnswers((prev) => prev.filter((a) => a.id !== commentId));
             setTotalComments((prev) => Math.max(prev - 1, 0));
         } catch (err) {
-            toast.error(err?.response?.data?.message ?? "Failed to delete comment");
+            toast.error(err?.response?.data?.message ?? t("question_bank.detail.toast.delete_answer_failed"));
         }
     };
 
@@ -330,7 +332,7 @@ export default function QuestionDetailPage() {
             });
             navigate("/questions");
         } catch (err) {
-            toast.error(err?.response?.data?.message ?? "Failed to delete question");
+            toast.error(err?.response?.data?.message ?? t("question_bank.detail.toast.delete_question_failed"));
         }
     };
 
@@ -341,10 +343,10 @@ export default function QuestionDetailPage() {
             return;
         }
         openConfirm({
-            title: "Save changes?",
-            message: "Do you want to update this question?",
-            confirmText: "Save",
-            cancelText: "Cancel",
+            title: t("question_bank.detail.confirm.save_title"),
+            message: t("question_bank.detail.confirm.save_message"),
+            confirmText: t("question_bank.common.save"),
+            cancelText: t("question_bank.common.cancel"),
             onConfirm: async () => {
                 await handleSaveEdit();
                 closeConfirm();
@@ -379,10 +381,10 @@ export default function QuestionDetailPage() {
                 content: editContent.trim(),
             }));
 
-            toast.success("Question updated");
+            toast.success(t("question_bank.detail.toast.question_updated"));
             setEditing(false);
         } catch (err) {
-            toast.error(err?.response?.data?.message ?? "Failed to update question");
+            toast.error(err?.response?.data?.message ?? t("question_bank.detail.toast.update_question_failed"));
         } finally {
             setSavingEdit(false);
         }
@@ -407,7 +409,7 @@ export default function QuestionDetailPage() {
     if (!data) {
         return (
             <Typography align="center" color="text.secondary" py={8}>
-                Question not found.
+                {t("question_bank.detail.not_found")}
             </Typography>
         );
     }
@@ -415,7 +417,9 @@ export default function QuestionDetailPage() {
     /* ── Normalized fields from QuestionDetailDto ── */
     const companyNames = data.companyNames ?? [];
     console.log("Data:", data);
-    const companyLabel = companyNames.length ? `Asked at ${companyNames.join(", ")}` : "Community question";
+    const companyLabel = companyNames.length
+        ? t("question_bank.common.asked_at", { company: companyNames.join(", ") })
+        : t("question_bank.common.community_question");
     const roles = data.roles ?? [];
     const tags = data.tags ?? [];
     const isOwner = !!currentUser?.id && String(currentUser.id) === String(data.createdBy ?? data.authorId);
@@ -423,7 +427,7 @@ export default function QuestionDetailPage() {
     const actionBtns = [
         {
             icon: saved ? <BookmarkIcon sx={{ fontSize: 15 }} /> : <BookmarkBorderIcon sx={{ fontSize: 15 }} />,
-            label: `Save${saveCount > 0 ? ` ${saveCount}` : ""}`,
+            label: saveCount > 0 ? t("question_bank.card.save_count_inline", { count: saveCount }) : t("question_bank.card.save"),
 
             onClick: handleSaveQuestion,
             active: saved,
@@ -431,7 +435,7 @@ export default function QuestionDetailPage() {
         },
         {
             icon: <AddCircleOutlineIcon sx={{ fontSize: 15 }} />,
-            label: "I was asked this",
+            label: t("question_bank.card.i_was_asked_this"),
             tooltip: "",
             onClick: () =>
                 navigate("/questions/share", {
@@ -450,13 +454,13 @@ export default function QuestionDetailPage() {
         },
         {
             icon: <ShareIcon sx={{ fontSize: 15 }} />,
-            label: "Share",
+            label: t("question_bank.detail.actions.share"),
             onClick: handleShare,
-            tooltip: copied ? "Link copied!" : "Copy link",
+            tooltip: copied ? t("question_bank.detail.actions.link_copied") : t("question_bank.detail.actions.copy_link"),
         },
         {
             icon: <FlagOutlinedIcon sx={{ fontSize: 15 }} />,
-            label: "Report",
+            label: t("question_bank.detail.actions.report"),
             tooltip: "",
             onClick: () =>
                 setReportTarget({
@@ -468,9 +472,9 @@ export default function QuestionDetailPage() {
     ];
 
     const detailRows = [
-        { label: "Companies", items: companyNames },
-        { label: "Roles", items: roles },
-        { label: "Tags", items: tags },
+        { label: t("question_bank.detail.sidebar.companies"), items: companyNames },
+        { label: t("question_bank.detail.sidebar.roles"), items: roles },
+        { label: t("question_bank.detail.sidebar.tags"), items: tags },
     ].filter(({ items }) => items.length > 0);
 
     const hottestAnswer = [...answers].sort((a, b) => {
@@ -526,7 +530,7 @@ export default function QuestionDetailPage() {
                         "&:hover": { color: "primary.main", background: "none" },
                     }}
                 >
-                    All Questions
+                    {t("question_bank.detail.back_all_questions")}
                 </Button>
 
                 <Stack direction="row" alignItems="flex-start" gap={1} mb={0.75}>
@@ -561,7 +565,7 @@ export default function QuestionDetailPage() {
                                     onClick={requestSaveEdit}
                                     sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
-                                    {savingEdit ? "Saving..." : "Save"}
+                                    {savingEdit ? t("question_bank.common.saving") : t("question_bank.common.save")}
                                 </Button>
                                 <Button
                                     size="small"
@@ -570,7 +574,7 @@ export default function QuestionDetailPage() {
                                     onClick={() => setEditing(false)}
                                     sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
-                                    Cancel
+                                    {t("question_bank.common.cancel")}
                                 </Button>
                             </Stack>
                         </Box>
@@ -598,10 +602,10 @@ export default function QuestionDetailPage() {
                                     size="small"
                                     onClick={() =>
                                         openConfirm({
-                                            title: "Delete question?",
-                                            message: "This action cannot be undone.",
-                                            confirmText: "Delete",
-                                            cancelText: "Cancel",
+                                            title: t("question_bank.detail.confirm.delete_question_title"),
+                                            message: t("question_bank.detail.confirm.delete_question_message"),
+                                            confirmText: t("question_bank.common.delete"),
+                                            cancelText: t("question_bank.common.cancel"),
                                             onConfirm: async () => {
                                                 await handleDeleteQuestion();
                                                 closeConfirm();
@@ -652,7 +656,7 @@ export default function QuestionDetailPage() {
 
                 {/* Actions */}
                 <Stack direction="row" flexWrap="wrap" gap={0.75} mb={2.75}>
-                    <Tooltip title={questionLiked ? "Unlike" : "Like"} placement="top">
+                    <Tooltip title={questionLiked ? t("question_bank.detail.actions.unlike") : t("question_bank.detail.actions.like")} placement="top">
                         <Button
                             size="small"
                             startIcon={
@@ -674,7 +678,7 @@ export default function QuestionDetailPage() {
                                 "&:hover": { bgcolor: "action.hover" },
                             }}
                         >
-                            Like {data.vote != null ? ` ${data.vote}` : ""}
+                            {t("question_bank.detail.actions.like_with_count", { count: data.vote ?? 0 })}
                         </Button>
                     </Tooltip>
                     {actionBtns.map(({ icon, label, onClick, active, tooltip }) => (
@@ -706,7 +710,7 @@ export default function QuestionDetailPage() {
                         <Stack direction="row" alignItems="center" gap={0.75} mb={1}>
                             <ListAltIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                             <Typography variant="body2" fontWeight={600}>
-                                Interview Process
+                                {t("question_bank.detail.interview_process")}
                             </Typography>
                         </Stack>
                         <Typography
@@ -724,21 +728,21 @@ export default function QuestionDetailPage() {
                     <Stack direction="row" alignItems="center" gap={0.75} mb={1}>
                         <ChatBubbleOutlineIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                         <Typography variant="body2" fontWeight={600}>
-                            Community guidelines
+                            {t("question_bank.detail.community_guidelines")}
                         </Typography>
                     </Stack>
                     <Box component="ul" sx={{ m: 0, pl: 2.5, "& li": { mb: 0.5 } }}>
                         <Typography component="li" variant="body2" color="text.secondary">
                             <Box component="strong" sx={{ color: "text.primary" }}>
-                                Stay on topic.
+                                {t("question_bank.detail.guidelines.stay_on_topic_title")}
                             </Box>{" "}
-                            Use this section for submitting solutions and providing feedback to others.
+                            {t("question_bank.detail.guidelines.stay_on_topic_desc")}
                         </Typography>
                         <Typography component="li" variant="body2" color="text.secondary">
                             <Box component="strong" sx={{ color: "text.primary" }}>
-                                Be inclusive.
+                                {t("question_bank.detail.guidelines.be_inclusive_title")}
                             </Box>{" "}
-                            Intervu is a diverse community. Please respect others&apos; opinions and beliefs.
+                            {t("question_bank.detail.guidelines.be_inclusive_desc")}
                         </Typography>
                     </Box>
                 </Paper>
@@ -759,7 +763,7 @@ export default function QuestionDetailPage() {
                                 size="small"
                                 multiline
                                 minRows={2}
-                                placeholder="Add your own answer to this question..."
+                                placeholder={t("question_bank.detail.answer_placeholder")}
                                 value={answerInput}
                                 onChange={(e) => setAnswerInput(e.target.value)}
                                 sx={{ mb: 1 }}
@@ -773,7 +777,9 @@ export default function QuestionDetailPage() {
                                     onClick={handleAddComment}
                                     sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
-                                    {submittingAnswer ? "Posting..." : "Post Answer"}
+                                    {submittingAnswer
+                                        ? t("question_bank.detail.posting_answer")
+                                        : t("question_bank.detail.post_answer")}
                                 </Button>
                             </Box>
                         </Box>
@@ -791,7 +797,7 @@ export default function QuestionDetailPage() {
                             <Stack direction="row" alignItems="center" gap={0.75} mb={1.75}>
                                 <ForumOutlinedIcon sx={{ fontSize: 18, color: "text.secondary" }} />
                                 <Typography variant="body1" fontWeight={600}>
-                                    {totalComments} {totalComments === 1 ? "Answer" : "Answers"}
+                                    {t("question_bank.detail.answers_count", { count: totalComments })}
                                 </Typography>
                                 <Box flex={1} />
                                 <FormControl size="small">
@@ -843,10 +849,10 @@ export default function QuestionDetailPage() {
                                             a.id && isCommentAuthor
                                                 ? () =>
                                                       openConfirm({
-                                                          title: "Delete comment?",
-                                                          message: "This action cannot be undone.",
-                                                          confirmText: "Delete",
-                                                          cancelText: "Cancel",
+                                                                                                                    title: t("question_bank.detail.confirm.delete_answer_title"),
+                                                                                                                    message: t("question_bank.detail.confirm.delete_answer_message"),
+                                                                                                                    confirmText: t("question_bank.common.delete"),
+                                                                                                                    cancelText: t("question_bank.common.cancel"),
                                                           onConfirm: async () => {
                                                               await handleDeleteComment(a.id);
                                                               closeConfirm();
@@ -876,7 +882,7 @@ export default function QuestionDetailPage() {
             >
                 <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2 }}>
                     <Typography variant="h6" mb={1.75}>
-                        Interview Details
+                        {t("question_bank.detail.sidebar.interview_details")}
                     </Typography>
 
                     {detailRows.map(({ label, items }) => (
@@ -890,7 +896,7 @@ export default function QuestionDetailPage() {
                                     const isObject = typeof item === "object";
                                     const itemName = isObject ? item.name : item;
                                     const matchedCompany =
-                                        label === "Companies" &&
+                                        label === t("question_bank.detail.sidebar.companies") &&
                                         allCompanies?.find((c) => (c.name || c.companyName) === itemName);
 
                                     return (
@@ -916,7 +922,7 @@ export default function QuestionDetailPage() {
                 {data.relatedQuestions?.length > 0 && (
                     <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 2 }}>
                         <Typography variant="h6" mb={1.75}>
-                            Related Questions
+                            {t("question_bank.detail.related_questions")}
                         </Typography>
                         {data.relatedQuestions.map((q) => (
                             <Paper
@@ -939,8 +945,11 @@ export default function QuestionDetailPage() {
                                     )}
                                     <Typography variant="caption" color="text.disabled">
                                         {(q.companyName || (q.companyNames && q.companyNames[0])) &&
-                                            `Asked at ${q.companyName || q.companyNames[0]}`}
-                                        {q.answerCount != null && ` \u2022 ${q.answerCount} answers`}
+                                            t("question_bank.common.asked_at", {
+                                                company: q.companyName || q.companyNames[0],
+                                            })}
+                                        {q.answerCount != null &&
+                                            ` \u2022 ${t("question_bank.detail.answers_count", { count: q.answerCount })}`}
                                         {q.createdAt && ` \u2022 ${timeAgo(q.createdAt)}`}
                                     </Typography>
                                 </Stack>

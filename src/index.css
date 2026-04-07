@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
+    /* Font variables - English fonts by default, Helvetica for Vietnamese */
+    --heading-font: "Outfit", "Plus Jakarta Sans", "Inter", sans-serif;
+    --body-font: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
+    
     /* Supplementary color (no MUI equivalent) */
     --color-bg-subtle: #f9fafb;
 
@@ -23,7 +27,7 @@
 /* Global resets */
 body,
 html {
-    font-family: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
+    font-family: var(--body-font);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     color: var(--mui-palette-text-primary, var(--mui-palette-primary-main));
@@ -46,4 +50,14 @@ h5,
 h6 {
     margin: 0;
     padding: 0;
+}
+
+/* Global heading font styles */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--heading-font);
 }

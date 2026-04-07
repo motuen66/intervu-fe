@@ -14,6 +14,7 @@ import {
     Alert,
 } from "@mui/material";
 import { Check, X, Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
@@ -27,6 +28,7 @@ const GENERATED_QUESTION_STATUS = {
 };
 
 function GeneratedQuestionsModal({ open, onClose, roomId }) {
+    const { t } = useTranslation();
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState({}); // { [id]: true/false }
@@ -46,7 +48,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             }
         } catch (err) {
             console.error("Failed to fetch generated questions:", err);
-            setError("Failed to load questions. Please try again.");
+            setError(t("interview.list.generated_questions.error_load"));
         } finally {
             setLoading(false);
         }
@@ -66,7 +68,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 endpoint: interviewEndPoints.APPROVE_GENERATED_QUESTION(qId),
                 arg: {}, // ApproveGeneratedQuestionRequest
                 displaySuccessMessage: true,
-                successMessage: `Added Question ${index + 1} to the interview session`,
+                successMessage: t("interview.list.generated_questions.toast_approve_success", { index: index + 1 }),
             });
             // Update local state
             setQuestions((prev) =>
@@ -88,7 +90,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 method: METHOD.PUT,
                 endpoint: interviewEndPoints.REJECT_GENERATED_QUESTION(qId),
                 displaySuccessMessage: true,
-                successMessage: `Reject Question ${index + 1}`,
+                successMessage: t("interview.list.generated_questions.toast_reject_success", { index: index + 1 }),
             });
             // Update local state
             setQuestions((prev) =>
@@ -106,11 +108,32 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
     const getStatusChip = (status) => {
         switch (status) {
             case GENERATED_QUESTION_STATUS.APPROVED:
-                return <Chip label="Approved" size="small" color="success" variant="outlined" />;
+                return (
+                    <Chip
+                        label={t("interview.list.generated_questions.status_approved")}
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                    />
+                );
             case GENERATED_QUESTION_STATUS.REJECTED:
-                return <Chip label="Rejected" size="small" color="error" variant="outlined" />;
+                return (
+                    <Chip
+                        label={t("interview.list.generated_questions.status_rejected")}
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                    />
+                );
             default:
-                return <Chip label="Pending" size="small" color="warning" variant="outlined" />;
+                return (
+                    <Chip
+                        label={t("interview.list.generated_questions.status_pending")}
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                    />
+                );
         }
     };
 
@@ -135,17 +158,17 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 {/* Header */}
                 <Box sx={{ p: 3, borderBottom: "1px solid", borderColor: "divider" }}>
                     <Typography id="generated-questions-title" variant="h6" fontWeight={700}>
-                        Generated Interview Questions
+                        {t("interview.list.generated_questions.title")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Review and approve the AI-generated questions for this session.
+                        {t("interview.list.generated_questions.subtitle")}
                     </Typography>
                 </Box>
 
                 {/* Content */}
                 <Box sx={{ p: 0, overflowY: "auto", flexGrow: 1 }}>
                     {loading ? (
-                        <Box sx={{ display: "center", justifyContent: "center", p: 4 }}>
+                        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
                             <CircularProgress size={32} />
                         </Box>
                     ) : error ? (
@@ -155,7 +178,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                     ) : questions.length === 0 ? (
                         <Box sx={{ p: 4, textAlign: "center" }}>
                             <Info size={40} style={{ opacity: 0.2, marginBottom: 16 }} />
-                            <Typography color="text.secondary">No questions generated yet.</Typography>
+                            <Typography color="text.secondary">{t("interview.list.generated_questions.empty")}</Typography>
                         </Box>
                     ) : (
                         <List sx={{ p: 0 }}>
@@ -171,7 +194,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                     >
                                         <Stack direction="row" justifyContent="space-between" width="100%" sx={{ mb: 1.5 }}>
                                             <Typography variant="caption" fontWeight={700} color="primary" sx={{ textTransform: "uppercase" }}>
-                                                Question {index + 1}
+                                                {t("interview.list.generated_questions.label_question", { index: index + 1 })}
                                             </Typography>
                                             {getStatusChip(q.status)}
                                         </Stack>
@@ -189,7 +212,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                                     disabled={!!actionLoading[q.id]}
                                                     sx={{ borderRadius: 1.5 }}
                                                 >
-                                                    Reject
+                                                    {t("interview.list.generated_questions.btn_reject")}
                                                 </SecondaryButton>
                                                 <PrimaryButton
                                                     size="small"
@@ -198,7 +221,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                                     disabled={!!actionLoading[q.id]}
                                                     sx={{ borderRadius: 1.5 }}
                                                 >
-                                                    Approve
+                                                    {t("interview.list.generated_questions.btn_approve")}
                                                 </PrimaryButton>
                                             </Stack>
                                         )}
@@ -213,7 +236,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 {/* Footer */}
                 <Box sx={{ p: 2, bgcolor: "grey.50", display: "flex", justifyContent: "flex-end" }}>
                     <SecondaryButton onClick={onClose} sx={{ px: 4 }}>
-                        Close
+                        {t("interview.list.generated_questions.btn_close")}
                     </SecondaryButton>
                 </Box>
             </Box>

@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Container, Avatar, Box, Tooltip, IconButton } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { Container, Box } from '@mui/material';
 import toast from 'react-hot-toast';
 import DataTable from '../components/DataTable';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
+import { BE_BASE_URL } from '../../../common/constants/env';
 import { adminEndPoints } from '../services/adminApi';
+import { CompanyLogo } from '../../../common/utils/logoImageGenerator';
 import './AdminDashboard.css';
 
 export default function CompanyManagementPage() {
     const [loading, setLoading] = useState(false);
     const [companiesData, setCompaniesData] = useState({ data: [], total: 0, page: 0, pageSize: 10 });
+    const [brokenLogoIds, setBrokenLogoIds] = useState({});
 
-    const handleCopyId = (id) => {
-        navigator.clipboard.writeText(id);
-        toast.success('ID copied!');
+    const resolveLogoUrl = (value) => {
+        if (!value) return '';
+        if (/^https?:\/\//i.test(value)) return value;
+        return `${BE_BASE_URL}/${String(value).replace(/^\/+/, '')}`;
     };
 
     const fetchCompanies = async (page = 0, pageSize = 10) => {
@@ -41,49 +44,31 @@ export default function CompanyManagementPage() {
 
     const companiesColumns = [
         {
-            field: 'id',
-            headerName: 'ID',
-            width: 120,
-            render: (value) => (
-                <Tooltip title={value} arrow placement="top">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                        <span sx={{ fontSize: '12px', fontFamily: 'monospace', color: '#6b7280' }}>
-                            {value?.substring(0, 8)}...
-                        </span>
-                        <IconButton
-                            size="small"
-                            onClick={() => handleCopyId(value)}
-                            sx={{
-                                opacity: 0,
-                                transition: 'opacity 0.2s',
-                                '&:hover': { opacity: 1 },
-                                p: 0.5,
-                                color: '#4F46E5'
-                            }}
-                        >
-                            <ContentCopyIcon sx={{ fontSize: '14px' }} />
-                        </IconButton>
-                    </Box>
-                </Tooltip>
-            )
-        },
-        {
             field: 'logoPath',
             headerName: 'Logo',
             width: 80,
-            render: (value) => (
-                <Avatar
-                    src={value}
-                    sx={{
-                        width: 36,
-                        height: 36,
-                        backgroundColor: '#e5e7eb',
-                        fontSize: '12px',
-                        fontWeight: 600
-                    }}
-                >
-                    {value ? '' : 'CO'}
-                </Avatar>
+            render: (value, row) => (
+                value && !brokenLogoIds[row?.id] ? (
+                    <Box
+                        component="img"
+                        src={resolveLogoUrl(value)}
+                        alt={row?.name || 'Company logo'}
+                        onError={() => {
+                            if (!row?.id) return;
+                            setBrokenLogoIds((prev) => ({ ...prev, [row.id]: true }));
+                        }}
+                        sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '8px',
+                            objectFit: 'contain',
+                            bgcolor: '#e5e7eb',
+                            p: 0.5
+                        }}
+                    />
+                ) : (
+                    <CompanyLogo name={row?.name || 'Company'} size={36} />
+                )
             )
         },
         { field: 'name', headerName: 'Company Name', width: 200 },

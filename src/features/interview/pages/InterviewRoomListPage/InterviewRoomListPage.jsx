@@ -1,4 +1,5 @@
 import { Box, Typography, Stack, Tabs, Tab, Container } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import CommonLoader from "../../../../common/components/loaders/CommonLoader";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
@@ -51,6 +52,7 @@ function a11yProps(index) {
 }
 
 function InterviewRoomListPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const user = useUser();
@@ -242,12 +244,12 @@ function InterviewRoomListPage() {
                 const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
                 if (diffDays > 0) {
-                    nextSession = `${diffDays}d ${diffHours}h`;
+                    nextSession = `${diffDays}${t("common.units.days")} ${diffHours}${t("common.units.hours")}`;
                 } else if (diffHours > 0) {
-                    nextSession = `${diffHours}h`;
+                    nextSession = `${diffHours}${t("common.units.hours")}`;
                 } else {
                     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                    nextSession = `${diffMins}m`;
+                    nextSession = `${diffMins}${t("common.units.minutes")}`;
                 }
             }
 
@@ -411,7 +413,7 @@ function InterviewRoomListPage() {
             });
 
             if (response?.success) {
-                toast.success(response.message || "Interview cancelled successfully");
+                toast.success(response.message || t("interview.list.toast.cancel_success"));
                 await fetchRooms([0, 1]);
                 await fetchRooms([2, 3]);
                 await fetchRescheduleRequests();
@@ -520,10 +522,10 @@ function InterviewRoomListPage() {
                 >
                     <Box>
                         <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5, color: "text.primary" }}>
-                            My Interviews
+                            {t("interview.list.title")}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Track your upcoming practice sessions and review past performance feedback.
+                            {t("interview.list.subtitle")}
                         </Typography>
                     </Box>
                 </Stack>
@@ -556,8 +558,8 @@ function InterviewRoomListPage() {
                             },
                         }}
                     >
-                        <Tab label="Upcoming" {...a11yProps(0)} />
-                        <Tab label="Past History" {...a11yProps(1)} />
+                        <Tab label={t("interview.list.tabs.upcoming")} {...a11yProps(0)} />
+                        <Tab label={t("interview.list.tabs.past")} {...a11yProps(1)} />
                     </Tabs>
                 </Box>
 
@@ -628,15 +630,18 @@ function InterviewRoomListPage() {
 
                 <ConfirmModal
                     show={cancelConfirmState.open}
-                    title="Cancel Interview"
-                    message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${cancelConfirmState.previewRefundPercent === null
-                            ? "Unable to calculate refund preview."
-                            : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
-                        }`}
+                    title={t("interview.list.cancel_modal.title")}
+                    message={`${t("interview.list.cancel_modal.message_base")}\n\n${
+                        cancelConfirmState.previewRefundPercent === null
+                            ? t("interview.list.cancel_modal.refund_error")
+                            : t("interview.list.cancel_modal.refund_preview", {
+                                  percent: cancelConfirmState.previewRefundPercent,
+                              })
+                    }`}
                     onConfirm={handleConfirmCancelInterview}
                     onCancel={handleCloseCancelConfirm}
-                    confirmText="Cancel Interview"
-                    cancelText="Keep Interview"
+                    confirmText={t("interview.list.cancel_modal.btn_confirm")}
+                    cancelText={t("interview.list.cancel_modal.cancel_text") || t("interview.list.cancel_modal.btn_cancel")}
                 />
             </Container>
             <GeneratedQuestionsModal

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Dialog,
     DialogTitle,
@@ -24,6 +25,7 @@ import { interviewEndPoints } from "../../../services/interviewRoomApi.js";
 import useUser from "../../../../../common/hooks/useUser.jsx";
 
 function AICVSelectionModal({ open, onClose, onJoin, room }) {
+    const { t } = useTranslation();
     const [step, setStep] = useState("selection"); // selection, processing, confirm
     const [cvSource, setCvSource] = useState(""); // "current" or "upload"
     const [uploadedFile, setUploadedFile] = useState(null);
@@ -152,12 +154,12 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle>Select CV for AI Interview</DialogTitle>
+            <DialogTitle>{t("ai_cv.modal.title")}</DialogTitle>
             <DialogContent>
                 {step === "selection" && (
                     <Stack spacing={2}>
                         <Typography variant="body1">
-                            Choose how to provide your CV for the AI interview:
+                            {t("ai_cv.modal.subtitle")}
                         </Typography>
                         <Stack direction="row" spacing={2}>
                             <Button
@@ -165,14 +167,14 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                                 onClick={handleSelectCurrent}
                                 fullWidth
                             >
-                                Use Current CV from Profile
+                                {t("ai_cv.modal.btn_current")}
                             </Button>
                             <Button
                                 variant="outlined"
                                 onClick={handleUploadNew}
                                 fullWidth
                             >
-                                Upload New CV
+                                {t("ai_cv.modal.btn_upload")}
                             </Button>
                             <Button
                                 variant="outlined"
@@ -180,7 +182,7 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                                 fullWidth
                                 disabled={!lastCvUrl || checkingLastCv}
                             >
-                                Use Previous CV
+                                {t("ai_cv.modal.btn_last")}
                             </Button>
                         </Stack>
                     </Stack>
@@ -211,10 +213,10 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                                 <input {...getInputProps({ accept: ".pdf" })} />
                                 <CloudUploadIcon sx={{ fontSize: 48, color: theme.palette.text.disabled, mb: 2 }} />
                                 <Typography variant="body1" sx={{ fontWeight: 500, color: theme.palette.text.primary, mb: 0.5 }}>
-                                    <span style={{ color: theme.palette.primary.main }}>Click to upload</span> or drag and drop
+                                    <span style={{ color: theme.palette.primary.main }}>{t("ai_cv.modal.upload_zone").split(" or ")[0]}</span>{" or " + t("ai_cv.modal.upload_zone").split(" or ")[1]}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                                    PDF file only
+                                    {t("ai_cv.modal.upload_hint")}
                                 </Typography>
                             </Box>
                         ) : (
@@ -260,7 +262,7 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                                 disabled={!uploadedFile}
                                 sx={{ textTransform: "none" }}
                             >
-                                Process CV
+                                {t("ai_cv.modal.btn_process")}
                             </Button>
                         </Box>
                     </Box>
@@ -270,7 +272,7 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                     <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
                         <Stack alignItems="center" spacing={2}>
                             <CircularProgress />
-                            <Typography>Processing your CV...</Typography>
+                            <Typography>{t("ai_cv.modal.processing")}</Typography>
                         </Stack>
                     </Box>
                 )}
@@ -278,31 +280,31 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                 {step === "confirm" && (
                     <Stack spacing={2}>
                         <Typography variant="body1">
-                            Your CV has been processed. Please review the CV URL below and confirm to join the interview.
+                            {t("ai_cv.modal.confirm_title")}
                         </Typography>
                         <Box>
                             <Typography variant="body2" color="text.secondary">
-                                CV URL:
+                                {t("ai_cv.modal.cv_url_label")}
                             </Typography>
                             <Link href={cvUrl} target="_blank" rel="noopener noreferrer">
                                 {cvUrl}
                             </Link>
                         </Box>
                         <Typography variant="body2" color="text.secondary">
-                            By confirming, you agree that this CV will be used for the AI interview.
+                            {t("ai_cv.modal.agreement")}
                         </Typography>
                     </Stack>
                 )}
             </DialogContent>
             <DialogActions>
                 {step === "selection" && (
-                    <Button onClick={handleClose}>Cancel</Button>
+                    <Button onClick={handleClose}>{t("coach.schedule.dialog.btn_cancel")}</Button>
                 )}
                 {step === "confirm" && (
                     <>
-                        <Button onClick={handleClose}>Cancel</Button>
+                        <Button onClick={handleClose}>{t("coach.schedule.dialog.btn_cancel")}</Button>
                         <Button onClick={handleConfirmJoin} variant="contained">
-                            Confirm & Join Interview
+                            {t("ai_cv.modal.btn_confirm_join")}
                         </Button>
                     </>
                 )}

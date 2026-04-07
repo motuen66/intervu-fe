@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Box,
     Typography,
@@ -12,6 +13,7 @@ import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 const ITEMS_PER_PAGE = 5;
 
 function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestions }) {
+    const { t } = useTranslation();
     const [page, setPage] = useState(1);
 
     // Simplified list: removed internal search/filter bars
@@ -59,10 +61,10 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestion
                     }}
                 >
                     <Typography variant="h6" color="text.secondary" gutterBottom>
-                        No past interviews
+                        {t("interview.list.empty.past_title")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Completed interviews will appear here
+                        {t("interview.list.empty.past_subtitle")}
                     </Typography>
                 </Box>
             ) : (
@@ -88,9 +90,11 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestion
                     sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}
                 >
                     <Typography variant="body2" color="text.secondary">
-                        Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                        {Math.min(page * ITEMS_PER_PAGE, filteredRooms.length)} of{" "}
-                        {filteredRooms.length} results
+                        {t("common.pagination.showing", {
+                            from: (page - 1) * ITEMS_PER_PAGE + 1,
+                            to: Math.min(page * ITEMS_PER_PAGE, filteredRooms.length),
+                            total: filteredRooms.length,
+                        })}
                     </Typography>
                     <Pagination
                         count={totalPages}

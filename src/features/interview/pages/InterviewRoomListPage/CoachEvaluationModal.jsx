@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Box, Button, CircularProgress, Modal, Slider, Stack, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
@@ -12,21 +13,22 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     const [error, setError] = useState("");
     const [isCompleted, setIsCompleted] = useState(false);
 
+    const { t } = useTranslation();
     const interviewLabel = useMemo(() => {
         if (!room?.scheduledTime) return "";
         try {
             const start = new Date(room.scheduledTime);
             const end = room.durationMinutes ? new Date(start.getTime() + room.durationMinutes * 60000) : null;
-            const startLabel = start.toLocaleString(undefined, {
+            const startLabel = start.toLocaleString(t("common.date_locale") || "en-US", {
                 dateStyle: "medium",
                 timeStyle: "short",
             });
-            const endLabel = end?.toLocaleTimeString(undefined, { timeStyle: "short" });
+            const endLabel = end?.toLocaleTimeString(t("common.date_locale") || "en-US", { timeStyle: "short" });
             return endLabel ? `${startLabel} - ${endLabel}` : startLabel;
         } catch (err) {
             return "";
         }
-    }, [room]);
+    }, [room, t]);
 
     useEffect(() => {
         const fetchEvaluation = async () => {
@@ -52,14 +54,14 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                 setItems(normalizedResults);
                 setIsCompleted(Boolean(data?.isEvaluationCompleted));
             } catch (err) {
-                setError(err?.response?.data?.message || "Failed to load evaluation form.");
+                setError(err?.response?.data?.message || t("interview.list.coach_evaluation.error_load"));
             } finally {
                 setLoading(false);
             }
         };
 
         fetchEvaluation();
-    }, [open, room?.id]);
+    }, [open, room?.id, t]);
 
     const handleItemChange = (index, field, value) => {
         setItems((prev) =>
@@ -78,7 +80,7 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
         if (!room?.id) return;
         setError("");
         if (items.some((item) => item.score < 0 || item.score > 10)) {
-            setError("Scores must be between 0 and 10.");
+            setError(t("interview.list.coach_evaluation.error_range"));
             return;
         }
         setSubmitting(true);
@@ -98,7 +100,7 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                 onClose();
             }
         } catch (err) {
-            setError(err?.response?.data?.message || "Failed to submit evaluation.");
+            setError(err?.response?.data?.message || t("interview.list.coach_evaluation.error_submit"));
         } finally {
             setSubmitting(false);
         }
@@ -118,11 +120,11 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     };
 
     const getScoreLabel = (score) => {
-        if (score <= 2) return "Very Bad";
-        if (score <= 4) return "Bad";
-        if (score <= 6) return "Average";
-        if (score <= 8) return "Good";
-        return "Very Good";
+        if (score <= 2) return t("interview.list.coach_evaluation.score_very_bad");
+        if (score <= 4) return t("interview.list.coach_evaluation.score_bad");
+        if (score <= 6) return t("interview.list.coach_evaluation.score_average");
+        if (score <= 8) return t("interview.list.coach_evaluation.score_good");
+        return t("interview.list.coach_evaluation.score_very_good");
     };
 
     const getScoreColor = (score) => {
@@ -148,11 +150,11 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                 })}
             >
                 <Typography id="coach-evaluation-modal" variant="h5" component="h2" sx={{ mb: 1 }}>
-                    Incomplete Mock Interview Evaluation
+                    {t("interview.list.coach_evaluation.title")}
                 </Typography>
                 {room?.candidateName && (
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        Candidate: <strong>{room.candidateName}</strong>
+                        {t("interview.list.coach_evaluation.candidate")} <strong>{room.candidateName}</strong>
                     </Typography>
                 )}
                 {interviewLabel && (
@@ -169,13 +171,13 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                     <Stack alignItems="center" sx={{ py: 4 }}>
                         <CircularProgress size={28} />
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                            Loading evaluation form...
+                            {t("interview.list.coach_evaluation.loading")}
                         </Typography>
                     </Stack>
                 ) : (
                     <Stack spacing={2} sx={{ maxHeight: "60vh", overflowY: "auto", pr: 1 }}>
                         {items.length === 0 ? (
-                            <Typography color="text.secondary">No evaluation items configured.</Typography>
+                            <Typography color="text.secondary">{t("interview.list.coach_evaluation.empty")}</Typography>
                         ) : (
                             items.map((item, index) => (
                                 <Box
@@ -202,9 +204,9 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                                 onChange={(_, val) => handleItemChange(index, "score", val)}
                                             />
                                             <Stack direction="row" justifyContent="space-between" sx={{ mt: -1 }}>
-                                                <Typography variant="caption" color="text.secondary">Very Bad</Typography>
-                                                <Typography variant="caption" color="text.secondary">Average</Typography>
-                                                <Typography variant="caption" color="text.secondary">Very Good</Typography>
+                                                <Typography variant="caption" color="text.secondary">{t("interview.list.coach_evaluation.score_very_bad")}</Typography>
+                                                <Typography variant="caption" color="text.secondary">{t("interview.list.coach_evaluation.score_average")}</Typography>
+                                                <Typography variant="caption" color="text.secondary">{t("interview.list.coach_evaluation.score_very_good")}</Typography>
                                             </Stack>
                                         </Box>
                                         <Box sx={{ width: 80, textAlign: "right" }}>
@@ -217,7 +219,7 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                         </Box>
                                     </Stack>
                                     <TextField
-                                        label="Feedback"
+                                        label={t("interview.list.coach_evaluation.label_feedback")}
                                         value={item.answer || ""}
                                         onChange={(e) => handleItemChange(index, "answer", e.target.value)}
                                         multiline
@@ -236,7 +238,7 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                 onClick={handleSubmit}
                                 sx={(theme) => ({ ...buttonStyles.primaryCta(theme) })}
                             >
-                                {submitting ? "Submitting..." : "Submit"}
+                                {submitting ? t("interview.list.coach_evaluation.btn_submitting") : t("interview.list.coach_evaluation.btn_submit")}
                             </Button>
                         </Stack>
                     </Stack>

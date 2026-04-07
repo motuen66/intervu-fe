@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, CardContent, Typography, IconButton, Stack } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
 
 const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }) => {
+    const { t } = useTranslation();
     const [displayDate, setDisplayDate] = useState(new Date());
 
     const daysInMonth = useMemo(() => {
@@ -150,18 +152,18 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
     }
 
     const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
+        t("common.months.january"),
+        t("common.months.february"),
+        t("common.months.march"),
+        t("common.months.april"),
+        t("common.months.may"),
+        t("common.months.june"),
+        t("common.months.july"),
+        t("common.months.august"),
+        t("common.months.september"),
+        t("common.months.october"),
+        t("common.months.november"),
+        t("common.months.december"),
     ];
 
     return (
@@ -196,7 +198,15 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                         mb: 1,
                     }}
                 >
-                    {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => (
+                    {[
+                        t("common.days.sun"),
+                        t("common.days.mon"),
+                        t("common.days.tue"),
+                        t("common.days.wed"),
+                        t("common.days.thu"),
+                        t("common.days.fri"),
+                        t("common.days.sat"),
+                    ].map((day, idx) => (
                         <Box
                             key={idx}
                             sx={{

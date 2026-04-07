@@ -1,0 +1,876 @@
+{
+  "common": {
+    "date_locale": "vi-VN",
+    "public_header": {
+      "logo": "INTERVU",
+      "nav_home": "Trang chủ",
+      "nav_questions": "Ngân hàng câu hỏi",
+      "btn_signin": "Đăng nhập"
+    },
+    "months": {
+      "january": "Tháng Giêng",
+      "february": "Tháng Hai",
+      "march": "Tháng Ba",
+      "april": "Tháng Tư",
+      "may": "Tháng Năm",
+      "june": "Tháng Sáu",
+      "july": "Tháng Bảy",
+      "august": "Tháng Tám",
+      "september": "Tháng Chín",
+      "october": "Tháng Mười",
+      "november": "Tháng Mười Một",
+      "december": "Tháng Mười Hai"
+    },
+    "days": {
+      "sun": "CN",
+      "mon": "T2",
+      "tue": "T3",
+      "wed": "T4",
+      "thu": "T5",
+      "fri": "T6",
+      "sat": "T7"
+    },
+    "pagination": {
+      "showing": "Hiển thị {{from}} đến {{to}} của {{total}} kết quả",
+      "prev": "← Quay lại",
+      "next": "Tiếp theo →",
+      "page": "Trang {{page}}"
+    },
+    "units": {
+      "days": "ng",
+      "hours": "g",
+      "minutes": "p"
+    },
+    "navbar": {
+      "discover": "KHÁM PHÁ",
+      "find_coaches": "Tìm huấn luyện viên",
+      "practice": "Luyện tập",
+      "question_bank": "Ngân hàng câu hỏi",
+      "all_questions": "Tất cả câu hỏi",
+      "saved_questions": "Câu hỏi đã lưu",
+      "suggested_for_you": "Gợi ý cho bạn",
+      "hot_topics": "Chủ đề hot",
+      "java_backend": "Java Backend",
+      "system_design": "System Design",
+      "frontend": "Frontend",
+      "pricing": "Bảng giá",
+      "membership": "THÀNH VIÊN",
+      "my_journey": "Hành trình của tôi",
+      "my_roadmap": "Lộ trình của tôi",
+      "my_interviews": "Phỏng vấn của tôi",
+      "smart_matching": "Ghép cặp thông minh",
+      "booking_requests": "Yêu cầu đặt lịch",
+      "workspace": "KHÔNG GIAN LÀM VIỆC",
+      "dashboard": "Bảng điều khiển",
+      "operations": "Hoạt động",
+      "my_services": "Dịch vụ của tôi",
+      "schedule": "Lịch trình",
+      "records": "LỊCH SỬ",
+      "platform": "NỀN TẢNG",
+      "login": "Đăng nhập",
+      "register": "Đăng ký",
+      "my_profile": "Hồ sơ của tôi",
+      "my_reports": "Báo cáo của tôi",
+      "payment_history": "Lịch sử thanh toán",
+      "settings": "Cài đặt",
+      "logout": "Đăng xuất"
+    },
+    "modals": {
+      "suspended": {
+        "title": "Tài khoản đã bị khóa",
+        "message": "Tài khoản của bạn đã bị khóa bởi quản trị viên. Hiện tại bạn bị hạn chế thực hiện bất kỳ hành động nào trên nền tảng. Vui lòng liên hệ admin@intervu.com để được hỗ trợ.",
+        "btn_logout": "Đăng xuất"
+      },
+      "session_expired": {
+        "title": "Phiên làm việc hết hạn",
+        "message": "Phiên làm việc của bạn đã hết hạn vì lý do bảo mật. Bạn sẽ được chuyển hướng tự động đến trang đăng nhập trong",
+        "message_suffix": "giây.",
+        "btn_login_now": "Quay lại đăng nhập ngay"
+      },
+      "payment_details": {
+        "title": "Chi tiết Phỏng vấn Được Thanh toán",
+        "btn_close": "Đóng"
+      },
+      "booking": {
+        "tag_single_focus": "Phỏng vấn Tập trung Đơn",
+        "step1_title": "Chọn một Dịch vụ",
+        "step1_subtitle": "Lựa chọn loại phỏng vấn của bạn để xem các khe thời gian khả dụng.",
+        "step2_title": "Chọn Ngày & Giờ",
+        "step2_subtitle_prefix": "",
+        "empty_services": "Huấn luyện viên này chưa thiết lập bất kỳ dịch vụ nào.",
+        "timezone_label": "Múi giờ",
+        "select_date_prompt": "Chọn một ngày để xem giờ khả dụng",
+        "duration_suffix": "phút",
+        "error_unavailable": "Cần {{count}} khoảng 30 phút liên tiếp cho dịch vụ {{duration}} phút này."
+      },
+      "jd_booking": {
+        "title": "Đặt Lịch Phỏng Vấn Nhiều Vòng JD",
+        "step1_desc": "Gửi chi tiết và xây dựng quy trình đánh giá của bạn.",
+        "step2_desc": "Chọn ngày và giờ cho mỗi vòng.",
+        "step1_name": "Chi tiết công việc & Vòng phỏng vấn",
+        "step2_name": "Lịch biểu vòng",
+        "job_url_label": "URL công việc",
+        "job_url_placeholder": "https://company.com/role",
+        "cv_url_label": "URL CV",
+        "cv_url_placeholder": "https://drive.google.com/...",
+        "aim_level_label": "Mục tiêu AIM",
+        "rounds_title": "Xây dựng Chuỗi Phỏng Vấn Của Bạn",
+        "rounds_subtitle": "Xác định quy trình đánh giá hợp lý",
+        "add_round_btn": "Thêm vòng",
+        "round_label": "Vòng {{number}}",
+        "select_service_label": "Chọn dịch vụ",
+        "error_invalid_job_url": "Vui lòng cung cấp liên kết hợp lệ cho Mô tả công việc",
+        "error_invalid_cv_url": "Vui lòng cung cấp liên kết hợp lệ cho CV của bạn (ví dụ: liên kết Google Drive)",
+        "error_no_service": "Vui lòng chọn dịch vụ cho tất cả các vòng phỏng vấn.",
+        "error_round_time": "Vui lòng đặt thời gian cho Vòng {{index}} trước.",
+        "schedule_section_title": "Lịch biểu",
+        "pending_label": "Đang chờ",
+        "complete_round_first": "Hoàn thành vòng {{number}} trước",
+        "blocks_label": "khối",
+        "blocks_label_plural": "khối",
+        "next_btn": "Tiếp theo: Lên lịch vòng phỏng vấn",
+        "back_btn": "Quay lại",
+        "confirming_paying_btn": "Đang xác nhận và thanh toán...",
+        "submit_btn": "Xác nhận và thanh toán ngay",
+        "cancel_btn": "Hủy"
+      }
+    }
+  },
+  "landing": {
+    "kinetic": {
+      "train": "Luyện tập.",
+      "refine": "Tinh chỉnh.",
+      "perform": "Thực hiện."
+    },
+    "hero": {
+      "label": "Tập dượt phỏng vấn",
+      "btn_start": "Bắt đầu ngay",
+      "btn_explore": "Khám phá ngân hàng"
+    },
+    "footer": {
+      "copyright": "© {{year}} Intervu. Mọi quyền được bảo lưu."
+    }
+  },
+  "admin": {
+    "user_management": {
+      "title": "Người dùng",
+      "subtitle": "Quản lý tài khoản và chi tiết người dùng.",
+      "btn_create": "Tạo người dùng",
+      "col_name": "Họ và tên",
+      "col_email": "Email",
+      "col_role": "Vai trò",
+      "col_status": "Trạng thái",
+      "col_actions": "Hành động"
+    },
+    "dashboard": {
+      "title": "Bảng điều khiển",
+      "stats_users": "Tổng người dùng",
+      "stats_companies": "Tổng công ty",
+      "stats_interviewers": "Tổng huấn luyện viên",
+      "stats_payments": "Tổng thanh toán",
+      "stats_feedbacks": "Tổng phản hồi",
+      "stats_rating": "Đánh giá trung bình"
+    }
+  },
+  "profile": {
+    "public": {
+      "loading": "Đang tải hồ sơ",
+      "loading_sub": "Đang chuẩn bị thông tin huấn luyện viên...",
+      "not_found": "Không tìm thấy huấn luyện viên.",
+      "back_home": "Quay lại trang chủ",
+      "years_exp": "Năm kinh nghiệm",
+      "rating": "Đánh giá ứng viên",
+      "mock_interviews": "Phỏng vấn thử",
+      "about": "Giới thiệu",
+      "view_more": "Xem thêm",
+      "view_less": "Thu nhỏ",
+      "no_bio": "Chưa có tiểu sử.",
+      "expertise": "Chuyên môn & Kinh nghiệm",
+      "core_skills": "Kỹ năng chính",
+      "no_skills": "Chưa liệt kê kỹ năng.",
+      "work_exp": "Kinh nghiệm làm việc",
+      "current": "Hiện tại",
+      "present": "Nay",
+      "no_companies": "Chưa liệt kê công ty.",
+      "domain": "Lĩnh vực (Ngành)",
+      "no_industries": "Chưa liệt kê ngành nghề.",
+      "certs": "Chứng chỉ",
+      "no_certs": "Chưa liệt kê chứng chỉ.",
+      "topics": "Chủ đề",
+      "no_topics": "Chưa liệt kê chủ đề.",
+      "availability": "Lịch rảnh nhanh",
+      "timezone": "Múi giờ",
+      "select_service": "Chọn dịch vụ phỏng vấn để đặt lịch",
+      "no_services": "Không có dịch vụ phỏng vấn nào rảnh.",
+      "request_session": "Yêu cầu buổi học",
+      "select_date": "CHỌN NGÀY",
+      "select_slot": "CHỌN KHUNG GIỜ NGÀY {{date}}",
+      "available_slots": "KHUNG GIỜ RẢNH",
+      "no_slots": "Không có khung giờ rảnh vào ngày này. Vui lòng chọn ngày khác.",
+      "booking": "Đặt lịch",
+      "booking_desc": "Đặt lịch buổi phỏng vấn lẻ với {{name}}. Bạn cần hoàn tất thanh toán sau bước này.",
+      "jd_booking": "Đặt phỏng vấn theo JD (Nhiều vòng)",
+      "refundable_hint": "Hoàn tiền đầy đủ nếu hủy trước 24 giờ",
+      "match_index": "Chỉ số phù hợp",
+      "match_hint": "Dựa trên phân tích nền tảng của bạn.",
+      "min": "phút",
+      "one_on_one": "Một-một",
+      "limited_slots": "Lịch hạn chế",
+      "check_schedule": "Kiểm tra lịch",
+      "open_for_bookings": "Mở để đặt lịch",
+      "view_free_time": "Xem thời gian rảnh",
+      "next_available": "Khả dụng tiếp theo",
+      "click_to_see": "Nhấp để xem thêm",
+      "benefit_1": "Nhận huấn luyện viên 1:1 chuyên gia",
+      "benefit_2": "Nhận phản hồi hữu ích",
+      "book_slot": "Đặt khung giờ",
+      "services": "Dịch vụ phỏng vấn"
+    }
+  },
+  "auth": {
+    "login": {
+      "welcome": "Chào mừng trở lại",
+      "email": "Email",
+      "email_required": "Email là bắt buộc",
+      "password": "Mật khẩu",
+      "password_required": "Mật khẩu là bắt buộc",
+      "forgot_password": "Quên mật khẩu?",
+      "btn_login": "Đăng nhập",
+      "or": "HOẶC",
+      "google_not_configured": "Đăng nhập Google chưa được cấu hình (thiếu VITE_APP_GOOGLE_CLIENT_ID).",
+      "google_loading": "Đang tải đăng nhập Google...",
+      "no_account": "Chưa có tài khoản?",
+      "signup": "Đăng ký",
+      "system_title": "Hệ thống hỗ trợ phỏng vấn trực tuyến",
+      "created_and_operated": "Được tạo và vận hành bởi TheSuperTeam"
+    },
+    "signup": {
+      "title": "Tạo tài khoản",
+      "subtitle": "Tham gia cùng chúng tôi để tối ưu hóa quá trình tuyển dụng của bạn",
+      "full_name": "Họ và tên",
+      "name_required": "Họ tên là bắt buộc",
+      "name_min_length": "Tên quá ngắn",
+      "email_invalid": "Định dạng email không hợp lệ",
+      "password_min_length": "Mật khẩu phải từ 8 ký tự trở lên",
+      "btn_signup": "Đăng ký",
+      "already_have_account": "Đã có tài khoản?",
+      "signin": "Đăng nhập",
+      "success_toast": "Tạo tài khoản thành công! Vui lòng đăng nhập."
+    }
+  },
+  "home": {
+    "hero": {
+      "welcome": "Chào mừng",
+      "subtitle": "Huấn luyện chuyên gia, phỏng vấn thử, và hơn thế nữa",
+      "description": "Kết nối với chuyên gia trong lĩnh vực của bạn để phỏng vấn thử, nhận xét CV hoặc lập lộ trình học tập.",
+      "btn_find": "Tìm huấn luyện viên",
+      "rating_text": "{{rating}} đánh giá từ hơn {{count}} nhận xét"
+    },
+    "browse": {
+      "title": "Danh sách huấn luyện viên",
+      "loading": "Đang tải danh sách...",
+      "no_results": "Không tìm thấy huấn luyện viên nào phù hợp."
+    },
+    "filters": {
+      "company": "Công ty",
+      "industry": "Lĩnh vực",
+      "more_filters": "Thêm bộ lọc",
+      "hide_filters": "Ẩn bộ lọc",
+      "search_placeholder": "Tìm kiếm...",
+      "btn_search": "Tìm kiếm",
+      "experience_title": "KINH NGHIỆM (NĂM)",
+      "price_title": "GIÁ (VND)",
+      "skills_title": "THÊM KỸ NĂNG",
+      "select_skill": "Chọn kỹ năng",
+      "active_label": "ĐANG LỌC:",
+      "smart_match": "Ghép cặp thông minh",
+      "none": "Không",
+      "skills_count": "kỹ năng",
+      "experience_label": "Kinh nghiệm",
+      "price_label": "Giá"
+    },
+    "pagination": {
+      "prev": "← Trước",
+      "next": "Tiếp →"
+    },
+    "card": {
+      "btn_view_profile": "Xem hồ sơ",
+      "btn_book_now": "Đặt lịch ngay",
+      "rating": "đánh giá",
+      "sessions": "{{count}} buổi",
+      "recommended": "Đề xuất",
+      "role": "Kỹ sư phần mềm",
+      "more": "+{{count}} người"
+    }
+  },
+  "interview": {
+    "room": {
+      "title": "Phòng phỏng vấn",
+      "loading": "Đang kết nối...",
+      "error": "Không thể kết nối vào phòng",
+      "btn_join": "Vào phỏng vấn",
+      "btn_leave": "Rời phòng",
+      "chat": {
+        "title": "Trò chuyện",
+        "placeholder": "Nhập tin nhắn...",
+        "btn_send": "Gửi"
+      }
+    },
+    "list": {
+      "title": "Phỏng vấn của tôi",
+      "subtitle": "Quản lý các buổi phỏng vấn sắp tới và lịch sử của bạn",
+      "stats": {
+        "total": "Tổng số buổi",
+        "upcoming": "Sắp tới",
+        "avg_score": "Điểm trung bình",
+        "next_session": "Buổi kế tiếp sau"
+      },
+      "tabs": {
+        "upcoming": "Sắp tới",
+        "past": "Lịch sử"
+      },
+      "recent_history": "Lịch sử gần đây",
+      "card": {
+        "menu_view_profile": "Xem hồ sơ",
+        "reviews_count": "{{count}} đánh giá",
+        "headline_coach": "Huấn luyện viên",
+        "headline_candidate": "Ứng viên",
+        "participant_default": "Người tham gia",
+        "interview_progress": "Tiến độ phỏng vấn",
+        "session_default": "Buổi phỏng vấn",
+        "round_progress": "Vòng {{current}} trên {{total}}",
+        "time_info_multi": "Lịch trình nhiều vòng",
+        "time_info_one": "Thời gian phỏng vấn"
+      },
+      "btn_view_questions": "Xem câu hỏi",
+      "btn_view_details": "Xem chi tiết",
+      "btn_cancel": "Hủy buổi",
+      "btn_reschedule": "Đổi lịch",
+      "btn_join": "Vào ngay",
+      "btn_view_feedback": "Xem nhận xét",
+      "btn_feedback": "Phản hồi",
+      "status": {
+        "scheduled": "Đã đặt lịch",
+        "ongoing": "Đang diễn ra",
+        "completed": "Đã hoàn thành",
+        "cancelled": "Đã hủy",
+        "past": "Lịch sử"
+      },
+      "type": {
+        "peer": "Phỏng vấn chéo"
+      },
+      "empty": {
+        "upcoming_title": "Chưa có buổi phỏng vấn sắp tới",
+        "upcoming_subtitle": "Các buổi phỏng vấn đã lên lịch sẽ hiển thị tại đây.",
+        "past_title": "Chưa có lịch sử phỏng vấn",
+        "past_subtitle": "Các buổi đã hoàn thành hoặc bị hoàn hủy sẽ hiển thị tại đây."
+      },
+      "cancel_modal": {
+        "title": "Hủy buổi phỏng vấn",
+        "message_base": "Bạn có chắc chắn muốn hủy buổi phỏng vấn này không?",
+        "refund_error": "Không thể tính số tiền hoàn lại.",
+        "refund_preview": "Bạn sẽ được hoàn lại {{percent}}% phí buổi học.",
+        "btn_confirm": "Có, Hủy",
+        "btn_cancel": "Không, Giữ lại"
+      },
+      "toast": {
+        "cancel_success": "Hủy phỏng vấn thành công",
+        "no_feedback": "Chưa có nhận xét"
+      },
+      "coach_evaluation": {
+        "title": "Nhận xét & Đánh giá buổi phỏng vấn",
+        "candidate": "Ứng viên:",
+        "loading": "Đang tải tiêu chí đánh giá...",
+        "empty": "Không tìm thấy tiêu chí đánh giá cho buổi này.",
+        "label_feedback": "Nhận xét chi tiết / Ghi chú",
+        "btn_submit": "Gửi đánh giá",
+        "btn_submitting": "Đang gửi...",
+        "error_load": "Không thể tải tiêu chí đánh giá.",
+        "error_submit": "Không thể gửi đánh giá.",
+        "error_range": "Điểm số phải nằm trong khoảng từ 0 đến 10.",
+        "score_very_bad": "Rất tệ",
+        "score_bad": "Tệ",
+        "score_average": "Trung bình",
+        "score_good": "Tốt",
+        "score_very_good": "Rất tốt"
+      }
+    },
+    "reports": {
+      "title": "Báo cáo",
+      "subtitle": "Xem các báo cáo sự cố bạn đã gửi",
+      "search_placeholder": "Tìm kiếm theo ID phòng...",
+      "status_label": "Trạng thái",
+      "all_status": "Tất cả trạng thái",
+      "pending": "Đang chờ xử lý",
+      "resolved": "Đã giải quyết",
+      "rejected": "Đã từ chối",
+      "table": {
+        "date": "Ngày",
+        "room_id": "ID phòng",
+        "reason": "Lý do",
+        "status": "Trạng thái"
+      },
+      "no_reports": "Không có báo cáo nào",
+      "error_load": "Không thể tải báo cáo"
+    }
+  },
+  "question_bank": {
+    "common": {
+      "asked_at": "Được hỏi tại {{company}}",
+      "community_question": "Câu hỏi cộng đồng",
+      "view_more": "Xem thêm",
+      "view_less": "Thu gọn",
+      "confirm": "Xác nhận",
+      "cancel": "Hủy",
+      "save": "Lưu",
+      "saving": "Đang lưu...",
+      "delete": "Xóa",
+      "edit": "Sửa",
+      "user": "Người dùng"
+    },
+    "list": {
+      "title": "Câu hỏi phỏng vấn",
+      "subtitle": "Khám phá các câu hỏi phỏng vấn thực tế được chia sẻ bởi ứng viên và nhà tuyển dụng.",
+      "subtitle_with_count": "Xem danh sách {{count}} câu hỏi và câu trả lời phỏng vấn đã được xác thực bởi nhà tuyển dụng và ứng viên.",
+      "share_interview": "Chia sẻ phỏng vấn",
+      "empty": "Không tìm thấy câu hỏi. Hãy thử thay đổi bộ lọc.",
+      "per_page": "Mỗi trang:"
+    },
+    "sidebar": {
+      "search_placeholder": "Tìm câu hỏi, công ty...",
+      "popular_roles": "Vai trò phổ biến",
+      "recent_interview_title": "Bạn vừa phỏng vấn gần đây?",
+      "recent_interview_desc": "Hãy giúp cải thiện ngân hàng câu hỏi (và nhận điểm thưởng) bằng cách chia sẻ trải nghiệm của bạn",
+      "share_experience": "+ Chia sẻ trải nghiệm phỏng vấn"
+    },
+    "filters": {
+      "role": "Vai trò",
+      "category": "Danh mục",
+      "company": "Công ty",
+      "level": "Cấp độ",
+      "round": "Vòng phỏng vấn",
+      "any_role": "Mọi vai trò",
+      "any_category": "Mọi danh mục",
+      "any_level": "Mọi cấp độ",
+      "any_round": "Mọi vòng"
+    },
+    "sort": {
+      "hot": "Nổi bật",
+      "new": "Mới nhất",
+      "top": "Hàng đầu"
+    },
+    "card": {
+      "save": "Lưu",
+      "save_count": "Lưu ({{count}})",
+      "save_count_inline": "Lưu {{count}}",
+      "answers_count_one": "{{count}} câu trả lời",
+      "answers_count_other": "{{count}} câu trả lời",
+      "i_was_asked_this": "Tôi từng được hỏi câu này"
+    },
+    "detail": {
+      "not_found": "Không tìm thấy câu hỏi.",
+      "back_all_questions": "Tất cả câu hỏi",
+      "interview_process": "Quy trình phỏng vấn",
+      "community_guidelines": "Quy tắc cộng đồng",
+      "top_answer": "CÂU TRẢ LỜI NỔI BẬT",
+      "author_badge": "Tác giả",
+      "answer_placeholder": "Thêm câu trả lời của bạn cho câu hỏi này...",
+      "posting_answer": "Đang đăng...",
+      "post_answer": "Đăng câu trả lời",
+      "answers_count_one": "{{count}} Câu trả lời",
+      "answers_count_other": "{{count}} Câu trả lời",
+      "related_questions": "Câu hỏi liên quan",
+      "guidelines": {
+        "stay_on_topic_title": "Giữ đúng chủ đề.",
+        "stay_on_topic_desc": "Hãy dùng phần này để gửi lời giải và phản hồi cho người khác.",
+        "be_inclusive_title": "Tôn trọng sự đa dạng.",
+        "be_inclusive_desc": "Intervu là cộng đồng đa dạng. Vui lòng tôn trọng quan điểm và niềm tin của người khác."
+      },
+      "actions": {
+        "share": "Chia sẻ",
+        "copy_link": "Sao chép liên kết",
+        "link_copied": "Đã sao chép liên kết!",
+        "report": "Báo cáo",
+        "like": "Thích",
+        "unlike": "Bỏ thích",
+        "like_with_count": "Thích {{count}}"
+      },
+      "confirm": {
+        "save_title": "Lưu thay đổi?",
+        "save_message": "Bạn có muốn cập nhật câu hỏi này không?",
+        "delete_question_title": "Xóa câu hỏi?",
+        "delete_question_message": "Hành động này không thể hoàn tác.",
+        "delete_answer_title": "Xóa câu trả lời?",
+        "delete_answer_message": "Hành động này không thể hoàn tác."
+      },
+      "toast": {
+        "add_answer_failed": "Thêm câu trả lời thất bại",
+        "update_answer_failed": "Cập nhật câu trả lời thất bại",
+        "delete_answer_failed": "Xóa câu trả lời thất bại",
+        "delete_question_failed": "Xóa câu hỏi thất bại",
+        "question_updated": "Đã cập nhật câu hỏi",
+        "update_question_failed": "Cập nhật câu hỏi thất bại"
+      },
+      "sidebar": {
+        "interview_details": "Chi tiết phỏng vấn",
+        "companies": "Công ty",
+        "roles": "Vai trò",
+        "tags": "Thẻ"
+      }
+    },
+    "roles": {
+      "product_manager": "Quản lý sản phẩm",
+      "software_engineer": "Kỹ sư phần mềm",
+      "data_engineer": "Kỹ sư dữ liệu",
+      "data_scientist": "Nhà khoa học dữ liệu",
+      "technical_program_manager": "Quản lý chương trình kỹ thuật",
+      "backend_engineer": "Kỹ sư Backend",
+      "frontend_engineer": "Kỹ sư Frontend",
+      "fullstack_engineer": "Kỹ sư Full Stack",
+      "mobile_engineer": "Kỹ sư Mobile",
+      "devops_engineer": "Kỹ sư DevOps",
+      "qa_engineer": "Kỹ sư QA",
+      "ml_engineer": "Kỹ sư Machine Learning",
+      "security_engineer": "Kỹ sư bảo mật",
+      "cloud_engineer": "Kỹ sư Cloud",
+      "uiux_designer": "Nhà thiết kế UI/UX",
+      "business_analyst": "Chuyên viên phân tích nghiệp vụ",
+      "solution_architect": "Kiến trúc sư giải pháp"
+    },
+    "categories": {
+      "behavioral": "Hành vi",
+      "technical": "Kỹ thuật",
+      "system_design": "Thiết kế hệ thống",
+      "case_study": "Tình huống",
+      "other": "Khác",
+      "coding": "Lập trình",
+      "database": "Cơ sở dữ liệu",
+      "networking": "Mạng máy tính",
+      "oop": "Lập trình hướng đối tượng",
+      "algorithms": "Thuật toán",
+      "data_structures": "Cấu trúc dữ liệu",
+      "concurrency": "Xử lý đồng thời",
+      "distributed_systems": "Hệ phân tán",
+      "cloud": "Điện toán đám mây",
+      "devops": "DevOps"
+    },
+    "levels": {
+      "intern": "Thực tập",
+      "junior": "Junior",
+      "middle": "Middle",
+      "senior": "Senior",
+      "lead": "Lead",
+      "manager": "Quản lý",
+      "director": "Giám đốc",
+      "expert": "Chuyên gia"
+    },
+    "share_experience_page": {
+      "page_title": "Chia sẻ kinh nghiệm phỏng vấn của bạn",
+      "page_subtitle": "Giúp cải thiện cộng đồng Intervu bằng cách chia sẻ kinh nghiệm phỏng vấn gần đây của bạn! Các câu hỏi phỏng vấn chi tiết và được viết rõ ràng sẽ được thêm vào cơ sở dữ liệu câu hỏi.",
+      "guidelines_link": "Xem hướng dẫn cộng đồng.",
+      "company_label": "Công ty *",
+      "company_placeholder": "Chọn công ty",
+      "companies_loading": "Đang tải công ty...",
+      "role_label": "Vị trí *",
+      "role_placeholder": "Chọn vị trí",
+      "level_label": "Cấp độ",
+      "level_optional": "(tùy chọn)",
+      "level_placeholder": "Chọn cấp độ",
+      "last_round_label": "Vòng cuối cùng hoàn thành *",
+      "last_round_placeholder": "Chọn vòng",
+      "interview_process_label": "Quy trình phỏng vấn *",
+      "interview_process_hint": "Chia sẻ kinh nghiệm phỏng vấn của bạn bao gồm chi tiết về quy trình, định dạng và mọi lời khuyên",
+      "interview_process_placeholder": "1. Phỏng vấn với nhà tuyển dụng (30 phút)\\n2. Đánh giá viết mã trực tuyến (1 giờ)\\n...",
+      "allow_contact_label": "Tôi quan tâm đến việc được liên hệ bởi đội ngũ Intervu để chia sẻ thêm về kinh nghiệm phỏng vấn của tôi",
+      "questions_label": "Câu hỏi phỏng vấn",
+      "questions_hint": "Thêm các câu hỏi cụ thể mà bạn đã được hỏi để xây dựng cơ sở dữ liệu câu hỏi phỏng vấn của chúng tôi",
+      "add_question_btn": "THÊM CÂU HỎI KHÁC",
+      "submit_btn": "Gửi kinh nghiệm",
+      "submit_btn_loading": "Đang gửi...",
+      "discard_btn": "Hủy và quay lại",
+      "error_select_company": "Vui lòng chọn công ty",
+      "error_select_role": "Vui lòng chọn vị trí",
+      "error_select_round": "Vui lòng chọn vòng cuối cùng hoàn thành",
+      "error_add_question": "Vui lòng thêm ít nhất một câu hỏi",
+      "success_submitted": "Kinh nghiệm đã được chia sẻ thành công!",
+      "error_generic": "Có lỗi xảy ra!"
+    },
+    "question_row": {
+      "remove_btn": "Xóa",
+      "question_type_label": "Loại câu hỏi",
+      "question_type_placeholder": "Chọn loại",
+      "interview_question_label": "Câu hỏi phỏng vấn",
+      "question_placeholder": "Bạn được hỏi gì? (nhập để tìm kiếm các câu hỏi hiện có)",
+      "word_count": "{{current}} / {{limit}} từ",
+      "answer_label": "Câu trả lời",
+      "answer_label_optional": "(tùy chọn)",
+      "answer_label_linked": "Câu trả lời của bạn",
+      "answer_note_linked": "(sẽ được đăng như câu trả lời cho câu hỏi được liên kết)",
+      "answer_placeholder": "Bạn đã trả lời như thế nào? Càng chi tiết càng tốt.",
+      "linked_indicator_title": "Được liên kết với câu hỏi hiện có",
+      "linked_edit_tooltip": "Chỉnh sửa / chọn câu hỏi khác",
+      "linked_clear_tooltip": "Xóa lựa chọn",
+      "answer_count": "{{count}} câu trả lời",
+      "answer_count_plural": "{{count}} câu trả lời"
+    },
+    "rounds": {
+      "phone_screen": "Sơ loại qua điện thoại",
+      "technical_screen": "Sàng lọc kỹ thuật",
+      "take_home": "Bài làm tại nhà",
+      "onsite_final": "Onsite / Vòng cuối",
+      "other": "Khác",
+      "hr_round": "Vòng HR",
+      "coding_challenge": "Thử thách lập trình",
+      "live_coding": "Live coding",
+      "system_design_round": "Vòng thiết kế hệ thống",
+      "behavioral_round": "Vòng hành vi",
+      "managerial_round": "Vòng quản lý"
+    }
+  },
+  "coach": {
+    "schedule": {
+      "title": "Quản lý lịch rảnh",
+      "subtitle": "Quản lý thời gian rảnh và các buổi phỏng vấn sắp tới.",
+      "btn_add_slot": "Thêm khung giờ",
+      "upcoming": {
+        "title": "Buổi phỏng vấn sắp tới",
+        "no_slots": "Không có buổi nào trong ngày này.",
+        "booked_label": "Đã đặt",
+        "focus_general": "Phỏng vấn chung",
+        "focus_jd": "Review JD"
+      },
+      "status": {
+        "booked": "Đã đặt",
+        "reserved": "Đang giữ chỗ",
+        "available": "Đang trống"
+      },
+      "dialog": {
+        "title_edit": "Chỉnh sửa khung giờ",
+        "field_date": "Ngày",
+        "field_start_time": "Giờ bắt đầu",
+        "field_end_time": "Giờ kết thúc",
+        "btn_cancel": "Hủy",
+        "btn_update": "Cập nhật",
+        "error_main_date": "Vui lòng chọn ngày.",
+        "error_already_added": "Khung giờ này đã tồn tại."
+      },
+      "errors": {
+        "past_slot": "Không thể thêm khung giờ trong quá khứ.",
+        "invalid_end": "Giờ kết thúc phải sau giờ bắt đầu.",
+        "modify_past": "Không thể chỉnh sửa khung giờ đã qua.",
+        "modify_booked": "Không thể chỉnh sửa khung giờ đã được đặt.",
+        "move_past": "Không thể di chuyển khung giờ vào quá khứ.",
+        "min_duration": "Thời lượng tối thiểu là {{minutes}} phút.",
+        "window_30": "Khung giờ phải khớp với khoảng 30 phút.",
+        "date_required": "Ngày là bắt buộc.",
+        "invalid_time": "Giờ đã chọn không hợp lệ.",
+        "end_after_start": "Giờ kết thúc phải sau giờ bắt đầu.",
+        "multiple_30": "Thời lượng phải là bội số của {{minutes}} phút."
+      },
+      "calendar": {
+        "btn_7days": "7 ngày",
+        "btn_today": "Hôm nay",
+        "btn_month": "Tháng",
+        "btn_day": "Ngày"
+      },
+      "confirm_delete": {
+        "title": "Xóa khung giờ",
+        "message": "Bạn có chắc chắn muốn xóa khung giờ rảnh này không?",
+        "btn_delete": "Xóa",
+        "btn_cancel": "Hủy"
+      },
+      "booked_details": {
+        "title": "Chi tiết buổi phỏng vấn",
+        "message_locked": "Khung giờ này đã được đặt và không thể chỉnh sửa.",
+        "time": "Thời gian",
+        "date": "Ngày",
+        "candidate": "Ứng viên",
+        "type": "Loại",
+        "close": "Đóng"
+      }
+    },
+    "services": {
+      "title": "Dịch vụ phỏng vấn của tôi",
+      "subtitle": "Quản lý các loại phỏng vấn bạn cung cấp và thiết lập mức giá của riêng bạn.",
+      "btn_add": "Thêm dịch vụ",
+      "empty_title": "Chưa có dịch vụ phỏng vấn nào",
+      "empty_subtitle": "Thêm dịch vụ phỏng vấn đầu tiên của bạn để bắt đầu chấp nhận đặt lịch từ các ứng viên.",
+      "card": {
+        "coding_exercises": "Bao gồm bài tập lập trình",
+        "non_coding": "Phỏng vấn không lập trình",
+        "price": "Giá",
+        "duration": "Thời lượng",
+        "min": "phút",
+        "type": "Loại",
+        "coding": "Lập trình",
+        "non_coding_label": "Không lập trình",
+        "btn_edit": "Chỉnh sửa",
+        "btn_delete": "Xóa"
+      },
+      "delete_modal": {
+        "title": "Xóa dịch vụ phỏng vấn",
+        "message": "Bạn có chắc chắn muốn xóa dịch vụ phỏng vấn này không? Các ứng viên sẽ không còn có thể đặt lịch dịch vụ này.",
+        "btn_confirm": "Xóa"
+      },
+      "dialog": {
+        "create_title": "Thêm dịch vụ phỏng vấn",
+        "update_title": "Chỉnh sửa dịch vụ phỏng vấn",
+        "subtitle": "Chọn loại phỏng vấn và thiết lập mức giá & thời lượng tùy chỉnh của bạn.",
+        "update_subtitle": "Cập nhật giá & thời lượng cho \"{{name}}\".",
+        "update_subtitle_fallback": "Cập nhật giá & thời lượng dịch vụ của bạn.",
+        "label_type": "Loại phỏng vấn",
+        "label_price": "Giá của bạn",
+        "label_duration": "Thời lượng (phút)",
+        "hint_range": "Khoảng giá: {{min}} – {{max}} · Thời lượng gợi ý: {{suggested}} phút",
+        "hint_allowed": "Cho phép: {{min}} – {{max}}",
+        "hint_duration": "Từ 15 đến 300 phút",
+        "btn_add": "Thêm dịch vụ",
+        "btn_save": "Lưu thay đổi",
+        "btn_cancel": "Hủy",
+        "error_select_type": "Vui lòng chọn loại phỏng vấn.",
+        "error_price_range": "Giá phải nằm trong khoảng từ {{min}} đến {{max}}.",
+        "error_duration": "Thời lượng phải nằm trong khoảng từ 15 đến 300 phút."
+      },
+      "toast": {
+        "load_failed": "Tải danh sách dịch vụ thất bại.",
+        "delete_failed": "Xóa dịch vụ thất bại."
+      }
+    }
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "tabs": {
+      "all": "Tất cả",
+      "unread": "Chưa đọc"
+    },
+    "empty": "Chưa có thông báo nào",
+    "empty_unread": "Bạn đã đọc hết thông báo!",
+    "loading": "Đang tải...",
+    "load_more": "Tải thêm",
+    "mark_all_read": "Đánh dấu tất cả đã đọc",
+    "time": {
+      "just_now": "Vừa xong",
+      "minutes_ago": "{{count}} phút trước",
+      "hours_ago": "{{count}} giờ trước",
+      "days_ago": "{{count}} ngày trước",
+      "weeks_ago": "{{count}} tuần trước"
+    }
+  },
+  "candidate_assessment": {
+    "onboarding_badge": "ONBOARDING AI",
+    "lets_calibrate_title": "Hãy thiết lập hồ sơ của bạn.",
+    "lets_calibrate_subtitle": "Cung cấp cho AI vai trò, trình độ, công nghệ sử dụng và lĩnh vực bạn quan tâm nhất. Bạn có thể chọn nhanh từ danh sách, tự nhập câu trả lời hoặc kết hợp cả hai.",
+    "processing": "Đang xử lý...",
+    "profile_calibrated_intro": "Hồ sơ đã được hiệu chỉnh. Tôi đang tạo cuộc trò chuyện phỏng vấn có trọng tâm dựa trên thiết lập của bạn.",
+    "choose_real_experience": "Chọn tùy chọn phù hợp nhất với kinh nghiệm thực tế của bạn.",
+    "choose_target_level": "Chọn cấp độ mục tiêu bạn muốn đạt được.",
+    "calibrated_card_title": "Câu hỏi chuẩn xác. Thông tin rõ ràng. Đánh giá tối ưu.",
+    "setup_fields": {
+      "target_role": {
+        "label": "Vị trí mục tiêu",
+        "step": "1.",
+        "helper": "Chọn hoặc nhập vị trí bạn muốn đánh giá này tối ưu hóa ngay bây giờ.",
+        "placeholder": "Hoặc nhập vị trí mục tiêu của bạn",
+        "hover_note": "Đây phải là vị trí bạn đang nhắm tới bây giờ, không phải mọi vị trí bạn đã thử trước đây."
+      },
+      "experience_level": {
+        "label": "Cấp độ kinh nghiệm",
+        "step": "2.",
+        "helper": "Chọn cấp độ gần nhất với mức độ tự tin làm việc hiện tại của bạn.",
+        "placeholder": "Hoặc mô tả cấp độ hiện tại của bạn",
+        "hover_note": "Chọn cấp độ phù hợp với hiệu suất hiện tại của bạn hôm nay, không phải mục tiêu lý tưởng của bạn."
+      },
+      "primary_stack": {
+        "label": "Stack chính",
+        "step": "3.",
+        "helper": "Thêm các công nghệ bạn muốn cuộc phỏng vấn tập trung vào nhất.",
+        "placeholder": "Ví dụ: TypeScript, React, Node.js",
+        "hover_note": "Đây là stack hiện tại của bạn, không phải mọi công nghệ bạn từng chạm tới hoặc học."
+      },
+      "industry_domain": {
+        "label": "Lĩnh vực ngành",
+        "step": "4.",
+        "helper": "Điều này giúp AI điều chỉnh các câu hỏi tình huống cho các sản phẩm bạn quan tâm.",
+        "placeholder": "Ví dụ: FinTech, SaaS",
+        "hover_note": "Chia sẻ lĩnh vực kinh doanh bạn muốn chuyển sang nhiều nhất, ngay cả khi các dự án trước đây của bạn khác.",
+        "optional": "(tùy chọn)"
+      },
+      "tell_us_more": {
+        "label": "Cho chúng tôi biết thêm",
+        "step": "5.",
+        "helper": "Bạn có thể đề cập đến mục tiêu phỏng vấn, điểm mạnh, điểm yếu hoặc kỳ vọng vị trí.",
+        "placeholder": "Nêu bật các dự án cụ thể hoặc kỹ năng độc đáo...",
+        "hover_note": "Sử dụng điều này để hướng dẫn thiết kế đánh giá với bối cảnh mà các chip không thể chụp lại."
+      }
+    },
+    "buttons": {
+      "skip_for_now": "Bỏ qua",
+      "continue_assessment": "Tiếp tục đánh giá",
+      "generating_questions": "Đang tạo câu hỏi..."
+    },
+    "level_score_labels": {
+      "missing": "Không có",
+      "weak": "Yếu",
+      "intermediate": "Trung bình",
+      "advanced": "Nâng cao"
+    },
+    "skill_labels": {
+      "problem_solving": "Giải quyết vấn đề",
+      "none": "Không có",
+      "basic": "Cơ bản",
+      "phaseA": "Kỹ năng Phase A {{index}}",
+      "phaseB": "Kỹ năng Phase B {{index}}"
+    },
+    "phase_a_question": "Câu hỏi Phase A {{index}}",
+    "phase_b_question": "Câu hỏi Phase B {{index}}"
+  },
+  "profile_actions": {
+    "view_public": "Xem hồ sơ công khai"
+  },
+  "payment_history": {
+    "title": "Lịch sử thanh toán",
+    "subtitle": "Xem tất cả các giao dịch đặt lịch phỏng vấn của bạn",
+    "refresh_tooltip": "Làm mới",
+    "stats": {
+      "total_transactions": "Tổng giao dịch",
+      "completed_amount": "Số tiền đã hoàn thành",
+      "pending_amount": "Số tiền đang chờ",
+      "average_amount": "Số tiền trung bình"
+    },
+    "filters": {
+      "search_placeholder": "Tìm kiếm theo huấn luyện viên, ID phỏng vấn hoặc ứng viên...",
+      "status_label": "Trạng thái",
+      "all_status": "Tất cả trạng thái",
+      "completed": "Đã hoàn thành",
+      "pending": "Đang chờ",
+      "failed": "Thất bại",
+      "refunded": "Đã hoàn tiền"
+    },
+    "table": {
+      "date": "Ngày",
+      "interview_coach": "Phỏng vấn / Huấn luyện viên",
+      "amount": "Số tiền",
+      "status": "Trạng thái",
+      "action": "Hành động",
+      "view_details": "Xem chi tiết",
+      "no_transactions": "Không tìm thấy giao dịch nào"
+    },
+    "interview_details": {
+      "coach": "Huấn luyện viên",
+      "candidate": "Ứng viên",
+      "interview_type": "Loại phỏng vấn",
+      "schedule": "Lịch biểu",
+      "payment_date": "Ngày thanh toán",
+      "amount": "Số tiền",
+      "status": "Trạng thái"
+    },
+    "interview_types": {
+      "technical_interview": "Phỏng vấn kỹ thuật",
+      "behavioral_interview": "Phỏng vấn hành vi",
+      "system_design": "Thiết kế hệ thống",
+      "coding_interview": "Phỏng vấn lập trình",
+      "mock_interview": "Phỏng vấn mô phỏng",
+      "interview": "Phỏng vấn"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Box,
     Typography,
@@ -67,6 +68,7 @@ const MutedChip = ({ label, color }) => {
 
 // Reschedule Request Card Component
 function RescheduleRequestCard({ request, user, onApprove, onReject }) {
+    const { t } = useTranslation();
     const theme = useTheme();
 
     const getInitials = (name) => {
@@ -90,7 +92,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
     // Get interview room info
     const interviewRoom = request.interviewRoom;
     const duration = interviewRoom?.durationMinutes || 60;
-    const interviewType = interviewRoom?.problemShortName || interviewRoom?.title || interviewRoom?.interviewTypeName || "Interview Session";
+    const interviewType = interviewRoom?.problemShortName || interviewRoom?.title || interviewRoom?.interviewTypeName || t("interview.list.card.session_default");
 
     // Get times from availability objects
     const originalTime = request.currentAvailability?.startTime;
@@ -139,14 +141,14 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                         <Stack direction="row" spacing={0.75} alignItems="center">
                             <Clock size={14} strokeWidth={2} color="var(--mui-palette-text-secondary)" />
                             <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                                {duration} minutes session
+                                {t("reschedule.list.card.minutes_session", { minutes: duration })}
                             </Typography>
                         </Stack>
                     </Stack>
                 </Box>
 
                 <Stack direction="row" spacing={1} alignItems="center">
-                    <MutedChip label={isSentByMe ? "Sent" : "Received"} color={isSentByMe ? "primary" : "info"} />
+                    <MutedChip label={isSentByMe ? t("reschedule.list.card.sent") : t("reschedule.list.card.received")} color={isSentByMe ? "primary" : "info"} />
                     <MutedChip label={statusInfo.label} color={statusInfo.color} />
                 </Stack>
             </Stack>
@@ -199,7 +201,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                         {requesterName}
                     </Typography>
                     <Typography variant="caption" fontWeight={600} sx={{ color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem" }}>
-                        {isSentByMe ? "You / Requester" : "Requester"}
+                        {isSentByMe ? t("reschedule.list.card.you_requester") : t("reschedule.list.card.requester")}
                     </Typography>
                 </Box>
 
@@ -210,7 +212,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                     {/* Original Time - Muffled */}
                     <Box sx={{ opacity: 0.7 }}>
                         <Typography variant="caption" fontWeight={700} sx={{ color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block", mb: 0.5 }}>
-                            Original Time
+                            {t("reschedule.list.card.original_time")}
                         </Typography>
                         <Stack direction="row" spacing={0.75} alignItems="center">
                             <Calendar size={14} strokeWidth={2} color="var(--mui-palette-text-secondary)" />
@@ -238,7 +240,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                     {/* Proposed Time - Highlighted */}
                     <Box>
                         <Typography variant="caption" fontWeight={800} sx={{ color: "primary.main", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block", mb: 0.5 }}>
-                            Proposed Time
+                            {t("reschedule.list.card.proposed_time")}
                         </Typography>
                         <Stack direction="row" spacing={0.75} alignItems="center">
                             <Calendar size={14} strokeWidth={2.5} color={theme.palette.primary.main} />
@@ -264,7 +266,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                                     fontSize: "0.75rem",
                                 }}
                             >
-                                Approve
+                                {t("reschedule.list.card.btn_approve")}
                             </SuccessButton>
                             <DangerButton
                                 size="small"
@@ -275,7 +277,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                                     fontSize: "0.75rem",
                                 }}
                             >
-                                Reject
+                                {t("reschedule.list.card.btn_reject")}
                             </DangerButton>
                         </Stack>
                     )}
@@ -308,7 +310,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                         </Box>
                         <Box>
                             <Typography variant="caption" fontWeight={700} sx={{ color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block" }}>
-                                Reason for reschedule
+                                {t("reschedule.list.card.reason_label")}
                             </Typography>
                             <Typography variant="body2" color="text.primary" sx={{ fontStyle: "italic", mt: 0.25 }}>
                                 "{request.reason}"
@@ -341,7 +343,7 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                         </Box>
                         <Box>
                             <Typography variant="caption" fontWeight={800} sx={{ color: "error.main", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block" }}>
-                                Rejection Feedback
+                                {t("reschedule.list.card.rejection_feedback")}
                             </Typography>
                             <Typography variant="body2" color="error.dark" sx={{ fontStyle: "italic", mt: 0.25, fontWeight: 500 }}>
                                 "{request.rejectionReason}"
@@ -361,6 +363,7 @@ function RescheduleRequestsTab({
     onApprove,
     onReject
 }) {
+    const { t } = useTranslation();
     const [page, setPage] = useState(1);
     const [confirmModal, setConfirmModal] = useState({
         show: false,
@@ -434,10 +437,10 @@ function RescheduleRequestsTab({
                     }}
                 >
                     <Typography variant="h6" color="text.secondary" gutterBottom>
-                        No reschedule requests
+                        {t("reschedule.list.empty_title")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Pending reschedule requests will appear here
+                        {t("reschedule.list.empty_subtitle")}
                     </Typography>
                 </Box>
             ) : (
@@ -463,9 +466,11 @@ function RescheduleRequestsTab({
                     sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}
                 >
                     <Typography variant="body2" color="text.secondary">
-                        Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                        {Math.min(page * ITEMS_PER_PAGE, requests?.length || 0)} of{" "}
-                        {requests?.length || 0} results
+                        {t("common.pagination.showing", {
+                            from: (page - 1) * ITEMS_PER_PAGE + 1,
+                            to: Math.min(page * ITEMS_PER_PAGE, requests?.length || 0),
+                            total: requests?.length || 0
+                        })}
                     </Typography>
                     <Pagination
                         count={totalPages}
@@ -483,12 +488,12 @@ function RescheduleRequestsTab({
             {confirmModal.type === 'approve' && (
                 <ConfirmModal
                     show={confirmModal.show}
-                    title='Approve Reschedule Request'
-                    message='Are you sure you want to approve this reschedule request? The interview will be moved to the new proposed time.'
+                    title={t("reschedule.list.modal_approve.title")}
+                    message={t("reschedule.list.modal_approve.message")}
                     onConfirm={handleConfirm}
                     onCancel={handleCancel}
-                    confirmText='Approve'
-                    cancelText="Cancel"
+                    confirmText={t("reschedule.list.modal_approve.confirm")}
+                    cancelText={t("reschedule.list.modal_approve.cancel")}
                 />
             )}
 
@@ -501,18 +506,18 @@ function RescheduleRequestsTab({
                     fullWidth
                     PaperProps={{ sx: dialogStyles.paper }}
                 >
-                    <DialogTitle>Reject Reschedule Request</DialogTitle>
+                    <DialogTitle>{t("reschedule.list.modal_reject.title")}</DialogTitle>
                     <DialogContent>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            Please provide a reason for rejecting this reschedule request. The requester will see this message.
+                            {t("reschedule.list.modal_reject.subtitle")}
                         </Typography>
                         <TextField
                             autoFocus
                             fullWidth
                             multiline
                             rows={3}
-                            label="Rejection Reason"
-                            placeholder="e.g., The proposed time conflicts with another interview..."
+                            label={t("reschedule.list.modal_reject.reason_label")}
+                            placeholder={t("reschedule.list.modal_reject.reason_placeholder")}
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                             required
@@ -520,14 +525,14 @@ function RescheduleRequestsTab({
                     </DialogContent>
                     <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
                         <SecondaryButton onClick={handleCancel}>
-                            Cancel
+                            {t("reschedule.list.modal_reject.cancel")}
                         </SecondaryButton>
                         <DangerButton
                             onClick={handleConfirm}
                             disabled={!rejectReason.trim()}
                             variant="contained"
                         >
-                            Reject
+                            {t("reschedule.list.modal_reject.confirm")}
                         </DangerButton>
                     </DialogActions>
                 </Dialog>

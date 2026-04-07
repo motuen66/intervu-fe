@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
     Avatar,
     Box,
@@ -36,62 +37,7 @@ import { assessmentEndPoints } from "../services/assessmentApi";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 
-const setupFields = [
-    {
-        id: "role",
-        label: "Target Role",
-        step: "1.",
-        type: "single",
-        options: ["Backend", "Frontend", "Fullstack", "Mobile", "DevOps", "Data Science"],
-        placeholder: "Or type your target role",
-        helper: "Choose or type the role you want this assessment to optimize for right now.",
-        hoverNote: "This should be the role you are targeting now, not every role you have tried before.",
-        required: true,
-    },
-    {
-        id: "level",
-        label: "Experience Level",
-        step: "2.",
-        type: "single",
-        options: ["Entry", "Junior", "Mid-Level", "Senior", "Staff / Lead"],
-        placeholder: "Or describe your current level",
-        helper: "Pick the level closest to your current working confidence.",
-        hoverNote: "Choose the level that matches your current performance today, not your ideal target yet.",
-        required: true,
-    },
-    {
-        id: "techstack",
-        label: "Primary Stack",
-        step: "3.",
-        type: "multi",
-        options: ["React", "TypeScript", "Node.js", "Python", "Go", "GraphQL", "PostgreSQL", "AWS"],
-        placeholder: "Example: TypeScript, React, Node.js",
-        helper: "Add the technologies you want the interview to focus on most.",
-        hoverNote: "This is your current focus stack, not every technology you have ever touched or learned.",
-        required: true,
-    },
-    {
-        id: "domain",
-        label: "Industry Domain",
-        step: "4.",
-        type: "multi",
-        options: ["FinTech", "E-commerce", "HealthTech", "Gaming", "AI/ML", "Other"],
-        placeholder: "Example: FinTech, SaaS",
-        helper: "This helps the AI tailor scenario questions to the products you care about.",
-        hoverNote: "Share the business area you want to move into most, even if your past projects were different.",
-        required: false,
-    },
-    {
-        id: "free_text",
-        label: "Tell Us More",
-        step: "5.",
-        type: "free_text",
-        placeholder: "Highlight specific projects or unique skills...",
-        helper: "You can mention interview goals, strengths, weak spots, or role expectations.",
-        hoverNote: "Use this to guide the assessment design with context that chips alone cannot capture.",
-        required: true,
-    },
-];
+const emptyQuestion = () => ({ type: "", question: "", answer: "", linkedQuestion: null });
 
 const floatUp = keyframes`
     from { opacity: 0; transform: translateY(22px) scale(0.98); }
@@ -276,12 +222,13 @@ const buildGeneratedQuestions = (data) => {
     return questions;
 };
 
-const buildGeneratedAssessment = (data) => {
+const buildGeneratedAssessment = (data, defaultIntroText) => {
     const source = data?.phaseA || data?.phaseB || data?.context_question ? data : data?.data || {};
 
     return {
         introText:
             source?.context_question ||
+            defaultIntroText ||
             "Profile calibrated. I'm generating a focused interview conversation based on your setup.",
         questions: buildGeneratedQuestions(source),
     };
@@ -331,7 +278,7 @@ const domainIconMap = {
     Other: AddCircleOutlineRoundedIcon,
 };
 
-const TypingIndicator = () => (
+const TypingIndicator = ({ text = "Processing..." }) => (
     <Stack direction="row" spacing={0.7} alignItems="center" sx={{ minHeight: 24 }}>
         {[0, 1, 2].map((dot) => (
             <Box
@@ -347,7 +294,7 @@ const TypingIndicator = () => (
             />
         ))}
         <Typography variant="body2" color="text.secondary" sx={{ ml: 0.6 }}>
-            Processing...
+            {text}
         </Typography>
     </Stack>
 );
@@ -357,10 +304,72 @@ const ChatSurvey = () => {
         useAssessment();
     const currentUser = useSelector((state) => state.auth?.userData);
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const listRef = useRef(null);
     const mountedRef = useRef(true);
     const sequenceRef = useRef(0);
     const generateTimerRef = useRef(null);
+
+    // Initialize setupFields with i18n keys
+    const setupFields = useMemo(
+        () => [
+            {
+                id: "role",
+                label: t("candidate_assessment.setup_fields.target_role.label"),
+                step: t("candidate_assessment.setup_fields.target_role.step"),
+                type: "single",
+                options: ["Backend", "Frontend", "Fullstack", "Mobile", "DevOps", "Data Science"],
+                placeholder: t("candidate_assessment.setup_fields.target_role.placeholder"),
+                helper: t("candidate_assessment.setup_fields.target_role.helper"),
+                hoverNote: t("candidate_assessment.setup_fields.target_role.hover_note"),
+                required: true,
+            },
+            {
+                id: "level",
+                label: t("candidate_assessment.setup_fields.experience_level.label"),
+                step: t("candidate_assessment.setup_fields.experience_level.step"),
+                type: "single",
+                options: ["Entry", "Junior", "Mid-Level", "Senior", "Staff / Lead"],
+                placeholder: t("candidate_assessment.setup_fields.experience_level.placeholder"),
+                helper: t("candidate_assessment.setup_fields.experience_level.helper"),
+                hoverNote: t("candidate_assessment.setup_fields.experience_level.hover_note"),
+                required: true,
+            },
+            {
+                id: "techstack",
+                label: t("candidate_assessment.setup_fields.primary_stack.label"),
+                step: t("candidate_assessment.setup_fields.primary_stack.step"),
+                type: "multi",
+                options: ["React", "TypeScript", "Node.js", "Python", "Go", "GraphQL", "PostgreSQL", "AWS"],
+                placeholder: t("candidate_assessment.setup_fields.primary_stack.placeholder"),
+                helper: t("candidate_assessment.setup_fields.primary_stack.helper"),
+                hoverNote: t("candidate_assessment.setup_fields.primary_stack.hover_note"),
+                required: true,
+            },
+            {
+                id: "domain",
+                label: t("candidate_assessment.setup_fields.industry_domain.label"),
+                step: t("candidate_assessment.setup_fields.industry_domain.step"),
+                type: "multi",
+                options: ["FinTech", "E-commerce", "HealthTech", "Gaming", "AI/ML", "Other"],
+                placeholder: t("candidate_assessment.setup_fields.industry_domain.placeholder"),
+                helper: t("candidate_assessment.setup_fields.industry_domain.helper"),
+                hoverNote: t("candidate_assessment.setup_fields.industry_domain.hover_note"),
+                required: false,
+            },
+            {
+                id: "free_text",
+                label: t("candidate_assessment.setup_fields.tell_us_more.label"),
+                step: t("candidate_assessment.setup_fields.tell_us_more.step"),
+                type: "free_text",
+                placeholder: t("candidate_assessment.setup_fields.tell_us_more.placeholder"),
+                helper: t("candidate_assessment.setup_fields.tell_us_more.helper"),
+                hoverNote: t("candidate_assessment.setup_fields.tell_us_more.hover_note"),
+                required: true,
+            },
+        ],
+        [t],
+    );
 
     const [stage, setStage] = useState("setup");
     const [setupForm, setSetupForm] = useState({
@@ -599,7 +608,10 @@ const ChatSurvey = () => {
                 arg: payload,
                 alertErrorMessage: true,
             });
-            const { introText, questions: generatedQuestions } = buildGeneratedAssessment(apiResult?.data || apiResult);
+            const { introText, questions: generatedQuestions } = buildGeneratedAssessment(
+                apiResult?.data || apiResult,
+                t("candidate_assessment.profile_calibrated_intro"),
+            );
             if (!generatedQuestions.length) {
                 throw new Error("Assessment generator returned no questions.");
             }
@@ -747,7 +759,7 @@ const ChatSurvey = () => {
             <Tooltip title={field.hoverNote} arrow placement="top-start">
                 <Typography
                     variant="overline"
-                    sx={{ color: "#3f4b54", fontWeight: 800, letterSpacing: "0.12em", cursor: "help" }}
+                    sx={{ fontFamily: "var(--heading-font)", color: "#3f4b54", fontWeight: 800, letterSpacing: "0.12em", cursor: "help" }}
                 >
                     {field.step} {field.label}
                 </Typography>
@@ -867,7 +879,7 @@ const ChatSurvey = () => {
                         >
                             <Stack spacing={1.3} alignItems="flex-start">
                                 <IconComponent sx={{ fontSize: 20 }} />
-                                <Typography sx={{ fontSize: "0.82rem", fontWeight: 800 }}>{option}</Typography>
+                                <Typography sx={{ fontSize: "0.82rem", fontWeight: 800, fontFamily: "var(--body-font)" }}>{option}</Typography>
                             </Stack>
                         </Button>
                     );
@@ -922,12 +934,10 @@ const ChatSurvey = () => {
                                         fontWeight: 900,
                                         letterSpacing: "-0.04em",
                                         color: "#1f2937",
+                                        fontFamily: "var(--heading-font)",
                                     }}
                                 >
-                                    Let&apos;s calibrate your{" "}
-                                    <Box component="span" sx={{ color: "#5b8c09" }}>
-                                        profile.
-                                    </Box>
+                                    {t("candidate_assessment.lets_calibrate_title")}
                                 </Typography>
                                 <Typography
                                     sx={{
@@ -936,10 +946,10 @@ const ChatSurvey = () => {
                                         color: "#475569",
                                         fontSize: "1.1rem",
                                         lineHeight: 1.8,
+                                        fontFamily: "var(--body-font)",
                                     }}
                                 >
-                                    Give the AI the role, level, stack, and context you care about most. You can click
-                                    the quick choices, type your own answers, or mix both.
+                                    {t("candidate_assessment.lets_calibrate_subtitle")}
                                 </Typography>
 
                                 <Paper
@@ -965,8 +975,8 @@ const ChatSurvey = () => {
                                             alt="Assessment"
                                             style={{ maxWidth: "320px", borderRadius: "12px" }}
                                         />
-                                        <Typography variant="h6" textAlign="center" fontWeight={600}>
-                                            Calibrated questions. Cleaner signal. Better assessment.
+                                        <Typography variant="h6" textAlign="center" fontWeight={600} sx={{ fontFamily: "var(--heading-font)" }}>
+                                            {t("candidate_assessment.calibrated_card_title")}
                                         </Typography>
                                     </Stack>
                                 </Paper>
@@ -995,7 +1005,7 @@ const ChatSurvey = () => {
                                             return (
                                                 <Box key={field.id}>
                                                     {renderSectionHeader(field)}
-                                                    <Typography variant="body2" sx={{ color: "#73808a", mb: 1.75 }}>
+                                                    <Typography variant="body2" sx={{ fontFamily: "var(--body-font)", color: "#73808a", mb: 1.75 }}>
                                                         {field.helper}
                                                     </Typography>
                                                     {renderSelectableButtons(field, selectedValues)}
@@ -1121,7 +1131,7 @@ const ChatSurvey = () => {
                                             disabled={isGenerating || isSubmitting}
                                             sx={{ justifyContent: "flex-start", fontWeight: 700 }}
                                         >
-                                            Skip for now
+                                            {t("candidate_assessment.buttons.skip_for_now")}
                                         </Button>
                                         <Button
                                             variant="contained"
@@ -1146,7 +1156,7 @@ const ChatSurvey = () => {
                                                     <AutoAwesomeRoundedIcon fontSize="small" />
                                                 )}
                                                 <Box component="span">
-                                                    {isGenerating ? "Generating Questions..." : "Continue Assessment"}
+                                                    {isGenerating ? t("candidate_assessment.buttons.generating_questions") : t("candidate_assessment.buttons.continue_assessment")}
                                                 </Box>
                                             </Stack>
                                         </Button>
@@ -1352,7 +1362,7 @@ const ChatSurvey = () => {
                                                 }}
                                             >
                                                 {isProcessing ? (
-                                                    <TypingIndicator />
+                                                    <TypingIndicator text={t("candidate_assessment.processing")} />
                                                 ) : (
                                                     <Typography sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
                                                         {message.text}

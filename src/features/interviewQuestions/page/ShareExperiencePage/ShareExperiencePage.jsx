@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Box, Button, Checkbox, FormControlLabel, MenuItem, Select, Stack, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ReactQuill from "react-quill-new";
@@ -27,9 +28,25 @@ const labelSx = {
     mb: 0.75,
 };
 
+const renderLabelWithRedAsterisk = (text) => {
+    const parts = text.split("*");
+    if (parts.length === 1) return text;
+    return (
+        <>
+            {parts.map((part, idx) => (
+                <span key={idx}>
+                    {part}
+                    {idx < parts.length - 1 && <span style={{ color: "#ef4444" }}>*</span>}
+                </span>
+            ))}
+        </>
+    );
+};
+
 export default function ShareExperiencePage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [companyId, setCompanyId] = useState("");
     const [companies, setCompanies] = useState([]);
@@ -96,17 +113,17 @@ export default function ShareExperiencePage() {
 
     const handleSubmit = async () => {
         if (!companyId) {
-            toast.error("Please select a company");
+            toast.error(t("question_bank.share_experience_page.error_select_company"));
             return;
         }
 
         if (!role) {
-            toast.error("Please select a role");
+            toast.error(t("question_bank.share_experience_page.error_select_role"));
             return;
         }
 
         if (!lastRound) {
-            toast.error("Please select last round completed");
+            toast.error(t("question_bank.share_experience_page.error_select_round"));
             return;
         }
 
@@ -115,7 +132,7 @@ export default function ShareExperiencePage() {
         );
 
         if (filledQuestions.length === 0) {
-            toast.error("Please add at least one question");
+            toast.error(t("question_bank.share_experience_page.error_add_question"));
             return;
         }
 
@@ -149,11 +166,11 @@ export default function ShareExperiencePage() {
                 },
             });
 
-            toast.success("Experience shared successfully!");
+            toast.success(t("question_bank.share_experience_page.success_submitted"));
             navigate("/questions");
         } catch (error) {
             console.error(error);
-            toast.error("Something went wrong!");
+            toast.error(t("question_bank.share_experience_page.error_generic"));
         } finally {
             setSubmitting(false);
         }
@@ -164,23 +181,22 @@ export default function ShareExperiencePage() {
             {/* Header */}
             <Box textAlign="center" mb={4.5}>
                 <Typography variant="h4" mb={1}>
-                    Share your interview experience
+                    {t("question_bank.share_experience_page.page_title")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" lineHeight={1.6}>
-                    Help improve the Intervu community by sharing your recent interview experience! Interview questions
-                    that are detailed and clearly written will be added to the question database.{" "}
+                    {t("question_bank.share_experience_page.page_subtitle")}{" "}
                     <Box
                         component="span"
                         sx={{ color: "primary.main", textDecoration: "underline", cursor: "pointer" }}
                     >
-                        Review Community Guidelines.
+                        {t("question_bank.share_experience_page.guidelines_link")}
                     </Box>
                 </Typography>
             </Box>
 
             {/* Company */}
             <Box mb={2.75}>
-                <Typography sx={labelSx}>Company *</Typography>
+                <Typography sx={labelSx}>{renderLabelWithRedAsterisk(t("question_bank.share_experience_page.company_label"))}</Typography>
                 <Select
                     displayEmpty
                     value={companyId}
@@ -193,7 +209,7 @@ export default function ShareExperiencePage() {
                             (companyLabelById.get(String(v)) ?? "Selected company")
                         ) : (
                             <Box component="span" sx={{ color: "text.disabled" }}>
-                                {loadingCompanies ? "Loading companies..." : "Select Company"}
+                                {loadingCompanies ? t("question_bank.share_experience_page.companies_loading") : t("question_bank.share_experience_page.company_placeholder")}
                             </Box>
                         )
                     }
@@ -209,7 +225,7 @@ export default function ShareExperiencePage() {
             {/* Role / Level / Last Round */}
             <Stack direction={{ xs: "column", sm: "row" }} gap={1.75} mb={2.75}>
                 <Box flex={1}>
-                    <Typography sx={labelSx}>Role *</Typography>
+                    <Typography sx={labelSx}>{renderLabelWithRedAsterisk(t("question_bank.share_experience_page.role_label"))}</Typography>
                     <Select
                         displayEmpty
                         value={role}
@@ -221,7 +237,7 @@ export default function ShareExperiencePage() {
                                 ROLES.find((r) => r.value === v)?.label
                             ) : (
                                 <Box component="span" sx={{ color: "text.disabled" }}>
-                                    Select Role
+                                    {t("question_bank.share_experience_page.role_placeholder")}
                                 </Box>
                             )
                         }
@@ -235,12 +251,12 @@ export default function ShareExperiencePage() {
                 </Box>
                 <Box flex={1}>
                     <Typography sx={labelSx}>
-                        Level{" "}
+                        {renderLabelWithRedAsterisk(t("question_bank.share_experience_page.level_label"))}{" "}
                         <Box
                             component="span"
                             sx={{ fontWeight: 400, textTransform: "none", color: "text.disabled", fontSize: 11 }}
                         >
-                            (optional)
+                            {t("question_bank.share_experience_page.level_optional")}
                         </Box>
                     </Typography>
                     <Select
@@ -254,7 +270,7 @@ export default function ShareExperiencePage() {
                                 LEVELS.find((l) => l.value === v)?.label
                             ) : (
                                 <Box component="span" sx={{ color: "text.disabled" }}>
-                                    Select Level
+                                    {t("question_bank.share_experience_page.level_placeholder")}
                                 </Box>
                             )
                         }
@@ -267,7 +283,9 @@ export default function ShareExperiencePage() {
                     </Select>
                 </Box>
                 <Box flex={1}>
-                    <Typography sx={labelSx}>Last Round Completed *</Typography>
+                    <Typography sx={{ ...labelSx, whiteSpace: "nowrap", overflow: "visible" }}>
+                        {renderLabelWithRedAsterisk(t("question_bank.share_experience_page.last_round_label"))}
+                    </Typography>
                     <Select
                         displayEmpty
                         value={lastRound}
@@ -279,7 +297,7 @@ export default function ShareExperiencePage() {
                                 ROUNDS.find((r) => r.value === v)?.label
                             ) : (
                                 <Box component="span" sx={{ color: "text.disabled" }}>
-                                    Select Round
+                                    {t("question_bank.share_experience_page.last_round_placeholder")}
                                 </Box>
                             )
                         }
@@ -295,16 +313,16 @@ export default function ShareExperiencePage() {
 
             {/* Interview Process */}
             <Box mb={2.75}>
-                <Typography sx={labelSx}>Interview Process *</Typography>
+                <Typography sx={labelSx}>{renderLabelWithRedAsterisk(t("question_bank.share_experience_page.interview_process_label"))}</Typography>
                 <Typography variant="caption" color="text.disabled" display="block" mb={0.75}>
-                    Share your interview experience include details about the process, format, and any advice
+                    {t("question_bank.share_experience_page.interview_process_hint")}
                 </Typography>
                 <div className="se-editor-wrap">
                     <ReactQuill
                         theme="snow"
                         value={process}
                         onChange={setProcess}
-                        placeholder={"1. Recruiter screen (30 min)\n2. Online coding assessment (1 hr)\n..."}
+                        placeholder={t("question_bank.share_experience_page.interview_process_placeholder")}
                     />
                 </div>
             </Box>
@@ -321,8 +339,7 @@ export default function ShareExperiencePage() {
                 }
                 label={
                     <Typography variant="body2" color="text.secondary">
-                        I&apos;m interested in getting contacted by the Intervu team to share more about my interview
-                        experience
+                        {t("question_bank.share_experience_page.allow_contact_label")}
                     </Typography>
                 }
                 sx={{ mb: 3.5, alignItems: "flex-start" }}
@@ -331,13 +348,13 @@ export default function ShareExperiencePage() {
             {/* Interview Questions */}
             <Box mb={3.5}>
                 <Typography sx={labelSx}>
-                    Interview Questions{" "}
+                    {renderLabelWithRedAsterisk(t("question_bank.share_experience_page.questions_label"))}{" "}
                     <Box component="span" sx={{ fontWeight: 400, textTransform: "none", color: "text.disabled" }}>
                         {/* (optional) */}
                     </Box>
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={1.75}>
-                    Add the specific questions you were asked to build our interview question database
+                    {t("question_bank.share_experience_page.questions_hint")}
                 </Typography>
 
                 {questions.map((q, idx) => (
@@ -364,7 +381,7 @@ export default function ShareExperiencePage() {
                         "&:hover": { textDecoration: "underline", background: "none" },
                     }}
                 >
-                    ADD ANOTHER QUESTION
+                    {t("question_bank.share_experience_page.add_question_btn")}
                 </Button>
             </Box>
 
@@ -377,7 +394,7 @@ export default function ShareExperiencePage() {
                     disabled={submitting}
                     sx={{ maxWidth: 340, py: 1.5, fontSize: 15 }}
                 >
-                    {submitting ? "Submitting..." : "Submit Experience"}
+                    {submitting ? t("question_bank.share_experience_page.submit_btn_loading") : t("question_bank.share_experience_page.submit_btn")}
                 </Button>
                 <Button
                     variant="text"
@@ -391,7 +408,7 @@ export default function ShareExperiencePage() {
                         "&:hover": { color: "text.primary", background: "none" },
                     }}
                 >
-                    Discard and go back
+                    {t("question_bank.share_experience_page.discard_btn")}
                 </Button>
             </Stack>
         </Box>

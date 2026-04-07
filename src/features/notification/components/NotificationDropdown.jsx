@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
@@ -31,6 +32,7 @@ export default function NotificationDropdown() {
     const dropdownRef = useRef(null);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { items, unreadCount } = useSelector((state) => state.notification);
 
@@ -194,7 +196,7 @@ export default function NotificationDropdown() {
                 <div className="noti-panel">
                     {/* Header */}
                     <div className="noti-header">
-                        <h3>Notifications</h3>
+                        <h3>{t("notifications.title")}</h3>
                     </div>
 
                     {/* Tabs */}
@@ -203,13 +205,13 @@ export default function NotificationDropdown() {
                             className={`noti-tab ${activeTab === "all" ? "active" : ""}`}
                             onClick={() => handleTabChange("all")}
                         >
-                            All
+                            {t("notifications.tabs.all")}
                         </button>
                         <button
                             className={`noti-tab ${activeTab === "unread" ? "active" : ""}`}
                             onClick={() => handleTabChange("unread")}
                         >
-                            Unread{unreadCount > 0 ? ` (${unreadCount})` : ""}
+                            {t("notifications.tabs.unread")}{unreadCount > 0 ? ` (${unreadCount})` : ""}
                         </button>
                     </div>
 
@@ -220,8 +222,8 @@ export default function NotificationDropdown() {
                                 <NotificationsNoneOutlinedIcon style={{ fontSize: 44, opacity: 0.25 }} />
                                 <p>
                                     {activeTab === "unread"
-                                        ? "You're all caught up!"
-                                        : "No notifications yet"}
+                                        ? t("notifications.empty_unread")
+                                        : t("notifications.empty")}
                                 </p>
                             </div>
                         ) : (
@@ -230,6 +232,7 @@ export default function NotificationDropdown() {
                                     key={n.id}
                                     notification={n}
                                     onClick={handleItemClick}
+                                    t={t}
                                 />
                             ))
                         )}
@@ -243,13 +246,13 @@ export default function NotificationDropdown() {
                                 onClick={handleLoadMore}
                                 disabled={loadingMore}
                             >
-                                {loadingMore ? "Loading..." : "Load more"}
+                                {loadingMore ? t("notifications.loading") : t("notifications.load_more")}
                             </button>
                         )}
                         {unreadCount > 0 && (
                             <button className="noti-mark-all" onClick={handleMarkAllRead}>
                                 <DoneAllIcon style={{ fontSize: 16 }} />
-                                Mark all as read
+                                {t("notifications.mark_all_read")}
                             </button>
                         )}
                     </div>
@@ -261,6 +264,7 @@ export default function NotificationDropdown() {
                 <NotificationDetailModal
                     notification={detailModal}
                     onClose={() => setDetailModal(null)}
+                    t={t}
                 />
             )}
         </div>
@@ -268,7 +272,7 @@ export default function NotificationDropdown() {
 }
 
 /* ─── Individual notification item ─── */
-function NotificationItem({ notification, onClick }) {
+function NotificationItem({ notification, onClick, t }) {
     const config = getNotificationConfig(notification.type);
     const Icon = config.icon;
 
@@ -288,10 +292,17 @@ function NotificationItem({ notification, onClick }) {
             {/* Content */}
             <div className="noti-item-body">
                 <p className="noti-item-text">
-                    <span className="noti-item-title">{notification.title}</span>{" "}
-                    {notification.message}
+                    <span className="noti-item-title">
+                        {t(`notifications.types.${notification.type}.title`, { defaultValue: notification.title })}
+                    </span>{" "}
+                    {t(`notifications.types.${notification.type}.message`, { 
+                        defaultValue: notification.message,
+                        ...notification.data 
+                    })}
                 </p>
-                <span className="noti-item-time">{formatTimeAgo(notification.createdAt)}</span>
+                <div className="noti-item-meta">
+                <span className="noti-item-time">{formatTimeAgo(notification.createdAt, t)}</span>
+                </div>
             </div>
 
             {/* Unread dot */}
@@ -305,7 +316,7 @@ function NotificationItem({ notification, onClick }) {
 }
 
 /* ─── Detail Modal — shows full notification content ─── */
-function NotificationDetailModal({ notification, onClose }) {
+function NotificationDetailModal({ notification, onClose, t }) {
     const config = getNotificationConfig(notification.type);
     const Icon = config.icon;
 
@@ -334,9 +345,9 @@ function NotificationDetailModal({ notification, onClose }) {
                         <Icon style={{ fontSize: 24 }} />
                     </div>
                     <div className="noti-modal-header-text">
-                        <h4>{notification.title}</h4>
+                        <h4>{t(`notifications.types.${notification.type}.title`, { defaultValue: notification.title })}</h4>
                         <span className="noti-modal-time">
-                            {formatTimeAgo(notification.createdAt)}
+                            {formatTimeAgo(notification.createdAt, t)}
                         </span>
                     </div>
                     <button className="noti-modal-close" onClick={onClose}>
@@ -344,7 +355,12 @@ function NotificationDetailModal({ notification, onClose }) {
                     </button>
                 </div>
                 <div className="noti-modal-body">
-                    <p>{notification.message}</p>
+                    <p>
+                        {t(`notifications.types.${notification.type}.message`, { 
+                            defaultValue: notification.message,
+                            ...notification.data 
+                        })}
+                    </p>
                 </div>
             </div>
         </div>

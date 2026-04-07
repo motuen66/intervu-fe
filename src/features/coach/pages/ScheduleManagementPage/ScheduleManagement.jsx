@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
     fetchAvailabilitiesByMonth,
     addAvailability,
@@ -51,6 +52,7 @@ const buildCalendarEventId = (availability) => {
 };
 
 const ScheduleManagement = () => {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const { availabilities, loading, error } = useSelector((state) => state.availability);
     const authState = useSelector((state) => state.auth);
@@ -208,7 +210,7 @@ const ScheduleManagement = () => {
         const isAllDaySelection = selectInfo.allDay || selectInfo.view.type === "dayGridMonth";
 
         if (start < new Date()) {
-            toast.error("Cannot create availability in the past");
+            toast.error(t("coach.schedule.errors.past_slot"));
             selectInfo.view.calendar.unselect();
             return;
         }
@@ -244,18 +246,18 @@ const ScheduleManagement = () => {
 
         if (!event.end) {
             info.revert();
-            toast.error("Invalid end time");
+            toast.error(t("coach.schedule.errors.invalid_end"));
             return;
         }
 
         if (event.extendedProps.isPast) {
-            toast.error("Cannot modify past availability");
+            toast.error(t("coach.schedule.errors.modify_past"));
             info.revert();
             return;
         }
 
         if (event.extendedProps.isUnavailable) {
-            toast.error("Cannot modify booked slots");
+            toast.error(t("coach.schedule.errors.modify_booked"));
             info.revert();
             return;
         }
@@ -264,14 +266,14 @@ const ScheduleManagement = () => {
         const endTime = event.end;
 
         if (startTime < new Date()) {
-            toast.error("Cannot move availability to the past");
+            toast.error(t("coach.schedule.errors.move_past"));
             info.revert();
             return;
         }
 
         const durationMinutes = (endTime - startTime) / (1000 * 60);
         if (durationMinutes < BLOCK_MINUTES) {
-            toast.error(`Availability must be at least ${BLOCK_MINUTES} minutes`);
+            toast.error(t("coach.schedule.errors.min_duration", { minutes: BLOCK_MINUTES }));
             info.revert();
             return;
         }
@@ -281,7 +283,7 @@ const ScheduleManagement = () => {
         maxAllowed.setHours(23, 59, 59, 999);
 
         if (startTime > maxAllowed) {
-            toast.error("Cannot move availability beyond the 30-day window");
+            toast.error(t("coach.schedule.errors.window_30"));
             info.revert();
             return;
         }
@@ -317,7 +319,7 @@ const ScheduleManagement = () => {
 
     const handleSubmit = async () => {
         if (!formData.date) {
-            showError("Date is required");
+            showError(t("coach.schedule.errors.date_required"));
             return;
         }
 
@@ -327,7 +329,7 @@ const ScheduleManagement = () => {
         const endMinute = Number(formData.endMinute);
 
         if (Number.isNaN(startHour) || Number.isNaN(startMinute) || Number.isNaN(endHour) || Number.isNaN(endMinute)) {
-            showError("Invalid time value");
+            showError(t("coach.schedule.errors.invalid_time"));
             return;
         }
 
@@ -335,19 +337,19 @@ const ScheduleManagement = () => {
         const endTotalMinutes = endHour * 60 + endMinute;
 
         if (endTotalMinutes <= startTotalMinutes) {
-            showError("End time must be after start time");
+            showError(t("coach.schedule.errors.end_after_start"));
             return;
         }
 
         const durationMinutes = endTotalMinutes - startTotalMinutes;
 
         if (durationMinutes < BLOCK_MINUTES) {
-            showError(`Availability must be at least ${BLOCK_MINUTES} minutes`);
+            showError(t("coach.schedule.errors.min_duration", { minutes: BLOCK_MINUTES }));
             return;
         }
 
         if (durationMinutes % BLOCK_MINUTES !== 0) {
-            showError(`Duration must be a multiple of ${BLOCK_MINUTES} minutes`);
+            showError(t("coach.schedule.errors.multiple_30", { minutes: BLOCK_MINUTES }));
             return;
         }
 
@@ -509,10 +511,10 @@ const ScheduleManagement = () => {
                     >
                         <div>
                             <Typography variant="h3" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
-                                Interview Schedule
+                                {t("coach.schedule.title")}
                             </Typography>
                             <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                Manage your available time slots for interviews
+                                {t("coach.schedule.subtitle")}
                             </Typography>
                         </div>
 
@@ -521,7 +523,7 @@ const ScheduleManagement = () => {
                             onClick={handleAddClick}
                             sx={{ py: 1.25, px: 3 }}
                         >
-                            Add Slot
+                            {t("coach.schedule.btn_add_slot")}
                         </PrimaryButton>
                     </Stack>
 
@@ -562,7 +564,7 @@ const ScheduleManagement = () => {
                                             type: "timeGrid",
                                             duration: { days: 7 },
                                             dateAlignment: "day",
-                                            buttonText: "7 Days",
+                                            buttonText: t("coach.schedule.calendar.btn_7days"),
                                             visibleRange: getRollingSevenDayRange,
                                         },
                                     }}
@@ -571,11 +573,15 @@ const ScheduleManagement = () => {
                                         center: "title",
                                         right: "dayGridMonth,rollingSevenDay,timeGridDay",
                                     }}
-                                    buttonText={{ today: "Today", month: "Month", day: "Day" }}
+                                    buttonText={{
+                                        today: t("coach.schedule.calendar.btn_today"),
+                                        month: t("coach.schedule.calendar.btn_month"),
+                                        day: t("coach.schedule.calendar.btn_day"),
+                                    }}
                                     events={calendarEvents}
                                     eventClick={(info) => {
                                         if (info.event.extendedProps.isPast) {
-                                            toast.error("Cannot edit past availability slots");
+                                            toast.error(t("coach.schedule.errors.modify_past"));
                                             return;
                                         }
 
@@ -712,10 +718,10 @@ const ScheduleManagement = () => {
             {/* Confirm Delete */}
             <ConfirmModal
                 show={confirmOpen}
-                title="Confirm Delete"
-                message="Are you sure you want to delete this availability slot? This action cannot be undone."
-                confirmText="Delete"
-                cancelText="Cancel"
+                title={t("coach.schedule.confirm_delete.title")}
+                message={t("coach.schedule.confirm_delete.message")}
+                confirmText={t("coach.schedule.confirm_delete.btn_delete")}
+                cancelText={t("coach.schedule.confirm_delete.btn_cancel")}
                 onConfirm={handleConfirm}
                 onCancel={() => {
                     setConfirmOpen(false);
@@ -727,17 +733,17 @@ const ScheduleManagement = () => {
             {bookedDetailOpen && bookedDetailData && (
                 <ConfirmModal
                     show={bookedDetailOpen}
-                    title="Booked Session Details"
-                    message={`This slot is booked and cannot be edited.\n\n
-                        Time: ${parseLocalTime(bookedDetailData.startTime)} - ${parseLocalTime(bookedDetailData.endTime)}\n
-                        Date: ${parseLocalDate(bookedDetailData.startTime)}${
-                            bookedDetailData.candidateName ? `\nCandidate: ${bookedDetailData.candidateName}` : ""
+                    title={t("coach.schedule.booked_details.title")}
+                    message={`${t("coach.schedule.booked_details.message_locked")}\n\n
+                        ${t("coach.schedule.booked_details.time")}: ${parseLocalTime(bookedDetailData.startTime)} - ${parseLocalTime(bookedDetailData.endTime)}\n
+                        ${t("coach.schedule.booked_details.date")}: ${parseLocalDate(bookedDetailData.startTime)}${
+                            bookedDetailData.candidateName ? `\n${t("coach.schedule.booked_details.candidate")}: ${bookedDetailData.candidateName}` : ""
                         }${
                             bookedDetailData.typeName || bookedDetailData.interviewType
-                                ? `\nType: ${bookedDetailData.typeName || bookedDetailData.interviewType}`
+                                ? `\n${t("coach.schedule.booked_details.type")}: ${bookedDetailData.typeName || bookedDetailData.interviewType}`
                                 : ""
                         }`}
-                    confirmText="Close"
+                    confirmText={t("coach.schedule.booked_details.close")}
                     onConfirm={() => {
                         setBookedDetailOpen(false);
                         setBookedDetailData(null);

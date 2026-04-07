@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
     Box,
     Typography,
@@ -41,10 +42,21 @@ import { formatCurrency } from "../../../common/utils/dateFormatter";
 import { ROLES } from "../../../common/constants/common";
 
 const transactionStatusConfig = {
-    PENDING: { label: "Pending", color: "#FFA500", bgColor: "#FFF3E0" },
-    COMPLETED: { label: "Completed", color: "#4CAF50", bgColor: "#E8F5E9" },
-    FAILED: { label: "Failed", color: "#F44336", bgColor: "#FFEBEE" },
-    REFUNDED: { label: "Refunded", color: "#2196F3", bgColor: "#E3F2FD" },
+    PENDING: { color: "#FFA500", bgColor: "#FFF3E0" },
+    COMPLETED: { color: "#4CAF50", bgColor: "#E8F5E9" },
+    FAILED: { color: "#F44336", bgColor: "#FFEBEE" },
+    REFUNDED: { color: "#2196F3", bgColor: "#E3F2FD" },
+};
+
+// Map status to i18n key
+const getStatusTranslationKey = (status) => {
+    const keyMap = {
+        PENDING: "payment_history.filters.pending",
+        COMPLETED: "payment_history.filters.completed",
+        FAILED: "payment_history.filters.failed",
+        REFUNDED: "payment_history.filters.refunded",
+    };
+    return keyMap[status] || "payment_history.filters.pending";
 };
 
 // Map numeric status codes from API to string status
@@ -168,22 +180,21 @@ const formatDateTimeSafe = (value) => {
     });
 };
 
-// Map numeric interview type codes to readable names
 const mapInterviewType = (typeCode) => {
     const typeMap = {
-        0: "Technical Interview",
-        1: "Behavioral Interview",
-        2: "System Design",
-        3: "Coding Interview",
-        4: "Mock Interview",
+        0: "interview_types.technical_interview",
+        1: "interview_types.behavioral_interview",
+        2: "interview_types.system_design",
+        3: "interview_types.coding_interview",
+        4: "interview_types.mock_interview",
     };
     
     if (typeof typeCode === "number") {
-        return typeMap[typeCode] || "Interview";
+        return typeMap[typeCode] || "interview_types.interview";
     }
     
-    // If already a string, return as-is
-    return typeCode || "Interview";
+    // If already a string, return as-is or assume it's a key
+    return typeCode || "interview_types.interview";
 };
 
 const fetchProfilesByIds = async (ids = []) => {
@@ -208,6 +219,7 @@ const fetchProfilesByIds = async (ids = []) => {
 };
 
 const PaymentHistoryPage = () => {
+    const { t } = useTranslation();
     const { userData } = useSelector((state) => state.auth || {});
     const isCoach = userData?.role === ROLES.INTERVIEWER;
 
@@ -292,7 +304,8 @@ const PaymentHistoryPage = () => {
 
         // Get interview type (handle both numeric and string)
         const typeValue = transaction?.type ?? transaction?.interviewType ?? transaction?.interviewRoom?.interviewType;
-        const interviewType = mapInterviewType(typeValue);
+        const interviewTypeKey = mapInterviewType(typeValue);
+        const interviewType = t(`payment_history.${interviewTypeKey}`);
 
         // Get schedule time
         const scheduleTime = transaction?.startTime 
@@ -302,13 +315,13 @@ const PaymentHistoryPage = () => {
             || transaction?.interviewDate;
 
         return [
-            { label: "Coach", value: transaction.coachName || "-" },
-            { label: "Candidate", value: transaction.candidateName || "-" },
-            { label: "Interview Type", value: interviewType },
-            { label: "Schedule", value: formatDateTimeSafe(scheduleTime) },
-            { label: "Payment Date", value: formatDateSafe(transaction.createdAt) },
-            { label: "Amount", value: formatCurrency(transaction.amount || 0) },
-            { label: "Status", value: getStatusConfig(transaction.status).label },
+            { label: t("payment_history.interview_details.coach"), value: transaction.coachName || "-" },
+            { label: t("payment_history.interview_details.candidate"), value: transaction.candidateName || "-" },
+            { label: t("payment_history.interview_details.interview_type"), value: interviewType },
+            { label: t("payment_history.interview_details.schedule"), value: formatDateTimeSafe(scheduleTime) },
+            { label: t("payment_history.interview_details.payment_date"), value: formatDateSafe(transaction.createdAt) },
+            { label: t("payment_history.interview_details.amount"), value: formatCurrency(transaction.amount || 0) },
+            { label: t("payment_history.interview_details.status"), value: t(getStatusTranslationKey(transaction.status)) },
         ];
     };
 
@@ -317,14 +330,14 @@ const PaymentHistoryPage = () => {
             <Container maxWidth="lg">
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
                     <Box>
-                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
-                            Payment History
+                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5, fontFamily: "var(--heading-font)" }}>
+                            {t("payment_history.title")}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            View all your interview booking transactions
+                        <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "var(--body-font)" }}>
+                            {t("payment_history.subtitle")}
                         </Typography>
                     </Box>
-                    <Tooltip title="Refresh">
+                    <Tooltip title={t("payment_history.refresh_tooltip")}>
                         <IconButton onClick={fetchPaymentHistory} aria-label="refresh payment history" sx={{ border: "1px solid #d6d9e0", bgcolor: 'white' }}>
                             <RefreshRoundedIcon />
                         </IconButton>
@@ -346,10 +359,10 @@ const PaymentHistoryPage = () => {
                                             <ReceiptLongRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                                Total Transactions
+                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "var(--body-font)" }}>
+                                                {t("payment_history.stats.total_transactions")}
                                             </Typography>
-                                            <Typography variant="h5" fontWeight={700}>{stats.transactionCount}</Typography>
+                                            <Typography variant="h5" fontWeight={700} sx={{ fontFamily: "var(--heading-font)" }}>{stats.transactionCount}</Typography>
                                         </Box>
                                     </Stack>
                                 </Box>
@@ -361,10 +374,10 @@ const PaymentHistoryPage = () => {
                                             <CheckCircleRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                                Completed Amount
+                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "var(--body-font)" }}>
+                                                {t("payment_history.stats.completed_amount")}
                                             </Typography>
-                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#2e7d32' }}>
+                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#2e7d32', fontFamily: "var(--heading-font)" }}>
                                                 {formatCurrency(stats.totalSpent)}
                                             </Typography>
                                         </Box>
@@ -378,10 +391,10 @@ const PaymentHistoryPage = () => {
                                             <HourglassEmptyRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                                Pending Amount
+                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "var(--body-font)" }}>
+                                                {t("payment_history.stats.pending_amount")}
                                             </Typography>
-                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#ed6c02' }}>
+                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#ed6c02', fontFamily: "var(--heading-font)" }}>
                                                 {formatCurrency(stats.totalPending)}
                                             </Typography>
                                         </Box>
@@ -395,10 +408,10 @@ const PaymentHistoryPage = () => {
                                             <AttachMoneyRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                                Average Amount
+                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "var(--body-font)" }}>
+                                                {t("payment_history.stats.average_amount")}
                                             </Typography>
-                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#7b1fa2' }}>
+                                            <Typography variant="h5" fontWeight={700} sx={{ color: '#7b1fa2', fontFamily: "var(--heading-font)" }}>
                                                 {formatCurrency(stats.average)}
                                             </Typography>
                                         </Box>
@@ -410,26 +423,26 @@ const PaymentHistoryPage = () => {
                         {/* Filters */}
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
                             <TextField
-                                placeholder="Search by coach, interview ID, or candidate..."
+                                placeholder={t("payment_history.filters.search_placeholder")}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 size="small"
-                                sx={{ flex: 1, bgcolor: 'white', borderRadius: 2 }}
+                                sx={{ flex: 1, bgcolor: 'white', borderRadius: 2, fontFamily: "var(--body-font)" }}
                                 variant="outlined"
                             />
                             <TextField
                                 select
-                                label="Status"
+                                label={t("payment_history.filters.status_label")}
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
                                 size="small"
-                                sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2 }}
+                                sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2, fontFamily: "var(--body-font)" }}
                             >
-                                <MenuItem value="ALL">All Status</MenuItem>
-                                <MenuItem value="COMPLETED">Completed</MenuItem>
-                                <MenuItem value="PENDING">Pending</MenuItem>
-                                <MenuItem value="FAILED">Failed</MenuItem>
-                                <MenuItem value="REFUNDED">Refunded</MenuItem>
+                                <MenuItem value="ALL" sx={{ fontFamily: "var(--body-font)" }}>{t("payment_history.filters.all_status")}</MenuItem>
+                                <MenuItem value="COMPLETED" sx={{ fontFamily: "var(--body-font)" }}>{t("payment_history.filters.completed")}</MenuItem>
+                                <MenuItem value="PENDING" sx={{ fontFamily: "var(--body-font)" }}>{t("payment_history.filters.pending")}</MenuItem>
+                                <MenuItem value="FAILED" sx={{ fontFamily: "var(--body-font)" }}>{t("payment_history.filters.failed")}</MenuItem>
+                                <MenuItem value="REFUNDED" sx={{ fontFamily: "var(--body-font)" }}>{t("payment_history.filters.refunded")}</MenuItem>
                             </TextField>
                         </Stack>
 
@@ -437,12 +450,12 @@ const PaymentHistoryPage = () => {
                         <Box sx={{ mt: 2 }}>
                             <Table sx={{ borderCollapse: 'separate', borderSpacing: '0 12px' }}>
                                 <TableHead>
-                                    <TableRow sx={{ '& .MuiTableCell-root': { borderBottom: 'none', color: 'text.secondary', fontWeight: 600, px: 3 } }}>
-                                        <TableCell>Date</TableCell>
-                                        <TableCell>Interview/Coach</TableCell>
-                                        <TableCell>Amount</TableCell>
-                                        <TableCell>Status</TableCell>
-                                        <TableCell align="right">Action</TableCell>
+                                    <TableRow sx={{ '& .MuiTableCell-root': { borderBottom: 'none', color: 'text.secondary', fontWeight: 600, px: 3, fontFamily: "var(--heading-font)" } }}>
+                                        <TableCell>{t("payment_history.table.date")}</TableCell>
+                                        <TableCell>{t("payment_history.table.interview_coach")}</TableCell>
+                                        <TableCell>{t("payment_history.table.amount")}</TableCell>
+                                        <TableCell>{t("payment_history.table.status")}</TableCell>
+                                        <TableCell align="right">{t("payment_history.table.action")}</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -458,14 +471,14 @@ const PaymentHistoryPage = () => {
                                                     '& .MuiTableCell-root': { border: 'none', py: 2.5, px: 3 }
                                                 }}
                                             >
-                                                <TableCell sx={{ fontWeight: 600, borderTopLeftRadius: 16, borderBottomLeftRadius: 16 }}>
+                                                <TableCell sx={{ fontWeight: 600, borderTopLeftRadius: 16, borderBottomLeftRadius: 16, fontFamily: "var(--body-font)" }}>
                                                     {formatDateSafe(transaction.startTime)}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontWeight={600}>{transaction.coachName}</Typography>
+                                                    <Typography variant="body2" fontWeight={600} sx={{ fontFamily: "var(--body-font)" }}>{transaction.coachName}</Typography>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Typography fontWeight={700} sx={{ color: formatAmountDisplay(transaction.amount, isCoach).color }}>
+                                                    <Typography fontWeight={700} sx={{ color: formatAmountDisplay(transaction.amount, isCoach).color, fontFamily: "var(--body-font)" }}>
                                                         {formatAmountDisplay(transaction.amount, isCoach).text}
                                                     </Typography>
                                                 </TableCell>
@@ -480,18 +493,19 @@ const PaymentHistoryPage = () => {
                                                             color: statusConfig.color,
                                                             fontWeight: 600,
                                                             fontSize: "0.75rem",
+                                                            fontFamily: "var(--body-font)",
                                                         }}
                                                     >
-                                                        {statusConfig.label}
+                                                        {t(getStatusTranslationKey(transaction.status))}
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell align="right" sx={{ borderTopRightRadius: 16, borderBottomRightRadius: 16 }}>
                                                     <SecondaryButton
                                                         size="small"
                                                         onClick={() => setSelectedTransaction(transaction)}
-                                                        sx={{ py: 0.5, px: 2 }}
+                                                        sx={{ py: 0.5, px: 2, fontFamily: "var(--body-font)" }}
                                                     >
-                                                        View details
+                                                        {t("payment_history.table.view_details")}
                                                     </SecondaryButton>
                                                 </TableCell>
                                             </TableRow>
@@ -502,7 +516,7 @@ const PaymentHistoryPage = () => {
 
                             {(!filteredTransactions || filteredTransactions.length === 0) && (
                                 <Box sx={{ textAlign: "center", py: 5 }}>
-                                    <Typography color="text.secondary">No transactions found</Typography>
+                                    <Typography color="text.secondary" sx={{ fontFamily: "var(--body-font)" }}>{t("payment_history.table.no_transactions")}</Typography>
                                 </Box>
                             )}
                         </Box>
@@ -513,15 +527,15 @@ const PaymentHistoryPage = () => {
                             fullWidth
                             maxWidth="sm"
                         >
-                            <DialogTitle>Paid Interview Details</DialogTitle>
+                            <DialogTitle sx={{ fontFamily: "var(--heading-font)" }}>{t("common.modals.payment_details.title")}</DialogTitle>
                             <DialogContent dividers>
                                 <Stack spacing={1.25}>
                                     {getInterviewDetails(selectedTransaction).map((item) => (
                                         <Box key={item.label}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontFamily: "var(--body-font)" }}>
                                                 {item.label}
                                             </Typography>
-                                            <Typography variant="body2" fontWeight={600}>
+                                            <Typography variant="body2" fontWeight={600} sx={{ fontFamily: "var(--body-font)" }}>
                                                 {item.value}
                                             </Typography>
                                             <Divider sx={{ mt: 1 }} />
@@ -530,7 +544,7 @@ const PaymentHistoryPage = () => {
                                 </Stack>
                             </DialogContent>
                             <DialogActions>
-                                <Button onClick={() => setSelectedTransaction(null)}>Close</Button>
+                                <Button onClick={() => setSelectedTransaction(null)} sx={{ fontFamily: "var(--body-font)" }}>{t("common.modals.payment_details.btn_close")}</Button>
                             </DialogActions>
                         </Dialog>
                     </>

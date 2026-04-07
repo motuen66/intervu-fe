@@ -5,7 +5,7 @@ import { METHOD } from "../../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { Check, ArrowRight, Briefcase, FileText, Rocket, Clock, Tag, ExternalLink, Award, Globe } from "lucide-react";
+import { Check, ArrowRight, Briefcase, FileText, Clock, Tag, ExternalLink, Globe } from "lucide-react";
 import toast from "react-hot-toast";
 import { PAYOS_TRANSACTION_STATUS, TRANSACTION_STATUS } from "../../../../../common/constants/status";
 import BookingSlotDialog from "./BookingSlotDialog";
@@ -15,8 +15,10 @@ import "./EliteCoachProfile.css";
 import { useSelector } from "react-redux";
 import { ROLES } from "../../../../../common/constants/common";
 import { CompanyLogo } from "../../../../../common/utils/logoImageGenerator";
+import { useTranslation } from "react-i18next";
 
 const PublicInterviewerProfilePage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { slugProfileUrl } = useParams();
     const [searchParams] = useSearchParams();
@@ -69,7 +71,7 @@ const PublicInterviewerProfilePage = () => {
                 fetchCoachAvailability(profileData.user.id);
             }
         } catch (e) {
-            setError("Failed to load coach profile.");
+            setError(t("profile.public.not_found"));
         } finally {
             setLoading(false);
         }
@@ -89,21 +91,22 @@ const PublicInterviewerProfilePage = () => {
             if (res.success && res.data) {
                 const uniqueDates = [];
                 const dateSet = new Set();
+                const locale = t("common.date_locale");
 
                 // Filter slots that are in the future
                 res.data.forEach((slot) => {
                     const d = new Date(slot.startTime);
                     if (d >= now) {
-                        let dateStr = d.toLocaleDateString("en-US", { weekday: "long" });
+                        let dateStr = d.toLocaleDateString(locale, { weekday: "long" });
 
                         const today = new Date();
                         const tomorrow = new Date();
                         tomorrow.setDate(today.getDate() + 1);
 
                         if (d.toDateString() === today.toDateString()) {
-                            dateStr = "Today";
+                            dateStr = t("common.days.today") || "Today";
                         } else if (d.toDateString() === tomorrow.toDateString()) {
-                            dateStr = "Tomorrow";
+                            dateStr = t("common.days.tomorrow") || "Tomorrow";
                         }
 
                         if (!dateSet.has(dateStr)) {
@@ -126,7 +129,7 @@ const PublicInterviewerProfilePage = () => {
             endpoint: interviewerProfileEndPoints.GET_BOOKING_TRANSACTION.replace("{orderCode}", orderCode),
         });
         if (data && data.status === TRANSACTION_STATUS.PAID) {
-            toast.success("Interview booked successfully!");
+            toast.success(t("booking.detail.toast.payment_completed"));
             navigate("/booking-requests", { replace: true });
         }
     };
@@ -138,7 +141,6 @@ const PublicInterviewerProfilePage = () => {
 
     const handleBooking = async ({ slot, service, startTime }) => {
         const returnUrl = window.location.origin + "/booking-requests";
-        // try {
         const { data } = await callApi({
             method: METHOD.POST,
             endpoint: interviewerProfileEndPoints.BOOK_INTERVIEW,
@@ -154,12 +156,9 @@ const PublicInterviewerProfilePage = () => {
         if (data?.checkOutUrl) {
             window.location.href = data.checkOutUrl;
         } else {
-            toast.success("Interview booked successfully!");
+            toast.success(t("booking.detail.toast.payment_completed"));
             navigate("/booking-requests");
         }
-        // } catch (err) {
-        //     // toast.error("Booking failed. Please try again.");
-        // }
     };
 
     const avatarUrl = useMemo(() => {
@@ -189,7 +188,7 @@ const PublicInterviewerProfilePage = () => {
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh" }}>
-                <CommonLoader text="Loading Profile" subtext="Preparing the coach's details for you..." />
+                <CommonLoader text={t("profile.public.loading")} subtext={t("profile.public.loading_sub")} />
             </Box>
         );
     }
@@ -198,9 +197,9 @@ const PublicInterviewerProfilePage = () => {
         return (
             <div className="elite-profile-container">
                 <div className="ep-shell" style={{ padding: "4rem 0", textAlign: "center" }}>
-                    <h2>{error || "Coach not found."}</h2>
+                    <h2>{error || t("profile.public.not_found")}</h2>
                     <button className="ep-btn-book" onClick={() => navigate("/")} style={{ marginTop: "1rem" }}>
-                        Back to Home
+                        {t("profile.public.back_home")}
                     </button>
                 </div>
             </div>
@@ -243,35 +242,35 @@ const PublicInterviewerProfilePage = () => {
                         <div className="ep-stats-grid">
                             <div className="ep-stat-item">
                                 <span className="ep-stat-value">{profile.experienceYears}+</span>
-                                <span className="ep-stat-label">Years Exp</span>
+                                <span className="ep-stat-label">{t("profile.public.years_exp")}</span>
                             </div>
                             <div className="ep-stat-item">
                                 <span className="ep-stat-value">
                                     {(profile.rating || 0).toFixed(1)}{" "}
                                     <span style={{ color: "#fbbf24", fontSize: "1.2rem" }}>★</span>
                                 </span>
-                                <span className="ep-stat-label">Candidate Rating</span>
+                                <span className="ep-stat-label">{t("profile.public.rating")}</span>
                             </div>
                             <div className="ep-stat-item">
                                 <span className="ep-stat-value">{profile.sessionsCount || 0}</span>
-                                <span className="ep-stat-label">Mock Interviews</span>
+                                <span className="ep-stat-label">{t("profile.public.mock_interviews")}</span>
                             </div>
                         </div>
 
                         <div className="ep-about">
-                            <h3 className="ep-about-title">About</h3>
-                            <p className="ep-about-text">
+                            <h3 className="ep-about-title">{t("profile.public.about")}</h3>
+                            <div className="ep-about-text">
                                 {profile.bio
                                     ? expandedBio
                                         ? profile.bio
                                         : `${profile.bio.slice(0, bioLimit)}${profile.bio.length > bioLimit ? "..." : ""}`
-                                    : "No bio provided yet."}
+                                    : t("profile.public.no_bio")}
                                 {profile.bio && profile.bio.length > bioLimit && (
                                     <button onClick={() => setExpandedBio(!expandedBio)} className="ep-view-more-btn">
-                                        {expandedBio ? "View Less" : "View More"}
+                                        {expandedBio ? t("profile.public.view_less") : t("profile.public.view_more")}
                                     </button>
                                 )}
-                            </p>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -280,9 +279,9 @@ const PublicInterviewerProfilePage = () => {
                     <div className="ep-content-left">
                         {/* Expertise & Experience */}
                         <section className="ep-expertise">
-                            <h2 className="ep-section-title">Expertise & Experience</h2>
+                            <h2 className="ep-section-title">{t("profile.public.expertise")}</h2>
 
-                            <h4 className="ep-sub-title">Core Skills</h4>
+                            <h4 className="ep-sub-title">{t("profile.public.core_skills")}</h4>
                             <div className="ep-skills-wrap">
                                 {profile.skills?.map((skill) => (
                                     <div key={skill.id} className="ep-skill-tag">
@@ -291,11 +290,11 @@ const PublicInterviewerProfilePage = () => {
                                     </div>
                                 ))}
                                 {(!profile.skills || profile.skills.length === 0) && (
-                                    <p className="ep-text-muted">No skills listed.</p>
+                                    <p className="ep-text-muted">{t("profile.public.no_skills")}</p>
                                 )}
                             </div>
 
-                            <h4 className="ep-sub-title">Working Experience</h4>
+                            <h4 className="ep-sub-title">{t("profile.public.work_exp")}</h4>
                             <Stack spacing={2} sx={{ mb: 4 }}>
                                 {(profile.workExperiences || profile.companies)?.length > 0 ? (
                                     (profile.workExperiences || profile.companies).map((exp, idx) => {
@@ -440,11 +439,11 @@ const PublicInterviewerProfilePage = () => {
                                         );
                                     })
                                 ) : (
-                                    <p className="ep-text-muted">No companies listed.</p>
+                                    <p className="ep-text-muted">{t("profile.public.no_companies")}</p>
                                 )}
                             </Stack>
 
-                            <h4 className="ep-sub-title">Domain (Industries)</h4>
+                            <h4 className="ep-sub-title">{t("profile.public.domain")}</h4>
                             <div className="ep-skills-wrap">
                                 {profile.industries?.map((ind) => (
                                     <div
@@ -457,7 +456,7 @@ const PublicInterviewerProfilePage = () => {
                                     </div>
                                 ))}
                                 {(!profile.industries || profile.industries.length === 0) && (
-                                    <p className="ep-text-muted">No industries listed.</p>
+                                    <p className="ep-text-muted">{t("profile.public.no_industries")}</p>
                                 )}
                             </div>
 
@@ -465,7 +464,7 @@ const PublicInterviewerProfilePage = () => {
                                 className="ep-sub-title"
                                 style={{ color: "var(--ep-accent-dark)", marginTop: "0.75rem" }}
                             >
-                                Certifications
+                                {t("profile.public.certs")}
                             </h4>
                             <div
                                 style={{
@@ -580,7 +579,7 @@ const PublicInterviewerProfilePage = () => {
 
                         {/* Services */}
                         <section className="ep-services">
-                            <h2 className="ep-section-title">Interview Services Provided</h2>
+                            <h2 className="ep-section-title">{t("profile.public.services")}</h2>
                             <div className="ep-services-grid">
                                 {services.map((svc) => (
                                     <div
@@ -599,18 +598,18 @@ const PublicInterviewerProfilePage = () => {
                                         <h4>{svc.interviewTypeName}</h4>
                                         <div className="ep-service-meta">
                                             <span>
-                                                <Clock size={12} /> {svc.durationMinutes} min
+                                                <Clock size={12} /> {svc.durationMinutes} {t("profile.public.min")}
                                             </span>
                                             <span>
-                                                <Tag size={12} /> One-on-one
+                                                <Tag size={12} /> {t("profile.public.one_on_one")}
                                             </span>
                                         </div>
                                         <div className="ep-service-hint">
-                                            Select Service <ArrowRight size={14} />
+                                            {t("profile.public.select_service")} <ArrowRight size={14} />
                                         </div>
                                     </div>
                                 ))}
-                                {services.length === 0 && <p className="ep-text-muted">No services offered yet.</p>}
+                                {services.length === 0 && <p className="ep-text-muted">{t("profile.public.no_services")}</p>}
                             </div>
                         </section>
                     </div>
@@ -619,15 +618,15 @@ const PublicInterviewerProfilePage = () => {
                     <aside className="ep-sidebar">
                         <div className="ep-side-card">
                             <span className="ep-slot-tag">
-                                {availableDates.length > 0 ? "Limited Slots" : "Check Schedule"}
+                                {availableDates.length > 0 ? t("profile.public.limited_slots") : t("profile.public.check_schedule")}
                             </span>
-                            <h5>Availability</h5>
+                            <h5>{t("profile.public.availability")}</h5>
                             <h2 className="ep-side-status">
-                                {availableDates.length > 0 ? "Open for Bookings" : "View Free Time"}
+                                {availableDates.length > 0 ? t("profile.public.open_for_bookings") : t("profile.public.view_free_time")}
                             </h2>
 
                             <p className="ep-about-title" style={{ fontSize: "0.65rem" }}>
-                                Next Available Dates
+                                {t("profile.public.next_available")}
                             </p>
                             <div className="ep-date-grid">
                                 {availableDates.length > 0 ? (
@@ -638,7 +637,7 @@ const PublicInterviewerProfilePage = () => {
                                     ))
                                 ) : (
                                     <p style={{ fontSize: "0.75rem", color: "#94a3b8", gridColumn: "span 2" }}>
-                                        Click below to see schedule.
+                                        {t("profile.public.click_to_see")}
                                     </p>
                                 )}
                             </div>
@@ -648,13 +647,13 @@ const PublicInterviewerProfilePage = () => {
                                     <div className="ep-benefit-check">
                                         <Check size={12} strokeWidth={3} />
                                     </div>
-                                    1:1 Live Mock Session
+                                    {t("profile.public.benefit_1")}
                                 </li>
                                 <li className="ep-benefit-item">
                                     <div className="ep-benefit-check">
                                         <Check size={12} strokeWidth={3} />
                                     </div>
-                                    Personalized Feedback Report
+                                    {t("profile.public.benefit_2")}
                                 </li>
                             </ul>
 
@@ -667,7 +666,7 @@ const PublicInterviewerProfilePage = () => {
                                             setBookingDialogOpen(true);
                                         }}
                                     >
-                                        Book Available Slot <ArrowRight size={18} />
+                                        {t("profile.public.book_slot")} <ArrowRight size={18} />
                                     </button>
 
                                     <button
@@ -675,7 +674,7 @@ const PublicInterviewerProfilePage = () => {
                                         onClick={() => setJdBookingOpen(true)}
                                         style={{ marginTop: "0.75rem" }}
                                     >
-                                        <FileText size={18} /> JD Multi-Round Booking
+                                        <FileText size={18} /> {t("profile.public.jd_booking")}
                                     </button>
                                 </>
                             )}
@@ -690,17 +689,17 @@ const PublicInterviewerProfilePage = () => {
                                     fontWeight: 700,
                                 }}
                             >
-                                Fully refundable if cancelled 24h prior
+                                {t("profile.public.refundable_hint")}
                             </p>
                         </div>
 
                         {/* Match Card (Derived logic) */}
                         <div className="ep-side-card ep-match-card">
-                            <h5>Coach Match Index</h5>
+                            <h5>{t("profile.public.match_index")}</h5>
                             <div className="ep-progress-bg">
                                 <div className="ep-progress-bar" style={{ width: "85%" }}></div>
                             </div>
-                            <p style={{ fontSize: "0.75rem", color: "#64748b" }}>Based on your background analysis.</p>
+                            <p style={{ fontSize: "0.75rem", color: "#64748b" }}>{t("profile.public.match_hint")}</p>
                         </div>
                     </aside>
                 </div>

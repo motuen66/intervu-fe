@@ -1,12 +1,14 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { callApi } from "../utils/apiConnector";
 import { METHOD } from "../constants/api";
 import { authEndPoints } from "../../features/auth/services/authApi";
 import { setUserData, setToken } from "../store/authSlice";
 
 const SuspendedGate = ({ children }) => {
+    const { t } = useTranslation();
     const { userData } = useSelector((state) => state.auth || {});
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -65,12 +67,11 @@ const SuspendedGate = ({ children }) => {
                 sx={{ zIndex: 2147483645 }}
             >
                 <DialogTitle id="suspended-dialog-title" sx={{ fontWeight: 700, pb: 1, color: '#ef4444' }}>
-                    Account Suspended
+                    {t("common.modals.suspended.title")}
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText id="suspended-dialog-description" sx={{ color: '#1e293b', fontSize: '1rem', lineHeight: 1.6 }}>
-                        Your account has been suspended by the administrator. You are currently restricted from performing any actions on the platform. 
-                        Please contact us at <strong>admin@intervu.com</strong> for assistance.
+                        {t("common.modals.suspended.message")}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2, pt: 1, justifyContent: 'center' }}>
@@ -91,7 +92,7 @@ const SuspendedGate = ({ children }) => {
                             }
                         }}
                     >
-                        Log out
+                        {t("common.modals.suspended.btn_logout")}
                     </Button>
                 </DialogActions>
             </Dialog>

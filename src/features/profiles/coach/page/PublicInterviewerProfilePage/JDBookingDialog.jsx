@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import Grow from "@mui/material/Grow";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -217,10 +218,11 @@ function RoundScheduleTimelineItem({
     blockedByRoundNumber,
     isLast,
     onActivate,
+    t,
 }) {
     const handleClick = () => {
         if (disabled && !isDone) {
-            toast.error(`Please set a time for Round ${index} first.`);
+            toast.error(t("common.modals.jd_booking.error_round_time", { index: index + 1 }));
             return;
         }
         onActivate();
@@ -233,9 +235,10 @@ function RoundScheduleTimelineItem({
     let subtitle = "Selecting time...";
     if (isDone) {
         const blockCount = round.availabilityIds?.length || 0;
-        subtitle = `${format(round.startTime, "MMM dd 'at' HH:mm")} (${blockCount} block${blockCount > 1 ? "s" : ""})`;
+        const blockLabel = blockCount > 1 ? t("common.modals.jd_booking.blocks_label_plural") : t("common.modals.jd_booking.blocks_label");
+        subtitle = `${format(round.startTime, "MMM dd 'at' HH:mm")} (${blockCount} ${blockLabel})`;
     } else if (isPending) {
-        subtitle = blockedByRoundNumber ? `Complete Round ${blockedByRoundNumber} first` : "Pending";
+        subtitle = blockedByRoundNumber ? t("common.modals.jd_booking.complete_round_first", { number: blockedByRoundNumber }) : t("common.modals.jd_booking.pending_label");
     }
 
     return (
@@ -276,7 +279,7 @@ function RoundScheduleTimelineItem({
                     </Typography>
                 </Box>
                 <Typography component="p" sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#1e293b" }}>
-                    {service?.interviewTypeName || "Select Service..."}
+                    {service?.interviewTypeName || t("common.modals.jd_booking.select_service_label")}
                 </Typography>
                 <Typography className="jd-schedule-subtitle" component="p">
                     {subtitle}
@@ -317,6 +320,7 @@ function RoundScheduleTimelineItem({
 }
 
 export default function JDBookingDialog({ open, onClose, coachId }) {
+    const { t } = useTranslation();
     const theme = useTheme();
     const navigate = useNavigate();
 
@@ -587,11 +591,11 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             let hasError = false;
 
             if (!isValidUrl(jdUrl)) {
-                newErrors.jobDescriptionUrl = "Please provide a valid link for the Job Description";
+                newErrors.jobDescriptionUrl = t("common.modals.jd_booking.error_invalid_job_url");
                 hasError = true;
             }
             if (!isValidUrl(cvUrl)) {
-                newErrors.cvUrl = "Please provide a valid link for your CV (e.g. Google Drive link)";
+                newErrors.cvUrl = t("common.modals.jd_booking.error_invalid_cv_url");
                 hasError = true;
             }
 
@@ -600,7 +604,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             if (hasError) return;
 
             if (!rounds.every((r) => r.coachInterviewServiceId)) {
-                setError("Please select a service for all interview rounds.");
+                setError(t("common.modals.jd_booking.error_no_service"));
                 return;
             }
 
@@ -656,14 +660,14 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                             letterSpacing: "-0.02em",
                         }}
                     >
-                        JD Multi-Round Interview Booking
+                        {t("common.modals.jd_booking.title")}
                     </Typography>
                     <Typography
                         sx={{ fontSize: "0.9375rem", color: "text.secondary", lineHeight: 1.55, maxWidth: 560 }}
                     >
                         {activeStep === 0
-                            ? "Submit details and build your assessment workflow."
-                            : "Select dates and times for each round."}
+                            ? t("common.modals.jd_booking.step1_desc")
+                            : t("common.modals.jd_booking.step2_desc")}
                     </Typography>
                 </Box>
                 <IconButton
@@ -708,13 +712,13 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             md={4}
                                             sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}
                                         >
-                                            <Typography className="jd-label-mini">Job url</Typography>
+                                            <Typography className="jd-label-mini">{t("common.modals.jd_booking.job_url_label")}</Typography>
                                             <Box className="jd-input-stitch">
                                                 <Link size={18} color="#94a3b8" aria-hidden />
                                                 <TextField
                                                     fullWidth
                                                     variant="standard"
-                                                    placeholder="https://company.com/role"
+                                                    placeholder={t("common.modals.jd_booking.job_url_placeholder")}
                                                     value={form.jobDescriptionUrl}
                                                     onChange={(e) =>
                                                         setForm({ ...form, jobDescriptionUrl: e.target.value })
@@ -750,13 +754,13 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             md={4}
                                             sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}
                                         >
-                                            <Typography className="jd-label-mini">CV url</Typography>
+                                            <Typography className="jd-label-mini">{t("common.modals.jd_booking.cv_url_label")}</Typography>
                                             <Box className="jd-input-stitch">
                                                 <FileUser size={18} color="#94a3b8" aria-hidden />
                                                 <TextField
                                                     fullWidth
                                                     variant="standard"
-                                                    placeholder="https://drive.google.com/cv.pdf"
+                                                    placeholder={t("common.modals.jd_booking.cv_url_placeholder")}
                                                     value={form.cvUrl}
                                                     onChange={(e) => {
                                                         setForm({ ...form, cvUrl: e.target.value });
@@ -794,7 +798,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             md={4}
                                             sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}
                                         >
-                                            <Typography className="jd-label-mini">Target</Typography>
+                                            <Typography className="jd-label-mini">{t("common.modals.jd_booking.aim_level_label")}</Typography>
                                             <Box className="jd-input-stitch">
                                                 <Target size={18} color="#94a3b8" aria-hidden />
                                                 <TextField
@@ -845,10 +849,10 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                     >
                                         <Box>
                                             <Typography fontWeight={800} fontSize="1.3rem" color="#0f172a">
-                                                Build Your Interview Sequence
+                                                {t("common.modals.jd_booking.rounds_title")}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                Define the logical flow of your assessment process
+                                                {t("common.modals.jd_booking.rounds_subtitle")}
                                             </Typography>
                                         </Box>
                                         <Button
@@ -864,7 +868,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                 textTransform: "none",
                                             }}
                                         >
-                                            Add Round
+                                            {t("common.modals.jd_booking.add_round_btn")}
                                         </Button>
                                     </Stack>
 
@@ -890,11 +894,11 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                             <Box className="jd-bubble-text">
                                                                 <Box className="jd-bubble-title-row">
                                                                     <span className="jd-bubble-round-tag">
-                                                                        Round {index + 1}
+                                                                        {t("common.modals.jd_booking.round_label", { number: index + 1 })}
                                                                     </span>
                                                                     <span className="jd-bubble-service-name">
                                                                         {service?.interviewTypeName ||
-                                                                            "Select service..."}
+                                                                            t("common.modals.jd_booking.select_service_label")}
                                                                     </span>
                                                                 </Box>
                                                             </Box>
@@ -1023,7 +1027,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                         mt: 0.25,
                                                     }}
                                                 >
-                                                    {activeService?.interviewTypeName || "Select service..."}{" "}
+                                                    {activeService?.interviewTypeName || t("common.modals.jd_booking.select_service_label")}{" "}
                                                     {activeService && (
                                                         <span style={{ color: "#64748b", fontWeight: 500 }}>
                                                             ({activeService.durationMinutes} min)
@@ -1192,6 +1196,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     setActiveRoundIndex(index);
                                                     setSelectedDate(null);
                                                 }}
+                                                t={t}
                                             />
                                         ))}
                                     </Stack>
@@ -1342,14 +1347,14 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                             onClick={handleBackStep}
                             sx={{ fontWeight: 700, textTransform: "none", color: "text.secondary" }}
                         >
-                            Back
+                            {t("common.modals.jd_booking.back_btn")}
                         </Button>
                     )}
                     <Button
                         onClick={handleClose}
                         sx={{ color: "text.secondary", fontWeight: 700, textTransform: "none" }}
                     >
-                        Cancel
+                        {t("common.modals.jd_booking.cancel_btn")}
                     </Button>
                     <Button
                         variant="contained"
@@ -1361,10 +1366,10 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                         sx={{ minWidth: { xs: "100%", sm: 240 }, py: 1.25 }}
                     >
                         {activeStep === 0
-                            ? "Next: Schedule Rounds"
+                            ? t("common.modals.jd_booking.next_btn")
                             : saving
-                              ? "Confirming & Paying..."
-                              : "Confirm & Pay Now"}
+                              ? t("common.modals.jd_booking.confirming_paying_btn")
+                              : t("common.modals.jd_booking.submit_btn")}
                     </Button>
                 </Stack>
             </DialogActions>

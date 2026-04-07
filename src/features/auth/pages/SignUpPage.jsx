@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { authEndPoints } from "../services/authApi";
@@ -10,6 +11,7 @@ import { PrimaryButton } from "../../../common/components/buttons";
 import toast from "react-hot-toast";
 
 function SignUpPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const isLoading = useLoading();
     const {
@@ -40,7 +42,7 @@ function SignUpPage() {
             });
 
             if (success) {
-                toast.success(message || "Account created successfully! Please log in.");
+                toast.success(message || t("auth.signup.success_toast"));
                 await new Promise((resolve) => setTimeout(resolve, 3000));
                 navigate("/login");
             }
@@ -115,7 +117,7 @@ function SignUpPage() {
 
                             {/* decorative subtitle */}
                             <div style={{ marginTop: '24px', fontSize: '13px', color: 'rgba(0,0,0,0.4)', letterSpacing: '0.5px', lineHeight: '1.6' }}>
-                                Join us to streamline your hiring process
+                                {t("auth.signup.subtitle")}
                             </div>
                         </div>
                     </div>
@@ -131,7 +133,7 @@ function SignUpPage() {
 
                         <div style={{ textAlign: 'center', marginBottom: '8px', position: 'relative', zIndex: 1 }}>
                             <Typography variant="h4" style={{ fontSize: '32px', fontWeight: 700, color: '#1a1a2e', letterSpacing: '-0.5px' }}>
-                                Create Account
+                                {t("auth.signup.title")}
                             </Typography>
                             <div style={{ width: '60px', height: '3px', background: 'linear-gradient(90deg, transparent, #4F46E5, transparent)', margin: '12px auto 0', borderRadius: '2px' }}></div>
                         </div>
@@ -139,7 +141,7 @@ function SignUpPage() {
                         <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ position: 'relative', zIndex: 1 }}>
                             <div style={{ marginBottom: '14px' }}>
                                 <TextField
-                                    label="Full Name"
+                                    label={t("auth.signup.full_name")}
                                     type="text"
                                     variant="outlined"
                                     fullWidth
@@ -154,8 +156,8 @@ function SignUpPage() {
                                         '& .MuiInputLabel-root.Mui-focused': { color: '#4F46E5' }
                                     }}
                                     {...register('fullName', {
-                                        required: 'Full name is required',
-                                        minLength: { value: 2, message: 'Name is too short' }
+                                        required: t("auth.signup.name_required"),
+                                        minLength: { value: 2, message: t("auth.signup.name_min_length") }
                                     })}
                                     error={!!errors.fullName}
                                     helperText={errors.fullName?.message}
@@ -164,7 +166,7 @@ function SignUpPage() {
 
                             <div style={{ marginBottom: '14px' }}>
                                 <TextField
-                                    label="Email"
+                                    label={t("auth.login.email")}
                                     type="email"
                                     variant="outlined"
                                     fullWidth
@@ -179,10 +181,10 @@ function SignUpPage() {
                                         '& .MuiInputLabel-root.Mui-focused': { color: '#4F46E5' }
                                     }}
                                     {...register('email', {
-                                        required: 'Email is required',
+                                        required: t("auth.login.email_required"),
                                         pattern: {
                                             value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                            message: 'Invalid email format',
+                                            message: t("auth.signup.email_invalid"),
                                         }
                                     })}
                                     error={!!errors.email}
@@ -192,7 +194,7 @@ function SignUpPage() {
 
                             <div style={{ marginBottom: '20px' }}>
                                 <TextField
-                                    label="Password"
+                                    label={t("auth.login.password")}
                                     type="password"
                                     variant="outlined"
                                     fullWidth
@@ -207,8 +209,8 @@ function SignUpPage() {
                                         '& .MuiInputLabel-root.Mui-focused': { color: '#4F46E5' }
                                     }}
                                     {...register('password', {
-                                        required: 'Password is required',
-                                        minLength: { value: 8, message: 'Password must be at least 8 characters' }
+                                        required: t("auth.login.password_required"),
+                                        minLength: { value: 8, message: t("auth.signup.password_min_length") }
                                     })}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
@@ -229,19 +231,19 @@ function SignUpPage() {
                                             fontSize: '17px',
                                         }}
                                     >
-                                        Sign up
+                                        {t("auth.signup.btn_signup")}
                                     </PrimaryButton>
                                 )}
                             </div>
 
                             <div style={{ textAlign: 'center', marginTop: '16px' }}>
                                 <Typography style={{ fontSize: '14px', color: 'rgba(0,0,0,0.6)' }}>
-                                    Already have an account?{' '}
+                                    {t("auth.signup.already_have_account")}{' '}
                                     <span
                                         onClick={() => navigate('/login')}
                                         style={{ color: '#4F46E5', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
                                     >
-                                        Sign in
+                                        {t("auth.signup.signin")}
                                     </span>
                                 </Typography>
                             </div>

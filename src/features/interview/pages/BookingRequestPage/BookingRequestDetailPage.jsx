@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
     getBookingRequestDetail,
     respondToBookingRequest,
@@ -76,6 +77,7 @@ const SectionCard = ({ title, icon: Icon, children, sx }) => (
 );
 
 export default function BookingRequestDetailPage() {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const user = useUser();
@@ -102,7 +104,7 @@ export default function BookingRequestDetailPage() {
             setDetail(data);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to load booking request.");
+            toast.error(t("booking.list.toast.load_error"));
         } finally {
             setLoading(false);
         }
@@ -112,7 +114,7 @@ export default function BookingRequestDetailPage() {
         setResponding(true);
         try {
             await respondToBookingRequest(id, { isApproved: true });
-            toast.success("Booking request accepted!");
+            toast.success(t("booking.detail.toast.accepted"));
             fetchDetail();
         } catch (err) {
             toast.error(err.message || "Failed to accept.");
@@ -123,7 +125,7 @@ export default function BookingRequestDetailPage() {
 
     const handleReject = async () => {
         if (!rejectionReason.trim()) {
-            toast.error("Please provide a reason for rejection.");
+            toast.error(t("booking.detail.reject_dialog_reason_required"));
             return;
         }
         setResponding(true);
@@ -132,7 +134,7 @@ export default function BookingRequestDetailPage() {
                 isApproved: false,
                 rejectionReason: rejectionReason.trim(),
             });
-            toast.success("Booking request rejected.");
+            toast.success(t("booking.detail.toast.rejected"));
             setRejectOpen(false);
             setRejectionReason("");
             fetchDetail();
@@ -151,7 +153,7 @@ export default function BookingRequestDetailPage() {
             if (result?.checkOutUrl) {
                 window.location.href = result.checkOutUrl;
             } else {
-                toast.success("Payment completed!");
+                toast.success(t("booking.detail.toast.payment_completed"));
                 fetchDetail();
             }
         } catch (err) {
@@ -165,7 +167,7 @@ export default function BookingRequestDetailPage() {
         setCancelling(true);
         try {
             await cancelBookingRequest(id);
-            toast.success("Booking request cancelled.");
+            toast.success(t("booking.detail.toast.cancelled"));
             fetchDetail();
         } catch (err) {
             toast.error(err.message || "Failed to cancel.");
@@ -185,8 +187,8 @@ export default function BookingRequestDetailPage() {
     if (!detail) {
         return (
             <Box sx={{ textAlign: 'center', py: 10 }}>
-                <Typography variant="h5" color="text.secondary">Booking request not found.</Typography>
-                <SecondaryButton sx={{ mt: 4 }} onClick={() => navigate("/booking-requests")}>Back to list</SecondaryButton>
+                <Typography variant="h5" color="text.secondary">{t("booking.detail.not_found")}</Typography>
+                <SecondaryButton sx={{ mt: 4 }} onClick={() => navigate("/booking-requests")}>{t("booking.detail.back_to_list")}</SecondaryButton>
             </Box>
         );
     }
@@ -211,7 +213,7 @@ export default function BookingRequestDetailPage() {
                             <ArrowBackIosNewIcon sx={{ fontSize: 14, color: '#111827' }} />
                         </IconButton>
                         <Box>
-                            <Typography variant="caption" color="#94a3b8" fontWeight={700} sx={{ letterSpacing: '0.05em' }}>RETURN TO LIST</Typography>
+                            <Typography variant="caption" color="#94a3b8" fontWeight={700} sx={{ letterSpacing: '0.05em' }}>{t("booking.detail.return_to_list")}</Typography>
                         </Box>
                     </Stack>
 
@@ -224,10 +226,10 @@ export default function BookingRequestDetailPage() {
                                     loading={responding}
                                     sx={{ borderRadius: '14px', px: 4, bgcolor: '#bef264', color: '#111827', border: 'none', '&:hover': { bgcolor: '#a3e635' } }}
                                 >
-                                    Accept Request
+                                    {t("booking.detail.accept_request")}
                                 </SecondaryButton>
                                 <DangerButton onClick={() => setRejectOpen(true)} sx={{ borderRadius: '14px', px: 3 }}>
-                                    Reject
+                                    {t("booking.detail.reject")}
                                 </DangerButton>
                             </>
                         )}
@@ -240,12 +242,12 @@ export default function BookingRequestDetailPage() {
                                         loading={paying}
                                         sx={{ borderRadius: '14px', px: 4, bgcolor: '#bef264', color: '#111827', border: 'none', '&:hover': { bgcolor: '#a3e635' } }}
                                     >
-                                        Pay {detail.totalAmount?.toLocaleString()} ₫
+                                        {t("booking.detail.pay_amount", { amount: detail.totalAmount?.toLocaleString() })}
                                     </SecondaryButton>
                                 )}
                                 {(isPending || isAccepted) && (
                                     <DangerButton onClick={handleCancel} loading={cancelling} sx={{ borderRadius: '14px', px: 3 }}>
-                                        Cancel Request
+                                        {t("booking.detail.cancel_request")}
                                     </DangerButton>
                                 )}
                             </>
@@ -256,7 +258,7 @@ export default function BookingRequestDetailPage() {
                                 onClick={() => navigate("/home")}
                                 sx={{ borderRadius: '28px', px: 4, py: 1.1, bgcolor: '#bef264', color: '#0f172a', fontWeight: 900, border: 'none', boxShadow: '0 8px 24px rgba(190,242,100,0.12)', '&:hover': { bgcolor: '#a3e635' } }}
                             >
-                                Schedule Follow-up
+                                {t("booking.detail.schedule_followup")}
                             </SecondaryButton>
                         )}
                     </Stack>
@@ -265,10 +267,10 @@ export default function BookingRequestDetailPage() {
                 {/* PAGE TITLE */}
                 <Box sx={{ mb: 3 }}>
                     <Typography fontWeight={900} color="#0f172a" sx={{ letterSpacing: '-0.03em', fontSize: { xs: '2.2rem', md: '3rem' }, lineHeight: 1.1, mb: 1, fontFamily: '"Outfit", "Plus Jakarta Sans", sans-serif' }}>
-                        {isPaid ? 'Interview Results' : 'Booking Details'}
+                        {isPaid ? t("booking.detail.interview_results") : t("booking.detail.booking_details")}
                     </Typography>
                     <Typography variant="h6" color="#475569" fontWeight={700} sx={{ fontSize: '1.15rem', opacity: 0.9 }}>
-                        {'Session: '}{detail.interviewTypeName || (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? 'External Session' : 'JD Interview')}{' — '}{new Date(detail.requestedStartTime || detail.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        {t("booking.detail.session") + ": "}{detail.interviewTypeName || (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? t("booking.detail.external_session") : t("booking.detail.jd_interview"))}{' — '}{new Date(detail.requestedStartTime || detail.createdAt).toLocaleDateString(t("common.date_locale") || 'en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </Typography>
                 </Box>
 
@@ -276,26 +278,26 @@ export default function BookingRequestDetailPage() {
                 <Stack spacing={1.5}>
 
                     {/* Session Details — always full width */}
-                    <SectionCard title="Session Details" icon={InfoOutlinedIcon} sx={{ mb: 0, p: 4 }}>
+                    <SectionCard title={t("booking.detail.section_session")} icon={InfoOutlinedIcon} sx={{ mb: 0, p: 4 }}>
                         <Stack direction="row" justifyContent="space-between" sx={{ flexWrap: 'wrap', gap: 3 }}>
                             <Box sx={{ flex: '1 1 auto', minWidth: '150px' }}>
-                                <DetailItem label="CANDIDATE" value={detail.candidateName} />
+                                <DetailItem label={t("booking.detail.candidate")} value={detail.candidateName} />
                             </Box>
                             <Box sx={{ flex: '1 1 auto', minWidth: '150px' }}>
-                                <DetailItem label="COACH" value={detail.coachName} />
+                                <DetailItem label={t("booking.detail.coach")} value={detail.coachName} />
                             </Box>
                             <Box sx={{ flex: '1 1 auto', minWidth: '180px' }}>
-                                <DetailItem label="SERVICE" value={detail.interviewTypeName || (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? 'External Session' : 'JD Interview')} />
+                                <DetailItem label={t("booking.detail.service")} value={detail.interviewTypeName || (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? t("booking.detail.external_session") : t("booking.detail.jd_interview"))} />
                             </Box>
                             <Box sx={{ flex: '1 1 auto', minWidth: '120px' }}>
-                                <DetailItem label="DURATION" value="45 Minutes" />
+                                <DetailItem label={t("booking.detail.duration")} value={t("booking.detail.duration_value")} />
                             </Box>
                             <Box sx={{ flex: '1 1 auto', minWidth: '200px' }}>
-                                <DetailItem label="START TIME (LOCAL TIME)" value={new Date(detail.requestedStartTime || detail.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })} />
+                                <DetailItem label={t("booking.detail.start_time_local")} value={new Date(detail.requestedStartTime || detail.createdAt).toLocaleString(t("common.date_locale") || 'en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })} />
                             </Box>
                             {detail.rounds?.length > 0 && (
                                 <Box sx={{ flex: '1 1 auto', minWidth: '100px' }}>
-                                    <DetailItem label="ROUNDS" value={`${detail.rounds.length} rounds`} />
+                                    <DetailItem label={t("booking.detail.rounds")} value={t("booking.list.table.rounds_count", { count: detail.rounds.length })} />
                                 </Box>
                             )}
                         </Stack>
@@ -307,19 +309,19 @@ export default function BookingRequestDetailPage() {
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <LinkIcon sx={{ fontSize: 15, color: '#94a3b8' }} />
                                 <Typography variant="caption" color="#94a3b8" fontWeight={700} sx={{ letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
-                                    Documents
+                                    {t("booking.detail.documents")}
                                 </Typography>
                             </Stack>
                             {detail.jobDescriptionUrl?.length > 4 && (
                                 <Box sx={{ px: 2, py: 0.75, borderRadius: '8px', bgcolor: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', '&:hover': { bgcolor: '#f1f5f9' } }} onClick={() => window.open(detail.jobDescriptionUrl, '_blank')}>
-                                    <Typography variant="body2" fontWeight={700} color="#0f172a">Job Description</Typography>
-                                    <Typography variant="caption" sx={{ color: '#4F46E5', fontWeight: 800 }}>VIEW ↗</Typography>
+                                    <Typography variant="body2" fontWeight={700} color="#0f172a">{t("booking.detail.job_description")}</Typography>
+                                    <Typography variant="caption" sx={{ color: '#4F46E5', fontWeight: 800 }}>{t("booking.detail.view_link")}</Typography>
                                 </Box>
                             )}
                             {detail.cvUrl?.length > 4 && (
                                 <Box sx={{ px: 2, py: 0.75, borderRadius: '8px', bgcolor: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', '&:hover': { bgcolor: '#f1f5f9' } }} onClick={() => window.open(detail.cvUrl, '_blank')}>
-                                    <Typography variant="body2" fontWeight={700} color="#0f172a">Candidate CV</Typography>
-                                    <Typography variant="caption" sx={{ color: '#4F46E5', fontWeight: 800 }}>VIEW ↗</Typography>
+                                    <Typography variant="body2" fontWeight={700} color="#0f172a">{t("booking.detail.candidate_cv")}</Typography>
+                                    <Typography variant="caption" sx={{ color: '#4F46E5', fontWeight: 800 }}>{t("booking.detail.view_link")}</Typography>
                                 </Box>
                             )}
                         </Box>
@@ -327,7 +329,7 @@ export default function BookingRequestDetailPage() {
 
                     {/* Interview Rounds — show overview for multi-round sessions */}
                     {detail.rounds?.length > 1 && (
-                        <SectionCard title="Interview Rounds" icon={AssignmentIcon} sx={{ mb: 0, p: 4 }}>
+                        <SectionCard title={t("booking.detail.section_rounds")} icon={AssignmentIcon} sx={{ mb: 0, p: 4 }}>
                             <Grid container spacing={3} alignItems="stretch">
                                 {detail.rounds.map((r, i) => (
                                     <Grid item key={i} sx={{ display: 'flex' }}>
@@ -350,14 +352,14 @@ export default function BookingRequestDetailPage() {
                                             {/* Top identifier */}
                                             <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
                                                 <Box>
-                                                    <Typography variant="caption" color="#94a3b8" fontWeight={800} sx={{ letterSpacing: '0.1em', display: 'block', mb: 0.5 }}>ROUND</Typography>
+                                                    <Typography variant="caption" color="#94a3b8" fontWeight={800} sx={{ letterSpacing: '0.1em', display: 'block', mb: 0.5 }}>{t("booking.detail.round_label")}</Typography>
                                                     <Typography variant="h4" fontWeight={900} color="#0f172a" sx={{ lineHeight: 1 }}>
                                                         {String(r.roundNumber).padStart(2, '0')}
                                                     </Typography>
                                                 </Box>
                                                 <Box sx={{ py: 0.6, px: 2, borderRadius: '12px', bgcolor: '#0f172a', border: '1px solid #1e293b' }}>
                                                     <Typography variant="caption" sx={{ color: '#bef264', fontWeight: 900, fontSize: '0.7rem', letterSpacing: '0.05em' }}>
-                                                        {r.isCoding ? 'TECHNICAL' : 'GENERAL'}
+                                                        {r.isCoding ? t("booking.detail.technical") : t("booking.detail.general")}
                                                     </Typography>
                                                 </Box>
                                             </Stack>
@@ -369,17 +371,17 @@ export default function BookingRequestDetailPage() {
                                                 <Stack spacing={1}>
                                                     <Typography variant="body2" color="#64748b" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                         <AccessTimeIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
-                                                        {new Date(r.startTime).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                        {new Date(r.startTime).toLocaleString(t("common.date_locale") || 'en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                     </Typography>
                                                     <Typography variant="body2" color="#64748b" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                         <AssignmentIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
-                                                        {r.isCoding ? 'Coding Workspace included' : 'Question set focused'}
+                                                        {r.isCoding ? t("booking.detail.coding_workspace") : t("booking.detail.question_set")}
                                                     </Typography>
                                                 </Stack>
                                             </Box>
 
                                             <Box sx={{ mt: 'auto', pt: 3, borderTop: '1px dashed #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <Typography variant="body2" color="#94a3b8" fontWeight={700}>Session Price</Typography>
+                                                <Typography variant="body2" color="#94a3b8" fontWeight={700}>{t("booking.detail.session_price")}</Typography>
                                                 <Typography variant="h6" fontWeight={900} color="#0f172a">
                                                     {r.price?.toLocaleString()} ₫
                                                 </Typography>
@@ -401,7 +403,7 @@ export default function BookingRequestDetailPage() {
 
                     {/* Rejection context */}
                     {detail.status === BOOKING_REQUEST_STATUS.REJECTED && detail.rejectionReason && (
-                        <SectionCard title="Rejection Reason" icon={CloseIcon} sx={{ bgcolor: '#fff1f2', border: '1px solid #fecdd3', p: 4 }}>
+                        <SectionCard title={t("booking.detail.rejection_reason")} icon={CloseIcon} sx={{ bgcolor: '#fff1f2', border: '1px solid #fecdd3', p: 4 }}>
                             <Typography variant="body1" color="#991b1b" fontWeight={500}>{detail.rejectionReason}</Typography>
                         </SectionCard>
                     )}
@@ -410,19 +412,19 @@ export default function BookingRequestDetailPage() {
 
             {/* REJECT DIALOG */}
             <Dialog open={rejectOpen} onClose={() => setRejectOpen(false)} PaperProps={{ sx: { ...dialogStyles.paper, borderRadius: '32px' } }}>
-                <DialogTitle sx={{ fontWeight: 900, px: 4, pt: 4 }}>Reject Request</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 900, px: 4, pt: 4 }}>{t("booking.detail.reject_dialog_title")}</DialogTitle>
                 <DialogContent sx={{ px: 4 }}>
-                    <Typography variant="body2" color="#64748b" sx={{ mb: 3 }}>Please explain why you cannot accept this session.</Typography>
+                    <Typography variant="body2" color="#64748b" sx={{ mb: 3 }}>{t("booking.detail.reject_dialog_subtitle")}</Typography>
                     <FormTextField
                         fullWidth multiline rows={4}
-                        label="Reason" value={rejectionReason}
+                        label={t("booking.detail.reject_dialog_reason")} value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder="e.g., I have a prior commitment at this time..."
+                        placeholder={t("booking.detail.reject_dialog_placeholder")}
                     />
                 </DialogContent>
                 <DialogActions sx={{ px: 4, pb: 4 }}>
-                    <SecondaryButton onClick={() => setRejectOpen(false)}>Cancel</SecondaryButton>
-                    <DangerButton onClick={handleReject} loading={responding}>Confirm Reject</DangerButton>
+                    <SecondaryButton onClick={() => setRejectOpen(false)}>{t("coach.schedule.dialog.btn_cancel")}</SecondaryButton>
+                    <DangerButton onClick={handleReject} loading={responding}>{t("booking.detail.reject_dialog_confirm")}</DangerButton>
                 </DialogActions>
             </Dialog>
         </Box>

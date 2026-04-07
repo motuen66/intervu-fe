@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { fetchInterviewers, fetchCompanies, fetchSkills, setPage } from "../store/homeSlice";
 import FilterBar from "../components/FilterBar";
@@ -55,6 +56,7 @@ const workflowSteps = [
 ];
 
 function HomePage() {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const browseSectionRef = useRef(null);
     const [smartMatchOpen, setSmartMatchOpen] = useState(false);
@@ -198,7 +200,7 @@ function HomePage() {
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                 >
-                    ← Previous
+                    {t("home.pagination.prev")}
                 </button>
 
                 {startPage > 1 && (
@@ -234,7 +236,7 @@ function HomePage() {
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                 >
-                    Next →
+                    {t("home.pagination.next")}
                 </button>
             </div>
         );
@@ -247,15 +249,14 @@ function HomePage() {
                 <div className="hero-container">
                     <div className="hero-content">
                         <h1 className="hero-title">
-                            Welcome{userData?.fullName ? `, ${userData.fullName.split(" ")[0]}` : ""}
+                            {t("home.hero.welcome")}{userData?.fullName ? `, ${userData.fullName.split(" ")[0]}` : ""}
                         </h1>
-                        <p className="hero-subtitle">Expert coaching, mock interviews, and more</p>
+                        <p className="hero-subtitle">{t("home.hero.subtitle")}</p>
                         <p className="hero-description">
-                            Connect with an expert in your field to practice mock interviews, review your resume, or
-                            create a study plan.
+                            {t("home.hero.description")}
                         </p>
                         <button className="hero-cta" onClick={scrollToBrowse}>
-                            <span>Find your coach</span>
+                            <span>{t("home.hero.btn_find")}</span>
                             <ArrowRight size={18} strokeWidth={2} />
                         </button>
                         <div className="hero-rating">
@@ -270,7 +271,9 @@ function HomePage() {
                                     />
                                 ))}
                             </span>
-                            <span className="rating-text">4.8 rating from over 2,400 reviews</span>
+                            <span className="rating-text">
+                                {t("home.hero.rating_text", { rating: "4.8", count: "2,400" })}
+                            </span>
                         </div>
                     </div>
                     <div className="hero-visual">
@@ -301,7 +304,7 @@ function HomePage() {
                         marginBottom: "16px",
                     }}
                 >
-                    <h2 style={{ margin: 0 }}>Browse all coaches</h2>
+                    <h2 style={{ margin: 0 }}>{t("home.browse.title")}</h2>
                 </div>
 
                 {/* Filters */}
@@ -314,7 +317,7 @@ function HomePage() {
                 {loading && interviewersList.length === 0 ? (
                     <div className="loading-state">
                         <div className="spinner"></div>
-                        <p>Loading interviewers...</p>
+                        <p>{t("home.browse.loading")}</p>
                     </div>
                 ) : (
                     <>
@@ -329,7 +332,7 @@ function HomePage() {
                         {!loading && interviewersList.length === 0 && (
                             <div className="empty-state">
                                 <Search size={48} color="#64748B" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
-                                <p>No coaches found matching your criteria.</p>
+                                <p>{t("home.browse.no_results")}</p>
                             </div>
                         )}
 

@@ -1,4 +1,5 @@
 import toast from "react-hot-toast";
+import i18n from "../../../i18n";
 import { getNotificationConfig } from "../utils/notificationUtils";
 
 const TOAST_DURATION = 5000;
@@ -12,11 +13,11 @@ export function showNotificationToast(notification) {
     const Icon = config.icon;
 
     toast.custom(
-        (t) => (
+        (toastInstance) => (
             <div
-                className={`notification-toast ${t.visible ? "show" : "hide"}`}
+                className={`notification-toast ${toastInstance.visible ? "show" : "hide"}`}
                 onClick={() => {
-                    toast.dismiss(t.id);
+                    toast.dismiss(toastInstance.id);
                     if (notification.actionUrl) {
                         window.location.href = notification.actionUrl;
                     }
@@ -29,14 +30,21 @@ export function showNotificationToast(notification) {
                     <Icon style={{ fontSize: 20 }} />
                 </div>
                 <div className="notification-toast-body">
-                    <p className="notification-toast-title">{notification.title}</p>
-                    <p className="notification-toast-message">{notification.message}</p>
+                    <p className="notification-toast-title">
+                        {i18n.t(`notifications.types.${notification.type}.title`, { defaultValue: notification.title })}
+                    </p>
+                    <p className="notification-toast-message">
+                        {i18n.t(`notifications.types.${notification.type}.message`, { 
+                            defaultValue: notification.message,
+                            ...notification.data 
+                        })}
+                    </p>
                 </div>
                 <button
                     className="notification-toast-close"
                     onClick={(e) => {
                         e.stopPropagation();
-                        toast.dismiss(t.id);
+                        toast.dismiss(toastInstance.id);
                     }}
                 >
                     ×
