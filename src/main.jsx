@@ -11,6 +11,7 @@ import GlobalStyles from "@mui/material/GlobalStyles";
 import { theme } from "./common/constants/theme.jsx";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { initGA, trackAppOpen } from "./utils/analytics";
 
 const router = createBrowserRouter(routes);
 export const store = configureStore({ reducer: rootReducer });
@@ -28,6 +29,15 @@ const appBackground = {
     ].join(","),
     minHeight: "100vh",
 };
+
+// Initialize Google Analytics once at app startup
+initGA();
+// Emit app_open event
+try {
+    trackAppOpen();
+} catch (err) {
+    console.warn("trackAppOpen failed", err);
+}
 
 createRoot(document.getElementById("root")).render(
     <ThemeProvider theme={theme}>

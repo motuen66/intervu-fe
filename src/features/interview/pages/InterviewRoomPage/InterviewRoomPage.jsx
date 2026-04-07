@@ -18,6 +18,9 @@ import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
 import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
 
+// Analytics
+import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
+
 // ---------------------------------------------------------------------------
 // InterviewRoomPage — Clean Orchestrator
 //
@@ -55,6 +58,12 @@ function InterviewRoomPage() {
             // } else {
             setRoomInfo(room);
             setLoading(false);
+            try {
+                // Track room view (analytics)
+                trackRoomView(room?.id ?? roomId, { title: room?.title ?? room?.name, viewOnly: isViewOnly });
+            } catch (err) {
+                console.warn("trackRoomView failed", err);
+            }
             // }
         } catch (err) {
             console.error("Failed to fetch room details:", err);
@@ -237,8 +246,22 @@ function InterviewRoomPage() {
     // ── Leave room ─────────────────────────────────────────────────────────────
     const handleLeaveRoom = useCallback(() => {
         leaveRoom();
+        try {
+            trackLeaveInterviewRoom(roomId);
+        } catch (err) {
+            console.warn("trackLeaveInterviewRoom failed", err);
+        }
         navigate("/interview");
     }, [leaveRoom, navigate]);
+
+    // Ensure we emit leave event on unmount/navigation
+    useEffect(() => {
+        return () => {
+            try {
+                trackLeaveInterviewRoom(roomId);
+            } catch (err) {}
+        };
+    }, [roomId]);
 
     // ── Problem / test-case state (Interviewer editing) ───────────────────────
     const [problemDescription, setProblemDescription] = useState("");

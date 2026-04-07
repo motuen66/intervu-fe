@@ -12,6 +12,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { timeAgo } from "../../../../common/utils/dateFormatter";
+import { trackQuestionOpen } from "../../../../utils/analytics";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { commentEndPoints } from "../../service/commentApi";
@@ -195,7 +196,15 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     return (
         <Paper
             variant="outlined"
-            onClick={() => navigate(`/questions/${item.id}`)}
+            onClick={() => {
+                try {
+                    // Track question open using analytics wrapper
+                    trackQuestionOpen(item.id, { item_name: item.content });
+                } catch (err) {
+                    console.warn('trackQuestionOpen failed', err);
+                }
+                navigate(`/questions/${item.id}`);
+            }}
             sx={{
                 p: 2.5,
                 borderRadius: 2,

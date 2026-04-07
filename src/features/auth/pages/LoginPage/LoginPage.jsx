@@ -14,6 +14,7 @@ import { TextField, Typography, Box } from "@mui/material";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
 import { hasSkillGapData } from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
+import { trackLogin } from "../../../../utils/analytics";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 
@@ -103,6 +104,9 @@ function LoginPage() {
 
                 const { success, data: responseData } = response;
                 if (success) {
+                    try {
+                        trackLogin(responseData?.user?.id ?? null, "google");
+                    } catch (e) {}
                     await handleAuthSuccess(responseData);
                 }
             } finally {
@@ -176,6 +180,9 @@ function LoginPage() {
         const { success, data: responseData } = response;
 
         if (success && responseData) {
+            try {
+                trackLogin(responseData?.user?.id ?? null, "email");
+            } catch (e) {}
             await handleAuthSuccess(responseData);
         }
 
