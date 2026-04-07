@@ -389,7 +389,7 @@ export function CameraWidget({
                             )}
                             <Box sx={{ position: "absolute", bottom: 4, left: 4, bgcolor: "rgba(0,0,0,0.6)", px: 0.75, py: 0.25, borderRadius: 1 }}>
                                 <Typography variant="caption" sx={{ color: "#FFF", fontSize: "0.72rem", fontWeight: 700 }}>
-                                    {remotePeerName || "Unknown"}
+                                    {remotePeerName || "Peer"}
                                 </Typography>
                             </Box>
                             <Box sx={{ position: "absolute", top: 4, right: 4 }}>
@@ -445,7 +445,7 @@ export function CameraWidget({
                             )}
                             <Box sx={{ position: "absolute", bottom: 4, left: 4, bgcolor: "rgba(0,0,0,0.6)", px: 0.75, py: 0.25, borderRadius: 1 }}>
                                 <Typography variant="caption" sx={{ color: "#FFF", fontSize: "0.72rem", fontWeight: 700 }}>
-                                    {localPeerName || "You"}
+                                    {localPeerName ? `${localPeerName} (You)` : "You"}
                                 </Typography>
                             </Box>
                         </Box>

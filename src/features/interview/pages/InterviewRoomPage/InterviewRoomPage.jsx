@@ -165,7 +165,7 @@ function InterviewRoomPage() {
     // ── Problem / test-case state (Interviewer editing) ──────────────────────
     const [problemDescription, setProblemDescription] = useState("");
     const [problemShortName, setProblemShortName] = useState("");
-    const [testCases, setTestCases] = useState([{ inputs: [{ name: "", value: "" }], expectedOutputs: [""] }]);
+    const [testCases, setTestCases] = useState([]);
     const [receivedProblem, setReceivedProblem] = useState(null);
     const [activeTestCaseTab, setActiveTestCaseTab] = useState(0);
     const [isEditingProblem, setIsEditingProblem] = useState(false);
@@ -173,7 +173,9 @@ function InterviewRoomPage() {
 
     const problemData =
         user?.role === ROLES.INTERVIEWER
-            ? { description: problemDescription, shortName: problemShortName, testCases }
+            ? ((problemDescription && problemDescription !== "<p><br></p>") || (problemShortName && problemShortName.trim() !== "") 
+                ? { description: problemDescription, shortName: problemShortName, testCases } 
+                : null)
             : receivedProblem;
 
     const sendProblem = useCallback(() => {
@@ -219,7 +221,6 @@ function InterviewRoomPage() {
         });
     };
     const removeTestCase = (idx) => {
-        if (testCases.length <= 1) return;
         setTestCases((prev) => {
             const next = prev.filter((_, i) => i !== idx);
             setActiveTestCaseTab((t) => Math.max(0, t >= idx ? t - 1 : t));
@@ -259,15 +260,11 @@ function InterviewRoomPage() {
             if (state) {
                 setProblemDescription(state.problemDescription ?? "");
                 setProblemShortName(state.problemShortName ?? "");
-                setTestCases(
-                    state.testCases?.length
-                        ? state.testCases
-                        : [{ inputs: [{ name: "", value: "" }], expectedOutputs: [""] }],
-                );
+                setTestCases(state.testCases ?? []);
                 setReceivedProblem({
                     description: state.problemDescription,
                     shortName: state.problemShortName,
-                    testCases: state.testCases,
+                    testCases: state.testCases ?? [],
                 });
                 if (state.peerCameraStates) {
                     const remoteEntries = Object.entries(state.peerCameraStates).filter(([id]) => id !== connectionId);
@@ -362,22 +359,21 @@ function InterviewRoomPage() {
     const [notesPos, setNotesPos] = useState({ x: 80, y: 80 });
 
     // ── Timer ────────────────────────────────────────────────────────────────
-    const timerRef = useRef(TIMER_SECONDS);
-    const [displayTime, setDisplayTime] = useState("45:00");
-    const [timerExpired, setTimerExpired] = useState(false);
+    const elapsedSecondsRef = useRef(0);
+    const [displayTime, setDisplayTime] = useState("00:00");
 
     useEffect(() => {
         const interval = setInterval(() => {
-            if (timerRef.current <= 0) {
-                setTimerExpired(true);
-                setDisplayTime("0:00");
-                clearInterval(interval);
-                return;
+            elapsedSecondsRef.current += 1;
+            const h = Math.floor(elapsedSecondsRef.current / 3600);
+            const m = Math.floor((elapsedSecondsRef.current % 3600) / 60);
+            const s = elapsedSecondsRef.current % 60;
+
+            if (h > 0) {
+                setDisplayTime(`${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
+            } else {
+                setDisplayTime(`${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
             }
-            timerRef.current -= 1;
-            const m = Math.floor(timerRef.current / 60);
-            const s = timerRef.current % 60;
-            setDisplayTime(`${m}:${s.toString().padStart(2, "0")}`);
         }, 1000);
         return () => clearInterval(interval);
     }, []);
@@ -518,13 +514,13 @@ function InterviewRoomPage() {
             >
                 {/* Left: Timer */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccessTimeIcon sx={{ fontSize: 20, color: timerExpired ? "#E11D48" : "#6B7280" }} />
+                    <AccessTimeIcon sx={{ fontSize: 20, color: "#6B7280" }} />
                     <Typography
                         variant="h6"
                         sx={{
                             fontWeight: 700,
                             fontSize: "1.1rem",
-                            color: timerExpired ? "#E11D48" : "#111827",
+                            color: "#111827",
                             fontVariantNumeric: "tabular-nums",
                         }}
                     >
@@ -540,7 +536,7 @@ function InterviewRoomPage() {
                     <HeaderToggle
                         id="header-toggle-editor"
                         icon={<CodeIcon sx={{ fontSize: 18 }} />}
-                        label="Code Editor"
+                        label="Workspace"
                         active={showPanelA}
                         onClick={() => setShowPanelA((v) => !v)}
                     />

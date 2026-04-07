@@ -86,151 +86,151 @@ function QuestionPanel({
                         </Typography>
                         {editButton}
                     </Stack>
-                <Box sx={{ flex: 1, overflow: "auto", p: 2, display: "flex", flexDirection: "column" }}>
-                    <TextField
-                        label="Function Name (e.g., twoSum)"
-                        value={problemShortName}
-                        onChange={(e) => setProblemShortName(e.target.value)}
-                        size="small"
-                        variant="outlined"
-                        sx={{ mb: 2 }}
-                    />
-                    <Box sx={{ mb: 2, ".ql-container": { height: "200px" } }}>
-                        <ReactQuill
-                            theme="snow"
-                            value={problemDescription}
-                            onChange={setProblemDescription}
-                            modules={quillModules}
+                    <Box sx={{ flex: 1, overflow: "auto", p: 2, display: "flex", flexDirection: "column" }}>
+                        <TextField
+                            label="Function Name (e.g., twoSum)"
+                            value={problemShortName}
+                            onChange={(e) => setProblemShortName(e.target.value)}
+                            size="small"
+                            variant="outlined"
+                            sx={{ mb: 2 }}
                         />
-                    </Box>
-                    <Typography variant="h6" sx={{ mb: 1 }}>
-                        Test Cases
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", borderBottom: 1, borderColor: "divider" }}>
-                        <Tabs
-                            value={activeTestCaseTab}
-                            onChange={(e, newValue) => setActiveTestCaseTab(newValue)}
-                            variant="scrollable"
-                            scrollButtons="auto"
-                        >
-                            {testCases?.map((_, index) => (
-                                <Tab
-                                    key={index}
-                                    label={
-                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                            <Typography variant="body2">Case {index + 1}</Typography>
-                                            {testCases.length > 1 && (
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        removeTestCase(index);
-                                                    }}
-                                                >
-                                                    <CloseIcon fontSize="small" />
-                                                </IconButton>
-                                            )}
+                        <Box sx={{ mb: 2, ".ql-container": { height: "200px" } }}>
+                            <ReactQuill
+                                theme="snow"
+                                value={problemDescription}
+                                onChange={setProblemDescription}
+                                modules={quillModules}
+                            />
+                        </Box>
+                        <Typography variant="h6" sx={{ mb: 1 }}>
+                            Test Cases
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", borderBottom: 1, borderColor: "divider" }}>
+                            <Tabs
+                                value={activeTestCaseTab}
+                                onChange={(e, newValue) => setActiveTestCaseTab(newValue)}
+                                variant="scrollable"
+                                scrollButtons="auto"
+                            >
+                                {testCases?.map((_, index) => (
+                                    <Tab
+                                        key={index}
+                                        label={
+                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                                <Typography variant="body2">Case {index + 1}</Typography>
+                                                {testCases.length > 1 && (
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            removeTestCase(index);
+                                                        }}
+                                                    >
+                                                        <CloseIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
+                                            </Stack>
+                                        }
+                                    />
+                                ))}
+                            </Tabs>
+                            <Tooltip title="Add Test Case">
+                                <IconButton onClick={addTestCase} size="small">
+                                    <AddIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                        <Box sx={{ pt: 2 }}>
+                            {testCases[activeTestCaseTab] && (
+                                <Stack spacing={2}>
+                                    <Typography variant="subtitle2">Inputs</Typography>
+                                    {testCases[activeTestCaseTab].inputs.map((input, inputIndex) => (
+                                        <Stack direction="row" spacing={1} key={inputIndex} alignItems="center">
+                                            <TextField
+                                                label="Name"
+                                                size="small"
+                                                value={input.name}
+                                                onChange={(e) =>
+                                                    handleTestCaseInputChange(
+                                                        activeTestCaseTab,
+                                                        inputIndex,
+                                                        "name",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                            <TextField
+                                                label="Value"
+                                                size="small"
+                                                fullWidth
+                                                value={input.value}
+                                                onChange={(e) =>
+                                                    handleTestCaseInputChange(
+                                                        activeTestCaseTab,
+                                                        inputIndex,
+                                                        "value",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => removeInputFromTestCase(activeTestCaseTab, inputIndex)}
+                                                disabled={testCases[activeTestCaseTab].inputs.length <= 1}
+                                            >
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
                                         </Stack>
-                                    }
-                                />
-                            ))}
-                        </Tabs>
-                        <Tooltip title="Add Test Case">
-                            <IconButton onClick={addTestCase} size="small">
-                                <AddIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                    <Box sx={{ pt: 2 }}>
-                        {testCases[activeTestCaseTab] && (
-                            <Stack spacing={2}>
-                                <Typography variant="subtitle2">Inputs</Typography>
-                                {testCases[activeTestCaseTab].inputs.map((input, inputIndex) => (
-                                    <Stack direction="row" spacing={1} key={inputIndex} alignItems="center">
-                                        <TextField
-                                            label="Name"
-                                            size="small"
-                                            value={input.name}
-                                            onChange={(e) =>
-                                                handleTestCaseInputChange(
-                                                    activeTestCaseTab,
-                                                    inputIndex,
-                                                    "name",
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                        <TextField
-                                            label="Value"
-                                            size="small"
-                                            fullWidth
-                                            value={input.value}
-                                            onChange={(e) =>
-                                                handleTestCaseInputChange(
-                                                    activeTestCaseTab,
-                                                    inputIndex,
-                                                    "value",
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => removeInputFromTestCase(activeTestCaseTab, inputIndex)}
-                                            disabled={testCases[activeTestCaseTab].inputs.length <= 1}
-                                        >
-                                            <CloseIcon fontSize="small" />
-                                        </IconButton>
-                                    </Stack>
-                                ))}
-                                <Button
-                                    size="small"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => addInputToTestCase(activeTestCaseTab)}
-                                >
-                                    Add Input
-                                </Button>
+                                    ))}
+                                    <Button
+                                        size="small"
+                                        startIcon={<AddIcon />}
+                                        onClick={() => addInputToTestCase(activeTestCaseTab)}
+                                    >
+                                        Add Input
+                                    </Button>
 
-                                <Typography variant="subtitle2" sx={{ mt: 2 }}>
-                                    Expected Outputs
-                                </Typography>
-                                {testCases[activeTestCaseTab].expectedOutputs.map((output, outputIndex) => (
-                                    <Stack direction="row" spacing={1} key={outputIndex} alignItems="center">
-                                        <TextField
-                                            label={`Valid Answer #${outputIndex + 1}`}
-                                            fullWidth
-                                            value={output}
-                                            onChange={(e) =>
-                                                handleTestCaseOutputChange(
-                                                    activeTestCaseTab,
-                                                    outputIndex,
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => removeExpectedOutput(activeTestCaseTab, outputIndex)}
-                                            disabled={testCases[activeTestCaseTab].expectedOutputs.length <= 1}
-                                        >
-                                            <CloseIcon fontSize="small" />
-                                        </IconButton>
-                                    </Stack>
-                                ))}
-                                <Button
-                                    size="small"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => addExpectedOutput(activeTestCaseTab)}
-                                >
-                                    Add Valid Answer
-                                </Button>
-                            </Stack>
-                        )}
+                                    <Typography variant="subtitle2" sx={{ mt: 2 }}>
+                                        Expected Outputs
+                                    </Typography>
+                                    {testCases[activeTestCaseTab].expectedOutputs.map((output, outputIndex) => (
+                                        <Stack direction="row" spacing={1} key={outputIndex} alignItems="center">
+                                            <TextField
+                                                label={`Valid Answer #${outputIndex + 1}`}
+                                                fullWidth
+                                                value={output}
+                                                onChange={(e) =>
+                                                    handleTestCaseOutputChange(
+                                                        activeTestCaseTab,
+                                                        outputIndex,
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => removeExpectedOutput(activeTestCaseTab, outputIndex)}
+                                                disabled={testCases[activeTestCaseTab].expectedOutputs.length <= 1}
+                                            >
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
+                                        </Stack>
+                                    ))}
+                                    <Button
+                                        size="small"
+                                        startIcon={<AddIcon />}
+                                        onClick={() => addExpectedOutput(activeTestCaseTab)}
+                                    >
+                                        Add Valid Answer
+                                    </Button>
+                                </Stack>
+                            )}
+                        </Box>
+                        <Button onClick={sendProblem} variant="contained" sx={{ mt: 2, mb: 1 }}>
+                            Send Problem to Candidate
+                        </Button>
                     </Box>
-                    <Button onClick={sendProblem} variant="contained" sx={{ mt: 2, mb: 1 }}>
-                        Send Problem to Candidate
-                    </Button>
-                </Box>
                 </>
             ) : (
                 // DISPLAY VIEW (Both roles)
@@ -264,8 +264,8 @@ function QuestionPanel({
                                 },
                             }}
                         >
-                            <Tab label={problemData?.shortName || "Problem"} />
-                            <Tab label="Test Cases" disabled={!problemData} />
+                            <Tab label={"Problem"} />
+                            <Tab label="Test Cases" />
                         </Tabs>
                         {editButton}
                     </Stack>
@@ -295,48 +295,62 @@ function QuestionPanel({
                                 </Stack>
                             )
                         )}
-                        {problemTab === 1 && problemData && (
-                            <Stack spacing={2}>
-                                {problemData?.testCases?.map((tc, index) => (
-                                    <Paper key={index} elevation={0} sx={{ p: 2, border: "1px solid #E5E7EB" }}>
-                                        <Typography variant="subtitle2" gutterBottom>
-                                            Test Case {index + 1}
+                        {problemTab === 1 && (
+                            !problemData || !problemData.testCases?.length ? (
+                                <Stack alignItems="center" justifyContent="center" spacing={1.5} sx={{ py: 6, color: "#9CA3AF" }}>
+                                    <QuizIcon sx={{ fontSize: 40, color: "#D1D5DB" }} />
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#6B7280" }}>
+                                        No Test Cases Available
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "#9CA3AF", textAlign: "center", maxWidth: 280 }}>
+                                        {user?.role === ROLES.INTERVIEWER
+                                            ? "Click \"Edit\" to create test cases and send them along with the problem."
+                                            : "Test cases will appear here once the interviewer assigns a problem."}
+                                    </Typography>
+                                </Stack>
+                            ) : (
+                                <Stack spacing={2}>
+                                    {problemData.testCases.map((tc, index) => (
+                                        <Paper key={index} elevation={0} sx={{ p: 2, border: "1px solid #E5E7EB" }}>
+                                            <Typography variant="subtitle2" gutterBottom>
+                                                Test Case {index + 1}
+                                            </Typography>
+                                            {tc.inputs.map((input, inputIndex) => (
+                                                <Box key={inputIndex} sx={{ mb: 1 }}>
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{ color: "text.secondary", fontWeight: "bold" }}
+                                                    >
+                                                        {input.name}
+                                                    </Typography>
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: "monospace",
+                                                            whiteSpace: "pre-wrap",
+                                                            background: "#f5f5f5",
+                                                            p: 1,
+                                                            borderRadius: 1,
+                                                            border: "1px solid #E5E7EB",
+                                                            wordBreak: "break-all"
+                                                        }}
+                                                    >
+                                                        {input.value}
+                                                    </Typography>
+                                                </Box>
+                                            ))}
+                                        </Paper>
+                                    ))}
+                                    <Paper elevation={0} sx={{ p: 2, mt: 2, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 2 }}>
+                                        <Typography variant="subtitle2" gutterBottom sx={{ color: "#2C5282" }}>
+                                            Expected Outputs
                                         </Typography>
-                                        {tc.inputs.map((input, inputIndex) => (
-                                            <Box key={inputIndex} sx={{ mb: 1 }}>
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{ color: "text.secondary", fontWeight: "bold" }}
-                                                >
-                                                    {input.name}
-                                                </Typography>
-                                                <Typography
-                                                    sx={{
-                                                        fontFamily: "monospace",
-                                                        whiteSpace: "pre-wrap",
-                                                        background: "#f5f5f5",
-                                                        p: 1,
-                                                        borderRadius: 1,
-                                                        border: "1px solid #E5E7EB",
-                                                        wordBreak: "break-all"
-                                                    }}
-                                                >
-                                                    {input.value}
-                                                </Typography>
-                                            </Box>
-                                        ))}
+                                        <Typography variant="caption" sx={{ color: "#2B6CB0" }}>
+                                            The candidate's code output must match one of the valid answers provided by the
+                                            interviewer.
+                                        </Typography>
                                     </Paper>
-                                ))}
-                                <Paper elevation={0} sx={{ p: 2, mt: 2, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 2 }}>
-                                    <Typography variant="subtitle2" gutterBottom sx={{ color: "#2C5282" }}>
-                                        Expected Outputs
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: "#2B6CB0" }}>
-                                        The candidate's code output must match one of the valid answers provided by the
-                                        interviewer.
-                                    </Typography>
-                                </Paper>
-                            </Stack>
+                                </Stack>
+                            )
                         )}
                     </Box>
                 </>
