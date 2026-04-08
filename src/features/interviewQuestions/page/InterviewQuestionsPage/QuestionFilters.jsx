@@ -1,5 +1,6 @@
-﻿import { Box, FormControl, InputAdornment, MenuItem, OutlinedInput, Select } from "@mui/material";
+import { Box, FormControl, InputAdornment, MenuItem, OutlinedInput } from "@mui/material";
 import WhatshotIcon from "@mui/icons-material/Whatshot";
+import FormSelect from "../../../../common/components/form/FormSelect";
 import { CATEGORIES, LEVELS, ROLES, ROUNDS, SORT_OPTIONS } from "../../../../common/constants/types";
 
 // const pillSx = { borderRadius: 999 };
@@ -8,7 +9,7 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
     return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 3, flexWrap: "wrap" }}>
             <FormControl size="small">
-                <Select
+                <FormSelect
                     displayEmpty
                     value={filters.role}
                     onChange={(e) => onChange("role", e.target.value)}
@@ -21,11 +22,11 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                             {r.label}
                         </MenuItem>
                     ))}
-                </Select>
+                </FormSelect>
             </FormControl>
 
             <FormControl size="small">
-                <Select
+                <FormSelect
                     displayEmpty
                     value={filters.category}
                     onChange={(e) => onChange("category", e.target.value)}
@@ -40,11 +41,11 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                             {c.label}
                         </MenuItem>
                     ))}
-                </Select>
+                </FormSelect>
             </FormControl>
 
             <FormControl size="small">
-                <Select
+                <FormSelect
                     displayEmpty
                     value={filters.companyId}
                     onChange={(e) => onChange("companyId", e.target.value)}
@@ -60,11 +61,11 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                             {c.name}
                         </MenuItem>
                     ))}
-                </Select>
+                </FormSelect>
             </FormControl>
 
             <FormControl size="small">
-                <Select
+                <FormSelect
                     displayEmpty
                     value={filters.level}
                     onChange={(e) => onChange("level", e.target.value)}
@@ -77,11 +78,11 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                             {l.label}
                         </MenuItem>
                     ))}
-                </Select>
+                </FormSelect>
             </FormControl>
 
             <FormControl size="small">
-                <Select
+                <FormSelect
                     displayEmpty
                     value={filters.round}
                     onChange={(e) => onChange("round", e.target.value)}
@@ -97,11 +98,11 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                             {r.label}
                         </MenuItem>
                     ))}
-                </Select>
+                </FormSelect>
             </FormControl>
 
             <FormControl size="small" sx={{ ml: "auto" }}>
-                <Select
+                <FormSelect
                     value={filters.sortBy}
                     onChange={(e) => onChange("sortBy", e.target.value)}
                     input={<OutlinedInput />}
@@ -118,7 +119,7 @@ export default function QuestionFilters({ filters, onChange, companies = [] }) {
                             {s.label}
                         </MenuItem>
                     ))}
-                </Select>
+                </FormSelect>
             </FormControl>
         </Box>
     );

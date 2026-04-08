@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Box, TextField, Typography, Modal, Card, Stack, FormControl, Select, MenuItem, Chip } from "@mui/material";
+import { Box, TextField, Typography, Modal, Card, Stack, FormControl, MenuItem, Chip } from "@mui/material";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
 import toast from "react-hot-toast";
 import StatusChip from "../../../../common/components/StatusChip";
+
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 const CreateAvailableSlotDialog = ({
     open,
@@ -130,7 +132,7 @@ const CreateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select
+                                    <FormSelect
                                         value={formData.startHour}
                                         onChange={(e) =>
                                             setFormData({ ...formData, startHour: Number(e.target.value) })
@@ -142,11 +144,11 @@ const CreateAvailableSlotDialog = ({
                                                 {hour.toString().padStart(2, "0")}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select
+                                    <FormSelect
                                         value={formData.startMinute}
                                         onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
                                         sx={{ borderRadius: "8px" }}
@@ -156,7 +158,7 @@ const CreateAvailableSlotDialog = ({
                                                 {minute.toString().padStart(2, "0")}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                             </Stack>
                         </Box>
@@ -167,7 +169,7 @@ const CreateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select
+                                    <FormSelect
                                         value={formData.endHour}
                                         onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
                                         sx={{ borderRadius: "8px" }}
@@ -177,11 +179,11 @@ const CreateAvailableSlotDialog = ({
                                                 {hour.toString().padStart(2, "0")}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select
+                                    <FormSelect
                                         value={formData.endMinute}
                                         onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
                                         sx={{ borderRadius: "8px" }}
@@ -191,7 +193,7 @@ const CreateAvailableSlotDialog = ({
                                                 {minute.toString().padStart(2, "0")}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                             </Stack>
                         </Box>

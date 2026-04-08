@@ -25,7 +25,10 @@ import {
     DialogContent,
     DialogActions,
     Divider,
+    FormControl,
+    InputLabel,
 } from "@mui/material";
+import FormSelect from "../../../common/components/form/FormSelect";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
@@ -465,20 +468,22 @@ const PaymentHistoryPage = () => {
                                 sx={{ flex: 1, bgcolor: 'white', borderRadius: 2 }}
                                 variant="outlined"
                             />
-                            <TextField
-                                select
-                                label="Status"
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                size="small"
-                                sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2 }}
-                            >
-                                <MenuItem value="ALL">All Status</MenuItem>
-                                <MenuItem value="COMPLETED">Completed</MenuItem>
-                                <MenuItem value="PENDING">Pending</MenuItem>
-                                <MenuItem value="FAILED">Failed</MenuItem>
-                                <MenuItem value="REFUNDED">Refunded</MenuItem>
-                            </TextField>
+                            <FormControl size="small" sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2 }}>
+                                <InputLabel id="history-page-status-label">Status</InputLabel>
+                                <FormSelect
+                                    labelId="history-page-status-label"
+                                    label="Status"
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    sx={{ borderRadius: 2 }}
+                                >
+                                    <MenuItem value="ALL">All Status</MenuItem>
+                                    <MenuItem value="COMPLETED">Completed</MenuItem>
+                                    <MenuItem value="PENDING">Pending</MenuItem>
+                                    <MenuItem value="FAILED">Failed</MenuItem>
+                                    <MenuItem value="REFUNDED">Refunded</MenuItem>
+                                </FormSelect>
+                            </FormControl>
                         </Stack>
 
                         {/* Table */}
