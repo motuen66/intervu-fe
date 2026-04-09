@@ -21,6 +21,8 @@ import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import FormTextField from "../../../../common/components/form/FormTextField";
 
+const DURATION_OPTIONS = Array.from({ length: 10 }, (_, i) => (i + 1) * 30);
+
 export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) {
     const [form, setForm] = useState({
         name: "",
@@ -118,12 +120,7 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            maxWidth="md"
-            fullWidth
-        >
+        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle
                 sx={{
                     fontWeight: 700,
@@ -196,13 +193,19 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
+                                select
                                 label="Suggested Duration (minutes)"
-                                type="number"
                                 value={form.suggestedDurationMinutes}
                                 onChange={(e) => setForm({ ...form, suggestedDurationMinutes: Number(e.target.value) })}
-                                inputProps={{ min: 0 }}
                                 required
-                            />
+                                helperText="30-minute blocks only (30 to 300 minutes)"
+                            >
+                                {DURATION_OPTIONS.map((duration) => (
+                                    <MenuItem key={duration} value={duration}>
+                                        {duration} minutes
+                                    </MenuItem>
+                                ))}
+                            </FormTextField>
                         </Grid>
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
@@ -237,9 +240,7 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
                         </Grid>
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
-                                <Typography sx={{ fontWeight: 600, color: "#111827" }}>
-                                    Evaluation structure
-                                </Typography>
+                                <Typography sx={{ fontWeight: 600, color: "#111827" }}>Evaluation structure</Typography>
                             </Box>
 
                             <Box display="flex" flexDirection="column" gap={2}>

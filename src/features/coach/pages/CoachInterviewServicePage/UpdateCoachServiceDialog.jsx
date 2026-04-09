@@ -12,6 +12,9 @@ import { updateCoachInterviewService } from "../../services/coachInterviewServic
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { MenuItem } from "@mui/material";
+
+const DURATION_OPTIONS = Array.from({ length: 10 }, (_, i) => (i + 1) * 30);
 
 export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdated }) {
     const [form, setForm] = useState({
@@ -35,6 +38,10 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
         setError("");
         if (form.durationMinutes < 15 || form.durationMinutes > 300) {
             setError("Duration must be between 15 and 300 minutes.");
+            return;
+        }
+        if (form.durationMinutes % 30 !== 0) {
+            setError("Duration must be a multiple of 30 minutes.");
             return;
         }
 
@@ -121,14 +128,19 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
                                 fullWidth
+                                select
                                 label="Duration (minutes)"
-                                type="number"
                                 value={form.durationMinutes}
                                 onChange={(e) => setForm({ ...form, durationMinutes: Number(e.target.value) })}
-                                inputProps={{ min: 15, max: 300 }}
                                 required
-                                helperText="Between 15 and 300 minutes"
-                            />
+                                helperText="30-minute blocks only (30 to 300 minutes)"
+                            >
+                                {DURATION_OPTIONS.map((duration) => (
+                                    <MenuItem key={duration} value={duration}>
+                                        {duration} minutes
+                                    </MenuItem>
+                                ))}
+                            </FormTextField>
                         </Grid>
                     </Grid>
 
