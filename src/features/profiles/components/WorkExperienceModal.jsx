@@ -11,7 +11,6 @@ import {
     Autocomplete,
     Box,
     MenuItem,
-    Select,
     FormControl,
     InputLabel,
     FormHelperText,
@@ -20,6 +19,7 @@ import {
 } from "@mui/material";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import { CompanyLogo } from "../../../common/utils/logoImageGenerator";
+import FormSelect from "../../../common/components/form/FormSelect";
 
 const EMPLOYMENT_TYPES = [
     "Full-time",
@@ -210,7 +210,7 @@ const WorkExperienceModal = ({
 
                     <FormControl fullWidth>
                         <InputLabel>Employment type</InputLabel>
-                        <Select
+                        <FormSelect
                             value={formData.employmentType}
                             label="Employment type"
                             onChange={(e) => setFormData({ ...formData, employmentType: e.target.value })}
@@ -221,7 +221,7 @@ const WorkExperienceModal = ({
                                     {type}
                                 </MenuItem>
                             ))}
-                        </Select>
+                        </FormSelect>
                     </FormControl>
 
                     <Autocomplete
@@ -301,7 +301,7 @@ const WorkExperienceModal = ({
 
                     <FormControl fullWidth>
                         <InputLabel>Location type</InputLabel>
-                        <Select
+                        <FormSelect
                             value={formData.locationType}
                             label="Location type"
                             onChange={(e) => setFormData({ ...formData, locationType: e.target.value })}
@@ -312,7 +312,7 @@ const WorkExperienceModal = ({
                                     {type}
                                 </MenuItem>
                             ))}
-                        </Select>
+                        </FormSelect>
                         <FormHelperText>Select the location type (e.g. Remote)</FormHelperText>
                     </FormControl>
 

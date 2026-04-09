@@ -1,4 +1,4 @@
-import { Box, CircularProgress, IconButton, MenuItem, Paper, Select, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, CircularProgress, IconButton, MenuItem, Paper, Stack, Tooltip, Typography } from "@mui/material";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import CodeIcon from "@mui/icons-material/Code";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -8,6 +8,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import Editor from "@monaco-editor/react";
 import { useEffect, useRef, useState } from "react";
 import { ROLES } from "../../../../common/constants/common.js";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 function CodeEditorPanel({
     languages,
@@ -121,7 +122,7 @@ function CodeEditorPanel({
                 }}
             >
                 {user?.role === ROLES.CANDIDATE ? (
-                    <Select
+                    <FormSelect
                         value={language}
                         onChange={handleLanguageChange}
                         size="small"
@@ -132,7 +133,7 @@ function CodeEditorPanel({
                                 {lang === 'javascript' ? 'JavaScript (Node.js 18)' : lang.charAt(0).toUpperCase() + lang.slice(1)}
                             </MenuItem>
                         ))}
-                    </Select>
+                    </FormSelect>
                 ) : (
                     <Typography variant="caption" sx={{ px: 1, color: '#6B7280', fontWeight: 600 }}>
                         {language === 'javascript' ? 'JavaScript (Node.js 18)' : language.charAt(0).toUpperCase() + language.slice(1)}

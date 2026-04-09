@@ -1,6 +1,6 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Box, Button, Checkbox, FormControlLabel, MenuItem, Select, Stack, Typography } from "@mui/material";
+import { Box, Button, Checkbox, FormControlLabel, MenuItem, Stack, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import "./ShareExperiencePage.css";
 import { LEVELS, ROLES, ROUNDS } from "../../../../common/constants/types";
 import QuestionRow from "./QuestionRow";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 const emptyQuestion = () => ({ type: "", question: "", answer: "", linkedQuestion: null });
 
@@ -195,7 +196,7 @@ export default function ShareExperiencePage() {
             {/* Company */}
             <Box mb={2.75}>
                 <Typography sx={labelSx}>Company *</Typography>
-                <Select
+                <FormSelect
                     displayEmpty
                     value={companyId}
                     onChange={(e) => setCompanyId(e.target.value)}
@@ -217,14 +218,14 @@ export default function ShareExperiencePage() {
                             {c.name}
                         </MenuItem>
                     ))}
-                </Select>
+                </FormSelect>
             </Box>
 
             {/* Role / Level / Last Round */}
             <Stack direction={{ xs: "column", sm: "row" }} gap={1.75} mb={2.75}>
                 <Box flex={1}>
                     <Typography sx={labelSx}>Role *</Typography>
-                    <Select
+                    <FormSelect
                         displayEmpty
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
@@ -245,7 +246,7 @@ export default function ShareExperiencePage() {
                                 {r.label}
                             </MenuItem>
                         ))}
-                    </Select>
+                    </FormSelect>
                 </Box>
                 <Box flex={1}>
                     <Typography sx={labelSx}>
@@ -257,7 +258,7 @@ export default function ShareExperiencePage() {
                             (optional)
                         </Box>
                     </Typography>
-                    <Select
+                    <FormSelect
                         displayEmpty
                         value={level}
                         onChange={(e) => setLevel(e.target.value)}
@@ -278,11 +279,11 @@ export default function ShareExperiencePage() {
                                 {l.label}
                             </MenuItem>
                         ))}
-                    </Select>
+                    </FormSelect>
                 </Box>
                 <Box flex={1}>
                     <Typography sx={labelSx}>Last Round Completed *</Typography>
-                    <Select
+                    <FormSelect
                         displayEmpty
                         value={lastRound}
                         onChange={(e) => setLastRound(e.target.value)}
@@ -303,7 +304,7 @@ export default function ShareExperiencePage() {
                                 {r.label}
                             </MenuItem>
                         ))}
-                    </Select>
+                    </FormSelect>
                 </Box>
             </Stack>
 

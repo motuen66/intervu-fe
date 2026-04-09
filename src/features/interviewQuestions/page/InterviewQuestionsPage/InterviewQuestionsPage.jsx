@@ -1,6 +1,6 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Button, CircularProgress, MenuItem, Pagination, Select, Stack, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, MenuItem, Pagination, Stack, Typography } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -9,6 +9,7 @@ import { homeEndPoints } from "../../../home/services/homeApi";
 import QuestionCard from "./QuestionCard";
 import QuestionFilters from "./QuestionFilters";
 import QuestionSidebar from "./QuestionSidebar";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 export default function InterviewQuestionsPage() {
     const navigate = useNavigate();
@@ -180,7 +181,7 @@ export default function InterviewQuestionsPage() {
                                     <Typography variant="body2" color="text.secondary" noWrap>
                                         Per page:
                                     </Typography>
-                                    <Select
+                                    <FormSelect
                                         size="small"
                                         value={pageSize}
                                         onChange={(e) => setPageSize(Number(e.target.value))}
@@ -191,7 +192,7 @@ export default function InterviewQuestionsPage() {
                                                 {n}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </Stack>
                             </Stack>
                         </>
