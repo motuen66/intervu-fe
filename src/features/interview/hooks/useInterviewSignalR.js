@@ -2,6 +2,11 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { BE_BASE_URL } from "../../../common/constants/env";
 
+// Timeline diagnostic — module-level T0 for relative timestamps
+const T0 = Date.now();
+const tLog = (tag, ...args) =>
+  console.log(`[${tag} T+${Date.now() - T0}ms]`, ...args);
+
 // ---------------------------------------------------------------------------
 // useInterviewSignalR
 //
@@ -31,6 +36,7 @@ import { BE_BASE_URL } from "../../../common/constants/env";
 //       onReceiveProblem:       (desc, shortName, testCases) => void
 //       onReceiveExecutionResult: (result) => void
 //       onReceiveTestResults:   (results) => void
+//       onReceiveWhiteboardState: (elementsJson, appStateJson) => void
 //   }>
 //
 // Outputs
@@ -99,7 +105,7 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
     // ── Peer presence ──────────────────────────────────────────────────────
 
     conn.on("UserJoined", (id) => {
-      console.log("[SignalR] UserJoined:", id);
+      tLog("SignalR", "UserJoined:", id);
       setPeers((prev) => {
         if (prev.includes(id)) return prev;
         return [...prev, id];
@@ -108,13 +114,13 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
     });
 
     conn.on("UserLeft", (id) => {
-      console.log("[SignalR] UserLeft:", id);
+      tLog("SignalR", "UserLeft:", id);
       setPeers((prev) => prev.filter((x) => x !== id));
       callbacks.current?.onPeerLeave?.(id);
     });
 
     conn.on("ExistingPeers", (existing) => {
-      console.log("[SignalR] ExistingPeers:", existing);
+      tLog("SignalR", "ExistingPeers:", existing);
       setPeers(existing);
       // Initiate a WebRTC connection to every peer already in the room
       for (const peerId of existing) {
@@ -125,7 +131,7 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
     // ── Room state ─────────────────────────────────────────────────────────
 
     conn.on("ReceiveFullState", (state) => {
-      console.log("[SignalR] ReceiveFullState:", state);
+      tLog("SignalR", "ReceiveFullState received");
       setRoomState(state);
       callbacks.current?.onReceiveFullState?.(state);
     });
@@ -133,12 +139,12 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
     // ── WebRTC signaling ───────────────────────────────────────────────────
 
     conn.on("ReceiveOffer", (fromId, sdp) => {
-      console.log("[SignalR] ReceiveOffer from:", fromId);
+      tLog("SignalR", "ReceiveOffer from:", fromId);
       callbacks.current?.onOffer?.(fromId, sdp);
     });
 
     conn.on("ReceiveAnswer", (fromId, sdp) => {
-      console.log("[SignalR] ReceiveAnswer from:", fromId);
+      tLog("SignalR", "ReceiveAnswer from:", fromId);
       callbacks.current?.onAnswer?.(fromId, sdp);
     });
 
@@ -177,14 +183,25 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       callbacks.current?.onReceiveMicState?.(fromId, isOn);
     });
 
+    // ── Whiteboard sync ────────────────────────────────────────────────────
+    // Server now sends only elements (single arg). Keep accepting 2 args for
+    // backward compat but only forward elementsJson to the callback.
+    conn.on("ReceiveWhiteboardState", (elementsJson, _appStateJson) => {
+      callbacks.current?.onReceiveWhiteboardState?.(elementsJson);
+    });
+
     // ── Start the connection ───────────────────────────────────────────────
     conn
       .start()
       .then(() => {
         const id = conn.connectionId;
-        console.log("[SignalR] Connected, id:", id);
+        tLog("SignalR", "Connected, id:", id);
         setConnectionId(id ?? null);
+        tLog("SignalR", "Invoking JoinRoom...");
         return conn.invoke("JoinRoom", roomId, userId, safeRole, safeUserName);
+      })
+      .then(() => {
+        tLog("SignalR", "JoinRoom completed");
       })
       .catch(console.error);
 
@@ -203,6 +220,7 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       conn.off("ReceiveTestResults");
       conn.off("ReceiveCameraState");
       conn.off("ReceiveMicState");
+      conn.off("ReceiveWhiteboardState");
 
       conn.invoke("LeaveRoom", roomId, userId, safeRole, safeUserName).catch(() => {});
       conn.stop();

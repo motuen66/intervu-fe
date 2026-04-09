@@ -1,5 +1,10 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 
+// Timeline diagnostic — module-level T0 for relative timestamps
+const T0 = Date.now();
+const tLog = (tag, ...args) =>
+  console.log(`[${tag} T+${Date.now() - T0}ms]`, ...args);
+
 // ---------------------------------------------------------------------------
 // ICE configuration
 // STUN for direct connections + TURN (openrelay.metered.ca) as relay fallback
@@ -207,7 +212,7 @@ export function useWebRTC({ signalingSender, selfId }) {
       return pcRef.current;
     }
 
-    console.log("[WebRTC] Creating RTCPeerConnection → target:", targetId);
+    tLog("WebRTC", "createPeerConnection → target:", targetId);
     const pc = new RTCPeerConnection(ICE_CONFIG);
     pcRef.current = pc;
     targetPeerIdRef.current = targetId;
@@ -224,7 +229,7 @@ export function useWebRTC({ signalingSender, selfId }) {
     };
 
     pc.oniceconnectionstatechange = () => {
-      console.log("[WebRTC] ICE state:", pc.iceConnectionState);
+      tLog("WebRTC", "ICE state:", pc.iceConnectionState);
       if (pc.iceConnectionState === "failed") {
         console.warn("[WebRTC] ICE failed – restarting ICE");
         pc.restartIce();
@@ -262,7 +267,7 @@ export function useWebRTC({ signalingSender, selfId }) {
         return;
       }
       try {
-        console.log("[WebRTC] onnegotiationneeded — creating offer");
+        tLog("WebRTC", "onnegotiationneeded → creating offer");
         makingOffer.current = true;
         await pc.setLocalDescription(); // auto-creates offer in Unified Plan
         signalingSenderRef.current?.(
@@ -270,7 +275,7 @@ export function useWebRTC({ signalingSender, selfId }) {
           targetPeerIdRef.current,
           pc.localDescription.sdp
         );
-        console.log("[WebRTC] Offer sent →", targetPeerIdRef.current);
+        tLog("WebRTC", "Offer sent →", targetPeerIdRef.current);
       } catch (err) {
         console.error("[WebRTC] onnegotiationneeded error:", err);
       } finally {
@@ -287,9 +292,11 @@ export function useWebRTC({ signalingSender, selfId }) {
 
     isPolite.current = (selfIdRef.current ?? "") < targetId;
     targetPeerIdRef.current = targetId;
-    console.log(
-      "[WebRTC] Peer available →", targetId,
-      "| polite:", isPolite.current
+    const hasLocalTracks = (localStreamRef.current?.getTracks().filter((t) => t.enabled) ?? []).length > 0;
+    tLog("WebRTC", "initiatePeerConnection → target:", targetId,
+      "| selfId:", selfIdRef.current,
+      "| polite:", isPolite.current,
+      "| hasLocalTracks:", hasLocalTracks
     );
 
     // If we already have active local tracks (e.g., user turned camera on
@@ -341,6 +348,7 @@ export function useWebRTC({ signalingSender, selfId }) {
 
   // ── Signaling: incoming offer ─────────────────────────────────────────────
   const handleOffer = useCallback(async (fromId, sdp) => {
+    tLog("WebRTC", "handleOffer → from:", fromId, "| signalingState:", pcRef.current?.signalingState ?? "no-pc");
     // Answerer path: create PC if it doesn't exist yet.
     if (!pcRef.current) {
       isPolite.current = (selfIdRef.current ?? "") < fromId;
@@ -374,13 +382,14 @@ export function useWebRTC({ signalingSender, selfId }) {
     await pc.setLocalDescription(); // auto-creates answer with our tracks included
 
     signalingSenderRef.current?.("SendAnswer", fromId, pc.localDescription.sdp);
-    console.log("[WebRTC] Answer sent →", fromId);
+    tLog("WebRTC", "Answer sent →", fromId);
 
     await flushIceCandidateQueue();
   }, [createPeerConnection, flushIceCandidateQueue, addLocalTracksToPc]);
 
   // ── Signaling: incoming answer ────────────────────────────────────────────
   const handleAnswer = useCallback(async (fromId, sdp) => {
+    tLog("WebRTC", "handleAnswer → from:", fromId);
     const pc = pcRef.current;
     if (!pc) return;
     isSettingRemoteAnswerPending.current = true;

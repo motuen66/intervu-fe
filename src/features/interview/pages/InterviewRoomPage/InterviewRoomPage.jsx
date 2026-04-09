@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
 import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack } from "@mui/material";
 
 // Icons
@@ -25,12 +25,16 @@ import { ROLES } from "../../../../common/constants/common.js";
 
 import QuestionPanel from "./QuestionPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
+const WhiteboardPanel = lazy(() =>
+    import("./WhiteboardPanel").then((m) => ({ default: m.WhiteboardPanel }))
+);
 import { CameraWidget } from "./CameraWidget";
 import { JdCvPanel } from "./JdCvPanel";
 
 import { useWebRTC } from "../../hooks/useWebRTC.js";
 import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
 import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
+import { useWhiteboardSync } from "../../hooks/useWhiteboardSync.js";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
 
 // Analytics
@@ -122,6 +126,15 @@ function InterviewRoomPage() {
         applyExternalLanguage,
         initFromRoomState,
     } = useCodeSync({ sendSignal, roomId, user });
+
+    // ── Whiteboard sync ─────────────────────────────────────────────────────
+    const {
+        excalidrawAPIRef,
+        handleWhiteboardChange,
+        applyExternalWhiteboardState,
+        initFromWhiteboardState,
+        flushWhiteboardState,
+    } = useWhiteboardSync({ sendSignal, roomId });
 
     // ── WebRTC ───────────────────────────────────────────────────────────────
     const {
@@ -308,6 +321,7 @@ function InterviewRoomPage() {
         onReceiveLanguage: applyExternalLanguage,
         onReceiveFullState: (state) => {
             initFromRoomState(state);
+            initFromWhiteboardState(state?.whiteboardElements);
             if (state) {
                 setProblemDescription(state.problemDescription ?? "");
                 setProblemShortName(state.problemShortName ?? "");
@@ -343,6 +357,7 @@ function InterviewRoomPage() {
         },
         onReceiveCameraState: (_fromId, isOn) => setRemoteCameraOn(isOn),
         onReceiveMicState: (_fromId, isOn) => setRemoteMicOn(isOn),
+        onReceiveWhiteboardState: applyExternalWhiteboardState,
     };
 
     // ── Wire video streams ──────────────────────────────────────────────────
@@ -817,11 +832,14 @@ function InterviewRoomPage() {
                                 />
                             )}
                             {panelATab === "whiteboard" && (
-                                <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#F9FAFB" }}>
-                                    <Typography sx={{ color: "#9CA3AF", fontSize: "0.9rem" }}>
-                                        Whiteboard coming soon
-                                    </Typography>
-                                </Box>
+                                <Suspense fallback={<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1 }}><CircularProgress /></Box>}>
+                                    <WhiteboardPanel
+                                        excalidrawAPIRef={excalidrawAPIRef}
+                                        onChange={handleWhiteboardChange}
+                                        onPointerUp={flushWhiteboardState}
+                                        readOnly={isViewOnly}
+                                    />
+                                </Suspense>
                             )}
                         </>
                     )}
