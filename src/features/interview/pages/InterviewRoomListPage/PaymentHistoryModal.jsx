@@ -23,7 +23,10 @@ import {
     Card,
     CardContent,
     Grid,
+    FormControl,
+    InputLabel,
 } from "@mui/material";
+import FormSelect from "../../../../common/components/form/FormSelect";
 import CloseIcon from "@mui/icons-material/Close";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -330,20 +333,21 @@ Interview ID: ${transaction.interviewId}
                                     sx={{ flex: 1 }}
                                     variant="outlined"
                                 />
-                                <TextField
-                                    select
-                                    label="Status"
-                                    value={filterStatus}
-                                    onChange={(e) => setFilterStatus(e.target.value)}
-                                    size="small"
-                                    sx={{ minWidth: 150 }}
-                                >
-                                    <MenuItem value="ALL">All Status</MenuItem>
-                                    <MenuItem value="COMPLETED">Completed</MenuItem>
-                                    <MenuItem value="PENDING">Pending</MenuItem>
-                                    <MenuItem value="FAILED">Failed</MenuItem>
-                                    <MenuItem value="REFUNDED">Refunded</MenuItem>
-                                </TextField>
+                                <FormControl size="small" sx={{ minWidth: 150 }}>
+                                    <InputLabel id="payment-modal-status-label">Status</InputLabel>
+                                    <FormSelect
+                                        labelId="payment-modal-status-label"
+                                        label="Status"
+                                        value={filterStatus}
+                                        onChange={(e) => setFilterStatus(e.target.value)}
+                                    >
+                                        <MenuItem value="ALL">All Status</MenuItem>
+                                        <MenuItem value="COMPLETED">Completed</MenuItem>
+                                        <MenuItem value="PENDING">Pending</MenuItem>
+                                        <MenuItem value="FAILED">Failed</MenuItem>
+                                        <MenuItem value="REFUNDED">Refunded</MenuItem>
+                                    </FormSelect>
+                                </FormControl>
                             </Stack>
 
                             {/* Transactions Table */}

@@ -25,7 +25,10 @@ import {
     DialogContent,
     DialogActions,
     Divider,
+    FormControl,
+    InputLabel,
 } from "@mui/material";
+import FormSelect from "../../../common/components/form/FormSelect";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
@@ -39,6 +42,8 @@ import { interviewEndPoints } from "../../interview/services/interviewRoomApi";
 import { profileEndPoints } from "../../profile/services/profileApi";
 import { formatCurrency } from "../../../common/utils/dateFormatter";
 import { ROLES } from "../../../common/constants/common";
+import { trackPaymentSuccess } from "../../../utils/analytics";
+import { useSearchParams } from "react-router-dom";
 
 const transactionStatusConfig = {
     PENDING: { label: "Pending", color: "#FFA500", bgColor: "#FFF3E0" },
@@ -218,6 +223,8 @@ const PaymentHistoryPage = () => {
     const [loading, setLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
 
+    const [searchParams] = useSearchParams();
+
     useEffect(() => {
         fetchPaymentHistory();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -263,6 +270,50 @@ const PaymentHistoryPage = () => {
             }));
 
             setTransactions(enriched);
+
+            // If user landed here after a payment gateway redirect (e.g. ?status=success&orderCode=...),
+            // attempt to find the matching transaction and emit a payment_success event.
+            try {
+                const statusParam = (searchParams.get("status") || searchParams.get("paymentStatus") || "").toLowerCase();
+                const orderCode = searchParams.get("orderCode") || searchParams.get("order_id") || searchParams.get("order") || null;
+
+                if (statusParam && ["success", "paid", "completed"].includes(statusParam)) {
+                    // try to match by common identifiers
+                    let matched = null;
+                    if (orderCode) {
+                        matched = enriched.find((t) =>
+                            [t.orderCode, t.orderId, t.bookingId, t.interviewId, t.id]
+                                .some((k) => k && String(k) === String(orderCode))
+                        );
+                    }
+
+                    if (!matched) {
+                        // fallback: most recent COMPLETED transaction within last 3 minutes
+                        const now = Date.now();
+                        const recent = enriched
+                            .filter((t) => t.status === "COMPLETED" && t.createdAt)
+                            .map((t) => ({
+                                tx: t,
+                                ts: new Date(t.createdAt).valueOf() || 0,
+                            }))
+                            .sort((a, b) => b.ts - a.ts);
+
+                        if (recent.length && now - recent[0].ts <= 1000 * 60 * 3) {
+                            matched = recent[0].tx;
+                        }
+                    }
+
+                    if (matched) {
+                        try {
+                            trackPaymentSuccess(matched.interviewId || matched.bookingId || matched.id || null, matched.amount ?? null);
+                        } catch (e) {
+                            console.warn("trackPaymentSuccess failed", e);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("payment tracking heuristic failed", err);
+            }
         } catch (error) {
             console.error("Failed to fetch payment history:", error);
             setTransactions([]);
@@ -417,20 +468,22 @@ const PaymentHistoryPage = () => {
                                 sx={{ flex: 1, bgcolor: 'white', borderRadius: 2 }}
                                 variant="outlined"
                             />
-                            <TextField
-                                select
-                                label="Status"
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                size="small"
-                                sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2 }}
-                            >
-                                <MenuItem value="ALL">All Status</MenuItem>
-                                <MenuItem value="COMPLETED">Completed</MenuItem>
-                                <MenuItem value="PENDING">Pending</MenuItem>
-                                <MenuItem value="FAILED">Failed</MenuItem>
-                                <MenuItem value="REFUNDED">Refunded</MenuItem>
-                            </TextField>
+                            <FormControl size="small" sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2 }}>
+                                <InputLabel id="history-page-status-label">Status</InputLabel>
+                                <FormSelect
+                                    labelId="history-page-status-label"
+                                    label="Status"
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    sx={{ borderRadius: 2 }}
+                                >
+                                    <MenuItem value="ALL">All Status</MenuItem>
+                                    <MenuItem value="COMPLETED">Completed</MenuItem>
+                                    <MenuItem value="PENDING">Pending</MenuItem>
+                                    <MenuItem value="FAILED">Failed</MenuItem>
+                                    <MenuItem value="REFUNDED">Refunded</MenuItem>
+                                </FormSelect>
+                            </FormControl>
                         </Stack>
 
                         {/* Table */}

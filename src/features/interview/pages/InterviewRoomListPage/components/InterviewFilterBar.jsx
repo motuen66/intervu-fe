@@ -2,12 +2,12 @@ import {
     TextField,
     Typography,
     InputAdornment,
-    Select,
     MenuItem,
     Stack,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 function InterviewFilterBar({ 
     searchQuery, 
@@ -51,7 +51,7 @@ function InterviewFilterBar({
 
             {/* Filter & Export */}
             <Stack direction="row" spacing={1}>
-                <Select
+                <FormSelect
                     value={filterValue}
                     onChange={(e) => onFilterChange(e.target.value)}
                     size="small"
@@ -79,7 +79,7 @@ function InterviewFilterBar({
                             {option.label}
                         </MenuItem>
                     ))}
-                </Select>
+                </FormSelect>
 
                 {/* <Button
                     variant="outlined"

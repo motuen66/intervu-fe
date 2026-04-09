@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Box } from "@mui/material";
+import { Box, Paper, Typography, Stack } from "@mui/material";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../../service/coachProfileApi";
@@ -169,7 +169,22 @@ const PublicInterviewerProfilePage = () => {
     }, [profile]);
 
     const [expandedBio, setExpandedBio] = useState(false);
+    const [expandedWorkExp, setExpandedWorkExp] = useState({});
     const bioLimit = 400;
+
+    const toggleWorkExp = (id) => {
+        setExpandedWorkExp((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
+
+    const formatMonthYear = (value) => {
+        if (!value) return "Present";
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return "Present";
+        return parsed.toLocaleDateString("en-US", { month: "numeric", year: "numeric" });
+    };
 
     if (loading) {
         return (
@@ -281,38 +296,156 @@ const PublicInterviewerProfilePage = () => {
                             </div>
 
                             <h4 className="ep-sub-title">Working Experience</h4>
-                            <div className="ep-track-grid">
-                                {(profile.workExperiences || profile.companies)?.map((c, idx) => (
-                                    <div key={c.id || idx} className="ep-track-card">
-                                        <div className="ep-track-card-head">
-                                            <CompanyLogo name={c.companyName || c.name} size={24} />
-                                            <h4>{c.companyName || c.name}</h4>
-                                        </div>
-                                        <p>
-                                            {c.isCurrentWorking
-                                                ? "Current"
-                                                : c.endDate
-                                                  ? new Date(c.endDate).toLocaleDateString()
-                                                  : "Present"}{" "}
-                                            | {new Date(c.startDate).toLocaleDateString()}
-                                        </p>
-                                        {c.description && (
-                                            <p
-                                                className="ep-about-text"
-                                                style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}
+                            <Stack spacing={2} sx={{ mb: 4 }}>
+                                {(profile.workExperiences || profile.companies)?.length > 0 ? (
+                                    (profile.workExperiences || profile.companies).map((exp, idx) => {
+                                        const expId = exp.id || idx;
+                                        const isExpanded = expandedWorkExp[expId];
+                                        const description = exp.description || "";
+                                        const descLimit = 200;
+                                        const shouldShowMore = description.length > descLimit;
+                                        const displayDescription =
+                                            isExpanded || !shouldShowMore
+                                                ? description
+                                                : `${description.slice(0, descLimit)}...`;
+
+                                        return (
+                                            <Paper
+                                                key={expId}
+                                                variant="outlined"
+                                                sx={{
+                                                    p: 2.5,
+                                                    position: "relative",
+                                                    bgcolor: "#fff",
+                                                    borderRadius: 2,
+                                                }}
                                             >
-                                                {c.description}
-                                            </p>
-                                        )}
-                                    </div>
-                                ))}
-                                {!profile.workExperiences && (!profile.companies || profile.companies.length === 0) && (
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "flex-start",
+                                                    }}
+                                                >
+                                                    <Box sx={{ flex: 1 }}>
+                                                        <Typography
+                                                            variant="h6"
+                                                            sx={{ fontSize: "1.1rem", fontWeight: 700 }}
+                                                        >
+                                                            {exp.positionTitle || exp.jobTitle || "Role not specified"}
+                                                        </Typography>
+                                                        <Box
+                                                            sx={{
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: 1,
+                                                                mt: 0.5,
+                                                            }}
+                                                        >
+                                                            <CompanyLogo
+                                                                name={exp.companyName || exp.name || ""}
+                                                                size={24}
+                                                            />
+                                                            <Typography
+                                                                variant="subtitle1"
+                                                                sx={{ fontWeight: 600, color: "text.primary" }}
+                                                            >
+                                                                {exp.companyName || exp.name || "Company not specified"}
+                                                                {exp.jobType ? ` · ${exp.jobType}` : ""}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="text.secondary"
+                                                            sx={{ mt: 0.5, color: "#94a3b8" }}
+                                                        >
+                                                            {formatMonthYear(exp.startDate || exp.startDay)} -{" "}
+                                                            {exp.isCurrentWorking
+                                                                ? "Present"
+                                                                : exp.endDate || exp.endDay
+                                                                  ? formatMonthYear(exp.endDate || exp.endDay)
+                                                                  : "Present"}
+                                                        </Typography>
+                                                        {(exp.location || exp.locationType) && (
+                                                            <Typography
+                                                                variant="body2"
+                                                                color="text.secondary"
+                                                                sx={{ color: "#94a3b8" }}
+                                                            >
+                                                                {[exp.location, exp.locationType]
+                                                                    .filter(Boolean)
+                                                                    .join(" · ")}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                                {description && (
+                                                    <Box sx={{ mt: 1.5 }}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                whiteSpace: "pre-wrap",
+                                                                color: "text.secondary",
+                                                            }}
+                                                        >
+                                                            {displayDescription}
+                                                        </Typography>
+                                                        {shouldShowMore && (
+                                                            <Typography
+                                                                variant="caption"
+                                                                onClick={() => toggleWorkExp(expId)}
+                                                                sx={{
+                                                                    display: "flex",
+                                                                    justifyContent: "end",
+                                                                    background: "none",
+                                                                    border: "none",
+                                                                    color: "var(--ep-accent-dark)",
+                                                                    cursor: "pointer",
+                                                                    padding: 0,
+                                                                    marginTop: "10px",
+                                                                    marginLeft: "auto",
+                                                                    fontSize: "0.85rem",
+                                                                    fontWeight: 600,
+                                                                }}
+                                                            >
+                                                                {isExpanded ? "View Less" : "View More"}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                )}
+                                                {exp.skillIds?.length > 0 && (
+                                                    <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 2 }}>
+                                                        {exp.skillIds.map((sid) => {
+                                                            const skill = profile.skills?.find((s) => s.id === sid);
+                                                            return skill ? (
+                                                                <Box
+                                                                    key={sid}
+                                                                    sx={{
+                                                                        bgcolor: "#f0f2f5",
+                                                                        px: 1.5,
+                                                                        py: 0.5,
+                                                                        borderRadius: 4,
+                                                                        fontSize: "0.75rem",
+                                                                        fontWeight: 600,
+                                                                        color: "text.primary",
+                                                                    }}
+                                                                >
+                                                                    {skill.name}
+                                                                </Box>
+                                                            ) : null;
+                                                        })}
+                                                    </Stack>
+                                                )}
+                                            </Paper>
+                                        );
+                                    })
+                                ) : (
                                     <p className="ep-text-muted">No companies listed.</p>
                                 )}
-                            </div>
+                            </Stack>
 
                             <h4 className="ep-sub-title">Domain (Industries)</h4>
-                            <div className="ep-skills-wrap" style={{ marginBottom: "3.5rem" }}>
+                            <div className="ep-skills-wrap">
                                 {profile.industries?.map((ind) => (
                                     <div
                                         key={ind.id}
@@ -334,95 +467,112 @@ const PublicInterviewerProfilePage = () => {
                             >
                                 Certifications
                             </h4>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                                {(profile.certificationLinks || profile.certificates)?.map((link, idx) => {
-                                    const href = typeof link === "string" ? link : link?.link || "";
-                                    const name =
-                                        typeof link === "string"
-                                            ? `Certificate ${idx + 1}`
-                                            : link?.name || link?.Name || `Certificate ${idx + 1}`;
-                                    const issuer = typeof link === "object" ? link?.issuer || link?.Issuer || "" : "";
-                                    const issuedAt =
-                                        typeof link === "object" && (link.issuedAt || link.IssuedAt)
-                                            ? link.issuedAt
-                                            : "";
-                                    const expiryAt =
-                                        typeof link === "object" && (link.expiryAt || link.ExpiryAt)
-                                            ? link.expiryAt
-                                            : "";
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "1rem",
+                                    marginBottom: "3.5rem",
+                                }}
+                            >
+                                {(profile.certificationLinks || profile.certificates || profile.certifications)?.map(
+                                    (link, idx) => {
+                                        const href = typeof link === "string" ? link : link?.link || link?.Link || "";
+                                        const name =
+                                            typeof link === "string"
+                                                ? `Certificate ${idx + 1}`
+                                                : link?.name || link?.Name || `Certificate ${idx + 1}`;
+                                        const issuer =
+                                            typeof link === "object" ? link?.issuer || link?.Issuer || "" : "";
+                                        const issuedAt =
+                                            typeof link === "object" && (link.issuedAt || link.IssuedAt)
+                                                ? link.issuedAt || link.IssuedAt
+                                                : "";
+                                        const expiryAt =
+                                            typeof link === "object" && (link.expiryAt || link.ExpiryAt)
+                                                ? link.expiryAt || link.ExpiryAt
+                                                : "";
 
-                                    let host = name;
-                                    try {
-                                        if (href) {
-                                            const u = new URL(href);
-                                            host = u.hostname.replace("www.", "");
-                                        }
-                                    } catch (e) {}
+                                        let host = "";
+                                        try {
+                                            if (href) {
+                                                const u = new URL(href);
+                                                host = u.hostname.replace("www.", "");
+                                            }
+                                        } catch (e) {}
 
-                                    return (
-                                        <div
-                                            key={idx}
-                                            style={{
-                                                display: "flex",
-                                                gap: "1rem",
-                                                alignItems: "flex-start",
-                                                padding: "1rem",
-                                                background: "white",
-                                                borderRadius: "8px",
-                                                border: "1px solid rgba(0,0,0,0.05)",
-                                            }}
-                                        >
-                                            <div style={{ flexShrink: 0, marginTop: "0.25rem" }}>
-                                                <CompanyLogo name={issuer || host || name} size={40} />
+                                        return (
+                                            <div
+                                                key={idx}
+                                                style={{
+                                                    display: "flex",
+                                                    gap: "1rem",
+                                                    alignItems: "flex-start",
+                                                    padding: "1rem",
+                                                    background: "white",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid rgba(0,0,0,0.05)",
+                                                }}
+                                            >
+                                                <div style={{ flexShrink: 0, marginTop: "0.25rem" }}>
+                                                    <CompanyLogo name={issuer || host || name} size={40} />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    {href ? (
+                                                        <a
+                                                            href={href}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            style={{
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: "0.5rem",
+                                                                color: "#347d00",
+                                                                textDecoration: "none",
+                                                                fontWeight: 700,
+                                                                fontSize: "1rem",
+                                                            }}
+                                                        >
+                                                            {name}
+                                                            <ExternalLink size={14} />
+                                                        </a>
+                                                    ) : (
+                                                        <div style={{ fontWeight: 700, fontSize: "1rem" }}>{name}</div>
+                                                    )}
+                                                    {issuer && (
+                                                        <div
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                fontSize: "0.9rem",
+                                                                color: "#333",
+                                                                marginTop: "2px",
+                                                            }}
+                                                        >
+                                                            {issuer}
+                                                        </div>
+                                                    )}
+                                                    {(issuedAt || expiryAt) && (
+                                                        <div
+                                                            style={{
+                                                                fontSize: "0.8rem",
+                                                                color: "#666",
+                                                                marginTop: "2px",
+                                                            }}
+                                                        >
+                                                            Issued {formatMonthYear(issuedAt)}{" "}
+                                                            {expiryAt
+                                                                ? `· Expires ${formatMonthYear(expiryAt)}`
+                                                                : "· No expiration"}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div style={{ flex: 1 }}>
-                                                {href ? (
-                                                    <a
-                                                        href={href}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            gap: "0.5rem",
-                                                            color: "#347d00",
-                                                            textDecoration: "none",
-                                                            fontWeight: 700,
-                                                            fontSize: "1rem",
-                                                        }}
-                                                    >
-                                                        {name}
-                                                        <ExternalLink size={14} />
-                                                    </a>
-                                                ) : (
-                                                    <div style={{ fontWeight: 700, fontSize: "1rem" }}>{name}</div>
-                                                )}
-                                                {issuer && (
-                                                    <div
-                                                        style={{
-                                                            fontWeight: 600,
-                                                            fontSize: "0.9rem",
-                                                            color: "#333",
-                                                            marginTop: "2px",
-                                                        }}
-                                                    >
-                                                        {issuer}
-                                                    </div>
-                                                )}
-                                                {(issuedAt || expiryAt) && (
-                                                    <div
-                                                        style={{ fontSize: "0.8rem", color: "#666", marginTop: "2px" }}
-                                                    >
-                                                        Issued {issuedAt}{" "}
-                                                        {expiryAt ? `· Expires ${expiryAt}` : "· No expiration"}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    },
+                                )}
                                 {(!profile.certificationLinks || profile.certificationLinks.length === 0) &&
-                                    (!profile.certificates || profile.certificates.length === 0) && (
+                                    (!profile.certificates || profile.certificates.length === 0) &&
+                                    (!profile.certifications || profile.certifications.length === 0) && (
                                         <p className="ep-text-muted">No certifications listed.</p>
                                     )}
                             </div>

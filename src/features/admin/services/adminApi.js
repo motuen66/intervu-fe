@@ -30,6 +30,3 @@ export const adminEndPoints = {
     GET_ROOM_AUDIT_LOGS: (roomId) => `${ADMIN_BASE_URL}/room-reports/${roomId}/audit-logs`,
     RESOLVE_ROOM_REPORT: `${ADMIN_BASE_URL}/resolve-room-report`,
 };
-
-
-

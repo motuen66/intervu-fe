@@ -10,11 +10,7 @@ import { Videocam, VideocamOff, Mic, MicOff } from "@mui/icons-material";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 import CreateIcon from "@mui/icons-material/Create";
-import FlagIcon from "@mui/icons-material/Flag";
-import ReportRoomModal from "./ReportRoomModal";
-import toast from "react-hot-toast";
 import { ROLES } from "../../../../common/constants/common.js";
-
 import { useEffect, useState } from "react";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
@@ -36,17 +32,12 @@ function VideoPanel({
     onLeaveRoom,
     user,
     roomInfo,
-    roomId,
 }) {
-
     const isCandidate = user?.role === ROLES.CANDIDATE;
     const remotePeerName = roomInfo ? (isCandidate ? roomInfo.coachName || "Coach" : roomInfo.candidateName || "Candidate") : "Peer";
     const remotePeerRole = isCandidate ? "Coach" : "Candidate";
 
     const [fetchedRemoteAvatar, setFetchedRemoteAvatar] = useState(null);
-    const [reportModalOpen, setReportModalOpen] = useState(false);
-    const [isReporting, setIsReporting] = useState(false);
-
 
     useEffect(() => {
         const participantId = roomInfo ? (isCandidate ? roomInfo.coachId : roomInfo.candidateId) : null;
@@ -251,20 +242,7 @@ function VideoPanel({
                 </Fab>
                 <Fab
                     size="medium"
-                    onClick={() => setReportModalOpen(true)}
-                    sx={{
-                        bgcolor: "#FFFFFF",
-                        color: "#EF4444",
-                        border: "1px solid #E5E7EB",
-                        "&:hover": { bgcolor: "#F3F4F6" }
-                    }}
-                >
-                    <FlagIcon />
-                </Fab>
-                <Fab
-                    size="medium"
                     onClick={onLeaveRoom}
-
                     sx={{
                         bgcolor: "#EF4444",
                         color: "#FFFFFF",
@@ -306,17 +284,8 @@ function VideoPanel({
                     }}
                 />
             </Box>
-
-            <ReportRoomModal
-                open={reportModalOpen}
-                onClose={() => setReportModalOpen(false)}
-                onSubmit={handleReportSubmit}
-                isSubmitting={isReporting}
-            />
         </Box>
-
     );
 }
 
 export default VideoPanel;
-

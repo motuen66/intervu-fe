@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,7 @@ import useNotificationHub from "../../features/notification/hooks/useNotificatio
 import SuspendedGate from "../../common/components/SuspendedGate";
 import CandidateAssessmentGate from "../../common/components/CandidateAssessmentGate";
 import Navbar from "../../common/components/Navbar/Navbar";
+import usePageTracking from "../../hooks/usePageTracking";
 import {
     LayoutDashboard,
     Calendar,
@@ -33,6 +34,8 @@ import {
 } from "lucide-react";
 
 const MainLayout = () => {
+    // automatic SPA page tracking for routes rendered inside MainLayout
+    usePageTracking();
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
@@ -60,7 +63,7 @@ const MainLayout = () => {
                     if (newUser.profilePicture) setRemoteAvatar(newUser.profilePicture);
                     setTimeout(() => dispatch(setUserData(newUser)), 0);
                 }
-            } catch (err) { }
+            } catch (err) {}
         };
         window.addEventListener("storage", onStorage);
         return () => window.removeEventListener("storage", onStorage);
@@ -81,31 +84,34 @@ const MainLayout = () => {
     };
 
     // Navigation menu configuration mapped by user roles
-    const menuItems = useMemo(() => [
-        // ROLE: CANDIDATE
-        [
-            { label: "Home", path: "/home" },
-            { label: "Questions", path: "/questions" },
-            { label: "Interview", path: "/interview" },
-            { label: "Roadmap", path: "/assessment?step=roadmap" },
-            { label: "Booking Requests", path: "/booking-requests" },
-            { label: "Settings", path: "/settings" },
+    const menuItems = useMemo(
+        () => [
+            // ROLE: CANDIDATE
+            [
+                { label: "Home", path: "/home" },
+                { label: "Questions", path: "/questions" },
+                { label: "Interview", path: "/interview" },
+                { label: "Roadmap", path: "/assessment?step=roadmap" },
+                { label: "Booking Requests", path: "/booking-requests" },
+                { label: "Settings", path: "/settings" },
+            ],
+            // ROLE: INTERVIEWER/COACH
+            [
+                { label: "Dashboard", path: "/coach/dashboard" },
+                { label: "Questions", path: "/questions" },
+                { label: "Schedule", path: "/coach/schedule" },
+                { label: "Booking Requests", path: "/coach/requests" },
+                { label: "My Services", path: "/coach/services" },
+            ],
+            // ROLE: ADMIN
+            [
+                { label: "Dashboard", path: "/admin/dashboard" },
+                { label: "Users", path: "/admin/users" },
+                { label: "Reports", path: "/admin/reports" },
+            ],
         ],
-        // ROLE: INTERVIEWER/COACH
-        [
-            { label: "Dashboard", path: "/coach/dashboard" },
-            { label: "Questions", path: "/questions" },
-            { label: "Schedule", path: "/coach/schedule" },
-            { label: "Booking Requests", path: "/coach/requests" },
-            { label: "My Services", path: "/coach/services" },
-        ],
-        // ROLE: ADMIN
-        [
-            { label: "Dashboard", path: "/admin/dashboard" },
-            { label: "Users", path: "/admin/users" },
-            { label: "Reports", path: "/admin/reports/questions" },
-        ],
-    ], []);
+        [],
+    );
 
     const isAdmin = userData?.role === ROLES.ADMIN;
 
@@ -113,7 +119,6 @@ const MainLayout = () => {
     const [openGroups, setOpenGroups] = useState({
         users: true,
         income: true,
-        reports: true,
         settings: true,
     });
 
@@ -140,13 +145,13 @@ const MainLayout = () => {
                             }
                         }
                     }
-                } catch (e) { }
+                } catch (e) {}
             }
             if (!userId) return;
             try {
                 const res = await callApi({
                     method: METHOD.GET,
-                    endpoint: userEndPoints.GET_USER_PROFILE(userId)
+                    endpoint: userEndPoints.GET_USER_PROFILE(userId),
                 });
                 const url = res?.data?.profilePicture ?? res?.data?.user?.profilePicture ?? null;
                 if (url) {
@@ -179,15 +184,7 @@ const MainLayout = () => {
                 { label: "Payouts", path: "/admin/income/payouts" },
             ],
         },
-                {
-            label: "Reports",
-            icon: BarChart2,
-            key: "reports",
-            children: [
-                { label: "Question", path: "/admin/reports/questions" },
-                { label: "Room", path: "/admin/reports/rooms" },
-            ],
-        },
+        { label: "Reports", icon: BarChart2, path: "/admin/reports" },
     ];
 
     // ADMIN LAYOUT
@@ -204,12 +201,18 @@ const MainLayout = () => {
                                 if (item.children) {
                                     return (
                                         <div key={item.label} className="sidebar-group">
-                                            <button className="sidebar-item" onClick={() => toggleGroup(item.key)} type="button">
+                                            <button
+                                                className="sidebar-item"
+                                                onClick={() => toggleGroup(item.key)}
+                                                type="button"
+                                            >
                                                 <span className="sidebar-item-icon">
                                                     <Icon size={20} strokeWidth={1.5} color="#64748B" />
                                                 </span>
                                                 <span className="sidebar-item-text">{item.label}</span>
-                                                <span className={`sidebar-item-arrow ${openGroups[item.key] ? "open" : ""}`}>
+                                                <span
+                                                    className={`sidebar-item-arrow ${openGroups[item.key] ? "open" : ""}`}
+                                                >
                                                     <ChevronDown size={16} strokeWidth={2} color="#64748B" />
                                                 </span>
                                             </button>
@@ -252,11 +255,15 @@ const MainLayout = () => {
                                 onClick={() => navigate("/settings")}
                                 type="button"
                             >
-                                <span className="sidebar-item-icon"><Bell size={20} strokeWidth={1.5} color="#64748B" /></span>
+                                <span className="sidebar-item-icon">
+                                    <Bell size={20} strokeWidth={1.5} color="#64748B" />
+                                </span>
                                 <span className="sidebar-item-text">Notification</span>
                             </button>
                             <button className="sidebar-item" onClick={handleLogout} type="button">
-                                <span className="sidebar-item-icon"><LogOut size={20} strokeWidth={1.5} color="#64748B" /></span>
+                                <span className="sidebar-item-icon">
+                                    <LogOut size={20} strokeWidth={1.5} color="#64748B" />
+                                </span>
                                 <span className="sidebar-item-text">Log out</span>
                             </button>
                         </div>
@@ -266,12 +273,17 @@ const MainLayout = () => {
                     <header className="admin-topbar">
                         <div className="admin-search">
                             <input type="text" placeholder="Search..." className="admin-search-input" />
-                            <span className="admin-search-icon"><Search size={20} strokeWidth={1.5} color="#64748B" /></span>
+                            <span className="admin-search-icon">
+                                <Search size={20} strokeWidth={1.5} color="#64748B" />
+                            </span>
                         </div>
                         <div className="admin-actions">
                             <NotificationDropdown />
                             <div className="admin-user-dropdown">
-                                <button className="admin-avatar-btn" onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}>
+                                <button
+                                    className="admin-avatar-btn"
+                                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                                >
                                     <Avatar
                                         src={remoteAvatar ?? userData?.profilePicture}
                                         alt={userData?.fullName || "User"}
@@ -323,7 +335,9 @@ const MainLayout = () => {
                             </div>
                         </div>
                     </header>
-                    <main className="admin-main"><Outlet /></main>
+                    <main className="admin-main">
+                        <Outlet />
+                    </main>
                 </div>
                 <SuspendedGate />
             </div>
@@ -356,6 +370,3 @@ const MainLayout = () => {
 };
 
 export default MainLayout;
-
-
-

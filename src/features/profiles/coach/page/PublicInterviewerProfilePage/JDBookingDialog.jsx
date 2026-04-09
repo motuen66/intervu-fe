@@ -51,6 +51,7 @@ import toast from "react-hot-toast";
 import { useTheme } from "@mui/material/styles";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import CalendlyCalendar from "../../../../../common/components/CalendlyCalendar";
+import FormSelect from "../../../../../common/components/form/FormSelect";
 import "./JDBookingDialog.css";
 
 const STEPS = ["Job Details & Rounds", "Schedule Rounds"];
@@ -168,9 +169,8 @@ function SortableRoundCard({
                 <Typography className="jd-label-mini" sx={{ mb: 1, color: "#94a3b8", fontSize: "0.65rem" }}>
                     SERVICE TYPE
                 </Typography>
-                <TextField
+                <FormSelect
                     fullWidth
-                    select
                     size="small"
                     value={round.coachInterviewServiceId}
                     onChange={(e) => {
@@ -178,15 +178,12 @@ function SortableRoundCard({
                         onServiceChange(e.target.value);
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    variant="outlined"
-                    InputProps={{
-                        sx: {
-                            borderRadius: "10px",
-                            bgcolor: "#f8fafc",
-                            fontWeight: 700,
-                            fontSize: "0.8rem",
-                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e2e8f0" },
-                        },
+                    sx={{
+                        borderRadius: "10px",
+                        bgcolor: "#f8fafc",
+                        fontWeight: 400,
+                        fontSize: "0.8rem",
+                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e2e8f0" },
                     }}
                 >
                     {services.map((s) => {
@@ -195,13 +192,13 @@ function SortableRoundCard({
                         );
                         return (
                             <MenuItem key={s.id} value={s.id} disabled={isAlreadySelected}>
-                                <Typography variant="body2" fontWeight={700}>
+                                <Typography variant="body2" fontWeight={400}>
                                     {s.interviewTypeName} {isAlreadySelected && "(Already selected)"}
                                 </Typography>
                             </MenuItem>
                         );
                     })}
-                </TextField>
+                </FormSelect>
             </Box>
         </Box>
     );
@@ -797,26 +794,23 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             <Typography className="jd-label-mini">Target</Typography>
                                             <Box className="jd-input-stitch">
                                                 <Target size={18} color="#94a3b8" aria-hidden />
-                                                <TextField
+                                                <FormSelect
                                                     fullWidth
-                                                    select
                                                     variant="standard"
                                                     value={form.aimLevel}
                                                     onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
-                                                    InputProps={{ disableUnderline: true }}
-                                                    SelectProps={{
-                                                        displayEmpty: true,
-                                                        renderValue: (selected) => {
-                                                            if (selected === "" || selected === undefined)
-                                                                return "Software Engineer";
-                                                            return AIM_LEVEL_LABELS[selected] ?? selected;
-                                                        },
+                                                    disableUnderline
+                                                    displayEmpty
+                                                    renderValue={(selected) => {
+                                                        if (selected === "" || selected === undefined)
+                                                            return "Software Engineer";
+                                                        return AIM_LEVEL_LABELS[selected] ?? selected;
                                                     }}
                                                     sx={{
                                                         "& .MuiSelect-select": {
                                                             py: 0.5,
                                                             fontSize: "0.95rem",
-                                                            fontWeight: 600,
+                                                            fontWeight: 400,
                                                             display: "flex",
                                                             alignItems: "center",
                                                         },
@@ -830,7 +824,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                             {label}
                                                         </MenuItem>
                                                     ))}
-                                                </TextField>
+                                                </FormSelect>
                                             </Box>
                                         </Grid>
                                     </Grid>

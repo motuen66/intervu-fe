@@ -15,6 +15,17 @@ import {
     markAllAsRead,
     setUnreadCount,
 } from "../store/notificationSlice";
+import { 
+    Dialog, 
+    DialogTitle, 
+    DialogContent, 
+    Box, 
+    Typography, 
+    Avatar, 
+    IconButton, 
+    Divider 
+} from "@mui/material";
+import { dialogStyles } from "../../../common/constants/uiStyles";
 import { getNotificationConfig, formatTimeAgo } from "../utils/notificationUtils";
 import "./NotificationDropdown.css";
 
@@ -309,44 +320,62 @@ function NotificationDetailModal({ notification, onClose }) {
     const config = getNotificationConfig(notification.type);
     const Icon = config.icon;
 
-    // Close on backdrop click
-    const handleBackdropClick = (e) => {
-        if (e.target === e.currentTarget) onClose();
-    };
-
-    // Close on Escape
-    useEffect(() => {
-        const handleEsc = (e) => {
-            if (e.key === "Escape") onClose();
-        };
-        window.addEventListener("keydown", handleEsc);
-        return () => window.removeEventListener("keydown", handleEsc);
-    }, [onClose]);
-
     return (
-        <div className="noti-modal-backdrop" onClick={handleBackdropClick}>
-            <div className="noti-modal">
-                <div className="noti-modal-header">
-                    <div
-                        className="noti-modal-icon"
-                        style={{ backgroundColor: config.bg, color: config.color }}
+        <Dialog
+            open={!!notification}
+            onClose={onClose}
+            fullWidth
+            maxWidth="xs"
+            PaperProps={{ sx: dialogStyles.paper }}
+            sx={{ zIndex: 10001 }} // Ensure it stays above everything
+        >
+            <Box sx={{ p: 2.5, pb: 1.5, display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                    sx={{
+                        bgcolor: config.bg,
+                        color: config.color,
+                        width: 44,
+                        height: 44,
+                    }}
+                >
+                    <Icon sx={{ fontSize: 24 }} />
+                </Avatar>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.3 }}
                     >
-                        <Icon style={{ fontSize: 24 }} />
-                    </div>
-                    <div className="noti-modal-header-text">
-                        <h4>{notification.title}</h4>
-                        <span className="noti-modal-time">
-                            {formatTimeAgo(notification.createdAt)}
-                        </span>
-                    </div>
-                    <button className="noti-modal-close" onClick={onClose}>
-                        <CloseIcon style={{ fontSize: 20 }} />
-                    </button>
+                        {notification.title}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {formatTimeAgo(notification.createdAt)}
+                    </Typography>
                 </div>
-                <div className="noti-modal-body">
-                    <p>{notification.message}</p>
-                </div>
-            </div>
-        </div>
+                <IconButton
+                    id="noti-detail-close"
+                    onClick={onClose}
+                    size="small"
+                    sx={{ alignSelf: "flex-start", mt: -0.5 }}
+                >
+                    <CloseIcon fontSize="small" />
+                </IconButton>
+            </Box>
+
+            <Divider />
+
+            <DialogContent sx={{ p: 2.5, py: 3 }}>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: "text.primary",
+                        lineHeight: 1.6,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                    }}
+                >
+                    {notification.message}
+                </Typography>
+            </DialogContent>
+        </Dialog>
     );
 }

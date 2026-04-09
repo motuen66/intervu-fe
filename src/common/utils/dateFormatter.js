@@ -94,3 +94,10 @@ export function formatDateTime(dateStr) {
         hour12: true,
     });
 }
+
+export function formatMonthYear(value) {
+    if (!value) return "Present";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "Present";
+    return parsed.toLocaleDateString("en-US", { month: "numeric", year: "numeric" });
+}

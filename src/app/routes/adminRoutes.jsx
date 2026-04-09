@@ -1,4 +1,4 @@
-﻿import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import AdminDashboard from "../../features/admin/pages/AdminDashboard";
 import UserManagementPage from "../../features/admin/pages/UserManagementPage";
 import CompanyManagementPage from "../../features/admin/pages/CompanyManagementPage";
@@ -19,9 +19,5 @@ export const adminRoutes = [
     { path: "/admin/income/earnings", element: <AdminEmptyPage /> },
     { path: "/admin/income/refunds", element: <AdminEmptyPage /> },
     { path: "/admin/income/payouts", element: <AdminEmptyPage /> },
-    { path: "/admin/reports", element: <Navigate to="/admin/reports/questions" replace /> },
-    { path: "/admin/reports/questions", element: <AdminReportsPage /> },
-    { path: "/admin/reports/rooms", element: <AdminRoomReportsPage /> },
+    { path: "/admin/reports", element: <AdminReportsPage /> },
 ];
-
-

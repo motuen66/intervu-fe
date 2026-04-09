@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
     Box,
     Container,
@@ -12,23 +12,25 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
-} from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import PeopleIcon from '@mui/icons-material/People';
-import BusinessIcon from '@mui/icons-material/Business';
-import PersonIcon from '@mui/icons-material/Person';
-import PaymentIcon from '@mui/icons-material/Payment';
-import FeedbackIcon from '@mui/icons-material/Feedback';
-import StarIcon from '@mui/icons-material/Star';
-import StatsCard from '../components/StatsCard';
-import DataTable from '../components/DataTable';
-import UserFormModal from '../components/UserFormModal';
-import toast from 'react-hot-toast';
-import { callApi } from '../../../common/utils/apiConnector';
-import { METHOD } from '../../../common/constants/api';
-import { adminEndPoints } from '../services/adminApi';
-import './AdminDashboard.css';
+    MenuItem,
+} from "@mui/material";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import PeopleIcon from "@mui/icons-material/People";
+import BusinessIcon from "@mui/icons-material/Business";
+import PersonIcon from "@mui/icons-material/Person";
+import PaymentIcon from "@mui/icons-material/Payment";
+import FeedbackIcon from "@mui/icons-material/Feedback";
+import StarIcon from "@mui/icons-material/Star";
+import StatsCard from "../components/StatsCard";
+import DataTable from "../components/DataTable";
+import UserFormModal from "../components/UserFormModal";
+import AnalyticsCharts from "../components/AnalyticsCharts";
+import toast from "react-hot-toast";
+import { callApi } from "../../../common/utils/apiConnector";
+import { METHOD } from "../../../common/constants/api";
+import { adminEndPoints } from "../services/adminApi";
+import "./AdminDashboard.css";
+import { trackRegister } from "../../../utils/analytics";
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -40,9 +42,9 @@ export default function AdminDashboard() {
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [openUserModal, setOpenUserModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [userFormMode, setUserFormMode] = useState('create');
-    const [roleFilter, setRoleFilter] = useState('all');
-    const [emailSearch, setEmailSearch] = useState('');
+    const [userFormMode, setUserFormMode] = useState("create");
+    const [roleFilter, setRoleFilter] = useState("all");
+    const [emailSearch, setEmailSearch] = useState("");
 
     // Pagination states for each tab
     const [usersData, setUsersData] = useState({ data: [], total: 0, page: 0, pageSize: 10 });
@@ -72,12 +74,12 @@ export default function AdminDashboard() {
                 totalInterviewers: interviewersRes?.data?.totalItems || 0,
                 totalPayments: 0,
                 totalFeedbacks: 0,
-                averageRating: 0
+                averageRating: 0,
             };
 
             setStats(calculatedStats);
         } catch (error) {
-            console.error('Error fetching stats:', error);
+            console.error("Error fetching stats:", error);
         } finally {
             setLoading(false);
         }
@@ -89,13 +91,13 @@ export default function AdminDashboard() {
             method: METHOD.GET,
             endpoint: `${adminEndPoints.GET_USERS}?page=${page + 1}&pageSize=${pageSize}`,
         });
-        console.log('👥 Users Response:', response);
+        console.log("👥 Users Response:", response);
         if (response?.success) {
             setUsersData({
                 data: response.data?.items || [],
                 total: response.data?.totalItems || 0,
                 page,
-                pageSize
+                pageSize,
             });
         }
         setLoading(false);
@@ -107,13 +109,13 @@ export default function AdminDashboard() {
             method: METHOD.GET,
             endpoint: `${adminEndPoints.GET_COMPANIES}?page=${page + 1}&pageSize=${pageSize}`,
         });
-        console.log('🏢 Companies Response:', response);
+        console.log("🏢 Companies Response:", response);
         if (response?.success) {
             setCompaniesData({
                 data: response.data?.items || [],
                 total: response.data?.totalItems || 0,
                 page,
-                pageSize
+                pageSize,
             });
         }
         setLoading(false);
@@ -125,13 +127,13 @@ export default function AdminDashboard() {
             method: METHOD.GET,
             endpoint: `${adminEndPoints.GET_PAYMENTS}?page=${page + 1}&pageSize=${pageSize}`,
         });
-        console.log('💳 Payments Response:', response);
+        console.log("💳 Payments Response:", response);
         if (response?.success) {
             setPaymentsData({
                 data: response.data?.items || [],
                 total: response.data?.totalItems || 0,
                 page,
-                pageSize
+                pageSize,
             });
         }
         setLoading(false);
@@ -143,13 +145,13 @@ export default function AdminDashboard() {
             method: METHOD.GET,
             endpoint: `${adminEndPoints.GET_FEEDBACKS}?page=${page + 1}&pageSize=${pageSize}`,
         });
-        console.log('📝 Feedbacks Response:', response);
+        console.log("📝 Feedbacks Response:", response);
         if (response?.success) {
             setFeedbacksData({
                 data: response.data?.items || [],
                 total: response.data?.totalItems || 0,
                 page,
-                pageSize
+                pageSize,
             });
         }
         setLoading(false);
@@ -161,13 +163,13 @@ export default function AdminDashboard() {
             method: METHOD.GET,
             endpoint: `${adminEndPoints.GET_INTERVIEWERS}?page=${page + 1}&pageSize=${pageSize}`,
         });
-        console.log('🎤 Interviewers Response:', response);
+        console.log("🎤 Interviewers Response:", response);
         if (response?.success) {
             setInterviewersData({
                 data: response.data?.items || [],
                 total: response.data?.totalItems || 0,
                 page,
-                pageSize
+                pageSize,
             });
         }
         setLoading(false);
@@ -176,25 +178,25 @@ export default function AdminDashboard() {
     // User Management Handlers
     const handleAddUser = () => {
         setSelectedUser(null);
-        setUserFormMode('create');
+        setUserFormMode("create");
         setOpenUserModal(true);
     };
 
     const handleEditUser = (user) => {
         setSelectedUser(user);
-        setUserFormMode('edit');
+        setUserFormMode("edit");
         setOpenUserModal(true);
     };
 
     const handleDeleteUser = (user) => {
-        const userId = typeof user === 'string' ? user : user?.id;
+        const userId = typeof user === "string" ? user : user?.id;
         setSelectedUserId(userId);
         setOpenDeleteDialog(true);
     };
 
     const confirmDeleteUser = async () => {
         if (!selectedUserId) {
-            toast.error('User ID is missing');
+            toast.error("User ID is missing");
             return;
         }
 
@@ -204,20 +206,19 @@ export default function AdminDashboard() {
         });
 
         if (success) {
-            toast.success('User deleted successfully');
+            toast.success("User deleted successfully");
             setOpenDeleteDialog(false);
             fetchUsers(usersData.page, usersData.pageSize);
         } else {
-            toast.error(message || 'Failed to delete user');
+            toast.error(message || "Failed to delete user");
         }
     };
 
     const handleSubmitUserForm = async (formData, onError) => {
-        const endpoint = userFormMode === 'create'
-            ? adminEndPoints.CREATE_USER
-            : adminEndPoints.UPDATE_USER(selectedUser.id);
+        const endpoint =
+            userFormMode === "create" ? adminEndPoints.CREATE_USER : adminEndPoints.UPDATE_USER(selectedUser.id);
 
-        const method = userFormMode === 'create' ? METHOD.POST : METHOD.PUT;
+        const method = userFormMode === "create" ? METHOD.POST : METHOD.PUT;
 
         const { success, message, data } = await callApi({
             method,
@@ -226,12 +227,16 @@ export default function AdminDashboard() {
         });
 
         if (success) {
-            toast.success(userFormMode === 'create' ? 'User created successfully' : 'User updated successfully');
+            toast.success(userFormMode === "create" ? "User created successfully" : "User updated successfully");
+            try {
+                trackRegister(data?.id ?? data?.userId ?? null, "admin_create");
+            } catch (e) {
+            }
             setOpenUserModal(false);
             fetchUsers(usersData.page, usersData.pageSize);
         } else {
             // Kiểm tra lỗi email trùng
-            if (message && message.toLowerCase().includes('email')) {
+            if (message && message.toLowerCase().includes("email")) {
                 onError?.(message);
             } else {
                 toast.error(message || `Failed to ${userFormMode} user`);
@@ -241,9 +246,9 @@ export default function AdminDashboard() {
 
     // Role mapping
     const roleMap = {
-        0: 'Candidate',
-        1: 'Coach',
-        2: 'Admin'
+        0: "Candidate",
+        1: "Coach",
+        2: "Admin",
     };
 
     const getRoleLabel = (roleValue) => {
@@ -251,87 +256,96 @@ export default function AdminDashboard() {
     };
 
     const normalizeRoleValue = (roleValue) => {
-        if (typeof roleValue === 'number') return roleValue;
-        if (typeof roleValue === 'string') {
+        if (typeof roleValue === "number") return roleValue;
+        if (typeof roleValue === "string") {
             const normalized = roleValue.toLowerCase();
-            if (normalized === 'candidate') return 0;
-            if (normalized === 'coach') return 1;
-            if (normalized === 'admin') return 2;
+            if (normalized === "candidate") return 0;
+            if (normalized === "coach") return 1;
+            if (normalized === "admin") return 2;
         }
         return roleValue;
     };
 
-    const filteredUsersByRole = roleFilter === 'all'
-        ? usersData.data
-        : (usersData.data || []).filter((user) => normalizeRoleValue(user.role) === Number(roleFilter));
+    const filteredUsersByRole =
+        roleFilter === "all"
+            ? usersData.data
+            : (usersData.data || []).filter((user) => normalizeRoleValue(user.role) === Number(roleFilter));
 
     const filteredUsers = (filteredUsersByRole || []).filter((user) => {
         if (!emailSearch.trim()) return true;
-        return (user.email || '').toLowerCase().includes(emailSearch.trim().toLowerCase());
+        return (user.email || "").toLowerCase().includes(emailSearch.trim().toLowerCase());
     });
 
     // Table columns configurations
     const usersColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
-        { field: 'fullName', headerName: 'Full Name', width: 200 },
-        { field: 'email', headerName: 'Email', width: 250 },
+        { field: "id", headerName: "ID", width: 70 },
+        { field: "fullName", headerName: "Full Name", width: 200 },
+        { field: "email", headerName: "Email", width: 250 },
         {
-            field: 'role',
-            headerName: 'Role',
-            type: 'chip',
+            field: "role",
+            headerName: "Role",
+            type: "chip",
             render: (val) => getRoleLabel(val),
             chipColor: (val) => {
                 const roleLabel = getRoleLabel(val);
-                if (roleLabel === 'Admin') return 'rgba(248,113,113,0.3)';
-                if (roleLabel === 'Coach') return 'rgba(74,222,128,0.3)';
-                return 'rgba(123,97,255,0.3)';
-            }
-        }
+                if (roleLabel === "Admin") return "rgba(248,113,113,0.3)";
+                if (roleLabel === "Coach") return "rgba(74,222,128,0.3)";
+                return "rgba(123,97,255,0.3)";
+            },
+        },
     ];
 
     const companiesColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
-        { field: 'name', headerName: 'Company Name', width: 250 },
-        { field: 'email', headerName: 'Email', width: 200 },
-        { field: 'phone', headerName: 'Phone', width: 150 },
-        { field: 'address', headerName: 'Address', width: 200 },
-        { field: 'createdAt', headerName: 'Created At', type: 'date' },
+        { field: "id", headerName: "ID", width: 70 },
+        { field: "name", headerName: "Company Name", width: 250 },
+        { field: "email", headerName: "Email", width: 200 },
+        { field: "phone", headerName: "Phone", width: 150 },
+        { field: "address", headerName: "Address", width: 200 },
+        { field: "createdAt", headerName: "Created At", type: "date" },
     ];
 
     const paymentsColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
-        { field: 'userId', headerName: 'User ID', width: 100 },
-        { field: 'amount', headerName: 'Amount', type: 'currency' },
+        { field: "id", headerName: "ID", width: 70 },
+        { field: "userId", headerName: "User ID", width: 100 },
+        { field: "amount", headerName: "Amount", type: "currency" },
         {
-            field: 'status', headerName: 'Status', type: 'chip', chipColor: (val) => {
-                if (val === 'SUCCESS') return 'rgba(74,222,128,0.3)';
-                if (val === 'PENDING') return 'rgba(251,191,36,0.3)';
-                return 'rgba(248,113,113,0.3)';
-            }
+            field: "status",
+            headerName: "Status",
+            type: "chip",
+            chipColor: (val) => {
+                if (val === "SUCCESS") return "rgba(74,222,128,0.3)";
+                if (val === "PENDING") return "rgba(251,191,36,0.3)";
+                return "rgba(248,113,113,0.3)";
+            },
         },
-        { field: 'createdAt', headerName: 'Created At', type: 'date' },
+        { field: "createdAt", headerName: "Created At", type: "date" },
     ];
 
     const feedbacksColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
-        { field: 'userId', headerName: 'User ID', width: 100 },
-        { field: 'rating', headerName: 'Rating', render: (val) => `⭐ ${val}/5` },
-        { field: 'comment', headerName: 'Comment', width: 300 },
-        { field: 'createdAt', headerName: 'Created At', type: 'date' },
+        { field: "id", headerName: "ID", width: 70 },
+        { field: "userId", headerName: "User ID", width: 100 },
+        { field: "rating", headerName: "Rating", render: (val) => `⭐ ${val}/5` },
+        { field: "comment", headerName: "Comment", width: 300 },
+        { field: "createdAt", headerName: "Created At", type: "date" },
     ];
 
     const interviewersColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
-        { field: 'fullName', headerName: 'Full Name', width: 200 },
-        { field: 'email', headerName: 'Email', width: 200 },
-        { field: 'specialization', headerName: 'Specialization', width: 150 },
-        { field: 'experienceYears', headerName: 'Experience (Years)', width: 150, render: (val) => val ? `${val} years` : '-' },
-        { field: 'createdAt', headerName: 'Created At', type: 'date' },
+        { field: "id", headerName: "ID", width: 70 },
+        { field: "fullName", headerName: "Full Name", width: 200 },
+        { field: "email", headerName: "Email", width: 200 },
+        { field: "specialization", headerName: "Specialization", width: 150 },
+        {
+            field: "experienceYears",
+            headerName: "Experience (Years)",
+            width: 150,
+            render: (val) => (val ? `${val} years` : "-"),
+        },
+        { field: "createdAt", headerName: "Created At", type: "date" },
     ];
 
     const currentMeta = {
-        title: 'Dashboard',
-        subtitle: 'Overview statistics for the platform.'
+        title: "Dashboard",
+        subtitle: "Overview statistics for the platform.",
     };
 
     return (
@@ -349,18 +363,13 @@ export default function AdminDashboard() {
             </div>
 
             {loading && !stats ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                    <CircularProgress sx={{ color: '#4F46E5' }} />
+                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                    <CircularProgress sx={{ color: "#4F46E5" }} />
                 </Box>
             ) : (
                 <Grid container spacing={3} sx={{ mb: 2 }}>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
-                        <StatsCard
-                            title="Total Users"
-                            value={stats?.totalUsers}
-                            icon={PeopleIcon}
-                            color="#7B61FF"
-                        />
+                        <StatsCard title="Total Users" value={stats?.totalUsers} icon={PeopleIcon} color="#7B61FF" />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4} lg={2}>
                         <StatsCard
@@ -397,16 +406,18 @@ export default function AdminDashboard() {
                     <Grid item xs={12} sm={6} md={4} lg={2}>
                         <StatsCard
                             title="Avg Rating"
-                            value={parseFloat(stats?.averageRating ?? stats?.avgRating ?? stats?.ratingAverage ?? 0).toFixed(2)}
+                            value={parseFloat(
+                                stats?.averageRating ?? stats?.avgRating ?? stats?.ratingAverage ?? 0,
+                            ).toFixed(2)}
                             icon={StarIcon}
                             color="#fbbf24"
                         />
                     </Grid>
                 </Grid>
             )}
-            {false && (
-                <div className="admin-card" />
-            )}
+            {/* Analytics charts (active users, events, geo) */}
+            <AnalyticsCharts />
+            {false && <div className="admin-card" />}
         </Container>
     );
 }
