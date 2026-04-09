@@ -16,6 +16,7 @@ import SuspendedGate from "../../common/components/SuspendedGate";
 import CandidateAssessmentGate from "../../common/components/CandidateAssessmentGate";
 import Navbar from "../../common/components/Navbar/Navbar";
 import usePageTracking from "../../hooks/usePageTracking";
+import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/services/assessmentApi";
 import {
     LayoutDashboard,
     Calendar,
@@ -114,6 +115,8 @@ const MainLayout = () => {
     );
 
     const isAdmin = userData?.role === ROLES.ADMIN;
+    const isAssessmentLocked = userData?.role === ROLES.CANDIDATE && isAssessmentForceRequired(userData?.id);
+    const isAssessmentPage = location.pathname.startsWith("/assessment");
 
     // Sidebar group toggle states for Admin view
     const [openGroups, setOpenGroups] = useState({
@@ -349,7 +352,31 @@ const MainLayout = () => {
         <>
             <CandidateAssessmentGate />
             <div className="main-layout">
-                <Navbar remoteAvatar={remoteAvatar} menuItems={menuItems} />
+                {isAssessmentPage ? null : isAssessmentLocked ? (
+                    <header
+                        style={{
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 1200,
+                            backdropFilter: "blur(10px)",
+                            background: "rgba(255,255,255,0.85)",
+                            borderBottom: "1px solid rgba(15,23,42,0.08)",
+                        }}
+                    >
+                        <Container
+                            maxWidth={false}
+                            sx={{
+                                maxWidth: "1350px",
+                                py: 1.5,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                            }}
+                        ></Container>
+                    </header>
+                ) : (
+                    <Navbar remoteAvatar={remoteAvatar} menuItems={menuItems} />
+                )}
 
                 <main className="main-content">
                     <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>

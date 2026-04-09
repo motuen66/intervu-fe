@@ -1,5 +1,6 @@
 const CACHE_PREFIX = "assessment_cache:";
 const EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+export const ASSESSMENT_PROGRESS_EXPIRY_MS = 5 * 60 * 1000;
 
 export const setAssessmentCache = (userId, data) => {
     if (!userId) return;
@@ -74,7 +75,7 @@ export const getProgressCache = (userId) => {
     }
 };
 
-export const isProgressCacheValid = (userId, expiryMs = EXPIRY_MS) => {
+export const isProgressCacheValid = (userId, expiryMs = ASSESSMENT_PROGRESS_EXPIRY_MS) => {
     const entry = getProgressCache(userId);
     if (!entry || !entry.ts) return false;
     return Date.now() - entry.ts < expiryMs;
