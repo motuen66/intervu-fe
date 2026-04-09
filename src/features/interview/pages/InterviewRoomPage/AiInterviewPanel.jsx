@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Typography, Paper, Stack, List, ListItem, ListItemText, Divider, Button, CircularProgress } from "@mui/material";
+import { DangerButton, PrimaryButton } from "../../../../common/components/buttons";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi.js";
@@ -140,20 +141,13 @@ function AiInterviewPanel({ roomId }) {
                         Start recording to capture your responses and generate transcripts.
                     </Typography>
                     {isRecording ? (
-                        <Button variant="outlined" color="error" onClick={stopRecording}>
+                        <DangerButton onClick={stopRecording}>
                             Stop
-                        </Button>
+                        </DangerButton>
                     ) : (
-                        <Button variant="contained" onClick={startRecording} disabled={isStarting}>
-                            {isStarting ? (
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <CircularProgress size={16} color="inherit" />
-                                    <span>Starting...</span>
-                                </Stack>
-                            ) : (
-                                "Start"
-                            )}
-                        </Button>
+                        <PrimaryButton onClick={startRecording} disabled={isStarting} loading={isStarting}>
+                            {isStarting ? "Starting..." : "Start"}
+                        </PrimaryButton>
                     )}
                 </Stack>
             </Paper>

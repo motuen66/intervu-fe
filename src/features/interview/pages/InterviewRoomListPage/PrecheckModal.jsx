@@ -10,7 +10,6 @@ import {
     IconButton,
     LinearProgress,
     MenuItem,
-    Select,
     Stack,
     Typography,
     useTheme,
@@ -33,6 +32,7 @@ import {
 } from "@mui/icons-material";
 import usePrecheckDevices from "./usePrecheckDevices";
 import { STATUS_MSG } from "../../constants/mediaConfig";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 // ─── Volume Meter Bar ────────────────────────────────────────────────────────
 function VolumeMeter({ level, isActive }) {
@@ -88,7 +88,7 @@ function DeviceSelector({ label, devices, value, onChange, disabled }) {
             >
                 {label}
             </Typography>
-            <Select
+            <FormSelect
                 value={value || ""}
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
@@ -113,7 +113,7 @@ function DeviceSelector({ label, devices, value, onChange, disabled }) {
                         {d.label || `Device ${d.deviceId.slice(0, 8)}…`}
                     </MenuItem>
                 ))}
-            </Select>
+            </FormSelect>
         </FormControl>
     );
 }

@@ -22,6 +22,7 @@ import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { interviewEndPoints } from "../../../services/interviewRoomApi.js";
 import useUser from "../../../../../common/hooks/useUser.jsx";
+import { SecondaryButton, PrimaryButton } from "../../../../../common/components/buttons";
 
 function AICVSelectionModal({ open, onClose, onJoin, room }) {
     const [step, setStep] = useState("selection"); // selection, processing, confirm
@@ -296,14 +297,14 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
             </DialogContent>
             <DialogActions>
                 {step === "selection" && (
-                    <Button onClick={handleClose}>Cancel</Button>
+                    <SecondaryButton onClick={handleClose}>Cancel</SecondaryButton>
                 )}
                 {step === "confirm" && (
                     <>
-                        <Button onClick={handleClose}>Cancel</Button>
-                        <Button onClick={handleConfirmJoin} variant="contained">
+                        <SecondaryButton onClick={handleClose}>Cancel</SecondaryButton>
+                        <PrimaryButton onClick={handleConfirmJoin}>
                             Confirm & Join Interview
-                        </Button>
+                        </PrimaryButton>
                     </>
                 )}
             </DialogActions>

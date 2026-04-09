@@ -9,6 +9,7 @@ import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import { createCoachInterviewService } from "../../services/coachInterviewServiceApi";
+import { trackCreateService } from "../../../../utils/analytics";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
@@ -43,7 +44,10 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
 
         setSaving(true);
         try {
-            await createCoachInterviewService(form);
+            const res = await createCoachInterviewService(form);
+            try {
+                trackCreateService(res?.id ?? null, form.interviewTypeId, form.price, form.durationMinutes);
+            } catch (e) {}
             onCreated && onCreated();
             setForm({ interviewTypeId: "", price: 0, durationMinutes: 30 });
         } catch (err) {
@@ -61,13 +65,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{ sx: dialogStyles.paper }}
-        >
+        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{ sx: dialogStyles.paper }}>
             <DialogTitle
                 sx={{
                     fontWeight: 700,

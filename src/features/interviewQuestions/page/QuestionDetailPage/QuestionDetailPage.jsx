@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -11,7 +11,6 @@ import {
     IconButton,
     MenuItem,
     Paper,
-    Select,
     Stack,
     TextField,
     Tooltip,
@@ -35,6 +34,7 @@ import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
+import { trackCreateComment } from "../../../../utils/analytics";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
 import { commentEndPoints } from "../../service/commentApi";
@@ -46,6 +46,7 @@ import { timeAgo } from "../../../../common/utils/dateFormatter";
 import { SORT_OPTIONS } from "../../../../common/constants/types";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 /* ─── Main Page ───────────────────────────────────────────────── */
 export default function QuestionDetailPage() {
@@ -272,17 +273,24 @@ export default function QuestionDetailPage() {
 
     /* ── Add comment ── */
     const handleAddComment = async () => {
-        if (!answerInput.trim()) return;
+        const content = answerInput.trim();
+        if (!content) return;
         setSubmittingAnswer(true);
         try {
-            await callApi({
+            const { data: res } = await callApi({
                 method: METHOD.POST,
                 endpoint: commentEndPoints.ADD_COMMENT(id),
-                arg: { content: answerInput.trim() },
+                arg: { content },
             });
             setAnswerInput("");
             setCommentPage(1);
             await fetchComments(1);
+
+            try {
+                trackCreateComment(id, res?.id ?? null, content.length);
+            } catch (err) {
+                console.warn("trackCreateComment failed", err);
+            }
         } catch (err) {
             toast.error(err?.response?.data?.message ?? "Failed to add comment");
         } finally {
@@ -795,7 +803,7 @@ export default function QuestionDetailPage() {
                                 </Typography>
                                 <Box flex={1} />
                                 <FormControl size="small">
-                                    <Select
+                                    <FormSelect
                                         value={answerSort}
                                         onChange={(e) => {
                                             setAnswerSort(e.target.value);
@@ -812,7 +820,7 @@ export default function QuestionDetailPage() {
                                                 {s.label}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                             </Stack>
                             {sortedAnswers.map((a, idx) => {

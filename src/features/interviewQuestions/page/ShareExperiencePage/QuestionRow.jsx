@@ -7,7 +7,6 @@ import {
     IconButton,
     MenuItem,
     Paper,
-    Select,
     Stack,
     TextField,
     Tooltip,
@@ -22,6 +21,7 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
 import { QUESTION_TYPES, ROLES } from "../../../../common/constants/types";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 const labelSx = {
     fontSize: 11,
@@ -169,7 +169,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
             {!q.linkedQuestion && (
                 <Box mb={1.75}>
                     <Typography sx={labelSx}>Question Type</Typography>
-                    <Select
+                    <FormSelect
                         displayEmpty
                         value={q.type}
                         onChange={(e) => onUpdateField(idx, "type", e.target.value)}
@@ -190,7 +190,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                                 {t.label}
                             </MenuItem>
                         ))}
-                    </Select>
+                    </FormSelect>
                 </Box>
             )}
 

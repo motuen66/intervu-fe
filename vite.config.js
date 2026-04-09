@@ -8,6 +8,17 @@ export default defineConfig(({ mode, command }) => {
     const env = loadEnv(mode, process.cwd(), "");
     const isLocalHttps = command === "serve" && (env.VITE_LOCAL_HTTPS === "1" || env.VITE_LOCAL_HTTPS === "true");
 
+    const allowedHostsFromEnv = (env.VITE_ALLOWED_HOSTS || "")
+        .split(",")
+        .map((h) => h.trim())
+        .filter(Boolean);
+
+    const allowedHosts = [
+        "supereminent-alita-honorless.ngrok-free.dev",
+        ".ngrok-free.dev",
+        ...allowedHostsFromEnv,
+    ];
+    
     let https = false;
     if (isLocalHttps) {
         try {
@@ -26,6 +37,7 @@ export default defineConfig(({ mode, command }) => {
         plugins: [react()],
         server: {
             host: true,
+            allowedHosts,
             https,
         },
     };

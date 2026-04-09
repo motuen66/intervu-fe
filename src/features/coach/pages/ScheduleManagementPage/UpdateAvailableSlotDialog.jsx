@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
-import { Box, TextField, Typography, Modal, Card, Stack, FormControl, Select, MenuItem, Divider } from "@mui/material";
+import { Box, TextField, Typography, Modal, Card, Stack, FormControl, MenuItem, Divider } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../../../../common/components/buttons";
 import { IoTrash } from "react-icons/io5";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 const MINUTES_STEP = 30;
 const MINUTE_OPTIONS = Array.from({ length: 60 / MINUTES_STEP }, (_, i) => i * MINUTES_STEP);
@@ -107,7 +108,7 @@ const UpdateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select
+                                    <FormSelect
                                         value={formData.startHour}
                                         onChange={(e) =>
                                             setFormData({ ...formData, startHour: Number(e.target.value) })
@@ -119,11 +120,11 @@ const UpdateAvailableSlotDialog = ({
                                                 {hour.toString().padStart(2, "0")}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select
+                                    <FormSelect
                                         value={formData.startMinute}
                                         onChange={(e) =>
                                             setFormData({ ...formData, startMinute: Number(e.target.value) })
@@ -135,7 +136,7 @@ const UpdateAvailableSlotDialog = ({
                                                 {minute.toString().padStart(2, "0")}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                             </Stack>
                         </Box>
@@ -146,7 +147,7 @@ const UpdateAvailableSlotDialog = ({
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <FormControl fullWidth size="small">
-                                    <Select
+                                    <FormSelect
                                         value={formData.endHour}
                                         onChange={(e) => setFormData({ ...formData, endHour: Number(e.target.value) })}
                                         sx={{ borderRadius: "8px" }}
@@ -156,11 +157,11 @@ const UpdateAvailableSlotDialog = ({
                                                 {hour.toString().padStart(2, "0")}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                                 <Typography sx={{ display: "flex", alignItems: "center", mx: 0.5 }}>:</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select
+                                    <FormSelect
                                         value={formData.endMinute}
                                         onChange={(e) =>
                                             setFormData({ ...formData, endMinute: Number(e.target.value) })
@@ -172,7 +173,7 @@ const UpdateAvailableSlotDialog = ({
                                                 {minute.toString().padStart(2, "0")}
                                             </MenuItem>
                                         ))}
-                                    </Select>
+                                    </FormSelect>
                                 </FormControl>
                             </Stack>
                         </Box>

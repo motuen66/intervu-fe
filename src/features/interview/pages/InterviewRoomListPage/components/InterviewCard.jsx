@@ -17,14 +17,12 @@ import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { INTERVIEW_ROOM_TYPE } from "../../../../../common/constants/types";
 import { ROLES } from "../../../../../common/constants/common";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import StatusChip from "../../../../../common/components/StatusChip";
 import BaseCard from "../../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
 import { getInterviewRoomStatusConfig } from "../../../../../common/constants/statusConfig";
 import { alpha } from "@mui/material/styles";
-import { callApi } from "../../../../../common/utils/apiConnector";
-import { METHOD } from "../../../../../common/constants/api";
 
 function InterviewCard({
     room,
@@ -42,8 +40,6 @@ function InterviewCard({
     const navigate = useNavigate();
     const isOngoing = room.status === INTERVIEW_ROOM_STATUS.ON_GOING;
     const isScheduled = room.status === INTERVIEW_ROOM_STATUS.SCHEDULED;
-    const [participantAvatarUrl, setParticipantAvatarUrl] = useState(null);
-    const [participantProfile, setParticipantProfile] = useState(null);
     const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null);
 
     // Determine which participant to show (opposite role)
@@ -223,8 +219,6 @@ function InterviewCard({
                 room.coachSlug ||
                 room.coach?.slugProfileUrl ||
                 room.interviewer?.slugProfileUrl ||
-                participantProfile?.slugProfileUrl ||
-                participantProfile?.profileUrl ||
                 null
             );
         }
@@ -234,8 +228,6 @@ function InterviewCard({
                 room.candidateSlugProfileUrl ||
                 room.candidateSlug ||
                 room.candidate?.slugProfileUrl ||
-                participantProfile?.slugProfileUrl ||
-                participantProfile?.profileUrl ||
                 null
             );
         }
@@ -573,7 +565,7 @@ function InterviewCard({
             {/* Header */}
             <Stack direction="row" spacing={1.5} alignItems="flex-start">
                 <Avatar
-                    src={participantAvatarUrl || getParticipantAvatar() || ""}
+                    src={getParticipantAvatar() || ""}
                     sx={{
                         width: 72,
                         height: 72,
@@ -589,7 +581,7 @@ function InterviewCard({
                                 : "var(--mui-palette-primary-main)",
                     }}
                 >
-                    {!(participantAvatarUrl || getParticipantAvatar()) ? getInitials(getParticipantName()) : null}
+                    {!getParticipantAvatar() ? getInitials(getParticipantName()) : null}
                 </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     {/* Modern Interview Type Badge - "Overline" Style */}

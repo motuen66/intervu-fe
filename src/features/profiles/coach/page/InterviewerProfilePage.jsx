@@ -9,7 +9,6 @@ import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import BankSelection from "./BankSelection";
 import {
     Box,
     Typography,
@@ -20,7 +19,6 @@ import {
     TextField,
     Paper,
     Link,
-    Grid,
     Divider,
     CardContent,
     Rating,
@@ -28,19 +26,23 @@ import {
 import { Tabs, Tab } from "@mui/material";
 import {
     Camera as CameraIcon,
-    Edit as EditIcon,
+    Edit3 as EditIcon,
+    Trash2 as DeleteIcon,
     X as CloseIcon,
-    Mail as EmailIcon,
+    Plus as PlusIcon,
     Link as LinkIcon,
-    Code as CodeIcon,
     Save as SaveIcon,
-    Star as StarIcon,
     ExternalLink as ExternalLinkIcon,
+    Globe as GlobeIcon,
+    Award as AwardIcon,
+    Briefcase as BriefcaseIcon,
 } from "lucide-react";
 import { Autocomplete } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPage/QuestionCard";
+import WorkExperienceModal from "../../components/WorkExperienceModal.jsx";
+import CertificateDialog from "../../components/CertificateDialog.jsx";
 import { interactionEndPoints } from "../../../interviewQuestions/service/interactionApi";
 import "./PublicInterviewerProfilePage/EliteCoachProfile.css";
 
@@ -65,7 +67,70 @@ function getRoleFromJwt() {
     }
 }
 
-// ─── Reusable sidebar card with header strip ──────────────────────────────────
+const toDateInput = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value.split("T")[0];
+    return "";
+};
+
+const normalizeWorkExperience = (item) => ({
+    id:
+        item?.id ||
+        item?.Id ||
+        item?.workExperienceId ||
+        item?.WorkExperienceId ||
+        item?.coachWorkExperienceId ||
+        item?.CoachWorkExperienceId ||
+        null,
+    companyName: item?.companyName || item?.CompanyName || item?.company || "",
+    positionTitle: item?.positionTitle || item?.PositionTitle || item?.jobTitle || "",
+    jobTitle: item?.jobTitle || item?.positionTitle || item?.PositionTitle || "",
+    employmentType: item?.employmentType || item?.jobType || item?.JobType || "",
+    location: item?.location || item?.Location || "",
+    locationType: item?.locationType || item?.LocationType || "",
+    startDate: item?.startDate || item?.StartDate || "",
+    endDate: item?.endDate || item?.EndDate || "",
+    isCurrentWorking: !!(item?.isCurrentWorking ?? item?.IsCurrentWorking),
+    isEnded: !!(item?.isEnded ?? item?.IsEnded),
+    description: item?.description || item?.Description || "",
+    skillIds: item?.skillIds || item?.SkillIds || [],
+});
+
+const normalizeCertificate = (item, index) => {
+    if (typeof item === "string") {
+        return { id: null, name: `Certificate ${index + 1}`, issuer: "", issuedAt: "", expiryAt: "", link: item };
+    }
+    return {
+        id: item?.id || item?.Id || item?.certificateId || item?.CertificateId || null,
+        name: item?.name || item?.Name || `Certificate ${index + 1}`,
+        issuer: item?.issuer || item?.Issuer || "",
+        issuedAt: toDateInput(item?.issuedAt || item?.IssuedAt),
+        expiryAt: toDateInput(item?.expiryAt || item?.ExpiryAt),
+        link: item?.link || item?.Link || "",
+    };
+};
+
+const normalizeCoachProfile = (data) => ({
+    ...data,
+    skills: (data?.skills || []).map((s) => (typeof s === "object" ? s?.name : s)).filter(Boolean),
+    companies: (data?.companies || []).map((c) => (typeof c === "object" ? c?.name : c)).filter(Boolean),
+    industryIds: data?.industryIds || (data?.industries || []).map((i) => i?.id || i).filter(Boolean),
+    industries: data?.industries || [],
+    certificationLinks: (data?.certificates || data?.certificationLinks || data?.certifications || []).map(
+        (item, idx) => normalizeCertificate(item, idx),
+    ),
+    workExperiences: (data?.workExperiences || []).map(normalizeWorkExperience),
+    bankBinNumber: data?.bankBinNumber || "",
+    bankAccountNumber: data?.bankAccountNumber || "",
+});
+
+const formatMonthYear = (value) => {
+    if (!value) return "Present";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "Present";
+    return parsed.toLocaleDateString("en-US", { month: "numeric", year: "numeric" });
+};
+
 function SidebarCard({ icon, title, badge, badgeActive, children, sx = {} }) {
     return (
         <Box
@@ -140,6 +205,8 @@ function InterviewerProfilePage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [expandedBio, setExpandedBio] = useState(false);
+    const [expandedWorkExp, setExpandedWorkExp] = useState({});
+    // editMode chỉ dành cho: fullName, bio, portfolioUrl, skills, companies, industries, experienceYears
     const [editMode, setEditMode] = useState(false);
     const [saving, setSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -156,6 +223,23 @@ function InterviewerProfilePage() {
     const [tabValue, setTabValue] = useState(0);
     const [savedQuestions, setSavedQuestions] = useState([]);
     const [loadingSaved, setLoadingSaved] = useState(false);
+    const [allIndustries, setAllIndustries] = useState([]);
+
+    // Work Experience modal state (independent of editMode)
+    const [workExperienceModalOpen, setWorkExperienceModalOpen] = useState(false);
+    const [editingWorkExperience, setEditingWorkExperience] = useState(null);
+    const [pendingWorkExperience, setPendingWorkExperience] = useState(null);
+    const [pendingDeleteWorkExperience, setPendingDeleteWorkExperience] = useState(null);
+    const [showConfirmWorkSave, setShowConfirmWorkSave] = useState(false);
+    const [showConfirmWorkDelete, setShowConfirmWorkDelete] = useState(false);
+
+    // Certificate modal state (independent of editMode)
+    const [certificateDialogOpen, setCertificateDialogOpen] = useState(false);
+    const [editingCertificate, setEditingCertificate] = useState(null);
+    const [pendingCertificatePayload, setPendingCertificatePayload] = useState(null);
+    const [pendingDeleteCertificate, setPendingDeleteCertificate] = useState(null);
+    const [showConfirmCertificateSave, setShowConfirmCertificateSave] = useState(false);
+    const [showConfirmCertificateDelete, setShowConfirmCertificateDelete] = useState(false);
 
     const tokenRole = useMemo(() => {
         const r = getRoleFromJwt();
@@ -168,9 +252,7 @@ function InterviewerProfilePage() {
         tokenRole === "interviewer";
 
     const endpoint = useMemo(() => {
-        if (routeId) {
-            return interviewerProfileEndPoints.VIEW_OWN_INTERVIEWER_PROFILE.replace("{id}", routeId);
-        }
+        if (routeId) return interviewerProfileEndPoints.VIEW_OWN_INTERVIEWER_PROFILE.replace("{id}", routeId);
         if (!user?.id) return null;
         return isInterviewer
             ? interviewerProfileEndPoints.VIEW_OWN_INTERVIEWER_PROFILE.replace("{id}", user.id)
@@ -185,13 +267,7 @@ function InterviewerProfilePage() {
             try {
                 const res = await callApi({ method: METHOD.GET, endpoint });
                 if (res.success) {
-                    setProfile({
-                        ...res.data,
-                        skills: res.data.skills?.map((s) => s.name || s) || [],
-                        companies: res.data.companies?.map((c) => c.name || c) || [],
-                        bankBinNumber: res.data.bankBinNumber || "",
-                        bankAccountNumber: res.data.bankAccountNumber || "",
-                    });
+                    setProfile(normalizeCoachProfile(res.data));
                 } else {
                     setError(res.message || "Failed to load profile");
                 }
@@ -236,6 +312,16 @@ function InterviewerProfilePage() {
                           ? companiesRes.data.items
                           : [];
                     setAllCompanies(companies);
+                }
+                const industriesRes = await callApi({
+                    method: METHOD.GET,
+                    endpoint: interviewerProfileEndPoints.GET_ALL_INDUSTRIES.replace("{page}", "1").replace(
+                        "{pageSize}",
+                        "100",
+                    ),
+                });
+                if (industriesRes.success) {
+                    setAllIndustries(industriesRes.data?.items || industriesRes.data || []);
                 }
             } catch (err) {
                 console.error("Error loading dropdown data:", err);
@@ -295,8 +381,6 @@ function InterviewerProfilePage() {
             </Box>
         );
     }
-
-    const handleTabChange = (_, v) => setTabValue(v);
 
     const onPick = (e) => {
         const file = e.target.files?.[0];
@@ -359,23 +443,18 @@ function InterviewerProfilePage() {
         setShowConfirmAvatar(false);
     };
 
-    const avatarUrl = profile?.profilePicture || profile?.user?.profilePicture || "";
-    const fullName = profile?.user?.fullName || profile?.fullName || user?.fullName || "Unnamed";
-    const email = profile?.user?.email || user?.email || "-";
-    const years = profile?.experienceYears ?? profile?.yearsOfExperience;
-    const bio = profile?.bio || profile?.description || "";
-    const headlineCompany = companiesDisplay[0] || "Independent Coach";
-    const headlineTitle = years != null ? `${years}+ years interviewing` : "Interview Coach";
+    const refreshProfile = async () => {
+        if (!profile?.id) return;
+        const ep = interviewerProfileEndPoints.VIEW_OWN_INTERVIEWER_PROFILE.replace("{id}", profile.id);
+        const res = await callApi({ method: METHOD.GET, endpoint: ep });
+        if (res?.success) setProfile(normalizeCoachProfile(res.data));
+    };
 
-    const truncatedBio = useMemo(() => {
-        if (!bio) return "";
-        if (bio.length <= 240) return bio;
-        return expandedBio ? bio : bio.slice(0, 240) + "...";
-    }, [bio, expandedBio]);
-
+    // ─── handleSave: CHỈ save profile fields cơ bản ──────────────────────────
+    // KHÔNG bao gồm workExperiences và certificationLinks
     const handleSave = async () => {
         if (!profile) return;
-        const endpoint = interviewerProfileEndPoints.UPDATE_INTERVIEWER_PROFILE.replace("{id}", profile.id);
+        const ep = interviewerProfileEndPoints.UPDATE_INTERVIEWER_PROFILE.replace("{id}", profile.id);
         setSaving(true);
         setError(null);
         try {
@@ -385,11 +464,13 @@ function InterviewerProfilePage() {
             const companyIds = (profile.companies || [])
                 .map((c) => (typeof c === "object" ? c.id : allCompanies.find((co) => co.name === c)?.id))
                 .filter(Boolean);
+
+            // Chỉ gửi các field thuộc profile chính, KHÔNG gửi workExperiences / certificationLinks
             const payload = {
                 id: profile.id,
                 fullName: profile.user?.fullName || profile.fullName || "",
                 email: profile.user?.email || profile.email || "",
-                profilePicture: avatarUrl,
+                profilePicture: profile?.profilePicture || profile?.user?.profilePicture || "",
                 portfolioUrl: profile.portfolioUrl || "",
                 currentAmount: Number(profile.currentAmount) || 0,
                 experienceYears:
@@ -401,12 +482,14 @@ function InterviewerProfilePage() {
                 companyIds,
                 bankBinNumber: profile.bankBinNumber || "",
                 bankAccountNumber: String(profile.bankAccountNumber || "").trim(),
+                industryIds: profile.industryIds || [],
             };
-            const res = await callApi({ method: METHOD.PUT, endpoint, arg: payload, displaySuccessMessage: true });
+
+            const res = await callApi({ method: METHOD.PUT, endpoint: ep, arg: payload, displaySuccessMessage: true });
             if (res.success) {
                 setEditMode(false);
                 setSaveSuccess(true);
-                setProfile((prev) => ({ ...prev, ...payload }));
+                await refreshProfile();
             } else {
                 setError(res.message || "Failed to save profile.");
             }
@@ -416,6 +499,129 @@ function InterviewerProfilePage() {
             setSaving(false);
         }
     };
+
+    // ─── Work Experience CRUD (độc lập với editMode) ─────────────────────────
+    const handleSaveWorkExperience = async (exp) => {
+        if (!profile) return;
+        if (!canEdit) return setError("You don't have permission to edit this profile.");
+        try {
+            if (editingWorkExperience && !exp?.id) {
+                throw new Error(
+                    "Cannot update this work experience because no id was returned by the API. Please delete and recreate it.",
+                );
+            }
+
+            const payload = {
+                CompanyName: exp.companyName || exp.company || "",
+                PositionTitle: exp.jobTitle || exp.positionTitle || "",
+                JobType: exp.employmentType || exp.jobType || null,
+                Location: exp.location || null,
+                LocationType: exp.locationType || null,
+                StartDate: exp.startDate ? new Date(exp.startDate).toISOString() : null,
+                EndDate: exp.endDate ? new Date(exp.endDate).toISOString() : null,
+                IsCurrentWorking: !!exp.isCurrentWorking,
+                IsEnded: !!exp.isEnded,
+                Description: exp.description || null,
+                SkillIds: Array.isArray(exp.skillIds) ? exp.skillIds : [],
+            };
+
+            if (exp.id) {
+                const endpoint = interviewerProfileEndPoints.UPDATE_WORK_EXPERIENCE.replace(
+                    "{profileId}",
+                    profile.id,
+                ).replace("{workExperienceId}", exp.id);
+                const res = await callApi({ method: METHOD.PUT, endpoint, arg: payload, displaySuccessMessage: true });
+                if (!res?.success) throw new Error(res?.message || "Failed to update work experience.");
+            } else {
+                const endpoint = interviewerProfileEndPoints.ADD_WORK_EXPERIENCE.replace("{profileId}", profile.id);
+                const res = await callApi({ method: METHOD.POST, endpoint, arg: payload, displaySuccessMessage: true });
+                if (!res?.success) throw new Error(res?.message || "Failed to add work experience.");
+            }
+
+            setWorkExperienceModalOpen(false);
+            setEditingWorkExperience(null);
+            await refreshProfile();
+        } catch (err) {
+            setError(err.message || "Failed to save work experience.");
+        }
+    };
+
+    const handleDeleteWorkExperience = async (id) => {
+        if (!profile?.id || !id) return;
+        try {
+            const endpoint = interviewerProfileEndPoints.DELETE_WORK_EXPERIENCE.replace(
+                "{profileId}",
+                profile.id,
+            ).replace("{workExperienceId}", id);
+            const res = await callApi({ method: METHOD.DELETE, endpoint, displaySuccessMessage: true });
+            if (!res?.success) throw new Error(res?.message || "Failed to delete work experience.");
+            await refreshProfile();
+        } catch (err) {
+            setError(err.message || "Failed to delete work experience.");
+        }
+    };
+
+    // ─── Certificate CRUD (độc lập với editMode) ─────────────────────────────
+    const handleSaveCertificate = async (form, certificateId) => {
+        if (!profile?.id) return;
+        try {
+            const payload = {
+                Name: form.name || "",
+                Issuer: form.issuer || "",
+                IssuedAt: form.issuedAt ? new Date(form.issuedAt).toISOString() : null,
+                ExpiryAt: form.expiryAt ? new Date(form.expiryAt).toISOString() : null,
+                Link: form.link || "",
+            };
+
+            if (certificateId) {
+                const endpoint = interviewerProfileEndPoints.UPDATE_CERTIFICATE.replace(
+                    "{profileId}",
+                    profile.id,
+                ).replace("{certificateId}", certificateId);
+                const res = await callApi({ method: METHOD.PUT, endpoint, arg: payload, displaySuccessMessage: true });
+                if (!res?.success) throw new Error(res?.message || "Failed to update certificate.");
+            } else {
+                const endpoint = interviewerProfileEndPoints.ADD_CERTIFICATE.replace("{profileId}", profile.id);
+                const res = await callApi({ method: METHOD.POST, endpoint, arg: payload, displaySuccessMessage: true });
+                if (!res?.success) throw new Error(res?.message || "Failed to add certificate.");
+            }
+
+            setCertificateDialogOpen(false);
+            setEditingCertificate(null);
+            await refreshProfile();
+        } catch (err) {
+            setError(err.message || "Failed to save certificate.");
+        }
+    };
+
+    const handleDeleteCertificate = async (certificate) => {
+        if (!profile?.id || !certificate?.id) return;
+        try {
+            const endpoint = interviewerProfileEndPoints.DELETE_CERTIFICATE.replace("{profileId}", profile.id).replace(
+                "{certificateId}",
+                certificate.id,
+            );
+            const res = await callApi({ method: METHOD.DELETE, endpoint, displaySuccessMessage: true });
+            if (!res?.success) throw new Error(res?.message || "Failed to delete certificate.");
+            setCertificateDialogOpen(false);
+            setEditingCertificate(null);
+            await refreshProfile();
+        } catch (err) {
+            setError(err.message || "Failed to delete certificate.");
+        }
+    };
+
+    const avatarUrl = profile?.profilePicture || profile?.user?.profilePicture || "";
+    const fullName = profile?.user?.fullName || profile?.fullName || user?.fullName || "Unnamed";
+    const email = profile?.user?.email || user?.email || "-";
+    const years = profile?.experienceYears ?? profile?.yearsOfExperience;
+    const bio = profile?.bio || profile?.description || "";
+
+    const truncatedBio = useMemo(() => {
+        if (!bio) return "";
+        if (bio.length <= 240) return bio;
+        return expandedBio ? bio : bio.slice(0, 240) + "...";
+    }, [bio, expandedBio]);
 
     if (loading) {
         return (
@@ -435,12 +641,7 @@ function InterviewerProfilePage() {
             <Box className="ep-shell" sx={{ pb: 0 }}>
                 <BaseCard
                     elevation={0}
-                    sx={{
-                        mb: 4,
-                        overflow: "hidden",
-                        background: "#fdfdf5",
-                        boxShadow: "var(--ep-shadow)",
-                    }}
+                    sx={{ mb: 4, overflow: "hidden", background: "#fdfdf5", boxShadow: "var(--ep-shadow)" }}
                 >
                     <Box
                         sx={{
@@ -450,6 +651,7 @@ function InterviewerProfilePage() {
                             position: "relative",
                         }}
                     >
+                        {/* Nút edit/close CHỈ cho profile fields */}
                         {canEdit && (
                             <IconButton
                                 onClick={() => setEditMode((v) => !v)}
@@ -484,7 +686,6 @@ function InterviewerProfilePage() {
                         <Box
                             sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 3, md: 5 } }}
                         >
-                            {/* Avatar */}
                             <Box sx={{ mt: -4, position: "relative" }}>
                                 <Box sx={{ position: "relative", display: "inline-block" }}>
                                     <Avatar
@@ -565,7 +766,6 @@ function InterviewerProfilePage() {
                                         >
                                             {fullName}
                                         </Typography>
-
                                         <Typography
                                             component="p"
                                             sx={{
@@ -573,20 +773,9 @@ function InterviewerProfilePage() {
                                                 color: "text.secondary",
                                                 mb: 3,
                                                 fontWeight: 500,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
                                             }}
                                         >
                                             {years}+ years experience
-                                            {/* with
-                                            <Box
-                                                component="span"
-                                                sx={{ display: "inline-flex", alignItems: "center", gap: 1, ml: 1 }}
-                                            >
-                                                <CompanyLogo name={headlineCompany} size={18} />
-                                                <strong>{headlineCompany}</strong>
-                                            </Box> */}
                                         </Typography>
                                     </>
                                 )}
@@ -594,61 +783,61 @@ function InterviewerProfilePage() {
                                 <Box
                                     sx={{ display: "flex", gap: { xs: 2, md: 3 }, mb: 3, flexWrap: "wrap", rowGap: 2 }}
                                 >
-                                    {[
-                                        // { value: `${years ?? 0}+`, label: "Years Exp" },
-                                        {
-                                            value: (
-                                                <Stack direction="row" alignItems="center" spacing={1}>
-                                                    <Typography
-                                                        sx={{
-                                                            fontSize: { xs: "1.25rem", md: "1.75rem" },
-                                                            fontWeight: 800,
-                                                            color: "text.primary",
-                                                        }}
-                                                    >
-                                                        {averageRating.toFixed(1)}
-                                                    </Typography>
-                                                    <Rating
-                                                        value={averageRating}
-                                                        precision={0.1}
-                                                        readOnly
-                                                        size="small"
-                                                        sx={{ color: "#afe34a" }}
-                                                    />
-                                                </Stack>
-                                            ),
-                                            label: `${totalRatings} Ratings`,
-                                        },
-                                        { value: companiesDisplay.length, label: "Companies" },
-                                    ].map(({ value, label }) => (
-                                        <Box key={label} sx={{ display: "flex", flexDirection: "column" }}>
-                                            {typeof value === "string" || typeof value === "number" ? (
-                                                <Typography
-                                                    sx={{
-                                                        fontSize: { xs: "1.25rem", md: "1.75rem" },
-                                                        fontWeight: 800,
-                                                        color: "text.primary",
-                                                    }}
-                                                >
-                                                    {value}
-                                                </Typography>
-                                            ) : (
-                                                value
-                                            )}
+                                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                                        <Stack direction="row" alignItems="center" spacing={1}>
                                             <Typography
                                                 sx={{
-                                                    fontSize: "0.65rem",
-                                                    fontWeight: 700,
-                                                    textTransform: "uppercase",
-                                                    letterSpacing: "0.1em",
-                                                    color: "text.secondary",
-                                                    mt: 0.5,
+                                                    fontSize: { xs: "1.25rem", md: "1.75rem" },
+                                                    fontWeight: 800,
+                                                    color: "text.primary",
                                                 }}
                                             >
-                                                {label}
+                                                {averageRating.toFixed(1)}
                                             </Typography>
-                                        </Box>
-                                    ))}
+                                            <Rating
+                                                value={averageRating}
+                                                precision={0.1}
+                                                readOnly
+                                                size="small"
+                                                sx={{ color: "#afe34a" }}
+                                            />
+                                        </Stack>
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.65rem",
+                                                fontWeight: 700,
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.1em",
+                                                color: "text.secondary",
+                                                mt: 0.5,
+                                            }}
+                                        >
+                                            {totalRatings} Ratings
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                                        <Typography
+                                            sx={{
+                                                fontSize: { xs: "1.25rem", md: "1.75rem" },
+                                                fontWeight: 800,
+                                                color: "text.primary",
+                                            }}
+                                        >
+                                            {companiesDisplay.length}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.65rem",
+                                                fontWeight: 700,
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.1em",
+                                                color: "text.secondary",
+                                                mt: 0.5,
+                                            }}
+                                        >
+                                            Companies
+                                        </Typography>
+                                    </Box>
                                 </Box>
                             </Box>
                         </Box>
@@ -713,10 +902,9 @@ function InterviewerProfilePage() {
                     </CardContent>
                 </BaseCard>
 
-                {/* Tabs */}
                 {isSelf && isInterviewer && (
                     <Box sx={{ mt: 2, mb: 2 }}>
-                        <Tabs value={tabValue} onChange={handleTabChange}>
+                        <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
                             <Tab label="Profile" />
                             <Tab label="Saved Questions" />
                         </Tabs>
@@ -727,9 +915,9 @@ function InterviewerProfilePage() {
                     <>
                         {tabValue === 0 && (
                             <Box className="ep-main-grid" sx={{ mb: 3 }}>
-                                {/* Left content */}
                                 <Box className="ep-content-left">
                                     <Box component="section" className="ep-expertise" sx={{ mb: 5 }}>
+                                        {/* Core Skills - chỉ editable khi editMode */}
                                         <Typography className="ep-sub-title">Core Skills</Typography>
                                         {editMode ? (
                                             <Autocomplete
@@ -782,62 +970,501 @@ function InterviewerProfilePage() {
                                             </Box>
                                         )}
 
-                                        <Typography className="ep-sub-title">Working Experience</Typography>
+                                        {/* ── Work Experience Section ──
+                                            Luôn hiển thị nút Add/Edit/Delete khi canEdit,
+                                            KHÔNG phụ thuộc vào editMode.
+                                            Khi editMode=true thì ẩn các nút này.
+                                        */}
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                mb: 1.5,
+                                                mt: 3,
+                                            }}
+                                        >
+                                            <Typography className="ep-sub-title" sx={{ mb: 0 }}>
+                                                Work Experience
+                                            </Typography>
+                                            {/* Ẩn khi editMode đang bật */}
+                                            {canEdit && !editMode && (
+                                                <Stack direction="row" spacing={0.75}>
+                                                    <IconButton
+                                                        onClick={() => {
+                                                            setEditingWorkExperience(null);
+                                                            setWorkExperienceModalOpen(true);
+                                                        }}
+                                                        sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            border: "1px solid",
+                                                            borderColor: "divider",
+                                                            borderRadius: 2,
+                                                        }}
+                                                    >
+                                                        <PlusIcon size={20} />
+                                                    </IconButton>
+                                                </Stack>
+                                            )}
+                                        </Box>
+                                        <Stack spacing={2} sx={{ mb: 4 }}>
+                                            {(profile?.workExperiences || []).length > 0 ? (
+                                                (profile.workExperiences || []).map((exp, idx) => {
+                                                    const expId = exp.id || idx;
+                                                    const isExpanded = expandedWorkExp[expId];
+                                                    const description = exp.description || "";
+                                                    const descLimit = 200;
+                                                    const shouldShowMore = description.length > descLimit;
+                                                    const displayDescription =
+                                                        isExpanded || !shouldShowMore
+                                                            ? description
+                                                            : `${description.slice(0, descLimit)}...`;
+
+                                                    return (
+                                                        <Paper
+                                                            key={expId}
+                                                            variant="outlined"
+                                                            sx={{
+                                                                p: 2.5,
+                                                                position: "relative",
+                                                                bgcolor: "#fff",
+                                                                borderRadius: 2,
+                                                            }}
+                                                        >
+                                                            <Box
+                                                                sx={{
+                                                                    display: "flex",
+                                                                    justifyContent: "space-between",
+                                                                    alignItems: "flex-start",
+                                                                }}
+                                                            >
+                                                                <Box sx={{ flex: 1, pr: canEdit && !editMode ? 8 : 0 }}>
+                                                                    <Typography
+                                                                        variant="h6"
+                                                                        sx={{ fontSize: "1.1rem", fontWeight: 700 }}
+                                                                    >
+                                                                        {exp.positionTitle ||
+                                                                            exp.jobTitle ||
+                                                                            "Role not specified"}
+                                                                    </Typography>
+                                                                    <Box
+                                                                        sx={{
+                                                                            display: "flex",
+                                                                            alignItems: "center",
+                                                                            gap: 1,
+                                                                            mt: 0.5,
+                                                                        }}
+                                                                    >
+                                                                        <CompanyLogo
+                                                                            name={exp.companyName || exp.company || ""}
+                                                                            size={24}
+                                                                        />
+                                                                        <Typography
+                                                                            variant="subtitle1"
+                                                                            sx={{
+                                                                                fontWeight: 600,
+                                                                                color: "text.primary",
+                                                                            }}
+                                                                        >
+                                                                            {exp.companyName ||
+                                                                                exp.company ||
+                                                                                "Company not specified"}
+                                                                            {exp.employmentType
+                                                                                ? ` · ${exp.employmentType}`
+                                                                                : ""}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        color="text.secondary"
+                                                                        sx={{ mt: 0.5 }}
+                                                                    >
+                                                                        {formatMonthYear(exp.startDate)} -{" "}
+                                                                        {exp.isCurrentWorking
+                                                                            ? "Present"
+                                                                            : exp.endDate
+                                                                              ? formatMonthYear(exp.endDate)
+                                                                              : "Present"}
+                                                                    </Typography>
+                                                                    {(exp.location || exp.locationType) && (
+                                                                        <Typography
+                                                                            variant="body2"
+                                                                            color="text.secondary"
+                                                                        >
+                                                                            {[exp.location, exp.locationType]
+                                                                                .filter(Boolean)
+                                                                                .join(" · ")}
+                                                                        </Typography>
+                                                                    )}
+                                                                </Box>
+                                                                {/* Nút edit/delete trên item: ẩn khi editMode */}
+                                                                {canEdit && !editMode && (
+                                                                    <Stack
+                                                                        direction="row"
+                                                                        spacing={0.5}
+                                                                        sx={{
+                                                                            position: "absolute",
+                                                                            top: 12,
+                                                                            right: 12,
+                                                                        }}
+                                                                    >
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={() => {
+                                                                                setEditingWorkExperience(exp);
+                                                                                setWorkExperienceModalOpen(true);
+                                                                            }}
+                                                                        >
+                                                                            <EditIcon size={18} />
+                                                                        </IconButton>
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            color="error"
+                                                                            onClick={() => {
+                                                                                if (!exp?.id) {
+                                                                                    setError(
+                                                                                        "This work experience cannot be deleted because no id was returned by the API.",
+                                                                                    );
+                                                                                    return;
+                                                                                }
+                                                                                setPendingDeleteWorkExperience(exp.id);
+                                                                                setShowConfirmWorkDelete(true);
+                                                                            }}
+                                                                        >
+                                                                            <DeleteIcon size={18} />
+                                                                        </IconButton>
+                                                                    </Stack>
+                                                                )}
+                                                            </Box>
+                                                            {description && (
+                                                                <Box sx={{ mt: 1.5 }}>
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        sx={{
+                                                                            whiteSpace: "pre-wrap",
+                                                                            color: "text.secondary",
+                                                                        }}
+                                                                    >
+                                                                        {displayDescription}
+                                                                    </Typography>
+                                                                    {shouldShowMore && (
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            onClick={() => {
+                                                                                setExpandedWorkExp((prev) => ({
+                                                                                    ...prev,
+                                                                                    [expId]: !prev[expId],
+                                                                                }));
+                                                                            }}
+                                                                            sx={{
+                                                                                display: "flex",
+                                                                                justifyContent: "end",
+                                                                                background: "none",
+                                                                                border: "none",
+                                                                                color: "var(--ep-accent-dark)",
+                                                                                cursor: "pointer",
+                                                                                padding: 0,
+                                                                                marginTop: "10px",
+                                                                                marginLeft: "auto",
+                                                                                fontSize: "0.85rem",
+                                                                                fontWeight: 600,
+                                                                            }}
+                                                                        >
+                                                                            {isExpanded ? "View Less" : "View More"}
+                                                                        </Typography>
+                                                                    )}
+                                                                </Box>
+                                                            )}
+                                                            {exp.skillIds?.length > 0 && (
+                                                                <Stack
+                                                                    direction="row"
+                                                                    flexWrap="wrap"
+                                                                    gap={1}
+                                                                    sx={{ mt: 2 }}
+                                                                >
+                                                                    {exp.skillIds.map((sid) => {
+                                                                        const skill = allSkills.find(
+                                                                            (s) => s.id === sid,
+                                                                        );
+                                                                        return skill ? (
+                                                                            <Box
+                                                                                key={sid}
+                                                                                sx={{
+                                                                                    bgcolor: "#f0f2f5",
+                                                                                    px: 1.5,
+                                                                                    py: 0.5,
+                                                                                    borderRadius: 4,
+                                                                                    fontSize: "0.75rem",
+                                                                                    fontWeight: 600,
+                                                                                    color: "text.primary",
+                                                                                }}
+                                                                            >
+                                                                                {skill.name}
+                                                                            </Box>
+                                                                        ) : null;
+                                                                    })}
+                                                                </Stack>
+                                                            )}
+                                                        </Paper>
+                                                    );
+                                                })
+                                            ) : (
+                                                <Typography color="text.secondary" fontStyle="italic">
+                                                    No work experience added.
+                                                </Typography>
+                                            )}
+                                        </Stack>
+
+                                        {/* Domain (Industries) - chỉ editable khi editMode */}
+                                        <Typography className="ep-sub-title">Domain (Industries)</Typography>
                                         {editMode ? (
                                             <Autocomplete
                                                 multiple
-                                                options={allCompanies || []}
-                                                getOptionLabel={(option) => option.name}
-                                                value={
-                                                    profile.companies?.map((c) =>
-                                                        typeof c === "object"
-                                                            ? c
-                                                            : allCompanies.find((co) => co.name === c),
-                                                    ) || []
-                                                }
-                                                onChange={(e, newValue) =>
-                                                    setProfile((prev) => ({ ...prev, companies: newValue }))
+                                                options={allIndustries}
+                                                getOptionLabel={(option) => option.name || ""}
+                                                value={allIndustries.filter((i) =>
+                                                    (profile.industryIds || []).includes(i.id),
+                                                )}
+                                                onChange={(_, newValue) =>
+                                                    setProfile({ ...profile, industryIds: newValue.map((i) => i.id) })
                                                 }
                                                 renderInput={(params) => (
                                                     <TextField
                                                         {...params}
-                                                        placeholder="Add companies"
+                                                        placeholder="Select industries"
                                                         size="small"
-                                                        inputProps={{ ...params.inputProps, maxLength: 100 }}
-                                                        sx={{
-                                                            mb: 2,
-                                                            "& .MuiOutlinedInput-root": { bgcolor: "background.paper" },
-                                                        }}
+                                                        sx={{ mb: 4, bgcolor: "background.paper" }}
                                                     />
                                                 )}
                                             />
                                         ) : (
-                                            <Box className="ep-track-grid">
-                                                {companiesDisplay.length === 0 ? (
-                                                    <Typography color="text.secondary">No companies listed.</Typography>
-                                                ) : (
-                                                    companiesDisplay.map((name, i) => (
+                                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 4 }}>
+                                                {(profile.industries || []).length > 0 ? (
+                                                    (profile.industries || []).map((ind) => (
                                                         <Box
-                                                            key={`company-layout-${i}`}
-                                                            className="ep-track-card"
-                                                            sx={{ animation: "none", transform: "none" }}
+                                                            key={ind.id}
+                                                            sx={{
+                                                                border: "1px solid rgba(175, 227, 74, 0.3)",
+                                                                px: 2,
+                                                                py: 0.7,
+                                                                borderRadius: 99,
+                                                                fontWeight: 700,
+                                                                fontSize: "0.85rem",
+                                                                bgcolor: "white",
+                                                            }}
                                                         >
-                                                            <Box className="ep-track-card-head">
-                                                                <CompanyLogo name={String(name)} size={24} />
-                                                                <h4>{name}</h4>
-                                                            </Box>
-                                                            {/* <p>{headlineTitle}</p> */}
+                                                            {ind.name}
                                                         </Box>
                                                     ))
+                                                ) : (
+                                                    <Typography color="text.secondary">
+                                                        No industries selected.
+                                                    </Typography>
                                                 )}
-                                            </Box>
+                                            </Stack>
                                         )}
+
+                                        {/* ── Certifications Section ──
+                                            Luôn hiển thị nút Add/Edit/Delete khi canEdit,
+                                            KHÔNG phụ thuộc vào editMode.
+                                            Khi editMode=true thì ẩn các nút này.
+                                        */}
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                mb: 1.5,
+                                            }}
+                                        >
+                                            <Typography className="ep-sub-title" sx={{ mb: 0 }}>
+                                                Certifications
+                                            </Typography>
+                                            {/* Ẩn khi editMode đang bật */}
+                                            {canEdit && !editMode && (
+                                                <Stack direction="row" spacing={0.75}>
+                                                    <IconButton
+                                                        onClick={() => {
+                                                            setEditingCertificate(null);
+                                                            setCertificateDialogOpen(true);
+                                                        }}
+                                                        sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            border: "1px solid",
+                                                            borderColor: "divider",
+                                                            borderRadius: 2,
+                                                        }}
+                                                    >
+                                                        <PlusIcon size={20} />
+                                                    </IconButton>
+                                                </Stack>
+                                            )}
+                                        </Box>
+
+                                        <Stack spacing={2} sx={{ mb: 4 }}>
+                                            {(
+                                                profile.certificationLinks ||
+                                                profile.certificates ||
+                                                profile.certifications ||
+                                                []
+                                            ).length > 0 ? (
+                                                (
+                                                    profile.certificationLinks ||
+                                                    profile.certificates ||
+                                                    profile.certifications ||
+                                                    []
+                                                ).map((item, idx) => {
+                                                    const href = item?.link || item?.Link || "";
+                                                    const label = item?.name || item?.Name || `Certificate ${idx + 1}`;
+                                                    const issuer = item?.issuer || item?.Issuer || "";
+                                                    const issuedAt =
+                                                        item?.issuedAt || item?.IssuedAt
+                                                            ? formatMonthYear(item.issuedAt || item.IssuedAt)
+                                                            : "";
+                                                    const expiryAt =
+                                                        item?.expiryAt || item?.ExpiryAt
+                                                            ? formatMonthYear(item.expiryAt || item.ExpiryAt)
+                                                            : "";
+                                                    let host = label;
+                                                    try {
+                                                        if (href) {
+                                                            const u = new URL(href);
+                                                            host = u.hostname.replace("www.", "");
+                                                        }
+                                                    } catch (e) {}
+                                                    return (
+                                                        <Box
+                                                            key={item?.id || `${label}-${idx}`}
+                                                            sx={{
+                                                                display: "flex",
+                                                                alignItems: "flex-start",
+                                                                justifyContent: "space-between",
+                                                                gap: 2,
+                                                                p: 2,
+                                                                bgcolor: "white",
+                                                                borderRadius: 2,
+                                                                border: "1px solid",
+                                                                borderColor: "rgba(0,0,0,0.06)",
+                                                            }}
+                                                        >
+                                                            <Box sx={{ display: "flex", gap: 1.5, flex: 1 }}>
+                                                                <Box sx={{ flexShrink: 0, mt: 0.5 }}>
+                                                                    <CompanyLogo
+                                                                        name={issuer || host || label}
+                                                                        size={40}
+                                                                    />
+                                                                </Box>
+                                                                <Box>
+                                                                    {href ? (
+                                                                        <Link
+                                                                            href={href}
+                                                                            target="_blank"
+                                                                            sx={{
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                gap: 0.5,
+                                                                                fontSize: "1rem",
+                                                                                fontWeight: 700,
+                                                                                color: "#347d00",
+                                                                                mb: 0.25,
+                                                                                textDecoration: "none",
+                                                                                "&:hover": {
+                                                                                    textDecoration: "underline",
+                                                                                },
+                                                                            }}
+                                                                        >
+                                                                            {label}
+                                                                            <ExternalLinkIcon
+                                                                                size={14}
+                                                                                strokeWidth={2}
+                                                                                style={{ flexShrink: 0 }}
+                                                                            />
+                                                                        </Link>
+                                                                    ) : (
+                                                                        <Typography
+                                                                            sx={{
+                                                                                fontSize: "1rem",
+                                                                                fontWeight: 700,
+                                                                                mb: 0.25,
+                                                                            }}
+                                                                        >
+                                                                            {label}
+                                                                        </Typography>
+                                                                    )}
+                                                                    {issuer && (
+                                                                        <Typography
+                                                                            variant="body2"
+                                                                            sx={{
+                                                                                fontWeight: 600,
+                                                                                color: "text.primary",
+                                                                                mb: 0.25,
+                                                                            }}
+                                                                        >
+                                                                            {issuer}
+                                                                        </Typography>
+                                                                    )}
+                                                                    {(issuedAt || expiryAt) && (
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            color="text.secondary"
+                                                                            sx={{ display: "block" }}
+                                                                        >
+                                                                            Issued {issuedAt}{" "}
+                                                                            {expiryAt
+                                                                                ? `· Expires ${expiryAt}`
+                                                                                : "· No expiration"}
+                                                                        </Typography>
+                                                                    )}
+                                                                </Box>
+                                                            </Box>
+                                                            {/* Nút edit/delete trên item: ẩn khi editMode */}
+                                                            {canEdit && !editMode && (
+                                                                <Stack
+                                                                    direction="row"
+                                                                    spacing={0.5}
+                                                                    sx={{ mt: -0.5, mr: -0.5 }}
+                                                                >
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={() => {
+                                                                            setEditingCertificate(item);
+                                                                            setCertificateDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <EditIcon size={18} />
+                                                                    </IconButton>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        color="error"
+                                                                        onClick={() => {
+                                                                            if (!item?.id) {
+                                                                                setError(
+                                                                                    "This certificate cannot be deleted because no id was returned by the API.",
+                                                                                );
+                                                                                return;
+                                                                            }
+                                                                            setPendingDeleteCertificate(item);
+                                                                            setShowConfirmCertificateDelete(true);
+                                                                        }}
+                                                                    >
+                                                                        <DeleteIcon size={18} />
+                                                                    </IconButton>
+                                                                </Stack>
+                                                            )}
+                                                        </Box>
+                                                    );
+                                                })
+                                            ) : (
+                                                <Typography color="text.secondary">No certificates added.</Typography>
+                                            )}
+                                        </Stack>
                                     </Box>
                                 </Box>
 
                                 {/* ── Sidebar ── */}
                                 <Box component="aside" className="ep-sidebar">
-                                    {/* Merged Portfolio & Contact card */}
                                     <SidebarCard
                                         icon={<LinkIcon />}
                                         title="Portfolio & Contact"
@@ -845,7 +1472,6 @@ function InterviewerProfilePage() {
                                         badgeActive={!!profile?.portfolioUrl}
                                         sx={{ mb: 3 }}
                                     >
-                                        {/* Portfolio row */}
                                         <Box sx={{ mb: 2 }}>
                                             <Typography
                                                 variant="caption"
@@ -906,7 +1532,6 @@ function InterviewerProfilePage() {
 
                                         <Divider sx={{ my: 1.5, opacity: 0.5 }} />
 
-                                        {/* Contact row */}
                                         <Box>
                                             <Typography
                                                 variant="caption"
@@ -925,31 +1550,8 @@ function InterviewerProfilePage() {
                                                 {email}
                                             </Typography>
                                         </Box>
-
-                                        {/* Bank Info in EDIT MODE ONLY */}
-                                        {editMode && canManageBank && (
-                                            <Box sx={{ mt: 3, pt: 2, borderTop: "1px dashed", borderColor: "divider" }}>
-                                                <Typography
-                                                    variant="subtitle2"
-                                                    fontWeight={700}
-                                                    sx={{ mb: 1.5, color: "primary.main" }}
-                                                >
-                                                    Payment Settings
-                                                </Typography>
-                                                <BankSelection
-                                                    selectedBin={profile?.bankBinNumber}
-                                                    accountNumber={profile?.bankAccountNumber}
-                                                    onChange={(data) =>
-                                                        setProfile((prev) => ({
-                                                            ...prev,
-                                                            bankBinNumber: data.bin,
-                                                            bankAccountNumber: data.accountNumber,
-                                                        }))
-                                                    }
-                                                />
-                                            </Box>
-                                        )}
                                     </SidebarCard>
+
                                     <Box className="ep-side-card ep-match-card">
                                         <Typography
                                             variant="overline"
@@ -1009,7 +1611,7 @@ function InterviewerProfilePage() {
                     </>
                 )}
 
-                {/* Action Buttons */}
+                {/* ── Save bar: chỉ save profile fields, KHÔNG liên quan WE/Cert ── */}
                 <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
                     {editMode && profile && (
                         <>
@@ -1032,7 +1634,7 @@ function InterviewerProfilePage() {
                     <ConfirmModal
                         show={showConfirmSave}
                         title="Confirm save"
-                        message="Are you sure you want to save changes to your profile?"
+                        message="Save changes to your profile? (Skills, bio, portfolio, industries)"
                         onConfirm={async () => {
                             setShowConfirmSave(false);
                             await handleSave();
@@ -1052,24 +1654,120 @@ function InterviewerProfilePage() {
                     </Paper>
                 )}
             </Box>
-        </Box>
-    );
-}
 
-function InfoRow({ icon, label, content }) {
-    return (
-        <Box sx={{ mb: 2.5 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                {icon}
-                <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-                    {label.toUpperCase()}
-                </Typography>
-            </Box>
-            {typeof content === "string" ? (
-                <Typography sx={{ ml: 3 }}>{content}</Typography>
-            ) : (
-                <Box sx={{ ml: 3 }}>{content}</Box>
-            )}
+            {/* ── Modals (WE và Cert hoàn toàn độc lập với editMode) ── */}
+            <WorkExperienceModal
+                open={workExperienceModalOpen}
+                onClose={() => {
+                    setWorkExperienceModalOpen(false);
+                    setEditingWorkExperience(null);
+                }}
+                onSave={(exp) => {
+                    const target = editingWorkExperience?.id ? { ...exp, id: editingWorkExperience.id } : exp;
+                    setPendingWorkExperience(target);
+                    setShowConfirmWorkSave(true);
+                }}
+                onDelete={(exp) => {
+                    setPendingDeleteWorkExperience(exp?.id || null);
+                    setShowConfirmWorkDelete(true);
+                }}
+                experience={editingWorkExperience}
+                allSkills={allSkills}
+                allCompanies={allCompanies}
+                onCreateCompany={async (name) => {
+                    setAllCompanies((prev) => [...(prev || []), name]);
+                    return name;
+                }}
+            />
+
+            <CertificateDialog
+                open={certificateDialogOpen}
+                onClose={() => {
+                    setCertificateDialogOpen(false);
+                    setEditingCertificate(null);
+                }}
+                certificate={editingCertificate}
+                onSave={(form) => {
+                    setPendingCertificatePayload({ form, certificateId: editingCertificate?.id || null });
+                    setShowConfirmCertificateSave(true);
+                }}
+                onDelete={(cert) => {
+                    setPendingDeleteCertificate(cert);
+                    setShowConfirmCertificateDelete(true);
+                }}
+            />
+
+            {/* Confirm modals cho Work Experience */}
+            <ConfirmModal
+                show={showConfirmWorkSave}
+                title="Confirm save"
+                message="Save this work experience?"
+                onConfirm={async () => {
+                    setShowConfirmWorkSave(false);
+                    const payload = pendingWorkExperience;
+                    setPendingWorkExperience(null);
+                    if (payload) await handleSaveWorkExperience(payload);
+                }}
+                onCancel={() => {
+                    setShowConfirmWorkSave(false);
+                    setPendingWorkExperience(null);
+                }}
+                confirmText="Save"
+                cancelText="Cancel"
+            />
+            <ConfirmModal
+                show={showConfirmWorkDelete}
+                title="Confirm delete"
+                message="Delete this work experience?"
+                onConfirm={async () => {
+                    setShowConfirmWorkDelete(false);
+                    const id = pendingDeleteWorkExperience;
+                    setPendingDeleteWorkExperience(null);
+                    if (id) await handleDeleteWorkExperience(id);
+                }}
+                onCancel={() => {
+                    setShowConfirmWorkDelete(false);
+                    setPendingDeleteWorkExperience(null);
+                }}
+                confirmText="Delete"
+                cancelText="Cancel"
+            />
+
+            {/* Confirm modals cho Certificate */}
+            <ConfirmModal
+                show={showConfirmCertificateSave}
+                title="Confirm save"
+                message="Save this certificate?"
+                onConfirm={async () => {
+                    setShowConfirmCertificateSave(false);
+                    const payload = pendingCertificatePayload;
+                    setPendingCertificatePayload(null);
+                    if (payload) await handleSaveCertificate(payload.form, payload.certificateId);
+                }}
+                onCancel={() => {
+                    setShowConfirmCertificateSave(false);
+                    setPendingCertificatePayload(null);
+                }}
+                confirmText="Save"
+                cancelText="Cancel"
+            />
+            <ConfirmModal
+                show={showConfirmCertificateDelete}
+                title="Confirm delete"
+                message="Delete this certificate?"
+                onConfirm={async () => {
+                    setShowConfirmCertificateDelete(false);
+                    const cert = pendingDeleteCertificate;
+                    setPendingDeleteCertificate(null);
+                    if (cert) await handleDeleteCertificate(cert);
+                }}
+                onCancel={() => {
+                    setShowConfirmCertificateDelete(false);
+                    setPendingDeleteCertificate(null);
+                }}
+                confirmText="Delete"
+                cancelText="Cancel"
+            />
         </Box>
     );
 }

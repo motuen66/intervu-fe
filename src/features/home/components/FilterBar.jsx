@@ -4,7 +4,6 @@ import { Search, Sparkles, X, Filter, ChevronUp } from 'lucide-react';
 import {
   Box,
   FormControl,
-  Select,
   MenuItem,
   InputAdornment,
   Typography,
@@ -16,6 +15,7 @@ import {
 import { fetchInterviewers, fetchIndustries, setFilters, clearFilters } from '../store/homeSlice';
 import { PrimaryButton, SecondaryButton, DangerButton } from '../../../common/components/buttons';
 import FormTextField from '../../../common/components/form/FormTextField';
+import FormSelect from '../../../common/components/form/FormSelect';
 import { buttonStyles, fieldStyles } from '../../../common/constants/uiStyles';
 import './FilterBar.css';
 
@@ -219,7 +219,7 @@ function FilterBar({ onOpenSmartMatch }) {
           <Stack direction="row" spacing={2} alignItems="center" flexWrap={{ xs: 'wrap', md: 'nowrap' }}>
             <FormControl size="small" sx={{ width: 190, minWidth: 190, ...fieldStyles.outlinedFocus }}>
               <InputLabel>Company</InputLabel>
-              <Select
+              <FormSelect
                 value={localFilters.company || ''}
                 label="Company"
                 onChange={(e) => handleLocalFilterChange('company', e.target.value || null)}
@@ -230,39 +230,17 @@ function FilterBar({ onOpenSmartMatch }) {
                     whiteSpace: "nowrap",
                   },
                 }}
-                MenuProps={{
-                  disableScrollLock: false,
-                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                  transformOrigin: { vertical: 'top', horizontal: 'left' },
-                  slotProps: {
-                    backdrop: {
-                      sx: { backdropFilter: 'none !important', backgroundColor: 'transparent' }
-                    },
-                    paper: {
-                      sx: {
-                        maxHeight: 300,
-                        boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        overflowY: 'auto',
-                        scrollbarWidth: 'none',
-                        '&::-webkit-scrollbar': { display: 'none' },
-                        msOverflowStyle: 'none'
-                      }
-                    }
-                  }
-                }}
               >
                 <MenuItem value=""><em>None</em></MenuItem>
                 {companiesList.map(company => (
                   <MenuItem key={company.id} value={company.id}>{company.name}</MenuItem>
                 ))}
-              </Select>
+              </FormSelect>
             </FormControl>
 
             <FormControl size="small" sx={{ width: 190, minWidth: 190, ...fieldStyles.outlinedFocus }}>
               <InputLabel>Domain/Industry</InputLabel>
-              <Select
+              <FormSelect
                 value={localFilters.industry || ''}
                 label="Domain/Industry"
                 onChange={(e) => handleLocalFilterChange('industry', e.target.value || null)}
@@ -273,34 +251,12 @@ function FilterBar({ onOpenSmartMatch }) {
                     whiteSpace: "nowrap",
                   },
                 }}
-                MenuProps={{
-                  disableScrollLock: false,
-                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                  transformOrigin: { vertical: 'top', horizontal: 'left' },
-                  slotProps: {
-                    backdrop: {
-                      sx: { backdropFilter: 'none !important', backgroundColor: 'transparent' }
-                    },
-                    paper: {
-                      sx: {
-                        maxHeight: 300,
-                        boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        overflowY: 'auto',
-                        scrollbarWidth: 'none',
-                        '&::-webkit-scrollbar': { display: 'none' },
-                        msOverflowStyle: 'none'
-                      }
-                    }
-                  }
-                }}
               >
                 <MenuItem value=""><em>None</em></MenuItem>
                 {industriesList.map(ind => (
                   <MenuItem key={ind.id} value={ind.id}>{ind.name}</MenuItem>
                 ))}
-              </Select>
+              </FormSelect>
             </FormControl>
 
             <SecondaryButton
@@ -405,7 +361,7 @@ function FilterBar({ onOpenSmartMatch }) {
                     ADD SKILLS
                   </Typography>
                   <FormControl size="small" fullWidth sx={{ ...fieldStyles.outlinedFocus, maxWidth: 200 }}>
-                    <Select
+                    <FormSelect
                       value=""
                       onChange={(e) => addSkillId(e.target.value)}
                       displayEmpty
@@ -416,34 +372,12 @@ function FilterBar({ onOpenSmartMatch }) {
                           whiteSpace: "nowrap",
                         },
                       }}
-                      MenuProps={{
-                        disableScrollLock: false,
-                        anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                        transformOrigin: { vertical: 'top', horizontal: 'left' },
-                        slotProps: {
-                          backdrop: {
-                            sx: { backdropFilter: 'none !important', backgroundColor: 'transparent' }
-                          },
-                          paper: {
-                            sx: {
-                              maxHeight: 300,
-                              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              overflowY: 'auto',
-                              scrollbarWidth: 'none',
-                              '&::-webkit-scrollbar': { display: 'none' },
-                              msOverflowStyle: 'none'
-                             }
-                          }
-                        }
-                      }}
                     >
                       <MenuItem value="">Select a skill</MenuItem>
                       {availableSkills.map((skill) => (
                         <MenuItem key={skill.id} value={skill.id}>{skill.name}</MenuItem>
                       ))}
-                    </Select>
+                    </FormSelect>
                   </FormControl>
                 </Box>
               </Stack>
