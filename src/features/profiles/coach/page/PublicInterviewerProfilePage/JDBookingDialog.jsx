@@ -555,7 +555,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             };
             const booking = await createJDBookingRequest(payload);
             const payResult = await payBookingRequest(booking.id, {
-                returnUrl: window.location.origin + `/booking-requests/{booking.id}`,
+                returnUrl: window.location.origin + `/booking-requests/${booking.id}`,
             });
             if (payResult?.checkOutUrl) window.location.href = payResult.checkOutUrl;
             else {

@@ -1,243 +1,207 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Dialog,
-    DialogTitle,
     DialogContent,
     DialogActions,
     Box,
     Typography,
-    Button,
     IconButton,
     TextField,
     Stack,
-    Paper,
     CircularProgress,
     Alert,
-    Table,
-    TableBody,
-    TableRow,
-    TableCell,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import SendIcon from "@mui/icons-material/Send";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
-import CloseIcon from "@mui/icons-material/Close";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import SendIcon from "@mui/icons-material/Send";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { formattedDateTime } from "../../../../common/utils/dateFormatter";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, getDay } from "date-fns";
-import { enUS } from "date-fns/locale";
+import CalendlyCalendar from "../../../../common/components/CalendlyCalendar";
+import { addMonths, format, isSameDay } from "date-fns";
+import "../../../../features/profiles/coach/page/PublicInterviewerProfilePage/BookingSlotDialog.css";
 
-// Days of the week header
-const DAYS_OF_WEEK = ["S", "M", "T", "W", "T", "F", "S"];
+const BLOCK_MINUTES = 30;
+const MIN_REASON_LENGTH = 10;
+const MAX_REASON_LENGTH = 500;
+
+/**
+ * Given a starting block, find N consecutive blocks from the available pool.
+ */
+function findConsecutiveBlocks(startBlock, requiredCount, availableBlocks) {
+    if (requiredCount <= 0) return [];
+    const sorted = [...availableBlocks].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    const startIdx = sorted.findIndex((b) => String(b.id) === String(startBlock.id));
+    if (startIdx === -1) return null;
+
+    const chain = [sorted[startIdx]];
+    for (let i = startIdx + 1; i < sorted.length && chain.length < requiredCount; i++) {
+        const prevEnd = new Date(chain[chain.length - 1].endTime).getTime();
+        const currStart = new Date(sorted[i].startTime).getTime();
+        if (currStart === prevEnd) {
+            chain.push(sorted[i]);
+        } else {
+            break;
+        }
+    }
+    return chain.length === requiredCount ? chain : null;
+}
+
+const normalizeIso = (value) => (value && !value.endsWith("Z") ? `${value}Z` : value);
 
 function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
-    const [availableSlots, setAvailableSlots] = useState([]);
+    const [freeSlots, setFreeSlots] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(null);
-    const [selectedSlot, setSelectedSlot] = useState(null);
+    const [selectedSlotData, setSelectedSlotData] = useState(null);
     const [reason, setReason] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Get coach ID from currentSession (handle both camelCase and PascalCase)
     const coachId =
         currentSession?.coachId || currentSession?.CoachId || currentSession?.coach?.id || currentSession?.Coach?.Id;
 
-    // Debug: log currentSession to see available fields
-    useEffect(() => {
-        if (open && currentSession) {
-            console.log("RescheduleModal - currentSession:", currentSession);
-            console.log("RescheduleModal - coachId extracted:", coachId);
-        }
-    }, [open, currentSession, coachId]);
-
-    // Fetch available slots when modal opens
-    useEffect(() => {
-        if (open && coachId) {
-            fetchAvailableSlots();
-        }
-    }, [open, coachId]);
+    const durationMinutes = currentSession?.durationMinutes || currentSession?.DurationMinutes || 30;
+    const requiredBlocks = Math.max(1, Math.ceil(durationMinutes / BLOCK_MINUTES));
+    const trimmedReason = reason.trim();
+    const isReasonTooShort = trimmedReason.length > 0 && trimmedReason.length < MIN_REASON_LENGTH;
+    const isReasonTooLong = trimmedReason.length > MAX_REASON_LENGTH;
 
     // Reset state when modal closes
     useEffect(() => {
         if (!open) {
             setSelectedDate(null);
-            setSelectedSlot(null);
+            setSelectedSlotData(null);
             setReason("");
             setError(null);
+            setFreeSlots([]);
+            setCurrentMonth(new Date());
         }
     }, [open]);
 
-    const fetchAvailableSlots = async () => {
-        try {
+    // Fetch free slots when modal opens
+    useEffect(() => {
+        if (!open || !coachId) return;
+
+        const fetchFreeSlots = async () => {
             setLoading(true);
             setError(null);
+            try {
+                const allSlots = [];
+                const today = new Date();
 
-            if (!coachId) {
-                setError("Cannot find coach information for this interview");
-                setLoading(false);
-                return;
-            }
+                for (let i = 0; i < 3; i++) {
+                    const targetMonth = addMonths(today, i);
+                    const month = targetMonth.getMonth() + 1;
+                    const year = targetMonth.getFullYear();
 
-            const today = new Date();
-            const allSlots = [];
+                    const response = await callApi({
+                        method: METHOD.GET,
+                        endpoint: `/availabilities/${coachId}/free-slots?month=${month}&year=${year}`,
+                    });
 
-            console.log("Fetching slots for coachId:", coachId);
-
-            // Fetch slots for next 3 months
-            for (let i = 0; i < 3; i++) {
-                const targetMonth = addMonths(today, i);
-                const month = targetMonth.getMonth() + 1;
-                const year = targetMonth.getFullYear();
-
-                const response = await callApi({
-                    method: METHOD.GET,
-                    endpoint: `/availabilities/${coachId}?month=${month}&year=${year}`,
-                });
-
-                console.log(`Slots for ${month}/${year}:`, response);
-
-                if (response.success && response.data) {
-                    const schedule = response.data;
-                    const freeSlots = Array.isArray(schedule?.freeSlots)
-                        ? schedule.freeSlots
-                        : Array.isArray(schedule)
-                          ? schedule
-                          : [];
-
-                    const normalizeTime = (t) => (t && !t.endsWith("Z") ? `${t}Z` : t);
-
-                    const availableData = freeSlots.map((slot) => ({
-                        ...slot,
-                        startTime: normalizeTime(slot.startTime ?? slot.StartTime),
-                        endTime: normalizeTime(slot.endTime ?? slot.EndTime),
-                        status: 0,
-                    }));
-
-                    console.log(`Available slots for ${month}/${year}:`, availableData);
-                    allSlots.push(...availableData);
+                    if (response?.success && Array.isArray(response.data)) {
+                        allSlots.push(
+                            ...response.data.map((slot) => ({
+                                ...slot,
+                                startTime: normalizeIso(slot.startTime ?? slot.StartTime),
+                                endTime: normalizeIso(slot.endTime ?? slot.EndTime),
+                            })),
+                        );
+                    }
                 }
+
+                allSlots.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+                setFreeSlots(allSlots);
+            } catch (err) {
+                setError("Failed to load available slots: " + (err?.response?.data?.message || err.message));
+            } finally {
+                setLoading(false);
             }
+        };
 
-            // Sort by start time
-            allSlots.sort((a, b) => new Date(a.startTime || a.StartTime) - new Date(b.startTime || b.StartTime));
-            console.log("Total available slots:", allSlots);
-            setAvailableSlots(allSlots);
-        } catch (err) {
-            setError("Failed to load available slots: " + err.message);
-            console.error("Error fetching slots:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        fetchFreeSlots();
+    }, [open, coachId]);
 
-    // Check if date is in the past
-    const isPastDate = (date) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const checkDate = new Date(date);
-        checkDate.setHours(0, 0, 0, 0);
-        return checkDate < today;
-    };
-
-    // Check if slot is in the past or too soon (< 15 min buffer)
-    const isPastSlot = (slot) => {
-        const startTime = slot.startTime || slot.StartTime;
-        const slotTime = new Date(startTime);
+    // Compute which dates have available slots
+    const availableDates = useMemo(() => {
+        const dates = new Set();
         const now = new Date();
-        return slotTime <= now || slotTime.getTime() - now.getTime() < 15 * 60 * 1000;
+        freeSlots.forEach((slot) => {
+            if (new Date(slot.endTime) > now) {
+                dates.add(format(new Date(slot.startTime), "yyyy-MM-dd"));
+            }
+        });
+        return dates;
+    }, [freeSlots]);
+
+    // Compute 30-min blocks for the selected date
+    const dayTimeBlocks = useMemo(() => {
+        if (!selectedDate) return [];
+        const dateStr = format(selectedDate, "yyyy-MM-dd");
+        const now = new Date();
+        const minStartTime = now.getTime() + 15 * 60 * 1000; // 15-min buffer
+
+        const uniqueSlots = new Map();
+        freeSlots.forEach((slot) => {
+            const start = new Date(slot.startTime);
+            const slotDate = format(start, "yyyy-MM-dd");
+            if (slotDate !== dateStr) return;
+            if (new Date(slot.endTime) <= now) return;
+            if (start.getTime() < minStartTime) return;
+            uniqueSlots.set(start.getTime(), slot);
+        });
+
+        return [...uniqueSlots.values()].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    }, [selectedDate, freeSlots]);
+
+    // Block IDs consumed by the current selection (for multi-block highlight)
+    const selectedBlockIds = useMemo(() => {
+        if (!selectedSlotData) return new Set();
+        return new Set(selectedSlotData.blocks.map((b) => String(b.id)));
+    }, [selectedSlotData]);
+
+    const handleDateSelect = (date) => {
+        setSelectedDate(date);
+        setSelectedSlotData(null);
     };
 
-    // Get unique dates from slots (excluding past dates)
-    const getAvailableDates = () => {
-        return availableSlots
-            .map((slot) => {
-                const startTime = slot.startTime || slot.StartTime;
-                return new Date(startTime.split("T")[0]);
-            })
-            .filter((date, idx, arr) => {
-                const isUnique = arr.findIndex((d) => isSameDay(d, date)) === idx;
-                return isUnique && !isPastDate(date);
-            });
-    };
+    const handleTimeSelect = (slotBlock) => {
+        const chain = findConsecutiveBlocks(slotBlock, requiredBlocks, dayTimeBlocks);
+        if (!chain) {
+            setError(
+                `Need ${requiredBlocks} consecutive 30-minute slot${requiredBlocks > 1 ? "s" : ""} for this ${durationMinutes}-minute session.`,
+            );
+            return;
+        }
 
-    // Get slots for selected date (excluding past slots)
-    const getSlotsForDate = (date) => {
-        return availableSlots.filter((slot) => {
-            const startTime = slot.startTime || slot.StartTime;
-            const slotDate = new Date(startTime.split("T")[0]);
-            return isSameDay(slotDate, date) && !isPastSlot(slot);
+        setSelectedSlotData({
+            startBlock: slotBlock,
+            blocks: chain,
+            startTime: new Date(slotBlock.startTime),
         });
     };
 
-    // Build calendar grid
-    const getCalendarDays = () => {
-        const start = startOfMonth(currentMonth);
-        const end = endOfMonth(currentMonth);
-        const days = eachDayOfInterval({ start, end });
-
-        // Add empty cells for days before month starts
-        const firstDayOfWeek = getDay(start);
-        const emptyDays = Array(firstDayOfWeek).fill(null);
-
-        return [...emptyDays, ...days];
-    };
-
-    const handlePrevMonth = () => {
-        setCurrentMonth(subMonths(currentMonth, 1));
-    };
-
-    const handleNextMonth = () => {
-        setCurrentMonth(addMonths(currentMonth, 1));
-    };
-
-    const handleDateClick = (date) => {
-        if (isPastDate(date)) return;
-
-        const slotsForThisDate = getSlotsForDate(date);
-        if (slotsForThisDate.length > 0) {
-            setSelectedDate(date);
-            setSelectedSlot(null); // Reset selected slot when date changes
-        }
-    };
-
-    const handleSlotClick = (slot) => {
-        if (isPastSlot(slot)) return;
-        setSelectedSlot(slot);
-    };
-
-    const parseTime = (isoString) => {
-        if (!isoString) return "";
-        const match = isoString.match(/T(\d{2}):(\d{2})/);
-        if (!match) return "";
-        const [, hour, minute] = match;
-        return `${hour}:${minute}`;
-    };
-
-    const getSlotStartTime = (slot) => slot.startTime || slot.StartTime;
-    const getSlotEndTime = (slot) => slot.endTime || slot.EndTime;
-
     const handleSubmit = async () => {
-        if (!selectedSlot || !reason.trim()) return;
+        if (!selectedSlotData || isReasonTooShort || isReasonTooLong || !trimmedReason) return;
 
         setIsSubmitting(true);
         try {
-            const startTime = selectedSlot.startTime || selectedSlot.StartTime;
-            const slotId = selectedSlot.id || selectedSlot.Id;
             await onSubmit({
                 roomId: currentSession?.id || currentSession?.Id,
-                proposedAvailabilityId: slotId,
-                reason: reason.trim(),
+                newStartTime: selectedSlotData.startTime.toISOString(),
+                reason: trimmedReason,
             });
             handleClose();
         } catch (error) {
             console.error("Failed to submit reschedule request:", error);
-            setError("Failed to submit request. Please try again.");
+            const backendMessage = error?.response?.data?.message;
+            const validationErrors = error?.response?.data?.errors;
+            const firstValidationMessage = validationErrors ? Object.values(validationErrors).flat()?.[0] : null;
+
+            setError(backendMessage || firstValidationMessage || "Failed to submit request. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -245,16 +209,13 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
 
     const handleClose = () => {
         setSelectedDate(null);
-        setSelectedSlot(null);
+        setSelectedSlotData(null);
         setReason("");
         setError(null);
         onClose();
     };
 
-    const availableDates = getAvailableDates();
-    const calendarDays = getCalendarDays();
-    const slotsForSelectedDate = selectedDate ? getSlotsForDate(selectedDate) : [];
-    const isFormValid = selectedSlot && reason.trim();
+    const isFormValid = selectedSlotData && trimmedReason && !isReasonTooShort && !isReasonTooLong;
 
     return (
         <Dialog
@@ -270,274 +231,138 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
             }}
         >
             {/* Header */}
-            <DialogTitle
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    pb: 1,
-                }}
-            >
-                <Box>
-                    <Typography variant="h6" fontWeight={600}>
-                        Request Reschedule
-                    </Typography>
-                    <Typography variant="body2" color="primary.main" sx={{ mt: 0.5 }}>
-                        Current: {formattedDateTime(currentSession?.scheduledTime)}
-                    </Typography>
-                </Box>
-                <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
+            <Box sx={{ px: 5, pt: 4, pb: 1, position: "relative" }}>
+                <IconButton
+                    onClick={handleClose}
+                    sx={{
+                        position: "absolute",
+                        right: 24,
+                        top: 24,
+                        color: "text.secondary",
+                        bgcolor: "action.hover",
+                        "&:hover": { bgcolor: "action.selected" },
+                    }}
+                >
                     <CloseIcon />
                 </IconButton>
-            </DialogTitle>
 
-            <DialogContent sx={{ pt: 2 }}>
+                <Typography
+                    sx={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "1.5px",
+                        color: "primary.main",
+                        mb: 1,
+                    }}
+                >
+                    Request Reschedule
+                </Typography>
+                <Typography sx={{ fontSize: "28px", fontWeight: 800, color: "text.primary", letterSpacing: "-0.5px" }}>
+                    Select a New Time
+                </Typography>
+                <Typography sx={{ color: "text.secondary", fontSize: "14px", mt: 1, mb: 2 }}>
+                    Current: {formattedDateTime(currentSession?.scheduledTime)} — {durationMinutes} min session
+                </Typography>
+            </Box>
+
+            <DialogContent sx={{ overflowY: "auto", px: 0, pb: 0 }}>
                 {error && (
-                    <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                        {error}
-                    </Alert>
+                    <Box sx={{ px: 5, mb: 2 }}>
+                        <Alert severity="error" onClose={() => setError(null)}>
+                            {error}
+                        </Alert>
+                    </Box>
                 )}
 
                 {loading ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" py={8}>
+                    <Box display="flex" justifyContent="center" alignItems="center" py={10}>
                         <CircularProgress />
                     </Box>
                 ) : (
-                    <>
-                        {/* Date and Time Selection */}
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ mb: 3 }}>
-                            {/* LEFT SIDE — CALENDAR */}
-                            <Box sx={{ flex: 1 }}>
-                                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
-                                    Select New Date
-                                </Typography>
-
-                                {/* Month Header */}
-                                <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    justifyContent="space-between"
-                                    sx={{ mb: 2 }}
-                                >
-                                    <IconButton size="small" onClick={handlePrevMonth}>
-                                        <ChevronLeftIcon />
-                                    </IconButton>
-                                    <Typography variant="subtitle1" fontWeight={600}>
-                                        {format(currentMonth, "MMMM yyyy", { locale: enUS })}
-                                    </Typography>
-                                    <IconButton size="small" onClick={handleNextMonth}>
-                                        <ChevronRightIcon />
-                                    </IconButton>
-                                </Stack>
-
-                                {/* Calendar Grid */}
-                                <Table sx={{ borderCollapse: "separate", borderSpacing: "4px" }}>
-                                    <TableBody>
-                                        {/* Days of week header */}
-                                        <TableRow>
-                                            {DAYS_OF_WEEK.map((day, idx) => (
-                                                <TableCell
-                                                    key={idx}
-                                                    align="center"
-                                                    sx={{
-                                                        fontWeight: 600,
-                                                        color: "text.secondary",
-                                                        fontSize: "0.75rem",
-                                                        p: 0.5,
-                                                        border: "none",
-                                                    }}
-                                                >
-                                                    {day}
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-
-                                        {/* Calendar Days */}
-                                        {Array.from({ length: Math.ceil(calendarDays.length / 7) }).map(
-                                            (_, weekIdx) => (
-                                                <TableRow key={weekIdx}>
-                                                    {calendarDays
-                                                        .slice(weekIdx * 7, weekIdx * 7 + 7)
-                                                        .map((day, dayIdx) => {
-                                                            const hasSlot =
-                                                                day && availableDates.some((d) => isSameDay(d, day));
-                                                            const isSelected =
-                                                                day && selectedDate && isSameDay(day, selectedDate);
-                                                            const isPast = day && isPastDate(day);
-
-                                                            return (
-                                                                <TableCell
-                                                                    key={dayIdx}
-                                                                    align="center"
-                                                                    sx={{
-                                                                        p: 0.5,
-                                                                        cursor:
-                                                                            hasSlot && !isPast ? "pointer" : "default",
-                                                                        border: "none",
-                                                                        opacity: hasSlot && !isPast ? 1 : 0.4,
-                                                                    }}
-                                                                    onClick={() =>
-                                                                        hasSlot && !isPast && handleDateClick(day)
-                                                                    }
-                                                                >
-                                                                    {day ? (
-                                                                        <Box
-                                                                            sx={{
-                                                                                width: 32,
-                                                                                height: 32,
-                                                                                display: "flex",
-                                                                                alignItems: "center",
-                                                                                justifyContent: "center",
-                                                                                bgcolor: isSelected
-                                                                                    ? "primary.main"
-                                                                                    : "transparent",
-                                                                                color: isSelected
-                                                                                    ? "white"
-                                                                                    : "text.primary",
-                                                                                fontWeight: isSelected ? 600 : 500,
-                                                                                borderRadius: "8px",
-                                                                                fontSize: "0.875rem",
-                                                                                transition: "all 0.2s",
-                                                                                mx: "auto",
-                                                                                "&:hover":
-                                                                                    hasSlot && !isPast
-                                                                                        ? {
-                                                                                              bgcolor: isSelected
-                                                                                                  ? "primary.main"
-                                                                                                  : "primary.lighter",
-                                                                                          }
-                                                                                        : {},
-                                                                            }}
-                                                                        >
-                                                                            {format(day, "d")}
-                                                                        </Box>
-                                                                    ) : null}
-                                                                </TableCell>
-                                                            );
-                                                        })}
-                                                </TableRow>
-                                            ),
-                                        )}
-                                    </TableBody>
-                                </Table>
-
-                                {availableDates.length === 0 && !loading && (
-                                    <Paper sx={{ p: 2, mt: 2, textAlign: "center", bgcolor: "grey.50" }}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            No available slots from this coach
-                                        </Typography>
-                                    </Paper>
-                                )}
+                    <Box sx={{ px: 5, pb: 3 }}>
+                        <Stack direction={{ xs: "column", md: "row" }} spacing={0} sx={{ minHeight: 380 }}>
+                            {/* Left: Calendar */}
+                            <Box
+                                sx={{
+                                    flex: "0 0 auto",
+                                    width: { xs: "100%", md: 380 },
+                                    pr: { md: 4 },
+                                    pb: { xs: 3, md: 0 },
+                                    borderRight: { md: "1px solid" },
+                                    borderColor: { md: "divider" },
+                                }}
+                            >
+                                <CalendlyCalendar
+                                    currentMonth={currentMonth}
+                                    onPrevMonth={() => setCurrentMonth((m) => addMonths(m, -1))}
+                                    onNextMonth={() => setCurrentMonth((m) => addMonths(m, 1))}
+                                    selectedDate={selectedDate}
+                                    onDateSelect={handleDateSelect}
+                                    availableDates={availableDates}
+                                />
                             </Box>
 
-                            {/* RIGHT SIDE — TIME SLOTS */}
-                            <Box sx={{ width: { xs: "100%", sm: 280 } }}>
-                                <Stack spacing={1.5}>
-                                    <Box>
-                                        <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
-                                            Select Time Slot
+                            {/* Right: Time slots (30-min blocks) */}
+                            <Box sx={{ flex: 1, pl: { md: 4 }, minWidth: 0 }}>
+                                {!selectedDate ? (
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            height: "100%",
+                                            minHeight: 300,
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.95rem" }}
+                                        >
+                                            Select a date to see available times
                                         </Typography>
-                                        {selectedDate ? (
-                                            <Typography variant="body2" fontWeight={500} sx={{ mt: 0.5 }}>
-                                                {format(selectedDate, "EEEE, dd MMMM yyyy", { locale: enUS })}
-                                            </Typography>
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                                Select a date first
-                                            </Typography>
-                                        )}
                                     </Box>
-
-                                    <Box sx={{ maxHeight: 280, overflowY: "auto" }}>
-                                        {slotsForSelectedDate.length > 0 ? (
-                                            <Stack spacing={1}>
-                                                {slotsForSelectedDate.map((slot) => {
-                                                    const slotId = slot.id || slot.Id;
-                                                    const selectedId = selectedSlot?.id || selectedSlot?.Id;
-                                                    const isSelected = slotId === selectedId;
-
+                                ) : (
+                                    <>
+                                        <Typography
+                                            sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary", mb: 2.5 }}
+                                        >
+                                            {format(selectedDate, "EEEE, MMMM d")}
+                                        </Typography>
+                                        {dayTimeBlocks.length === 0 ? (
+                                            <Box sx={{ textAlign: "center", py: 6 }}>
+                                                <Typography color="text.secondary" fontSize="0.9rem">
+                                                    No available 30-minute slots on this date.
+                                                </Typography>
+                                            </Box>
+                                        ) : (
+                                            <Box className="calendly-timeslot-list">
+                                                {dayTimeBlocks.map((slot) => {
+                                                    const isSelected = selectedBlockIds.has(String(slot.id));
+                                                    const startTime = new Date(slot.startTime);
+                                                    const endTime = new Date(slot.endTime);
                                                     return (
-                                                        <Paper
-                                                            key={slotId}
-                                                            onClick={() => handleSlotClick(slot)}
-                                                            sx={{
-                                                                p: 1.5,
-                                                                cursor: "pointer",
-                                                                border: "1px solid",
-                                                                borderColor: isSelected ? "primary.main" : "divider",
-                                                                bgcolor: isSelected
-                                                                    ? "primary.main"
-                                                                    : "background.paper",
-                                                                transition: "all 0.2s ease-in-out",
-                                                                "&:hover": {
-                                                                    borderColor: "primary.main",
-                                                                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                                                                },
-                                                            }}
+                                                        <Box
+                                                            key={slot.id}
+                                                            className={`calendly-timeslot ${isSelected ? "selected" : ""}`}
+                                                            onClick={() => handleTimeSelect(slot)}
                                                         >
-                                                            <Stack
-                                                                direction="row"
-                                                                alignItems="center"
-                                                                justifyContent="space-between"
-                                                            >
-                                                                <Stack direction="row" spacing={1} alignItems="center">
-                                                                    <AccessTimeIcon
-                                                                        fontSize="small"
-                                                                        sx={{
-                                                                            color: isSelected
-                                                                                ? "white"
-                                                                                : "primary.main",
-                                                                        }}
-                                                                    />
-                                                                    <Typography
-                                                                        variant="body2"
-                                                                        fontWeight={600}
-                                                                        color={isSelected ? "white" : "primary.main"}
-                                                                    >
-                                                                        {parseTime(getSlotStartTime(slot))} -{" "}
-                                                                        {parseTime(getSlotEndTime(slot))}
-                                                                    </Typography>
-                                                                </Stack>
-                                                                {isSelected && (
-                                                                    <Box
-                                                                        sx={{
-                                                                            width: 20,
-                                                                            height: 20,
-                                                                            borderRadius: "50%",
-                                                                            bgcolor: "white",
-                                                                            display: "flex",
-                                                                            alignItems: "center",
-                                                                            justifyContent: "center",
-                                                                            fontSize: "12px",
-                                                                            fontWeight: "bold",
-                                                                            color: "primary.main",
-                                                                        }}
-                                                                    >
-                                                                        ✓
-                                                                    </Box>
-                                                                )}
-                                                            </Stack>
-                                                        </Paper>
+                                                            <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>
+                                                                {format(startTime, "HH:mm")} —{" "}
+                                                                {format(endTime, "HH:mm")}
+                                                            </Typography>
+                                                        </Box>
                                                     );
                                                 })}
-                                            </Stack>
-                                        ) : (
-                                            <Paper sx={{ p: 2, textAlign: "center", bgcolor: "grey.50" }}>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {selectedDate
-                                                        ? "No available slots for this date"
-                                                        : "Select a date to see available times"}
-                                                </Typography>
-                                            </Paper>
+                                            </Box>
                                         )}
-                                    </Box>
-                                </Stack>
+                                    </>
+                                )}
                             </Box>
                         </Stack>
 
                         {/* Reason Section */}
-                        <Box>
-                            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+                        <Box sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>
+                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
                                 Reason for Rescheduling{" "}
                                 <Typography component="span" color="error.main">
                                     *
@@ -550,6 +375,15 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                 placeholder="Why do you want to reschedule? Enter your reason here..."
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
+                                error={isReasonTooShort || isReasonTooLong}
+                                helperText={
+                                    isReasonTooShort
+                                        ? `Reason must be at least ${MIN_REASON_LENGTH} characters.`
+                                        : isReasonTooLong
+                                          ? `Reason must be at most ${MAX_REASON_LENGTH} characters.`
+                                          : `${trimmedReason.length}/${MAX_REASON_LENGTH}`
+                                }
+                                inputProps={{ maxLength: MAX_REASON_LENGTH }}
                                 sx={{
                                     "& .MuiOutlinedInput-root": {
                                         borderRadius: "8px",
@@ -557,12 +391,12 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                 }}
                             />
                         </Box>
-                    </>
+                    </Box>
                 )}
             </DialogContent>
 
             {/* Actions */}
-            <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+            <DialogActions sx={{ px: 5, pb: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
                 <SecondaryButton onClick={handleClose}>Cancel</SecondaryButton>
                 <PrimaryButton
                     onClick={handleSubmit}
