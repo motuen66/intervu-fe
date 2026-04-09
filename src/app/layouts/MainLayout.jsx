@@ -97,9 +97,9 @@ const MainLayout = () => {
             ],
             // ROLE: INTERVIEWER/COACH
             [
-                { label: "Dashboard", path: "/coach/dashboard" },
+                { label: "Dashboard", path: "/dashboard" },
                 { label: "Questions", path: "/questions" },
-                { label: "Schedule", path: "/coach/schedule" },
+                { label: "Schedule", path: "/schedule" },
                 { label: "Booking Requests", path: "/coach/requests" },
                 { label: "My Services", path: "/coach/services" },
             ],
@@ -114,6 +114,7 @@ const MainLayout = () => {
     );
 
     const isAdmin = userData?.role === ROLES.ADMIN;
+    const isCoachDashboardRoute = location.pathname.startsWith("/coach/dashboard");
 
     // Sidebar group toggle states for Admin view
     const [openGroups, setOpenGroups] = useState({
@@ -352,9 +353,13 @@ const MainLayout = () => {
                 <Navbar remoteAvatar={remoteAvatar} menuItems={menuItems} />
 
                 <main className="main-content">
-                    <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
+                    {isCoachDashboardRoute ? (
                         <Outlet />
-                    </Container>
+                    ) : (
+                        <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
+                            <Outlet />
+                        </Container>
+                    )}
                 </main>
 
                 <SuspendedGate />
