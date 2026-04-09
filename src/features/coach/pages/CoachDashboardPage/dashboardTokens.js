@@ -6,7 +6,13 @@ export const DASHBOARD_LAYOUT = {
     emptyStatePaddingY: 3,
     kpiSectionMarginTop: 3,
     contentGridMarginTop: 2,
+    panelItemLimit: 5,
 };
+
+export const COACH_SCHEDULE_ROUTE = "/schedule";
+export const COACH_BOOKING_REQUESTS_ROUTE = "/booking-requests";
+export const COACH_INTERVIEWS_ROUTE = "/interview";
+export const COACH_SERVICES_ROUTE = "/my-services";
 
 export function getServiceColorByName(theme, serviceName, index = 0) {
     const normalized = (serviceName || "").toLowerCase();

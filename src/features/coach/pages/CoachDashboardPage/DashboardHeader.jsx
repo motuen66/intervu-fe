@@ -2,11 +2,10 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
-import Tooltip from "@mui/material/Tooltip";
-import { Download, CalendarMonth } from "@mui/icons-material";
+import { CalendarMonth } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import PrimaryButton from "../../../../common/components/buttons/PrimaryButton";
-import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
+import { COACH_SCHEDULE_ROUTE } from "./dashboardTokens";
 
 export default function DashboardHeader({ period, onPeriodChange }) {
     const navigate = useNavigate();
@@ -57,21 +56,9 @@ export default function DashboardHeader({ period, onPeriodChange }) {
                     <ToggleButton value="year">This Year</ToggleButton>
                 </ToggleButtonGroup>
 
-                {/* <Tooltip title="Coming soon">
-                    <span>
-                        <SecondaryButton
-                            startIcon={<Download />}
-                            disabled
-                            sx={{ textTransform: "none" }}
-                        >
-                            Export Report
-                        </SecondaryButton>
-                    </span>
-                </Tooltip> */}
-
                 <PrimaryButton
                     startIcon={<CalendarMonth />}
-                    onClick={() => navigate("/coach/schedule")}
+                    onClick={() => navigate(COACH_SCHEDULE_ROUTE)}
                     sx={{ textTransform: "none" }}
                 >
                     Manage Schedule

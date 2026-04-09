@@ -3,12 +3,14 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Divider from "@mui/material/Divider";
+import Button from "@mui/material/Button";
 import { Groups, CalendarToday, Check, Cancel } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import SuccessButton from "../../../../common/components/buttons/SuccessButton";
+import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
 import DangerButton from "../../../../common/components/buttons/DangerButton";
 import { respondToBookingRequest } from "../../services/coachDashboardApi";
-import { DASHBOARD_LAYOUT } from "./dashboardTokens";
+import { COACH_BOOKING_REQUESTS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 function RequestItem({ request, onResponded }) {
     const [loading, setLoading] = useState(null);
@@ -67,24 +69,54 @@ function RequestItem({ request, onResponded }) {
                     </Box>
                 </Box>
 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1, alignItems: "flex-end" }}>
-                    <SuccessButton
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        alignItems: "stretch",
+                        justifyContent: "center",
+                        minWidth: 116,
+                    }}
+                >
+                    <SecondaryButton
                         size="small"
                         startIcon={<Check />}
                         loading={loading === "approve"}
                         disabled={loading !== null}
                         onClick={() => handleRespond(true)}
-                        sx={{ textTransform: "none", minWidth: 100 }}
+                        sx={{
+                            textTransform: "none",
+                            minWidth: 110,
+                            px: 1.5,
+                            py: 0.625,
+                            lineHeight: 1.2,
+                            bgcolor: "secondary.main",
+                            color: "secondary.contrastText",
+                            borderColor: "secondary.main",
+                            "&:hover": {
+                                bgcolor: "secondary.dark",
+                                borderColor: "secondary.dark",
+                            },
+                            "& .MuiSvgIcon-root": { fontSize: 18 },
+                        }}
                     >
                         Approve
-                    </SuccessButton>
+                    </SecondaryButton>
                     <DangerButton
                         size="small"
                         startIcon={<Cancel />}
                         loading={loading === "reject"}
                         disabled={loading !== null}
                         onClick={() => handleRespond(false)}
-                        sx={{ textTransform: "none", minWidth: 100 }}
+                        sx={{
+                            textTransform: "none",
+                            minWidth: 110,
+                            px: 1.5,
+                            py: 0.625,
+                            lineHeight: 1.2,
+                            "& .MuiSvgIcon-root": { fontSize: 18 },
+                        }}
                     >
                         Reject
                     </DangerButton>
@@ -95,6 +127,12 @@ function RequestItem({ request, onResponded }) {
 }
 
 export default function PendingRequestsList({ requests, onResponded }) {
+    const navigate = useNavigate();
+
+    const displayRequests = [...(requests || [])]
+        .sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt))
+        .slice(0, DASHBOARD_LAYOUT.panelItemLimit);
+
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
             <Box
@@ -102,6 +140,8 @@ export default function PendingRequestsList({ requests, onResponded }) {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    flexWrap: "wrap",
+                    rowGap: 0.75,
                     mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
                 }}
             >
@@ -112,14 +152,43 @@ export default function PendingRequestsList({ requests, onResponded }) {
                     </Typography>
                 </Box>
 
-                {requests?.length > 0 && (
-                    <Typography variant="body2" fontWeight={700} color="info.main">
-                        {requests.length} New
-                    </Typography>
-                )}
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: { xs: 1.5, sm: 3 },
+                        flexShrink: 0,
+                        flexWrap: "nowrap",
+                        ml: "auto",
+                    }}
+                >
+                    {requests?.length > 0 && (
+                        <Typography variant="body2" fontWeight={700} color="info.main">
+                            {requests.length} New
+                        </Typography>
+                    )}
+                    <Button
+                        size="small"
+                        onClick={() => navigate(COACH_BOOKING_REQUESTS_ROUTE)}
+                        sx={{
+                            textTransform: "none",
+                            minWidth: 88,
+                            whiteSpace: "nowrap",
+                            px: "10%",
+                            py: 0.35,
+                            borderRadius: 1.5,
+                            bgcolor: "action.hover",
+                            "&:hover": { bgcolor: "action.selected" },
+                            fontWeight: 600,
+                            fontSize: "0.8125rem",
+                        }}
+                    >
+                        View all
+                    </Button>
+                </Box>
             </Box>
 
-            {!requests?.length ? (
+            {!displayRequests.length ? (
                 <Typography
                     variant="body2"
                     color="text.secondary"
@@ -128,7 +197,7 @@ export default function PendingRequestsList({ requests, onResponded }) {
                     No pending requests
                 </Typography>
             ) : (
-                requests.map((req, idx) => (
+                displayRequests.map((req, idx) => (
                     <Box key={req.bookingRequestId}>
                         {idx > 0 && <Divider />}
                         <RequestItem request={req} onResponded={onResponded} />

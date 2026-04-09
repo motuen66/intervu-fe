@@ -3,12 +3,13 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Divider from "@mui/material/Divider";
+import Button from "@mui/material/Button";
 import { AccessTime } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import StatusChip from "../../../../common/components/StatusChip";
 import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
-import { DASHBOARD_LAYOUT } from "./dashboardTokens";
+import { COACH_INTERVIEWS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 const STATUS_COLOR_MAP = {
     Confirmed: "success",
@@ -86,8 +87,12 @@ function SessionItem({ session }) {
                         size="small"
                     />
                 </Box>
-                <Typography variant="caption" color="text.secondary">
-                    Room ID: {session.roomIdDisplay}
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", wordBreak: "break-all" }}
+                >
+                    Session code: {session.interviewRoomId || session.roomIdDisplay || "N/A"}
                 </Typography>
             </Box>
 
@@ -117,23 +122,52 @@ function SessionItem({ session }) {
 }
 
 export default function UpcomingSessionsList({ sessions }) {
+    const navigate = useNavigate();
+
+    const displaySessions = [...(sessions || [])]
+        .sort((a, b) => new Date(a.scheduledTime || 0) - new Date(b.scheduledTime || 0))
+        .slice(0, DASHBOARD_LAYOUT.panelItemLimit);
+
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
             <Box
                 sx={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 1,
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    rowGap: 0.75,
                     mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
                 }}
             >
-                <AccessTime sx={{ color: "success.main", fontSize: 20 }} />
-                <Typography variant="h6" fontWeight={700}>
-                    Upcoming Sessions
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                    <AccessTime sx={{ color: "success.main", fontSize: 20 }} />
+                    <Typography variant="h6" fontWeight={700}>
+                        Upcoming Sessions
+                    </Typography>
+                </Box>
+
+                <Button
+                    size="small"
+                    onClick={() => navigate(COACH_INTERVIEWS_ROUTE)}
+                    sx={{
+                        textTransform: "none",
+                        minWidth: "auto",
+                        px: "5%",
+                        py: 0.35,
+                        borderRadius: 1.5,
+                        bgcolor: "action.hover",
+                        "&:hover": { bgcolor: "action.selected" },
+                        fontWeight: 600,
+                        fontSize: "0.8125rem",
+                        flexShrink: 0,
+                    }}
+                >
+                    View all
+                </Button>
             </Box>
 
-            {!sessions?.length ? (
+            {!displaySessions.length ? (
                 <Typography
                     variant="body2"
                     color="text.secondary"
@@ -142,7 +176,7 @@ export default function UpcomingSessionsList({ sessions }) {
                     No upcoming sessions
                 </Typography>
             ) : (
-                sessions.map((session, idx) => (
+                displaySessions.map((session, idx) => (
                     <Box key={session.interviewRoomId}>
                         {idx > 0 && <Divider />}
                         <SessionItem session={session} />

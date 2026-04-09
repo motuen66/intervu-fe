@@ -4,11 +4,17 @@ import Rating from "@mui/material/Rating";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import { ChatBubbleOutline } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import { DASHBOARD_LAYOUT } from "./dashboardTokens";
+import { COACH_INTERVIEWS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 function getTimeAgo(dateStr) {
-    const diff = Date.now() - new Date(dateStr).getTime();
+    const timestamp = new Date(dateStr).getTime();
+    if (Number.isNaN(timestamp)) return "Just now";
+
+    const diff = Date.now() - timestamp;
+    if (diff < 0) return "Just now";
+
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `${mins} min ago`;
     const hours = Math.floor(mins / 60);
@@ -33,7 +39,7 @@ function FeedbackItem({ feedback }) {
                         },
                     }}
                 />
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase" }}>
+                <Typography variant="caption" color="text.secondary">
                     {getTimeAgo(feedback.createdAt)}
                 </Typography>
             </Box>
@@ -43,13 +49,19 @@ function FeedbackItem({ feedback }) {
             </Typography>
 
             <Typography variant="caption" fontWeight={700} color="text.primary">
-                — {feedback.candidateName?.toUpperCase()}
+                — {feedback.candidateName}
             </Typography>
         </Box>
     );
 }
 
 export default function FeedbackWall({ feedbacks }) {
+    const navigate = useNavigate();
+
+    const displayFeedbacks = [...(feedbacks || [])]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, DASHBOARD_LAYOUT.panelItemLimit);
+
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
             <Box
@@ -66,7 +78,7 @@ export default function FeedbackWall({ feedbacks }) {
                 </Typography>
             </Box>
 
-            {!feedbacks?.length ? (
+            {!displayFeedbacks.length ? (
                 <Typography
                     variant="body2"
                     color="text.secondary"
@@ -76,7 +88,7 @@ export default function FeedbackWall({ feedbacks }) {
                 </Typography>
             ) : (
                 <>
-                    {feedbacks.map((fb, idx) => (
+                    {displayFeedbacks.map((fb, idx) => (
                         <Box key={idx}>
                             {idx > 0 && <Divider />}
                             <FeedbackItem feedback={fb} />
@@ -86,12 +98,17 @@ export default function FeedbackWall({ feedbacks }) {
                     <Divider sx={{ mt: 1 }} />
                     <Button
                         fullWidth
+                        onClick={() => navigate(COACH_INTERVIEWS_ROUTE)}
                         sx={{
                             mt: 1,
                             textTransform: "none",
                             color: "text.secondary",
                             fontWeight: 600,
                             fontSize: "0.8125rem",
+                            px: "10%",
+                            borderRadius: 1.5,
+                            bgcolor: "action.hover",
+                            "&:hover": { bgcolor: "action.selected" },
                         }}
                     >
                         VIEW ALL FEEDBACK

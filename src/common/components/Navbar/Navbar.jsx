@@ -262,7 +262,7 @@ const Navbar = () => {
             { label: "Pricing", path: "#", type: "link", icon: CreditCard, sectionLabel: "MEMBERSHIP" },
         ],
         COACH: [
-            { label: "Dashboard", path: "/home", type: "link", icon: LayoutDashboard, sectionLabel: "WORKSPACE" },
+            { label: "Dashboard", path: "/dashboard", type: "link", icon: LayoutDashboard, sectionLabel: "WORKSPACE" },
             {
                 label: "Operations",
                 type: "dropdown",

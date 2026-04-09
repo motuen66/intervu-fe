@@ -97,9 +97,9 @@ const MainLayout = () => {
             ],
             // ROLE: INTERVIEWER/COACH
             [
-                { label: "Dashboard", path: "/coach/dashboard" },
+                { label: "Dashboard", path: "/dashboard" },
                 { label: "Questions", path: "/questions" },
-                { label: "Schedule", path: "/coach/schedule" },
+                { label: "Schedule", path: "/schedule" },
                 { label: "Booking Requests", path: "/coach/requests" },
                 { label: "My Services", path: "/coach/services" },
             ],

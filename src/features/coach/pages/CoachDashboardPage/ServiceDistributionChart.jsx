@@ -1,19 +1,30 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
 import { useTheme } from "@mui/material/styles";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { BarChart as BarChartIcon } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import { DASHBOARD_LAYOUT, getServiceColorByName } from "./dashboardTokens";
+import {
+    COACH_SERVICES_ROUTE,
+    DASHBOARD_LAYOUT,
+    getServiceColorByName,
+} from "./dashboardTokens";
 
 export default function ServiceDistributionChart({ services }) {
     const theme = useTheme();
+    const navigate = useNavigate();
 
-    const chartData = services?.map((s, i) => ({
+    const rankedServices = [...(services || [])]
+        .sort((a, b) => (b.count || 0) - (a.count || 0))
+        .slice(0, DASHBOARD_LAYOUT.panelItemLimit);
+
+    const chartData = rankedServices.map((s, i) => ({
         name: s.serviceName,
         value: s.count,
         color: getServiceColorByName(theme, s.serviceName, i),
-    })) || [];
+    }));
 
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
@@ -21,14 +32,37 @@ export default function ServiceDistributionChart({ services }) {
                 sx={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 1,
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    rowGap: 0.75,
                     mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
                 }}
             >
-                <BarChartIcon sx={{ color: "primary.main", fontSize: 20 }} />
-                <Typography variant="h6" fontWeight={700}>
-                    Common Services
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                    <BarChartIcon sx={{ color: "primary.main", fontSize: 20 }} />
+                    <Typography variant="h6" fontWeight={700}>
+                        Common Services
+                    </Typography>
+                </Box>
+
+                <Button
+                    size="small"
+                    onClick={() => navigate(COACH_SERVICES_ROUTE)}
+                    sx={{
+                        textTransform: "none",
+                        minWidth: "auto",
+                        px: "10%",
+                        py: 0.35,
+                        borderRadius: 1.5,
+                        bgcolor: "action.hover",
+                        "&:hover": { bgcolor: "action.selected" },
+                        fontWeight: 600,
+                        fontSize: "0.8125rem",
+                        flexShrink: 0,
+                    }}
+                >
+                    Manage
+                </Button>
             </Box>
 
             {!chartData.length ? (

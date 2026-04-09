@@ -1,11 +1,11 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
-import IconButton from "@mui/material/IconButton";
-import { CalendarMonth, Add } from "@mui/icons-material";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import { CalendarMonth } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import { DASHBOARD_LAYOUT } from "./dashboardTokens";
+import { COACH_SCHEDULE_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function AvailabilityWidget({ availability }) {
     const navigate = useNavigate();
@@ -17,6 +17,8 @@ export default function AvailabilityWidget({ availability }) {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    flexWrap: "wrap",
+                    rowGap: 0.75,
                     mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
                 }}
             >
@@ -26,9 +28,24 @@ export default function AvailabilityWidget({ availability }) {
                         Availability
                     </Typography>
                 </Box>
-                <IconButton size="small" onClick={() => navigate("/coach/schedule")}>
-                    <Add fontSize="small" />
-                </IconButton>
+                <Button
+                    size="small"
+                    onClick={() => navigate(COACH_SCHEDULE_ROUTE)}
+                    sx={{
+                        textTransform: "none",
+                        minWidth: "auto",
+                        px: "10%",
+                        py: 0.35,
+                        borderRadius: 1.5,
+                        bgcolor: "action.hover",
+                        "&:hover": { bgcolor: "action.selected" },
+                        fontWeight: 600,
+                        fontSize: "0.8125rem",
+                        flexShrink: 0,
+                    }}
+                >
+                    Manage
+                </Button>
             </Box>
 
             {!availability?.length ? (
@@ -41,37 +58,39 @@ export default function AvailabilityWidget({ availability }) {
                 </Typography>
             ) : (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                    {availability.map((day) => (
-                        <Box
-                            key={day.dayOfWeek}
-                            sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                        >
-                            <Typography variant="body2" fontWeight={500} sx={{ minWidth: 36 }}>
-                                {day.dayOfWeek}
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                                {day.timeSlots?.length > 0 ? (
-                                    day.timeSlots.map((slot) => (
-                                        <Chip
-                                            key={slot}
-                                            label={slot}
-                                            size="small"
-                                            sx={{
-                                                fontWeight: 600,
-                                                fontSize: "0.75rem",
-                                                bgcolor: "info.main",
-                                                color: "info.contrastText",
-                                            }}
-                                        />
-                                    ))
-                                ) : (
-                                    <Typography variant="caption" color="text.disabled" fontStyle="italic">
-                                        No slots
+                    {availability.slice(0, 7).map((day, idx) => {
+                        const totalSlots = day.timeSlots?.length || 0;
+                        const previewSlots = (day.timeSlots || []).slice(0, 2);
+                        const moreCount = Math.max(totalSlots - previewSlots.length, 0);
+
+                        return (
+                            <Box key={day.dayOfWeek}>
+                                {idx > 0 && <Divider sx={{ mb: 1.25 }} />}
+
+                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                    <Typography variant="body2" fontWeight={600} sx={{ minWidth: 40 }}>
+                                        {day.dayOfWeek}
                                     </Typography>
-                                )}
+
+                                    {totalSlots > 0 ? (
+                                        <Box sx={{ textAlign: "right", minWidth: 160 }}>
+                                            <Typography variant="body2" fontWeight={700} color="info.main">
+                                                {totalSlots} slots
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {previewSlots.join(" • ")}
+                                                {moreCount > 0 ? `  +${moreCount} more` : ""}
+                                            </Typography>
+                                        </Box>
+                                    ) : (
+                                        <Typography variant="caption" color="text.disabled" fontStyle="italic">
+                                            No slots
+                                        </Typography>
+                                    )}
+                                </Box>
                             </Box>
-                        </Box>
-                    ))}
+                        );
+                    })}
                 </Box>
             )}
         </BaseCard>
