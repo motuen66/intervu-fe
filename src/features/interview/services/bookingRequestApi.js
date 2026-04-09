@@ -9,6 +9,7 @@ export const bookingRequestEndPoints = {
     RESPOND: (id) => `${BASE_URL}/${id}/respond`,
     PAY: (id) => `${BASE_URL}/${id}/pay`,
     CANCEL: (id) => `${BASE_URL}/${id}/cancel`,
+    CANCEL_ROUND: (id, roundId) => `${BASE_URL}/${id}/rounds/${roundId}/cancel`,
     GET_LIST: BASE_URL,
     GET_DETAIL: (id) => `${BASE_URL}/${id}`,
 };
@@ -101,6 +102,19 @@ export const cancelBookingRequest = async (id) => {
     const result = await callApi({
         method: METHOD.POST,
         endpoint: bookingRequestEndPoints.CANCEL(id),
+    });
+    return result.data;
+};
+
+/**
+ * Candidate cancels a single round in an Accepted JD booking
+ * @param {string} bookingRequestId
+ * @param {string} roundId
+ */
+export const cancelInterviewRound = async (bookingRequestId, roundId) => {
+    const result = await callApi({
+        method: METHOD.POST,
+        endpoint: bookingRequestEndPoints.CANCEL_ROUND(bookingRequestId, roundId),
     });
     return result.data;
 };

@@ -38,6 +38,11 @@ export const AIM_LEVEL_LABELS = {
     [AIM_LEVEL.TEAM_LEADER]: "Team Leader",
 };
 
+export const INTERVIEW_ROUND_STATUS = {
+    ACTIVE: "Active",
+    CANCELLED: "Cancelled",
+};
+
 export const BOOKING_REQUEST_STATUS = {
     PENDING: 0,
     ACCEPTED: 1,

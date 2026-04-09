@@ -5,12 +5,14 @@ import {
     respondToBookingRequest,
     payBookingRequest,
     cancelBookingRequest,
+    cancelInterviewRound,
 } from "../../services/bookingRequestApi";
 import {
     BOOKING_REQUEST_STATUS,
     BOOKING_REQUEST_STATUS_LABELS,
     BOOKING_REQUEST_TYPE,
     AIM_LEVEL_LABELS,
+    INTERVIEW_ROUND_STATUS,
 } from "../../../../common/constants/status";
 import useUser from "../../../../common/hooks/useUser";
 import { ROLES } from "../../../../common/constants/common";
@@ -109,10 +111,14 @@ export default function BookingRequestDetailPage() {
     const [responding, setResponding] = useState(false);
     const [paying, setPaying] = useState(false);
     const [cancelling, setCancelling] = useState(false);
+    const [cancellingRoundId, setCancellingRoundId] = useState(null);
 
     // Reject dialog state
     const [rejectOpen, setRejectOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState("");
+
+    // Cancel round dialog state
+    const [cancelRoundTarget, setCancelRoundTarget] = useState(null); // { id, roundNumber }
 
     useEffect(() => {
         if (id) fetchDetail();
@@ -213,6 +219,21 @@ export default function BookingRequestDetailPage() {
         }
     };
 
+    const handleCancelRound = async () => {
+        if (!cancelRoundTarget) return;
+        setCancellingRoundId(cancelRoundTarget.id);
+        try {
+            await cancelInterviewRound(id, cancelRoundTarget.id);
+            toast.success(`Round ${cancelRoundTarget.roundNumber} cancelled.`);
+            setCancelRoundTarget(null);
+            fetchDetail();
+        } catch (err) {
+            toast.error(err.message || "Failed to cancel round.");
+        } finally {
+            setCancellingRoundId(null);
+        }
+    };
+
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
@@ -269,7 +290,7 @@ export default function BookingRequestDetailPage() {
 
                     {/* Primary Action Context Dependent */}
                     <Stack direction="row" spacing={2}>
-                        {isCoach && isPending && (
+                        {isCoach && isPaid && (
                             <>
                                 <SecondaryButton
                                     onClick={handleAccept}
@@ -293,7 +314,7 @@ export default function BookingRequestDetailPage() {
 
                         {!isCoach && (
                             <>
-                                {isAccepted && (
+                                {isPending && (
                                     <SecondaryButton
                                         onClick={handlePay}
                                         loading={paying}
@@ -309,7 +330,7 @@ export default function BookingRequestDetailPage() {
                                         Pay {detail.totalAmount?.toLocaleString()} ₫
                                     </SecondaryButton>
                                 )}
-                                {(isPending || isAccepted) && (
+                                {(isPending || isPaid) && (
                                     <DangerButton
                                         onClick={handleCancel}
                                         loading={cancelling}
@@ -504,134 +525,188 @@ export default function BookingRequestDetailPage() {
                     {detail.rounds?.length > 1 && (
                         <SectionCard title="Interview Rounds" icon={AssignmentIcon} sx={{ mb: 0, p: 4 }}>
                             <Grid container spacing={3} alignItems="stretch">
-                                {detail.rounds.map((r, i) => (
-                                    <Grid item key={i} sx={{ display: "flex" }}>
-                                        <Box
-                                            sx={{
-                                                p: 4,
-                                                borderRadius: "24px",
-                                                bgcolor: "white",
-                                                border: "1px solid #f1f5f9",
-                                                width: "340px", // Rigged width for consistency
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                flexShrink: 0,
-                                                position: "relative",
-                                                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                                                boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
-                                                "&:hover": {
-                                                    boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
-                                                    transform: "translateY(-4px)",
-                                                    borderColor: "#bef264",
-                                                },
-                                            }}
-                                        >
-                                            {/* Top identifier */}
-                                            <Stack
-                                                direction="row"
-                                                justifyContent="space-between"
-                                                alignItems="flex-start"
-                                                sx={{ mb: 3 }}
-                                            >
-                                                <Box>
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="#94a3b8"
-                                                        fontWeight={800}
-                                                        sx={{ letterSpacing: "0.1em", display: "block", mb: 0.5 }}
-                                                    >
-                                                        ROUND
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="h4"
-                                                        fontWeight={900}
-                                                        color="#0f172a"
-                                                        sx={{ lineHeight: 1 }}
-                                                    >
-                                                        {String(r.roundNumber).padStart(2, "0")}
-                                                    </Typography>
-                                                </Box>
-                                                <Box
-                                                    sx={{
-                                                        py: 0.6,
-                                                        px: 2,
-                                                        borderRadius: "12px",
-                                                        bgcolor: "#0f172a",
-                                                        border: "1px solid #1e293b",
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{
-                                                            color: "#bef264",
-                                                            fontWeight: 900,
-                                                            fontSize: "0.7rem",
-                                                            letterSpacing: "0.05em",
-                                                        }}
-                                                    >
-                                                        {r.isCoding ? "TECHNICAL" : "GENERAL"}
-                                                    </Typography>
-                                                </Box>
-                                            </Stack>
-
-                                            <Box sx={{ mb: 4 }}>
-                                                <Typography
-                                                    variant="h6"
-                                                    fontWeight={800}
-                                                    color="#0f172a"
-                                                    sx={{ mb: 1, lineHeight: 1.2 }}
-                                                >
-                                                    {r.interviewTypeName}
-                                                </Typography>
-                                                <Stack spacing={1}>
-                                                    <Typography
-                                                        variant="body2"
-                                                        color="#64748b"
-                                                        fontWeight={600}
-                                                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                                                    >
-                                                        <AccessTimeIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
-                                                        {new Date(r.startTime).toLocaleString("en-US", {
-                                                            day: "numeric",
-                                                            month: "short",
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        })}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="body2"
-                                                        color="#64748b"
-                                                        fontWeight={600}
-                                                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                                                    >
-                                                        <AssignmentIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
-                                                        {r.isCoding
-                                                            ? "Coding Workspace included"
-                                                            : "Question set focused"}
-                                                    </Typography>
-                                                </Stack>
-                                            </Box>
-
+                                {detail.rounds.map((r, i) => {
+                                    const isCancelled = r.status === INTERVIEW_ROUND_STATUS.CANCELLED;
+                                    const canCancelRound =
+                                        !isCoach &&
+                                        isAccepted &&
+                                        !isCancelled &&
+                                        r.interviewRoomStatus === "Scheduled";
+                                    return (
+                                        <Grid item key={i} sx={{ display: "flex" }}>
                                             <Box
                                                 sx={{
-                                                    mt: "auto",
-                                                    pt: 3,
-                                                    borderTop: "1px dashed #e2e8f0",
+                                                    p: 4,
+                                                    borderRadius: "24px",
+                                                    bgcolor: isCancelled ? "#f8fafc" : "white",
+                                                    border: `1px solid ${isCancelled ? "#e2e8f0" : "#f1f5f9"}`,
+                                                    width: "340px",
                                                     display: "flex",
-                                                    justifyContent: "space-between",
-                                                    alignItems: "center",
+                                                    flexDirection: "column",
+                                                    flexShrink: 0,
+                                                    position: "relative",
+                                                    opacity: isCancelled ? 0.65 : 1,
+                                                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                                    boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+                                                    ...(!isCancelled && {
+                                                        "&:hover": {
+                                                            boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
+                                                            transform: "translateY(-4px)",
+                                                            borderColor: "#bef264",
+                                                        },
+                                                    }),
                                                 }}
                                             >
-                                                <Typography variant="body2" color="#94a3b8" fontWeight={700}>
-                                                    Session Price
-                                                </Typography>
-                                                <Typography variant="h6" fontWeight={900} color="#0f172a">
-                                                    {r.price?.toLocaleString()} ₫
-                                                </Typography>
+                                                {/* Top identifier */}
+                                                <Stack
+                                                    direction="row"
+                                                    justifyContent="space-between"
+                                                    alignItems="flex-start"
+                                                    sx={{ mb: 3 }}
+                                                >
+                                                    <Box>
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="#94a3b8"
+                                                            fontWeight={800}
+                                                            sx={{ letterSpacing: "0.1em", display: "block", mb: 0.5 }}
+                                                        >
+                                                            ROUND
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="h4"
+                                                            fontWeight={900}
+                                                            color="#0f172a"
+                                                            sx={{ lineHeight: 1 }}
+                                                        >
+                                                            {String(r.roundNumber).padStart(2, "0")}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Stack direction="row" spacing={1} alignItems="center">
+                                                        {isCancelled && (
+                                                            <Box
+                                                                sx={{
+                                                                    py: 0.6,
+                                                                    px: 2,
+                                                                    borderRadius: "12px",
+                                                                    bgcolor: "#fef2f2",
+                                                                    border: "1px solid #fecaca",
+                                                                }}
+                                                            >
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    sx={{
+                                                                        color: "#ef4444",
+                                                                        fontWeight: 900,
+                                                                        fontSize: "0.7rem",
+                                                                        letterSpacing: "0.05em",
+                                                                    }}
+                                                                >
+                                                                    CANCELLED
+                                                                </Typography>
+                                                            </Box>
+                                                        )}
+                                                        <Box
+                                                            sx={{
+                                                                py: 0.6,
+                                                                px: 2,
+                                                                borderRadius: "12px",
+                                                                bgcolor: "#0f172a",
+                                                                border: "1px solid #1e293b",
+                                                            }}
+                                                        >
+                                                            <Typography
+                                                                variant="caption"
+                                                                sx={{
+                                                                    color: "#bef264",
+                                                                    fontWeight: 900,
+                                                                    fontSize: "0.7rem",
+                                                                    letterSpacing: "0.05em",
+                                                                }}
+                                                            >
+                                                                {r.isCoding ? "TECHNICAL" : "GENERAL"}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Stack>
+                                                </Stack>
+
+                                                <Box sx={{ mb: 4 }}>
+                                                    <Typography
+                                                        variant="h6"
+                                                        fontWeight={800}
+                                                        color="#0f172a"
+                                                        sx={{ mb: 1, lineHeight: 1.2 }}
+                                                    >
+                                                        {r.interviewTypeName}
+                                                    </Typography>
+                                                    <Stack spacing={1}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="#64748b"
+                                                            fontWeight={600}
+                                                            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                                                        >
+                                                            <AccessTimeIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
+                                                            {new Date(r.startTime).toLocaleString("en-US", {
+                                                                day: "numeric",
+                                                                month: "short",
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                            })}
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="#64748b"
+                                                            fontWeight={600}
+                                                            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                                                        >
+                                                            <AssignmentIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
+                                                            {r.isCoding
+                                                                ? "Coding Workspace included"
+                                                                : "Question set focused"}
+                                                        </Typography>
+                                                    </Stack>
+                                                </Box>
+
+                                                <Box
+                                                    sx={{
+                                                        mt: "auto",
+                                                        pt: 3,
+                                                        borderTop: "1px dashed #e2e8f0",
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "center",
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" color="#94a3b8" fontWeight={700}>
+                                                        Session Price
+                                                    </Typography>
+                                                    <Typography variant="h6" fontWeight={900} color="#0f172a">
+                                                        {r.price?.toLocaleString()} ₫
+                                                    </Typography>
+                                                </Box>
+
+                                                {canCancelRound && (
+                                                    <Box sx={{ mt: 2 }}>
+                                                        <DangerButton
+                                                            fullWidth
+                                                            loading={cancellingRoundId === r.id}
+                                                            onClick={() =>
+                                                                setCancelRoundTarget({
+                                                                    id: r.id,
+                                                                    roundNumber: r.roundNumber,
+                                                                })
+                                                            }
+                                                            sx={{ borderRadius: "12px", py: 1 }}
+                                                        >
+                                                            Cancel Round
+                                                        </DangerButton>
+                                                    </Box>
+                                                )}
                                             </Box>
-                                        </Box>
-                                    </Grid>
-                                ))}
+                                        </Grid>
+                                    );
+                                })}
                             </Grid>
                         </SectionCard>
                     )}
@@ -658,6 +733,27 @@ export default function BookingRequestDetailPage() {
                     )}
                 </Stack>
             </Box>
+
+            {/* CANCEL ROUND DIALOG */}
+            <Dialog
+                open={!!cancelRoundTarget}
+                onClose={() => setCancelRoundTarget(null)}
+                PaperProps={{ sx: { ...dialogStyles.paper, borderRadius: "32px" } }}
+            >
+                <DialogTitle sx={{ fontWeight: 900, px: 4, pt: 4 }}>Cancel Round {cancelRoundTarget?.roundNumber}</DialogTitle>
+                <DialogContent sx={{ px: 4 }}>
+                    <Typography variant="body2" color="#64748b">
+                        Are you sure you want to cancel Round {cancelRoundTarget?.roundNumber}? A partial refund will be
+                        calculated based on the time remaining before the session.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 4, pb: 4 }}>
+                    <SecondaryButton onClick={() => setCancelRoundTarget(null)}>Keep Round</SecondaryButton>
+                    <DangerButton onClick={handleCancelRound} loading={!!cancellingRoundId}>
+                        Confirm Cancel
+                    </DangerButton>
+                </DialogActions>
+            </Dialog>
 
             {/* REJECT DIALOG */}
             <Dialog
