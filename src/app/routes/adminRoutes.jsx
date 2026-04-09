@@ -5,7 +5,7 @@ import CompanyManagementPage from "../../features/admin/pages/CompanyManagementP
 import AdminEmptyPage from "../../features/admin/pages/AdminEmptyPage";
 import AdminInterviewsPage from "../../features/admin/pages/AdminInterviewsPage";
 import AdminReportsPage from "../../features/admin/pages/AdminReportsPage";
-import AdminRoomReportsPage from "../../features/admin/pages/AdminRoomReportsPage";
+import AdminRoomReportPage from "../../features/admin/pages/AdminRoomReportPage";
 import AdminQuestionBankPage from "../../features/admin/pages/AdminQuestionBankPage";
 
 export const adminRoutes = [
@@ -19,5 +19,7 @@ export const adminRoutes = [
     { path: "/admin/income/earnings", element: <AdminEmptyPage /> },
     { path: "/admin/income/refunds", element: <AdminEmptyPage /> },
     { path: "/admin/income/payouts", element: <AdminEmptyPage /> },
-    { path: "/admin/reports", element: <AdminReportsPage /> },
+    { path: "/admin/reports", element: <Navigate to="/admin/reports/questions" replace /> },
+    { path: "/admin/reports/questions", element: <AdminReportsPage /> },
+    { path: "/admin/reports/rooms", element: <AdminRoomReportPage /> },
 ];

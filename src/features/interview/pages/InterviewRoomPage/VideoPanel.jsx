@@ -14,6 +14,7 @@ import { ROLES } from "../../../../common/constants/common.js";
 import { useEffect, useState } from "react";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
+import ReportRoomModal from "./ReportRoomModal.jsx";
 
 function VideoPanel({
     myId,
@@ -38,6 +39,8 @@ function VideoPanel({
     const remotePeerRole = isCandidate ? "Coach" : "Candidate";
 
     const [fetchedRemoteAvatar, setFetchedRemoteAvatar] = useState(null);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [isReporting, setIsReporting] = useState(false);
 
     useEffect(() => {
         const participantId = roomInfo ? (isCandidate ? roomInfo.coachId : roomInfo.candidateId) : null;
@@ -284,6 +287,13 @@ function VideoPanel({
                     }}
                 />
             </Box>
+
+            <ReportRoomModal
+                open={reportModalOpen}
+                onClose={() => setReportModalOpen(false)}
+                onSubmit={handleReportSubmit}
+                isSubmitting={isReporting}
+            />
         </Box>
     );
 }

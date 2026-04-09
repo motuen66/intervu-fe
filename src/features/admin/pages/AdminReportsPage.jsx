@@ -88,12 +88,7 @@ const getStatusLabel = (status) => {
 };
 
 const normalizeReport = (raw) => ({
-    id:
-        raw?.id ||
-        raw?.reportId ||
-        raw?.questionReportId ||
-        raw?.questionReport?.id ||
-        raw?.questionReport?.reportId,
+    id: raw?.id || raw?.reportId || raw?.questionReportId || raw?.questionReport?.id || raw?.questionReport?.reportId,
     questionId:
         raw?.questionId ||
         raw?.question?.id ||
@@ -142,10 +137,7 @@ export default function AdminReportsPage() {
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const params = [
-                `page=${page + 1}`,
-                `pageSize=${pageSize}`,
-            ];
+            const params = [`page=${page + 1}`, `pageSize=${pageSize}`];
 
             if (statusFilter !== REPORT_STATUSES.ALL) {
                 params.push(`status=${encodeURIComponent(getStatusLabel(statusFilter))}`);
@@ -188,15 +180,14 @@ export default function AdminReportsPage() {
             });
 
             if (response?.success) {
-
                 setReports((prev) =>
                     prev.map((item) =>
                         item.id === reportId
                             ? {
-                                ...item,
-                                status,
-                                updatedAt: new Date().toISOString(),
-                            }
+                                  ...item,
+                                  status,
+                                  updatedAt: new Date().toISOString(),
+                              }
                             : item,
                     ),
                 );
@@ -428,29 +419,29 @@ export default function AdminReportsPage() {
                         />
                     </Box>
                     <FormControl size="small" sx={{ minWidth: 180 }}>
-                            <Select
-                                displayEmpty
-                                value={statusFilter}
-                                onChange={(event) => {
-                                    setStatusFilter(event.target.value);
-                                    setPage(0);
-                                }}
-                                startAdornment={<FilterListIcon sx={{ color: "text.disabled", mr: 1, fontSize: 18 }} />}
-                                sx={{
-                                    height: 44,
-                                    borderRadius: "12px",
-                                    bgcolor: "#fff",
-                                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#E2E8F0" },
-                                    fontSize: "14px",
-                                    fontWeight: 600,
-                                    color: "text.primary",
-                                }}
-                            >
-                                <MenuItem value={REPORT_STATUSES.ALL}>All status</MenuItem>
-                                <MenuItem value={REPORT_STATUSES.PENDING}>Pending</MenuItem>
-                                <MenuItem value={REPORT_STATUSES.REVIEWED}>Reviewed</MenuItem>
-                                <MenuItem value={REPORT_STATUSES.DISMISSED}>Dismissed</MenuItem>
-                            </Select>
+                        <Select
+                            displayEmpty
+                            value={statusFilter}
+                            onChange={(event) => {
+                                setStatusFilter(event.target.value);
+                                setPage(0);
+                            }}
+                            startAdornment={<FilterListIcon sx={{ color: "text.disabled", mr: 1, fontSize: 18 }} />}
+                            sx={{
+                                height: 44,
+                                borderRadius: "12px",
+                                bgcolor: "#fff",
+                                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#E2E8F0" },
+                                fontSize: "14px",
+                                fontWeight: 600,
+                                color: "text.primary",
+                            }}
+                        >
+                            <MenuItem value={REPORT_STATUSES.ALL}>All status</MenuItem>
+                            <MenuItem value={REPORT_STATUSES.PENDING}>Pending</MenuItem>
+                            <MenuItem value={REPORT_STATUSES.REVIEWED}>Reviewed</MenuItem>
+                            <MenuItem value={REPORT_STATUSES.DISMISSED}>Dismissed</MenuItem>
+                        </Select>
                     </FormControl>
                 </Box>
 
@@ -480,17 +471,14 @@ export default function AdminReportsPage() {
                 onCancel={() => setDeleteQuestionTarget(null)}
                 message={
                     <>
-                        Are you sure you want to delete <strong>{deleteQuestionTarget?.questionTitle || "this question"}</strong>?{"\n\n"}
+                        Are you sure you want to delete{" "}
+                        <strong>{deleteQuestionTarget?.questionTitle || "this question"}</strong>?{"\n\n"}
                         <span style={{ color: "#d32f2f", fontSize: "0.875rem" }}>This action cannot be undone.</span>
                     </>
                 }
             />
 
-            <ActionMenu
-                anchorEl={actionMenuAnchor}
-                open={Boolean(actionMenuAnchor)}
-                onClose={handleCloseMenu}
-            >
+            <ActionMenu anchorEl={actionMenuAnchor} open={Boolean(actionMenuAnchor)} onClose={handleCloseMenu}>
                 <MenuItem
                     disabled={!menuCanReview}
                     onClick={() => {
@@ -501,10 +489,7 @@ export default function AdminReportsPage() {
                     <ListItemIcon>
                         <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
                     </ListItemIcon>
-                    <ListItemText
-                        primary="Reviewed"
-                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
-                    />
+                    <ListItemText primary="Reviewed" primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }} />
                 </MenuItem>
                 <MenuItem
                     disabled={!menuCanDismiss}
@@ -516,10 +501,7 @@ export default function AdminReportsPage() {
                     <ListItemIcon>
                         <BlockIcon fontSize="small" sx={{ color: "warning.main" }} />
                     </ListItemIcon>
-                    <ListItemText
-                        primary="Dismissed"
-                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
-                    />
+                    <ListItemText primary="Dismissed" primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }} />
                 </MenuItem>
                 <MenuItem
                     disabled={!menuRow?.questionId}
