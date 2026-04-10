@@ -116,7 +116,6 @@ const MainLayout = () => {
 
     const isAdmin = userData?.role === ROLES.ADMIN;
     const isAssessmentLocked = userData?.role === ROLES.CANDIDATE && isAssessmentForceRequired(userData?.id);
-    const isAssessmentPage = location.pathname.startsWith("/assessment");
 
     // Sidebar group toggle states for Admin view
     const [openGroups, setOpenGroups] = useState({
@@ -361,7 +360,7 @@ const MainLayout = () => {
         <>
             <CandidateAssessmentGate />
             <div className="main-layout">
-                {isAssessmentPage ? null : isAssessmentLocked ? (
+                {isAssessmentLocked ? (
                     <header
                         style={{
                             position: "sticky",

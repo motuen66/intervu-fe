@@ -3,7 +3,8 @@ import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROLES } from "../constants/common";
 import {
-    hasAssessmentData,
+    ASSESSMENT_DATA_STATE,
+    getAssessmentState,
     setAssessmentForceRequired,
 } from "../../features/profiles/candidate/candidate-assessment/services/assessmentApi";
 
@@ -15,6 +16,7 @@ function CandidateAssessmentGate({ children }) {
 
     useEffect(() => {
         let cancelled = false;
+        const isRoadmapPath = location.pathname.startsWith("/roadmap");
 
         const shouldSkipCheck =
             !token || userData?.role !== ROLES.CANDIDATE || location.pathname.startsWith("/assessment");
@@ -28,9 +30,26 @@ function CandidateAssessmentGate({ children }) {
 
         const checkAssessment = async () => {
             try {
-                const hasData = await hasAssessmentData(userData?.id);
-                if (!cancelled && !hasData) {
+                const assessmentState = await getAssessmentState(userData?.id);
+
+                if (cancelled) {
+                    return;
+                }
+
+                if (assessmentState.status === ASSESSMENT_DATA_STATE.NO_RECORD) {
                     setAssessmentForceRequired(userData?.id, true);
+                    navigate("/assessment", {
+                        replace: true,
+                        state: {
+                            showAssessmentPrompt: true,
+                            redirectedFrom: `${location.pathname}${location.search}`,
+                        },
+                    });
+                    return;
+                }
+
+                if (assessmentState.status === ASSESSMENT_DATA_STATE.ALL_EMPTY && isRoadmapPath) {
+                    setAssessmentForceRequired(userData?.id, false);
                     navigate("/assessment", {
                         replace: true,
                         state: {

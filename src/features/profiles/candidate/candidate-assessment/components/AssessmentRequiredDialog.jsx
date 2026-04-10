@@ -19,7 +19,7 @@ function AssessmentRequiredDialog({ open, onSkip, onProceed, loading = false }) 
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
                 <Button onClick={onSkip} disabled={loading}>
-                    Skip for now
+                    Skip
                 </Button>
                 <Button
                     variant="contained"
