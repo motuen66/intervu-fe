@@ -2,7 +2,7 @@ import { BE_BASE_URL } from "../../../common/constants/env";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 
-const BASE_URL = `${BE_BASE_URL}/coach/dashboard`;
+const BASE_URL = `${BE_BASE_URL}/dashboard`;
 
 export const getCoachDashboardStats = async (period = "month") => {
     const result = await callApi({

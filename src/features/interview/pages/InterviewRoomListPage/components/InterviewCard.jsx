@@ -17,12 +17,14 @@ import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { INTERVIEW_ROOM_TYPE } from "../../../../../common/constants/types";
 import { ROLES } from "../../../../../common/constants/common";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import StatusChip from "../../../../../common/components/StatusChip";
 import BaseCard from "../../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
 import { getInterviewRoomStatusConfig } from "../../../../../common/constants/statusConfig";
 import { alpha } from "@mui/material/styles";
+import { callApi } from "../../../../../common/utils/apiConnector";
+import { METHOD } from "../../../../../common/constants/api";
 
 function InterviewCard({
     room,
@@ -41,6 +43,7 @@ function InterviewCard({
     const isOngoing = room.status === INTERVIEW_ROOM_STATUS.ON_GOING;
     const isScheduled = room.status === INTERVIEW_ROOM_STATUS.SCHEDULED;
     const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null);
+    const [participantAvatarUrl, setParticipantAvatarUrl] = useState(null);
 
     // Determine which participant to show (opposite role)
     const participantId = user?.role === ROLES.CANDIDATE ? room.coachId : room.candidateId;
@@ -224,12 +227,7 @@ function InterviewCard({
         }
 
         if (user?.role === ROLES.INTERVIEWER) {
-            return (
-                room.candidateSlugProfileUrl ||
-                room.candidateSlug ||
-                room.candidate?.slugProfileUrl ||
-                null
-            );
+            return room.candidateSlugProfileUrl || room.candidateSlug || room.candidate?.slugProfileUrl || null;
         }
 
         return null;

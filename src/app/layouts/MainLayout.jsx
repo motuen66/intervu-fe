@@ -114,7 +114,7 @@ const MainLayout = () => {
     );
 
     const isAdmin = userData?.role === ROLES.ADMIN;
-    const isCoachDashboardRoute = location.pathname.startsWith("/coach/dashboard");
+    const isCoachDashboardRoute = location.pathname.startsWith("/dashboard");
 
     // Sidebar group toggle states for Admin view
     const [openGroups, setOpenGroups] = useState({

@@ -45,18 +45,18 @@ export const INTERVIEW_ROUND_STATUS = {
 
 export const BOOKING_REQUEST_STATUS = {
     PENDING: 0,
-    ACCEPTED: 1,
-    REJECTED: 2,
-    PAID: 3,
-    EXPIRED: 4,
+    PendingForApprovalAfterPayment: 1,
+    ACCEPTED: 2,
+    REJECTED: 3,
+    EXPIRED: 4, 
     CANCELLED: 5,
 };
 
 export const BOOKING_REQUEST_STATUS_LABELS = {
     [BOOKING_REQUEST_STATUS.PENDING]: "Pending",
+    [BOOKING_REQUEST_STATUS.PendingForApprovalAfterPayment]: "Pending for Approval",
     [BOOKING_REQUEST_STATUS.ACCEPTED]: "Accepted",
     [BOOKING_REQUEST_STATUS.REJECTED]: "Rejected",
-    [BOOKING_REQUEST_STATUS.PAID]: "Paid",
     [BOOKING_REQUEST_STATUS.EXPIRED]: "Expired",
     [BOOKING_REQUEST_STATUS.CANCELLED]: "Cancelled",
 };

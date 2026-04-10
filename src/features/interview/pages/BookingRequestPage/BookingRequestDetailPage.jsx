@@ -387,12 +387,6 @@ export default function BookingRequestDetailPage() {
                         {"Session: "}
                         {detail.interviewTypeName ||
                             (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? "External Session" : "JD Interview")}
-                        {" — "}
-                        {new Date(detail.requestedStartTime || detail.createdAt).toLocaleDateString("en-US", {
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                        })}
                     </Typography>
                 </Box>
 
@@ -421,21 +415,20 @@ export default function BookingRequestDetailPage() {
                             <Box sx={{ flex: "1 1 auto", minWidth: "120px" }}>
                                 <DetailItem label="DURATION" value="45 Minutes" />
                             </Box>
-                            <Box sx={{ flex: "1 1 auto", minWidth: "200px" }}>
-                                <DetailItem
-                                    label="START TIME (LOCAL TIME)"
-                                    value={new Date(detail.requestedStartTime || detail.createdAt).toLocaleString(
-                                        "en-US",
-                                        {
+                            {detail.rounds?.length === 1 && (
+                                <Box sx={{ flex: "1 1 auto", minWidth: "200px" }}>
+                                    <DetailItem
+                                        label="START TIME (LOCAL TIME)"
+                                        value={new Date(detail.rounds?.[0].startTime).toLocaleString("en-US", {
                                             month: "short",
                                             day: "numeric",
                                             year: "numeric",
                                             hour: "2-digit",
                                             minute: "2-digit",
-                                        },
-                                    )}
-                                />
-                            </Box>
+                                        })}
+                                    />
+                                </Box>
+                            )}
                             {detail.rounds?.length > 0 && (
                                 <Box sx={{ flex: "1 1 auto", minWidth: "100px" }}>
                                     <DetailItem label="ROUNDS" value={`${detail.rounds.length} rounds`} />
@@ -528,10 +521,7 @@ export default function BookingRequestDetailPage() {
                                 {detail.rounds.map((r, i) => {
                                     const isCancelled = r.status === INTERVIEW_ROUND_STATUS.CANCELLED;
                                     const canCancelRound =
-                                        !isCoach &&
-                                        isAccepted &&
-                                        !isCancelled &&
-                                        r.interviewRoomStatus === "Scheduled";
+                                        !isCoach && isAccepted && !isCancelled && r.interviewRoomStatus === "Scheduled";
                                     return (
                                         <Grid item key={i} sx={{ display: "flex" }}>
                                             <Box
@@ -740,7 +730,9 @@ export default function BookingRequestDetailPage() {
                 onClose={() => setCancelRoundTarget(null)}
                 PaperProps={{ sx: { ...dialogStyles.paper, borderRadius: "32px" } }}
             >
-                <DialogTitle sx={{ fontWeight: 900, px: 4, pt: 4 }}>Cancel Round {cancelRoundTarget?.roundNumber}</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 900, px: 4, pt: 4 }}>
+                    Cancel Round {cancelRoundTarget?.roundNumber}
+                </DialogTitle>
                 <DialogContent sx={{ px: 4 }}>
                     <Typography variant="body2" color="#64748b">
                         Are you sure you want to cancel Round {cancelRoundTarget?.roundNumber}? A partial refund will be
