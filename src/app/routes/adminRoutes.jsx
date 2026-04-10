@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import AdminDashboard from "../../features/admin/pages/AdminDashboard";
+import AdminDashboard from "../../features/admin/pages/AdminDashboardPage/AdminDashboardPage";
 import UserManagementPage from "../../features/admin/pages/UserManagementPage";
 import CompanyManagementPage from "../../features/admin/pages/CompanyManagementPage";
 import AdminEmptyPage from "../../features/admin/pages/AdminEmptyPage";

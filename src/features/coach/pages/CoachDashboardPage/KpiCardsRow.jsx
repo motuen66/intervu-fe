@@ -1,5 +1,5 @@
 import Grid from "@mui/material/Grid";
-import KpiCard from "./KpiCard";
+import KpiCard from "../../../../common/components/cards/KpiCard";
 import { AttachMoney, Groups, Star, CheckCircle } from "@mui/icons-material";
 import { DASHBOARD_LAYOUT } from "./dashboardTokens";
 

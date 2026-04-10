@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
-import BaseCard from "../../../../common/components/cards/BaseCard";
+import BaseCard from "./BaseCard";
 
 export default function KpiCard({ icon, iconColor = "primary", label, value, growthPercent }) {
     const isPositive = growthPercent > 0;

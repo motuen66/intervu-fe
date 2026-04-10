@@ -76,28 +76,26 @@ const SidebarMenuItem = ({ item, isActive, onClick, collapsed }) => {
                 cursor: "pointer",
                 transition: "all 0.2s ease",
                 ...(isActive && {
-                    bgcolor: "primary.main",
+                    bgcolor: "action.selected",
+                    background: "linear-gradient(90deg, rgba(79, 70, 229, 0.1) 0%, rgba(79, 70, 229, 0.02) 100%)",
                     "& .sidebar-icon-box": {
-                        bgcolor: "secondary.main",
-                        color: "primary.main",
-                        transform: "none",
-                        boxShadow: "none",
+                        bgcolor: "primary.main",
+                        color: "white",
+                        boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
                     },
-                    "& .sidebar-label": { color: "white" },
+                    "& .sidebar-label": { color: "primary.main", fontWeight: 700 },
                 }),
                 "&:hover": {
-                    bgcolor: "primary.main",
-                    boxShadow: "none",
-                    transform: "none",
+                    bgcolor: isActive ? "action.selected" : "action.hover",
+                    transform: "translateX(4px)",
                     "& .sidebar-icon-box": {
-                        bgcolor: "secondary.main",
-                        color: "primary.main",
-                        transform: "none",
-                        boxShadow: "none",
+                        bgcolor: "primary.main",
+                        color: "white",
+                        transform: "rotate(5deg) scale(1.1)",
                     },
-                    "& .sidebar-label": { color: "white" },
+                    "& .sidebar-label": { color: "primary.main" },
                 },
-                "&:active": { transform: "none" },
+                "&:active": { transform: "scale(0.98)" },
             }}
             title={item.label}
         >
@@ -160,21 +158,24 @@ const SidebarGroupItem = ({ item, openGroups, onToggleGroup, location, onNavigat
                     background: "transparent",
                     borderRadius: "16px",
                     cursor: "pointer",
-                    transition: "all 0.2s ease",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                     ...(isChildActive &&
                         !isOpen && {
-                            bgcolor: "primary.main",
+                            bgcolor: "action.selected",
                             "& .sidebar-icon-box": {
-                                bgcolor: "secondary.main",
-                                color: "primary.main",
+                                bgcolor: "primary.main",
+                                color: "white",
                             },
-                            "& .sidebar-label": { color: "white" },
-                            "& .sidebar-arrow": { color: "white" },
+                            "& .sidebar-label": { color: "primary.main", fontWeight: 700 },
+                            "& .sidebar-arrow": { color: "primary.main" },
                         }),
                     "&:hover": {
                         bgcolor: "action.hover",
+                        transform: "translateX(4px)",
                         "& .sidebar-label": { color: "primary.main" },
+                        "& .sidebar-icon-box": { transform: "rotate(5deg) scale(1.05)" }
                     },
+                    "&:active": { transform: "scale(0.98)" },
                 }}
                 title={item.label}
             >
