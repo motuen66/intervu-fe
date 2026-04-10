@@ -37,15 +37,14 @@ export default function CoachDashboardPage() {
     const fetchAll = useCallback(async (p) => {
         setLoading(true);
         try {
-            const [statsRes, sessionsRes, requestsRes, servicesRes, feedbacksRes, availRes] =
-                await Promise.all([
-                    getCoachDashboardStats(p),
-                    getCoachUpcomingSessions(),
-                    getCoachPendingRequests(),
-                    getCoachServiceDistribution(),
-                    getCoachFeedbackWall(),
-                    getCoachAvailability(),
-                ]);
+            const [statsRes, sessionsRes, requestsRes, servicesRes, feedbacksRes, availRes] = await Promise.all([
+                getCoachDashboardStats(p),
+                getCoachUpcomingSessions(),
+                getCoachPendingRequests(),
+                getCoachServiceDistribution(),
+                getCoachFeedbackWall(),
+                getCoachAvailability(),
+            ]);
             setStats(statsRes);
             setSessions(sessionsRes);
             setRequests(requestsRes);
@@ -83,60 +82,37 @@ export default function CoachDashboardPage() {
                 )}
             </Box>
 
-            <Grid
-                container
-                spacing={DASHBOARD_LAYOUT.panelGap}
-                sx={{ mt: DASHBOARD_LAYOUT.contentGridMarginTop }}
-            >
+            <Grid container spacing={DASHBOARD_LAYOUT.panelGap} sx={{ mt: DASHBOARD_LAYOUT.contentGridMarginTop }}>
                 {/* Left column — 8/12 */}
                 <Grid size={{ xs: 12, md: 8 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: DASHBOARD_LAYOUT.panelGap }}>
                         {loading ? (
                             <CardSkeleton height={340} />
                         ) : (
-                            <EarningsChart
-                                data={stats?.earningsTrend}
-                                growthPercent={stats?.earningsGrowthPercent}
-                            />
+                            <EarningsChart data={stats?.earningsTrend} growthPercent={stats?.earningsGrowthPercent} />
                         )}
 
-                        {loading ? (
-                            <CardSkeleton height={260} />
-                        ) : (
-                            <UpcomingSessionsList sessions={sessions} />
-                        )}
+                        {loading ? <CardSkeleton height={260} /> : <UpcomingSessionsList sessions={sessions} />}
 
-                        {loading ? (
+                        {/* {loading ? (
                             <CardSkeleton height={300} />
                         ) : (
                             <PendingRequestsList
                                 requests={requests}
                                 onResponded={handleRequestResponded}
                             />
-                        )}
+                        )} */}
                     </Box>
                 </Grid>
 
                 {/* Right column — 4/12 */}
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: DASHBOARD_LAYOUT.panelGap }}>
-                        {loading ? (
-                            <CardSkeleton height={220} />
-                        ) : (
-                            <AvailabilityWidget availability={availability} />
-                        )}
+                        {loading ? <CardSkeleton height={220} /> : <AvailabilityWidget availability={availability} />}
 
-                        {loading ? (
-                            <CardSkeleton height={300} />
-                        ) : (
-                            <ServiceDistributionChart services={services} />
-                        )}
+                        {loading ? <CardSkeleton height={300} /> : <ServiceDistributionChart services={services} />}
 
-                        {loading ? (
-                            <CardSkeleton height={350} />
-                        ) : (
-                            <FeedbackWall feedbacks={feedbacks} />
-                        )}
+                        {loading ? <CardSkeleton height={350} /> : <FeedbackWall feedbacks={feedbacks} />}
                     </Box>
                 </Grid>
             </Grid>
