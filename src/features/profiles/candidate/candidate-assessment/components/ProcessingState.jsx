@@ -3,6 +3,7 @@ import { Box, CircularProgress, LinearProgress, Paper, Stack, Typography } from 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { alpha } from "@mui/material/styles";
 import { useAssessment } from "../context/AssessmentContext";
+import { setAssessmentCache } from "../../../../../common/utils/assessmentCache";
 
 const levelMap = {
     none: 0,
@@ -80,6 +81,17 @@ const ProcessingState = () => {
 
             setSkillScores(processedSkills);
             updateMatchPercentage(matchPercentage);
+
+            if (answers?.userId) {
+                setAssessmentCache(answers.userId, {
+                    currentStep: 3,
+                    answers,
+                    surveyResult,
+                    skillScores: processedSkills,
+                    matchPercentage,
+                    roadmap: null,
+                });
+            }
 
             if (isCancelled) {
                 return;

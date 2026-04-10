@@ -13,7 +13,10 @@ import SplitText from "./SplitText";
 import { TextField, Typography, Box } from "@mui/material";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
-import { hasAssessmentData } from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
+import {
+    ASSESSMENT_DATA_STATE,
+    getAssessmentState,
+} from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
 import { trackLogin } from "../../../../utils/analytics";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
@@ -46,11 +49,11 @@ function LoginPage() {
             }
 
             try {
-                const hasData = await hasAssessmentData(user.id);
-                if (hasData) {
-                    navigate("/home");
-                } else {
+                const assessmentState = await getAssessmentState(user.id);
+                if (assessmentState.status === ASSESSMENT_DATA_STATE.NO_RECORD) {
                     navigate("/assessment");
+                } else {
+                    navigate("/home");
                 }
             } catch (error) {
                 navigate("/assessment");

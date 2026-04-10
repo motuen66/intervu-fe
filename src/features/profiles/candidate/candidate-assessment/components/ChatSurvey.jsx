@@ -1017,9 +1017,9 @@ const ChatSurvey = () => {
                                         color: "#1f2937",
                                     }}
                                 >
-                                    Let&apos;s calibrate your{" "}
+                                    Let&apos;s get to know{" "}
                                     <Box component="span" sx={{ color: "#5b8c09" }}>
-                                        profile.
+                                        you.
                                     </Box>
                                 </Typography>
                                 <Typography
