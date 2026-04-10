@@ -21,4 +21,5 @@ export const candidateProfileEndPoints = {
     DELETE_CANDIDATE_PROFILE: BE_BASE_URL + "/candidate-profile/{id}",
     GET_ALL_SKILLS: BE_BASE_URL + "/Skills?page={page}&pageSize={pageSize}",
     GET_ALL_INDUSTRIES: BE_BASE_URL + "/Industries?page={page}&pageSize={pageSize}",
+    EVALUATE_CV: BE_BASE_URL + "/candidate-profile/evaluate-cv",
 };
