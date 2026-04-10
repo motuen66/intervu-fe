@@ -40,6 +40,7 @@ import SessionResultSection from "./components/SessionResultSection";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { SecondaryButton, DangerButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
+import { CvDialog } from "../../../../features/profiles/components/CvDialog";
 import "./BookingRequestPage.css";
 import { trackInitiatePayment, trackCreateBooking, trackServiceUsed } from "../../../../utils/analytics";
 
@@ -119,6 +120,12 @@ export default function BookingRequestDetailPage() {
 
     // Cancel round dialog state
     const [cancelRoundTarget, setCancelRoundTarget] = useState(null); // { id, roundNumber }
+    const [documentDialog, setDocumentDialog] = useState({ open: false, title: "", url: "" });
+
+    const openDocumentDialog = (title, url) => {
+        if (!url) return;
+        setDocumentDialog({ open: true, title, url });
+    };
 
     useEffect(() => {
         if (id) fetchDetail();
@@ -500,7 +507,7 @@ export default function BookingRequestDetailPage() {
                                         cursor: "pointer",
                                         "&:hover": { bgcolor: "#f1f5f9" },
                                     }}
-                                    onClick={() => window.open(detail.jobDescriptionUrl, "_blank")}
+                                    onClick={() => openDocumentDialog("Job Description", detail.jobDescriptionUrl)}
                                 >
                                     <Typography variant="body2" fontWeight={700} color="#0f172a">
                                         Job Description
@@ -524,7 +531,7 @@ export default function BookingRequestDetailPage() {
                                         cursor: "pointer",
                                         "&:hover": { bgcolor: "#f1f5f9" },
                                     }}
-                                    onClick={() => window.open(detail.cvUrl, "_blank")}
+                                    onClick={() => openDocumentDialog("Candidate CV", detail.cvUrl)}
                                 >
                                     <Typography variant="body2" fontWeight={700} color="#0f172a">
                                         Candidate CV
@@ -816,6 +823,13 @@ export default function BookingRequestDetailPage() {
                     </DangerButton>
                 </DialogActions>
             </Dialog>
+
+            <CvDialog
+                open={documentDialog.open}
+                onClose={() => setDocumentDialog({ open: false, title: "", url: "" })}
+                url={documentDialog.url}
+                title={documentDialog.title || "Document Viewer"}
+            />
         </Box>
     );
 }
