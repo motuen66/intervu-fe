@@ -141,9 +141,11 @@ const ScheduleManagement = () => {
     const handleAddClick = () => {
         setEditingId(null);
         setOriginalRange(null);
-        const today = new Date().toISOString().split("T")[0];
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split("T")[0];
         setFormData({
-            date: today,
+            date: tomorrowStr,
             startHour: 9,
             startMinute: 0,
             endHour: 10,
@@ -416,6 +418,8 @@ const ScheduleManagement = () => {
                         return;
                     }
                 }
+
+                toast.success("Availability created successfully.", { id: "availability-success" });
             }
 
             refetchMonth();
