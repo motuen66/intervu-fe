@@ -145,13 +145,20 @@ export const AdminRoomReportsPage = () => {
     };
 
     const handleResolveReport = async (reportId, status, refund = 0, note = "") => {
+        const effectiveReportId = reportId || selectedReportId || actionMenuRow?.id || actionMenuRow?.reportId;
+        if (!effectiveReportId) {
+            toast.error("Missing report id");
+            return;
+        }
+
         setIsResolving(true);
         try {
             const response = await callApi({
                 method: METHOD.POST,
                 endpoint: adminEndPoints.RESOLVE_ROOM_REPORT,
                 arg: {
-                    reportId,
+                    ReportId: effectiveReportId,
+                    reportId: effectiveReportId,
                     status,
                     adminNote: note || "Updated status via Admin Panel",
                     refundOption: refund,
@@ -171,7 +178,7 @@ export const AdminRoomReportsPage = () => {
     };
 
     const handleViewAuditLog = (report) => {
-        setSelectedReportId(report.id);
+        setSelectedReportId(report?.id || report?.reportId || null);
         setSelectedRoomId(report.interviewRoomId);
         setAuditLogDialogOpen(true);
         fetchAuditLogs(report.interviewRoomId);
@@ -269,6 +276,7 @@ export const AdminRoomReportsPage = () => {
                             onClick={(e) => {
                                 setActionMenuAnchor(e.currentTarget);
                                 setActionMenuRow(row);
+                                setSelectedReportId(row?.id || row?.reportId || row?.reportID || null);
                             }}
                             sx={{
                                 bgcolor: "action.hover",
@@ -777,6 +785,9 @@ export const AdminRoomReportsPage = () => {
                 <MenuItem
                     disabled={actionMenuRow?.status === 1}
                     onClick={() => {
+                        setSelectedReportId(
+                            actionMenuRow?.id || actionMenuRow?.reportId || actionMenuRow?.reportID || null,
+                        );
                         setResolveDialogOpen(true);
                         handleCloseMenu();
                     }}
