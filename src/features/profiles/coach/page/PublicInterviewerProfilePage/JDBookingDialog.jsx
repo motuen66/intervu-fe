@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Dialog from "@mui/material/Dialog";
 import Grow from "@mui/material/Grow";
@@ -25,7 +26,8 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckIcon from "@mui/icons-material/Check";
 import LanguageIcon from "@mui/icons-material/Language";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Link, FileUser, ArrowRight, Target, Search, Terminal, CheckCircle, Edit2 } from "lucide-react";
+import { Link, FileUser, ArrowRight, Target, Search, Terminal, CheckCircle, Edit2, UploadCloud } from "lucide-react";
+import { uploadMedia } from "../../../../../common/services/mediaApi";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Grow ref={ref} {...props} timeout={500} />;
@@ -320,6 +322,16 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const [activeStep, setActiveStep] = useState(0);
     const [form, setForm] = useState({ jobDescriptionUrl: "", cvUrl: "", aimLevel: "" });
     const [formErrors, setFormErrors] = useState({ jobDescriptionUrl: "", cvUrl: "" });
+    const [uploadingJd, setUploadingJd] = useState(false);
+    const [uploadingCv, setUploadingCv] = useState(false);
+    const [jdUploadingName, setJdUploadingName] = useState("");
+    const [cvUploadingName, setCvUploadingName] = useState("");
+    const [bookingSessionId, setBookingSessionId] = useState("");
+
+    const { userData } = useSelector((state) => state.auth);
+
+    const jdFileInputRef = React.useRef(null);
+    const cvFileInputRef = React.useRef(null);
     const [services, setServices] = useState([]);
     const [loadingServices, setLoadingServices] = useState(false);
     const [freeSlots, setFreeSlots] = useState([]);
@@ -344,6 +356,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
         if (open && coachId) {
             loadServices();
             fetchFreeSlots();
+            setBookingSessionId(crypto.randomUUID?.() || Date.now().toString());
         }
         if (!open) {
             setActiveStep(0);
@@ -354,6 +367,9 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             setSelectedDate(null);
             setCurrentMonth(new Date());
             setError("");
+            setBookingSessionId("");
+            setJdUploadingName("");
+            setCvUploadingName("");
         }
     }, [open, coachId]);
 
@@ -524,6 +540,43 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
         },
         [activeRoundIndex, rounds, services, dayTimeBlocks],
     );
+
+    const handleFileUpload = async (event, field) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const isJd = field === "jobDescriptionUrl";
+        if (isJd) {
+            setUploadingJd(true);
+            setJdUploadingName(file.name);
+        } else {
+            setUploadingCv(true);
+            setCvUploadingName(file.name);
+        }
+
+        try {
+            const folder = `bookings/${userData?.id || "anonymous"}/${coachId}/${bookingSessionId}`;
+            const url = await uploadMedia(file, folder);
+            setForm((prev) => ({ ...prev, [field]: url }));
+            toast.success("File uploaded successfully!");
+            if (formErrors[field]) {
+                setFormErrors((prev) => ({ ...prev, [field]: "" }));
+            }
+        } catch (err) {
+            console.error("Upload error:", err);
+            toast.error(err.message || "Failed to upload file");
+        } finally {
+            if (isJd) {
+                setUploadingJd(false);
+                setJdUploadingName("");
+            } else {
+                setUploadingCv(false);
+                setCvUploadingName("");
+            }
+            // Clear input
+            event.target.value = "";
+        }
+    };
 
     const handleSubmit = async () => {
         setError("");
@@ -711,11 +764,12 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                 <TextField
                                                     fullWidth
                                                     variant="standard"
-                                                    placeholder="https://company.com/role"
-                                                    value={form.jobDescriptionUrl}
+                                                    placeholder={uploadingJd ? `Uploading: ${jdUploadingName}...` : "https://company.com/role"}
+                                                    value={uploadingJd ? "" : form.jobDescriptionUrl}
                                                     onChange={(e) =>
                                                         setForm({ ...form, jobDescriptionUrl: e.target.value })
                                                     }
+                                                    helperText={uploadingJd ? `Saving to session folder...` : ""}
                                                     InputProps={{ disableUnderline: true }}
                                                     sx={{
                                                         "& .MuiInputBase-input": {
@@ -724,7 +778,32 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                             fontWeight: 600,
                                                             color: "#0f172a",
                                                         },
+                                                        "& .MuiFormHelperText-root": {
+                                                            mx: 0,
+                                                            fontSize: "0.7rem",
+                                                            fontWeight: 500,
+                                                            color: "#6366f1"
+                                                        }
                                                     }}
+                                                />
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => jdFileInputRef.current?.click()}
+                                                    disabled={uploadingJd}
+                                                    sx={{ color: "#6366f1" }}
+                                                >
+                                                    {uploadingJd ? (
+                                                        <CircularProgress size={16} color="inherit" />
+                                                    ) : (
+                                                        <UploadCloud size={18} />
+                                                    )}
+                                                </IconButton>
+                                                <input
+                                                    type="file"
+                                                    accept=".pdf,.doc,.docx,image/*"
+                                                    hidden
+                                                    ref={jdFileInputRef}
+                                                    onChange={(e) => handleFileUpload(e, "jobDescriptionUrl")}
                                                 />
                                             </Box>
                                             {formErrors.jobDescriptionUrl && (
@@ -753,13 +832,14 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                 <TextField
                                                     fullWidth
                                                     variant="standard"
-                                                    placeholder="https://drive.google.com/cv.pdf"
-                                                    value={form.cvUrl}
+                                                    placeholder={uploadingCv ? `Uploading: ${cvUploadingName}...` : "https://drive.google.com/cv.pdf"}
+                                                    value={uploadingCv ? "" : form.cvUrl}
                                                     onChange={(e) => {
                                                         setForm({ ...form, cvUrl: e.target.value });
                                                         if (formErrors.cvUrl)
                                                             setFormErrors((prev) => ({ ...prev, cvUrl: "" }));
                                                     }}
+                                                    helperText={uploadingCv ? `Saving to session folder...` : ""}
                                                     InputProps={{ disableUnderline: true }}
                                                     sx={{
                                                         "& .MuiInputBase-input": {
@@ -768,7 +848,32 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                             fontWeight: 600,
                                                             color: "#0f172a",
                                                         },
+                                                        "& .MuiFormHelperText-root": {
+                                                            mx: 0,
+                                                            fontSize: "0.7rem",
+                                                            fontWeight: 500,
+                                                            color: "#6366f1"
+                                                        }
                                                     }}
+                                                />
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => cvFileInputRef.current?.click()}
+                                                    disabled={uploadingCv}
+                                                    sx={{ color: "#6366f1" }}
+                                                >
+                                                    {uploadingCv ? (
+                                                        <CircularProgress size={16} color="inherit" />
+                                                    ) : (
+                                                        <UploadCloud size={18} />
+                                                    )}
+                                                </IconButton>
+                                                <input
+                                                    type="file"
+                                                    accept=".pdf,.doc,.docx,image/*"
+                                                    hidden
+                                                    ref={cvFileInputRef}
+                                                    onChange={(e) => handleFileUpload(e, "cvUrl")}
                                                 />
                                             </Box>
                                             {formErrors.cvUrl && (
@@ -1357,8 +1462,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                         {activeStep === 0
                             ? "Next: Schedule Rounds"
                             : saving
-                              ? "Confirming & Paying..."
-                              : "Confirm & Pay Now"}
+                                ? "Confirming & Paying..."
+                                : "Confirm & Pay Now"}
                     </Button>
                 </Stack>
             </DialogActions>
