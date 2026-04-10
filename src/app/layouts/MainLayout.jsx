@@ -19,22 +19,6 @@ import Navbar from "../../common/components/Navbar/Navbar";
 import AdminSidebar from "../../features/admin/components/AdminSidebar";
 import usePageTracking from "../../hooks/usePageTracking";
 import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/services/assessmentApi";
-import {
-    LayoutDashboard,
-    Calendar,
-    Video,
-    Users,
-    Building2,
-    HelpCircle,
-    CircleDollarSign,
-    BarChart2,
-    Bell,
-    LogOut,
-    User,
-    Settings,
-    ChevronDown,
-    Search,
-} from "lucide-react";
 
 const MainLayout = () => {
     // automatic SPA page tracking for routes rendered inside MainLayout
