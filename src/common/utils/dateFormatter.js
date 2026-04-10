@@ -13,6 +13,7 @@ export const formattedDateTime = (dateTimeString) => {
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
+        hour12: false,
     });
 };
 
@@ -91,7 +92,7 @@ export function formatDateTime(dateStr) {
         day: "numeric",
         hour: "numeric",
         minute: "2-digit",
-        hour12: true,
+        hour12: false,
     });
 }
 
