@@ -43,12 +43,14 @@ import {
     Award as AwardIcon,
     Globe as GlobeIcon,
     ExternalLink as ExternalLinkIcon,
+    BrainCircuit,
 } from "lucide-react";
 import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import UploadCv from "../../components/UploadCv.jsx";
+import AiCvEvaluationModal from "../components/AiCvEvaluationModal.jsx";
 import WorkExperienceModal from "../../components/WorkExperienceModal.jsx";
 import CertificateDialog from "../../components/CertificateDialog.jsx";
 import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
@@ -234,6 +236,8 @@ function CandidateProfilePage() {
     const [showConfirmCertificateSave, setShowConfirmCertificateSave] = useState(false);
     const [showConfirmCertificateDelete, setShowConfirmCertificateDelete] = useState(false);
 
+    const [openAiEval, setOpenAiEval] = useState(false);
+
     const dispatch = useDispatch();
 
     const endpoint = useMemo(() => {
@@ -244,54 +248,59 @@ function CandidateProfilePage() {
         return candidateProfileEndPoints.VIEW_OWN_CANDIDATE_PROFILE.replace("{id}", user.id);
     }, [routeId, slugProfileUrl, profileUrl, user?.id]);
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            if (!endpoint) return;
-            setLoading(true);
-            setError(null);
-            try {
-                const res = await callApi({ method: METHOD.GET, endpoint });
-                const slug = slugProfileUrl || profileUrl;
-                if (slug && (!res || !res.success || !res.data)) {
-                    navigate(`/profile/${slug}`);
-                    return;
-                }
-                if (res.success) {
-                    setProfile(normalizeCandidateProfile(res.data));
-                    try {
-                        const idToUse = res.data.id || routeId || user?.id;
-                        if (idToUse) {
-                            const ep = candidateProfileEndPoints.GET_CANDIDATE_RATING.replace("{id}", idToUse);
-                            const r = await callApi({ method: METHOD.GET, endpoint: ep });
-                            if (r?.success && r.data) {
-                                const payload = r.data?.data || r.data;
-                                const val = Number(
-                                    payload?.averageRating ?? payload?.avgRating ?? payload?.rating ?? 0,
-                                );
-                                setCandidateRating(Number.isFinite(val) ? val : null);
-                                setCandidateRatingCount(
-                                    payload?.totalRatings ??
-                                        payload?.totalFeedbacks ??
-                                        payload?.ratingCount ??
-                                        payload?.count ??
-                                        0,
-                                );
-                            }
-                        }
-                    } catch (err) {
-                        console.error("Error fetching candidate rating", err);
-                    }
-                } else {
-                    setError(res.message || "Failed to load profile");
-                }
-            } catch (err) {
-                setError(err.message || "An error occurred while fetching the profile.");
-            } finally {
-                setLoading(false);
+    const fetchProfile = async (silent = false) => {
+        if (!endpoint) return;
+        if (!silent) setLoading(true);
+        setError(null);
+        try {
+            const res = await callApi({ method: METHOD.GET, endpoint });
+            const slug = slugProfileUrl || profileUrl;
+            if (slug && (!res || !res.success || !res.data)) {
+                navigate(`/profile/${slug}`);
+                return;
             }
-        };
+            if (res.success) {
+                setProfile(normalizeCandidateProfile(res.data));
+                try {
+                    const idToUse = res.data.id || routeId || user?.id;
+                    if (idToUse) {
+                        const ep = candidateProfileEndPoints.GET_CANDIDATE_RATING.replace("{id}", idToUse);
+                        const r = await callApi({ method: METHOD.GET, endpoint: ep });
+                        if (r?.success && r.data) {
+                            const payload = r.data?.data || r.data;
+                            const val = Number(
+                                payload?.averageRating ?? payload?.avgRating ?? payload?.rating ?? 0,
+                            );
+                            setCandidateRating(Number.isFinite(val) ? val : null);
+                            setCandidateRatingCount(
+                                payload?.totalRatings ??
+                                    payload?.totalFeedbacks ??
+                                    payload?.ratingCount ??
+                                    payload?.count ??
+                                    0,
+                            );
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error fetching candidate rating", err);
+                }
+            } else {
+                setError(res.message || "Failed to load profile");
+            }
+        } catch (err) {
+            setError(err.message || "An error occurred while fetching the profile.");
+        } finally {
+            if (!silent) setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchProfile();
     }, [endpoint]);
+
+    const handleRefresh = () => {
+        fetchProfile(true);
+    };
 
     useEffect(() => {
         const fetchDropdownData = async () => {
@@ -1540,7 +1549,9 @@ function CandidateProfilePage() {
                                                 </Box>
 
                                                 <Box sx={{ cursor: "default" }}>
-                                                    <UploadCv profile={profile} canEdit={canEdit} />
+                                                    {canEdit && profile && (
+                                                        <UploadCv profile={profile} canEdit={canEdit} />
+                                                    )}
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -1670,6 +1681,37 @@ function CandidateProfilePage() {
                                                 </Box>
                                             )} */}
                                         </SidebarCard>
+
+                                        {canEdit && profile && (
+                                            <>
+                                                <PrimaryButton
+                                                    onClick={() => setOpenAiEval(true)}
+                                                    startIcon={<BrainCircuit size={18} />}
+                                                    fullWidth
+                                                    sx={{ 
+                                                        mt: -2,
+                                                        mb: 3,
+                                                        borderRadius: "12px",
+                                                        py: 1.5,
+                                                        background: "var(--ep-accent-dark)",
+                                                        boxShadow: "0 8px 20px -6px rgba(106, 170, 0, 0.4)",
+                                                        "&:hover": {
+                                                            background: "var(--ep-accent-dark)",
+                                                            transform: "translateY(-2px)",
+                                                            boxShadow: "0 10px 24px -6px rgba(106, 170, 0, 0.5)",
+                                                        }
+                                                    }}
+                                                >
+                                                    View AI CV evaluation
+                                                </PrimaryButton>
+                                                <AiCvEvaluationModal
+                                                    open={openAiEval}
+                                                    onClose={() => setOpenAiEval(false)}
+                                                    profile={profile}
+                                                    onRefresh={handleRefresh}
+                                                />
+                                            </>
+                                        )}
 
                                         {isSelf && (
                                             <Box className="ep-side-card ep-match-card">
