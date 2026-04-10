@@ -6,11 +6,12 @@ import usePageTracking from "../../hooks/usePageTracking";
 function EmptyLayout() {
     usePageTracking();
     return (
-        // <CandidateAssessmentGate>
-        <SuspendedGate>
-            <Outlet />
-        </SuspendedGate>
-        // </CandidateAssessmentGate>
+        <>
+            <CandidateAssessmentGate />
+            <SuspendedGate>
+                <Outlet />
+            </SuspendedGate>
+        </>
     );
 }
 
