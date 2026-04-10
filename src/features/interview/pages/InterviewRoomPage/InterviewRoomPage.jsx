@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
-import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack } from "@mui/material";
+import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from "@mui/material";
 
 // Icons
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -17,6 +17,7 @@ import EditNoteIcon from "@mui/icons-material/EditNote";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import FlagIcon from "@mui/icons-material/Flag";
 
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -25,6 +26,7 @@ import { ROLES } from "../../../../common/constants/common.js";
 
 import QuestionPanel from "./QuestionPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
+import RoomReportModal from "./RoomReportModal";
 const WhiteboardPanel = lazy(() => import("./WhiteboardPanel").then((m) => ({ default: m.WhiteboardPanel })));
 import { CameraWidget } from "./CameraWidget";
 import { JdCvPanel } from "./JdCvPanel";
@@ -476,6 +478,32 @@ function InterviewRoomPage() {
     const [noteText, setNoteText] = useState("");
     const [notesPos, setNotesPos] = useState({ x: 80, y: 80 });
 
+    // ── Report room modal ──────────────────────────────────────────────────────
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [isReportSubmitting, setIsReportSubmitting] = useState(false);
+
+    const handleReportRoomSubmit = async (payload) => {
+        setIsReportSubmitting(true);
+        try {
+            await callApi({
+                method: METHOD.POST,
+                endpoint: `/interviewroom/${roomId}/report`,
+                arg: {
+                    reason: payload.reason,
+                    details: payload.details,
+                },
+                displaySuccessMessage: true,
+            });
+            setReportModalOpen(false);
+            return true;
+        } catch (error) {
+            console.error("Failed to report room:", error);
+            return false;
+        } finally {
+            setIsReportSubmitting(false);
+        }
+    };
+
     // ── Timer ────────────────────────────────────────────────────────────────
     const elapsedSecondsRef = useRef(0);
     const [displayTime, setDisplayTime] = useState("00:00");
@@ -724,6 +752,25 @@ function InterviewRoomPage() {
 
                 {/* Right: Panel toggles */}
                 <Box sx={{ display: "flex", gap: 1 }}>
+                    <Tooltip title="Report problem" placement="bottom">
+                        <IconButton
+                            onClick={() => setReportModalOpen(true)}
+                            sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: "8px",
+                                bgcolor: "#F3F4F6",
+                                color: "#6B7280",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                    bgcolor: "#E5E7EB",
+                                    color: "#EF4444",
+                                },
+                            }}
+                        >
+                            <FlagIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                    </Tooltip>
                     <HeaderToggle
                         id="header-toggle-editor"
                         icon={<CodeIcon sx={{ fontSize: 18 }} />}
@@ -1230,6 +1277,14 @@ function InterviewRoomPage() {
                     />
                 </Box>
             )}
+
+            {/* ═══ Report Room Modal ═══ */}
+            <RoomReportModal
+                open={reportModalOpen}
+                onClose={() => setReportModalOpen(false)}
+                onSubmit={handleReportRoomSubmit}
+                isSubmitting={isReportSubmitting}
+            />
         </Box>
     );
 }

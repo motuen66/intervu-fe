@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
     Table,
     TableBody,
@@ -36,6 +35,9 @@ export default function DataTable({
     showIndex = false,
     showHeader = true
 }) {
+    const normalizedData = Array.isArray(data) ? data : [];
+    const emptyRowsCount = !loading ? Math.max(pageSize - normalizedData.length, 0) : 0;
+
     const handleChangePage = (event, newPage) => {
         onPageChange?.(newPage);
     };
@@ -101,12 +103,11 @@ export default function DataTable({
     return (
         <Paper
             sx={{
-                bgcolor: "background.paper",
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: '12px',
+                bgcolor: "transparent",
+                border: "none",
+                borderRadius: 0,
                 overflow: 'hidden',
-                boxShadow: "0 8px 20px rgba(17,24,39,0.04)",
+                boxShadow: "none",
             }}
         >
             {showHeader && (
@@ -183,22 +184,8 @@ export default function DataTable({
                                     <CircularProgress sx={{ color: "primary.main" }} />
                                 </TableCell>
                             </TableRow>
-                        ) : !Array.isArray(data) || data.length === 0 ? (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={columns.length + (actions ? 1 : 0) + (showIndex ? 1 : 0)}
-                                    sx={{
-                                        textAlign: 'center',
-                                        py: 8,
-                                        color: "text.secondary",
-                                        borderBottom: 'none'
-                                    }}
-                                >
-                                    No data available
-                                </TableCell>
-                            </TableRow>
                         ) : (
-                            data.map((row, index) => (
+                            normalizedData.map((row, index) => (
                                 <TableRow
                                     key={row.id || index}
                                     sx={{
@@ -281,6 +268,50 @@ export default function DataTable({
                                 </TableRow>
                             ))
                         )}
+
+                        {!loading && emptyRowsCount > 0 &&
+                            Array.from({ length: emptyRowsCount }).map((_, idx) => (
+                                <TableRow key={`empty-row-${idx}`}>
+                                    {showIndex && (
+                                        <TableCell
+                                            sx={{
+                                                borderBottom: "1px solid",
+                                                borderBottomColor: "divider",
+                                                color: "transparent",
+                                                fontSize: "12px",
+                                                height: 53,
+                                            }}
+                                        >
+                                            &nbsp;
+                                        </TableCell>
+                                    )}
+                                    {columns.map((column) => (
+                                        <TableCell
+                                            key={`${column.field}-empty-${idx}`}
+                                            sx={{
+                                                color: "transparent",
+                                                fontSize: "12px",
+                                                borderBottom: "1px solid",
+                                                borderBottomColor: "divider",
+                                                height: 53,
+                                            }}
+                                        >
+                                            &nbsp;
+                                        </TableCell>
+                                    ))}
+                                    {actions && (
+                                        <TableCell
+                                            sx={{
+                                                borderBottom: "1px solid",
+                                                borderBottomColor: "divider",
+                                                height: 53,
+                                            }}
+                                        >
+                                            &nbsp;
+                                        </TableCell>
+                                    )}
+                                </TableRow>
+                            ))}
                     </TableBody>
                 </Table>
             </TableContainer>
@@ -292,7 +323,7 @@ export default function DataTable({
                 onPageChange={handleChangePage}
                 rowsPerPage={pageSize}
                 onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10, 25, 50]}
+                rowsPerPageOptions={[10, 25, 50]}
                 sx={{
                     color: "text.secondary",
                     borderTop: "1px solid",

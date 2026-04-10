@@ -15,12 +15,15 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import BlockIcon from "@mui/icons-material/Block";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import toast from "react-hot-toast";
 import DataTable from "../components/DataTable";
 import StatusChip from "../../../common/components/StatusChip";
 import ConfirmModal from "../../../common/components/ConfirmModal";
 import ActionMenu from "../../../common/components/ActionMenu";
-import { DangerButton, SecondaryButton } from "../../../common/components/buttons";
+import { PrimaryButton } from "../../../common/components/buttons";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
@@ -43,15 +46,15 @@ const normalizeStatusKey = (status) => {
     if (status === null || status === undefined) return "";
 
     if (typeof status === "number") {
-        if (status === 0) return REPORT_STATUSES.PENDING;
-        if (status === 1) return REPORT_STATUSES.REVIEWED;
-        if (status === 2) return REPORT_STATUSES.DISMISSED;
+        if (status === 1) return REPORT_STATUSES.PENDING;
+        if (status === 2) return REPORT_STATUSES.REVIEWED;
+        if (status === 3) return REPORT_STATUSES.DISMISSED;
     }
 
     const normalized = status.toString().trim().toLowerCase();
-    if (normalized === "0") return REPORT_STATUSES.PENDING;
-    if (normalized === "1") return REPORT_STATUSES.REVIEWED;
-    if (normalized === "2") return REPORT_STATUSES.DISMISSED;
+    if (normalized === "1") return REPORT_STATUSES.PENDING;
+    if (normalized === "2") return REPORT_STATUSES.REVIEWED;
+    if (normalized === "3") return REPORT_STATUSES.DISMISSED;
 
     return normalized;
 };
@@ -61,9 +64,9 @@ const getRawStatus = (raw) => raw?.status ?? raw?.reportStatus ?? raw?.state ?? 
 const toStatusValueForRequest = (targetStatus, currentStatus) => {
     const normalizedTarget = normalizeStatusKey(targetStatus);
     const numberMap = {
-        [REPORT_STATUSES.PENDING]: 0,
-        [REPORT_STATUSES.REVIEWED]: 1,
-        [REPORT_STATUSES.DISMISSED]: 2,
+        [REPORT_STATUSES.PENDING]: 1,
+        [REPORT_STATUSES.REVIEWED]: 2,
+        [REPORT_STATUSES.DISMISSED]: 3,
     };
 
     const currentIsNumeric =
@@ -85,12 +88,7 @@ const getStatusLabel = (status) => {
 };
 
 const normalizeReport = (raw) => ({
-    id:
-        raw?.id ||
-        raw?.reportId ||
-        raw?.questionReportId ||
-        raw?.questionReport?.id ||
-        raw?.questionReport?.reportId,
+    id: raw?.id || raw?.reportId || raw?.questionReportId || raw?.questionReport?.id || raw?.questionReport?.reportId,
     questionId:
         raw?.questionId ||
         raw?.question?.id ||
@@ -139,10 +137,7 @@ export default function AdminReportsPage() {
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const params = [
-                `page=${page + 1}`,
-                `pageSize=${pageSize}`,
-            ];
+            const params = [`page=${page + 1}`, `pageSize=${pageSize}`];
 
             if (statusFilter !== REPORT_STATUSES.ALL) {
                 params.push(`status=${encodeURIComponent(getStatusLabel(statusFilter))}`);
@@ -181,19 +176,18 @@ export default function AdminReportsPage() {
                 method: METHOD.PUT,
                 endpoint: adminEndPoints.UPDATE_QUESTION_REPORT_STATUS(reportId),
                 arg: { status: toStatusValueForRequest(status, currentStatus) },
+                displaySuccessMessage: true,
             });
 
             if (response?.success) {
-                toast.success("Updated report status successfully");
-
                 setReports((prev) =>
                     prev.map((item) =>
                         item.id === reportId
                             ? {
-                                ...item,
-                                status,
-                                updatedAt: new Date().toISOString(),
-                            }
+                                  ...item,
+                                  status,
+                                  updatedAt: new Date().toISOString(),
+                              }
                             : item,
                     ),
                 );
@@ -229,10 +223,10 @@ export default function AdminReportsPage() {
             const response = await callApi({
                 method: METHOD.DELETE,
                 endpoint: adminEndPoints.DELETE_QUESTION(questionId),
+                displaySuccessMessage: true,
             });
 
             if (response?.success) {
-                toast.success("Question deleted successfully");
                 fetchReports();
             }
         } catch (error) {
@@ -341,6 +335,13 @@ export default function AdminReportsPage() {
                                     setActionMenuAnchor(e.currentTarget);
                                     setActionMenuRow(row);
                                 }}
+                                sx={{
+                                    bgcolor: "action.hover",
+                                    borderRadius: "10px",
+                                    height: 32,
+                                    width: 32,
+                                    "&:hover": { bgcolor: "divider" },
+                                }}
                             >
                                 <MoreVertIcon fontSize="small" />
                             </IconButton>
@@ -363,67 +364,89 @@ export default function AdminReportsPage() {
     };
 
     return (
-        <Container maxWidth="xl" className="admin-page">
-            <div className="admin-page-header">
-                <div>
-                    <h2 className="admin-page-title">Reports</h2>
-                    <p className="admin-page-subtitle">Review and resolve question reports.</p>
-                </div>
-            </div>
+        <Container maxWidth="xl" sx={{ py: 4 }} className="admin-page">
+            <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box>
+                    <Typography
+                        variant="h4"
+                        sx={{ fontWeight: 800, color: "text.primary", letterSpacing: "-0.02em", mb: 0.5 }}
+                    >
+                        Question Reports
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                        Monitor and resolve reports submitted for interview questions.
+                    </Typography>
+                </Box>
+                <PrimaryButton
+                    startIcon={<RefreshIcon />}
+                    onClick={fetchReports}
+                    sx={{ borderRadius: "12px", px: 3, py: 1 }}
+                >
+                    Refresh
+                </PrimaryButton>
+            </Box>
 
-            <div className="admin-card">
-                <div className="admin-table-toolbar">
-                    <div className="admin-toolbar-left">
+            <Box sx={{ p: 0, overflow: "hidden" }} className="admin-card">
+                <Box sx={{ mb: 2.5, display: "flex", gap: 2, alignItems: "center" }}>
+                    <Box sx={{ position: "relative", flex: 1, maxWidth: "400px" }}>
+                        <SearchIcon
+                            sx={{
+                                position: "absolute",
+                                left: 14,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                color: "text.disabled",
+                                fontSize: 20,
+                            }}
+                        />
                         <input
                             className="admin-search-input"
                             placeholder="Search by question or reporter"
                             value={searchInput}
                             onChange={(event) => setSearchInput(event.target.value)}
+                            style={{
+                                paddingLeft: "44px",
+                                height: "44px",
+                                borderRadius: "12px",
+                                fontSize: "14px",
+                                width: "100%",
+                                border: "1px solid",
+                                borderColor: "#E2E8F0",
+                                background: "#fff",
+                                fontWeight: 500,
+                                outline: "none",
+                            }}
                         />
-                        <FormControl size="small" sx={{ minWidth: 170 }}>
-                            <Select
-                                displayEmpty
-                                value={statusFilter}
-                                onChange={(event) => {
-                                    setStatusFilter(event.target.value);
-                                    setPage(0);
-                                }}
-                                sx={{
-                                    height: 36,
-                                    borderRadius: "10px",
-                                    background:
-                                        "linear-gradient(180deg, #ffffff 0%, #f7f8ff 100%)",
-                                    boxShadow:
-                                        "inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 6px 16px rgba(17, 24, 39, 0.06)",
-                                    ".MuiSelect-select": {
-                                        fontSize: "12px",
-                                        fontWeight: 600,
-                                        color: "#1f2937",
-                                        padding: "6px 10px",
-                                    },
-                                    "& .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "rgba(102, 126, 234, 0.25)",
-                                    },
-                                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "rgba(102, 126, 234, 0.5)",
-                                    },
-                                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "#4F46E5",
-                                    },
-                                }}
-                            >
-                                <MenuItem value={REPORT_STATUSES.ALL}>All status</MenuItem>
-                                <MenuItem value={REPORT_STATUSES.PENDING}>Pending</MenuItem>
-                                <MenuItem value={REPORT_STATUSES.REVIEWED}>Reviewed</MenuItem>
-                                <MenuItem value={REPORT_STATUSES.DISMISSED}>Dismissed</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </div>
-                </div>
+                    </Box>
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                        <Select
+                            displayEmpty
+                            value={statusFilter}
+                            onChange={(event) => {
+                                setStatusFilter(event.target.value);
+                                setPage(0);
+                            }}
+                            startAdornment={<FilterListIcon sx={{ color: "text.disabled", mr: 1, fontSize: 18 }} />}
+                            sx={{
+                                height: 44,
+                                borderRadius: "12px",
+                                bgcolor: "#fff",
+                                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#E2E8F0" },
+                                fontSize: "14px",
+                                fontWeight: 600,
+                                color: "text.primary",
+                            }}
+                        >
+                            <MenuItem value={REPORT_STATUSES.ALL}>All status</MenuItem>
+                            <MenuItem value={REPORT_STATUSES.PENDING}>Pending</MenuItem>
+                            <MenuItem value={REPORT_STATUSES.REVIEWED}>Reviewed</MenuItem>
+                            <MenuItem value={REPORT_STATUSES.DISMISSED}>Dismissed</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Box>
 
                 <DataTable
                     showHeader={false}
-                    showIndex
                     actions={false}
                     columns={columns}
                     data={reports}
@@ -437,7 +460,7 @@ export default function AdminReportsPage() {
                     }}
                     loading={loading}
                 />
-            </div>
+            </Box>
 
             <ConfirmModal
                 show={!!deleteQuestionTarget}
@@ -448,17 +471,14 @@ export default function AdminReportsPage() {
                 onCancel={() => setDeleteQuestionTarget(null)}
                 message={
                     <>
-                        Are you sure you want to delete <strong>{deleteQuestionTarget?.questionTitle || "this question"}</strong>?{"\n\n"}
+                        Are you sure you want to delete{" "}
+                        <strong>{deleteQuestionTarget?.questionTitle || "this question"}</strong>?{"\n\n"}
                         <span style={{ color: "#d32f2f", fontSize: "0.875rem" }}>This action cannot be undone.</span>
                     </>
                 }
             />
 
-            <ActionMenu
-                anchorEl={actionMenuAnchor}
-                open={Boolean(actionMenuAnchor)}
-                onClose={handleCloseMenu}
-            >
+            <ActionMenu anchorEl={actionMenuAnchor} open={Boolean(actionMenuAnchor)} onClose={handleCloseMenu}>
                 <MenuItem
                     disabled={!menuCanReview}
                     onClick={() => {
@@ -469,10 +489,7 @@ export default function AdminReportsPage() {
                     <ListItemIcon>
                         <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
                     </ListItemIcon>
-                    <ListItemText
-                        primary="Reviewed"
-                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
-                    />
+                    <ListItemText primary="Reviewed" primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }} />
                 </MenuItem>
                 <MenuItem
                     disabled={!menuCanDismiss}
@@ -484,10 +501,7 @@ export default function AdminReportsPage() {
                     <ListItemIcon>
                         <BlockIcon fontSize="small" sx={{ color: "warning.main" }} />
                     </ListItemIcon>
-                    <ListItemText
-                        primary="Dismissed"
-                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
-                    />
+                    <ListItemText primary="Dismissed" primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }} />
                 </MenuItem>
                 <MenuItem
                     disabled={!menuRow?.questionId}

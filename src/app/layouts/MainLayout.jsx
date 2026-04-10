@@ -97,9 +97,9 @@ const MainLayout = () => {
             ],
             // ROLE: INTERVIEWER/COACH
             [
-                { label: "Dashboard", path: "/dashboard" },
+                { label: "Dashboard", path: "/coach/dashboard" },
                 { label: "Questions", path: "/questions" },
-                { label: "Schedule", path: "/schedule" },
+                { label: "Schedule", path: "/coach/schedule" },
                 { label: "Booking Requests", path: "/coach/requests" },
                 { label: "My Services", path: "/coach/services" },
             ],
@@ -114,12 +114,12 @@ const MainLayout = () => {
     );
 
     const isAdmin = userData?.role === ROLES.ADMIN;
-    const isCoachDashboardRoute = location.pathname.startsWith("/dashboard");
 
     // Sidebar group toggle states for Admin view
     const [openGroups, setOpenGroups] = useState({
         users: true,
         income: true,
+        reports: true,
         settings: true,
     });
 
@@ -185,7 +185,15 @@ const MainLayout = () => {
                 { label: "Payouts", path: "/admin/income/payouts" },
             ],
         },
-        { label: "Reports", icon: BarChart2, path: "/admin/reports" },
+        {
+            label: "Reports",
+            icon: BarChart2,
+            key: "reports",
+            children: [
+                { label: "Room Report", path: "/admin/reports/room" },
+                { label: "Question Report", path: "/admin/reports/question" },
+            ],
+        },
     ];
 
     // ADMIN LAYOUT
@@ -353,13 +361,9 @@ const MainLayout = () => {
                 <Navbar remoteAvatar={remoteAvatar} menuItems={menuItems} />
 
                 <main className="main-content">
-                    {isCoachDashboardRoute ? (
+                    <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
                         <Outlet />
-                    ) : (
-                        <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
-                            <Outlet />
-                        </Container>
-                    )}
+                    </Container>
                 </main>
 
                 <SuspendedGate />
