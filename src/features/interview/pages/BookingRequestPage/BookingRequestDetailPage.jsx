@@ -279,7 +279,7 @@ export default function BookingRequestDetailPage() {
         );
     }
 
-    const isPaid = detail.status === BOOKING_REQUEST_STATUS.PAID;
+    const isPaid = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
     const isPending = detail.status === BOOKING_REQUEST_STATUS.PENDING;
     const isAccepted = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
 
@@ -366,24 +366,20 @@ export default function BookingRequestDetailPage() {
                             </>
                         )}
 
-                        {isPaid && (
+                        {/* {isPaid && (
                             <SecondaryButton
                                 onClick={() => navigate("/home")}
                                 sx={{
                                     borderRadius: "28px",
                                     px: 4,
                                     py: 1.1,
-                                    bgcolor: "#bef264",
-                                    color: "#0f172a",
                                     fontWeight: 900,
                                     border: "none",
-                                    boxShadow: "0 8px 24px rgba(190,242,100,0.12)",
-                                    "&:hover": { bgcolor: "#a3e635" },
                                 }}
                             >
                                 Schedule Follow-up
                             </SecondaryButton>
-                        )}
+                        )} */}
                     </Stack>
                 </Stack>
 
