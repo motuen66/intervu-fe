@@ -33,4 +33,5 @@ export const interviewEndPoints = {
     GET_GENERATED_QUESTIONS_BY_ROOM: (roomId) => `/generated-questions/rooms/${roomId}`,
     APPROVE_GENERATED_QUESTION: (id) => `/generated-questions/${id}/approve`,
     REJECT_GENERATED_QUESTION: (id) => `/generated-questions/${id}/reject`,
+    CREATE_GENERATED_QUESTION: "/generated-questions",
 };
