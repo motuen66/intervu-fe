@@ -584,9 +584,7 @@ const ChatSurvey = () => {
     const handleSetupChange = (fieldId, value) => {
         let nextValue = value;
         if (fieldId === "free_text") {
-            nextValue = String(value || "")
-                .replace(/\r?\n+/g, " ")
-                .replace(/['\u2018\u2019\u201B\u2032\u02BC]/g, "");
+            nextValue = String(value || "").replace(/\r?\n+/g, " ");
         }
 
         setSetupForm((prev) => ({ ...prev, [fieldId]: nextValue }));
