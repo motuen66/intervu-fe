@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import {
-    Modal,
+    Dialog,
     Box,
     Typography,
     IconButton,
     CircularProgress,
     Button,
-    Avatar,
-    AvatarGroup,
     Alert,
 } from "@mui/material";
+import { AnimatePresence, motion } from "framer-motion";
 import {
     X,
     MessageSquare,
@@ -18,32 +17,15 @@ import {
     Trash2,
     ChevronRight,
     Check,
-    FileText,
-    Clock,
     Plus,
+    Sparkles,
 } from "lucide-react";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
-const COLORS = {
-    sidebarBg: "#111827",
-    lime: "#D9F99D",
-    limeAccent: "#A3E635",
-    limeDark: "#65A30D",
-    cardBg: "#F9FAFB",
-    white: "#FFFFFF",
-    muted: "#6B7280",
-    mutedLight: "#9CA3AF",
-    border: "#E5E7EB",
-    dashedBorder: "#D1D5DB",
-    successGreen: "#22C55E",
-    deleteRed: "#EF4444",
-    tagGreen: "#DCFCE7",
-    tagGreenText: "#166534",
-    tagGray: "#F3F4F6",
-    tagGrayText: "#374151",
-};
+const springTransition = { type: "spring", damping: 25, stiffness: 200 };
 
 function GeneratedQuestionsModal({ open, onClose, roomId }) {
     const [questions, setQuestions] = useState([]);
@@ -185,61 +167,107 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
 
     const hasValidQuestions = questions.length > 0 && questions.some((q) => q.localContent.trim().length >= 5);
 
-    // --- Sidebar Step Component ---
-    const SidebarStep = ({ number, label, icon: Icon, active, done }) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Box
-                sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: done ? COLORS.limeAccent : active ? COLORS.limeAccent : "rgba(255,255,255,0.1)",
-                    color: done || active ? COLORS.sidebarBg : COLORS.mutedLight,
-                    transition: "all 0.3s ease",
-                }}
-            >
-                {done ? <Check size={16} /> : <Icon size={16} />}
-            </Box>
-            <Box>
-                <Typography
-                    variant="caption"
-                    sx={{
-                        color: active || done ? COLORS.lime : COLORS.mutedLight,
-                        fontWeight: 600,
-                        fontSize: "0.65rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                    }}
-                >
-                    Step {number}
-                </Typography>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: active || done ? COLORS.white : COLORS.mutedLight,
-                        fontWeight: 600,
-                        fontSize: "0.8rem",
-                    }}
-                >
-                    {label}
-                </Typography>
-            </Box>
-        </Box>
+    const handleDialogClose = (_, reason) => {
+        if (modalPhase !== "review") return;
+        if (reason === "backdropClick") return;
+        onClose();
+    };
+
+    const PulsingSparkles = () => (
+        <motion.div
+            animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            style={{ display: "inline-flex" }}
+        >
+            <Sparkles size={14} color="var(--mui-palette-secondary-main)" />
+        </motion.div>
     );
 
-    // --- Question Card Component ---
-    const QuestionCard = ({ question, index, isLast }) => (
+    const SidebarStep = ({ number, label, icon: Icon, active, done }) => (
+        <motion.div
+            animate={active ? { x: [0, 4, 0] } : { x: 0 }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+        >
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    py: 1.25,
+                    px: 1.5,
+                    borderRadius: "12px",
+                    bgcolor: active ? "rgba(190, 242, 100, 0.1)" : "transparent",
+                    transition: "all 0.4s ease",
+                }}
+            >
+                <Box
+                    sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: active
+                            ? "secondary.main"
+                            : done
+                                ? "transparent"
+                                : "rgba(255,255,255,0.08)",
+                        border: done ? "1px solid" : "none",
+                        borderColor: done ? "secondary.dark" : "transparent",
+                        transition: "all 0.4s ease",
+                        boxShadow: active ? "0 0 16px rgba(190, 242, 100, 0.4)" : "none",
+                    }}
+                >
+                    {done ? (
+                        <Check size={18} color="var(--mui-palette-secondary-main)" />
+                    ) : (
+                        <Icon
+                            size={20}
+                            color={
+                                active
+                                    ? "var(--mui-palette-primary-main)"
+                                    : "rgba(255,255,255,0.35)"
+                            }
+                        />
+                    )}
+                </Box>
+                <Box>
+                    <Typography
+                        variant="overline"
+                        sx={{
+                            color: active ? "secondary.main" : "rgba(255,255,255,0.35)",
+                            fontSize: "0.6rem",
+                            fontWeight: 700,
+                        }}
+                    >
+                        Step {number}
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: active || done ? "primary.contrastText" : "rgba(255,255,255,0.35)",
+                            fontWeight: active ? 800 : 700,
+                        }}
+                    >
+                        {label}
+                    </Typography>
+                </Box>
+            </Box>
+        </motion.div>
+    );
+
+    // --- Question Card Renderer (kept as render fn to avoid remount/focus loss while typing) ---
+    const renderQuestionCard = (question, index, isLast) => (
         <Box
+            key={question.id}
             sx={{
                 position: "relative",
-                bgcolor: COLORS.cardBg,
-                borderRadius: 2,
-                p: 2.5,
+                bgcolor: "#F9FAFB",
+                borderRadius: 2.5,
+                p: 2.25,
                 mb: isLast ? 0 : 2,
-                border: `1px solid ${COLORS.border}`,
+                border: "1px solid #E5E7EB",
                 transition: "all 0.2s ease",
                 "&:hover .delete-btn": { opacity: 1 },
             }}
@@ -250,11 +278,11 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 onClick={() => handleDelete(question.id, question.isNew)}
                 sx={{
                     position: "absolute",
-                    top: 8,
-                    right: 8,
+                    top: 10,
+                    right: 10,
                     opacity: 0,
                     transition: "opacity 0.2s ease",
-                    color: COLORS.deleteRed,
+                    color: "#EF4444",
                     "&:hover": { bgcolor: "rgba(239,68,68,0.1)" },
                 }}
                 size="small"
@@ -269,23 +297,23 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                         width: 24,
                         height: 24,
                         borderRadius: "6px",
-                        bgcolor: COLORS.sidebarBg,
+                        bgcolor: "var(--mui-palette-primary-main)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                     }}
                 >
-                    <Typography sx={{ color: COLORS.limeAccent, fontSize: "0.7rem", fontWeight: 700 }}>
+                    <Typography sx={{ color: "var(--mui-palette-secondary-main)", fontSize: "0.7rem", fontWeight: 700 }}>
                         {index + 1}
                     </Typography>
                 </Box>
                 <Typography
                     variant="caption"
-                    sx={{ fontWeight: 700, color: COLORS.sidebarBg, textTransform: "uppercase", letterSpacing: "0.05em" }}
+                    sx={{ fontWeight: 800, color: "var(--mui-palette-primary-main)", textTransform: "uppercase", letterSpacing: "0.05em" }}
                 >
                     Question {index + 1}
                 </Typography>
-                <Typography variant="caption" sx={{ color: COLORS.muted, fontSize: "0.7rem" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem", fontWeight: 600 }}>
                     {question.isCustom ? "• CUSTOM QUESTION" : "• EXTRACTED FROM TRANSCRIPT"}
                 </Typography>
             </Box>
@@ -300,81 +328,59 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 rows={3}
                 sx={{
                     width: "100%",
-                    border: `1px solid ${COLORS.border}`,
+                    border: "1px solid #E5E7EB",
                     borderRadius: "8px",
                     p: 1.5,
                     fontSize: "0.875rem",
                     fontFamily: "inherit",
                     resize: "vertical",
-                    bgcolor: COLORS.white,
-                    color: COLORS.sidebarBg,
+                    bgcolor: "#fff",
+                    color: "text.primary",
                     outline: "none",
                     transition: "border-color 0.2s ease, box-shadow 0.2s ease",
                     "&:focus": {
-                        borderColor: COLORS.limeAccent,
-                        boxShadow: `0 0 0 2px ${COLORS.limeAccent}40`,
+                        borderColor: "var(--mui-palette-secondary-main)",
+                        boxShadow: "0 0 0 2px rgba(190, 242, 100, 0.35)",
                     },
                 }}
             />
 
-            {/* Tags row */}
-            <Box sx={{ display: "flex", gap: 1, mt: 1.5, flexWrap: "wrap" }}>
-                <Box
-                    sx={{
-                        px: 1.5,
-                        py: 0.25,
-                        borderRadius: "12px",
-                        bgcolor: COLORS.tagGreen,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                    }}
-                >
-                    <Typography sx={{ fontSize: "0.65rem", fontWeight: 600, color: COLORS.tagGreenText }}>
-                        HIGH RELEVANCE
-                    </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: COLORS.muted }}>
-                    <FileText size={12} />
-                    <Typography sx={{ fontSize: "0.65rem", fontWeight: 500 }}>DATA STRUCTURES</Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: COLORS.muted }}>
-                    <Clock size={12} />
-                    <Typography sx={{ fontSize: "0.65rem", fontWeight: 500 }}>INTERMEDIATE</Typography>
-                </Box>
-            </Box>
         </Box>
     );
 
     return (
-        <Modal open={open} onClose={modalPhase === "review" ? onClose : undefined}>
-            <Box
-                sx={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: 820,
-                    maxWidth: "95vw",
-                    height: 580,
-                    maxHeight: "90vh",
-                    display: "flex",
-                    borderRadius: 3,
+        <Dialog
+            open={open}
+            onClose={handleDialogClose}
+            maxWidth={false}
+            disableEscapeKeyDown={modalPhase !== "review"}
+            PaperProps={{
+                sx: {
+                    borderRadius: "20px",
                     overflow: "hidden",
-                    bgcolor: COLORS.white,
-                    boxShadow: 24,
+                    width: "min(1060px, 94vw)",
+                    height: "min(680px, 88vh)",
+                    display: "flex",
+                    flexDirection: "row",
+                    bgcolor: "background.paper",
+                    border: "none",
                     outline: "none",
-                }}
-            >
+                    boxShadow: "0 28px 70px -20px rgba(2, 6, 23, 0.55), 0 12px 28px rgba(15, 23, 42, 0.22)",
+                },
+            }}
+        >
                 {/* ===== SIDEBAR ===== */}
                 <Box
                     sx={{
-                        width: 260,
-                        minWidth: 260,
-                        bgcolor: COLORS.sidebarBg,
-                        p: 3,
+                        width: 280,
+                        minWidth: 280,
+                        minHeight: "100%",
+                        background: "linear-gradient(180deg, var(--mui-palette-primary-main) 0%, var(--mui-palette-primary-light) 100%)",
+                        borderRadius: "20px 0 0 20px",
+                        p: 3.5,
                         display: "flex",
                         flexDirection: "column",
+                        gap: 2,
                     }}
                 >
                     {/* Badge */}
@@ -383,51 +389,66 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 0.75,
-                            bgcolor: "rgba(255,255,255,0.08)",
-                            borderRadius: "6px",
+                            bgcolor: "rgba(190, 242, 100, 0.15)",
+                            border: "1px solid rgba(190, 242, 100, 0.3)",
+                            borderRadius: "20px",
                             px: 1.5,
                             py: 0.5,
-                            mb: 3,
+                            mb: 1,
                             alignSelf: "flex-start",
                         }}
                     >
-                        <Typography sx={{ fontSize: "0.65rem", fontWeight: 600, color: COLORS.lime, letterSpacing: "0.05em" }}>
+                        <PulsingSparkles />
+                        <Typography
+                            variant="overline"
+                            sx={{ color: "secondary.main", fontSize: "0.625rem", letterSpacing: "0.12em", fontWeight: 800 }}
+                        >
                             AI EXTRACTED QUESTIONS
                         </Typography>
                     </Box>
 
                     {/* Title */}
-                    <Typography variant="h6" sx={{ color: COLORS.white, fontWeight: 700, mb: 0.5, lineHeight: 1.3 }}>
-                        Question{" "}
-                        <Box component="span" sx={{ color: COLORS.lime }}>
-                            Contribution
-                        </Box>
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: COLORS.mutedLight, mb: 4, display: "block", lineHeight: 1.5 }}>
+                    <Box>
+                        <Typography variant="h4" sx={{ color: "primary.contrastText", fontWeight: 800, lineHeight: 1.2 }}>
+                            Question
+                        </Typography>
+                        <motion.div
+                            animate={{
+                                textShadow: [
+                                    "0 0 8px rgba(190, 242, 100, 0.2)",
+                                    "0 0 20px rgba(190, 242, 100, 0.45)",
+                                    "0 0 8px rgba(190, 242, 100, 0.2)",
+                                ],
+                            }}
+                            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                            style={{ display: "inline-block" }}
+                        >
+                            <Typography
+                                variant="h3"
+                                component="span"
+                                sx={{
+                                    color: "secondary.main",
+                                    fontWeight: 800,
+                                    lineHeight: 1.2,
+                                    display: "block",
+                                }}
+                            >
+                                Contribution
+                            </Typography>
+                        </motion.div>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)", mb: 2, lineHeight: 1.6 }}>
                         Review and refine questions extracted from your interview session.
                     </Typography>
 
                     {/* Steps */}
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0, mt: "auto" }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: "auto" }}>
                         <SidebarStep
                             number="01"
                             label="Review Questions"
                             icon={MessageSquare}
                             active={modalPhase === "review"}
                             done={modalPhase === "contributing" || modalPhase === "success"}
-                        />
-
-                        {/* Connector line */}
-                        <Box
-                            sx={{
-                                width: 2,
-                                height: 28,
-                                bgcolor: modalPhase !== "review" ? COLORS.limeAccent : "rgba(255,255,255,0.1)",
-                                ml: "15px",
-                                my: 0.5,
-                                borderRadius: 1,
-                                transition: "background-color 0.3s ease",
-                            }}
                         />
 
                         <SidebarStep
@@ -442,23 +463,44 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
 
                 {/* ===== CONTENT AREA ===== */}
                 <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                    {/* Header */}
-                    <Box sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 700, color: COLORS.sidebarBg }}>
-                                Review Extracted Questions
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: COLORS.muted, mt: 0.25 }}>
-                                Verify and edit the questions before adding them to the bank.
-                            </Typography>
-                        </Box>
-                        <IconButton onClick={onClose} size="small" sx={{ color: COLORS.muted }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            alignItems: "center",
+                            px: 2,
+                            pt: 1.5,
+                            pb: 0,
+                            flexShrink: 0,
+                        }}
+                    >
+                        <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>
                             <X size={20} />
                         </IconButton>
                     </Box>
 
-                    {/* Scrollable content */}
-                    <Box sx={{ flex: 1, overflowY: "auto", px: 3, pb: 2 }}>
+                    {/* Header */}
+                    <Box sx={{ px: 4, pt: 1, pb: 2 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary" }}>
+                            Review Extracted Questions
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                            Verify and edit the questions before adding them to the bank.
+                        </Typography>
+                    </Box>
+
+                    {/* Main content area */}
+                    <Box
+                        sx={{
+                            flex: 1,
+                            px: 4,
+                            pb: modalPhase === "review" ? 2 : 4,
+                            overflowY: modalPhase === "review" ? "auto" : "hidden",
+                            display: modalPhase === "review" ? "block" : "flex",
+                            alignItems: modalPhase === "review" ? "stretch" : "center",
+                            justifyContent: modalPhase === "review" ? "flex-start" : "center",
+                        }}
+                    >
                         {error && (
                             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
                                 {error}
@@ -466,182 +508,189 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                         )}
 
                         {loading ? (
-                            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-                                <CircularProgress size={32} />
-                            </Box>
-                        ) : modalPhase === "review" ? (
-                            <>
-                                {questions.map((q, index) => (
-                                    <QuestionCard
-                                        key={q.id}
-                                        question={q}
-                                        index={index}
-                                        isLast={index === questions.length - 1}
-                                    />
-                                ))}
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={springTransition}>
+                                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                                    <CircularProgress size={32} />
+                                </Box>
+                            </motion.div>
+                        ) : (
+                            <AnimatePresence mode="wait">
+                                {modalPhase === "review" && (
+                                    <motion.div
+                                        key="review"
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={springTransition}
+                                    >
+                                        {questions.map((q, index) =>
+                                            renderQuestionCard(q, index, index === questions.length - 1)
+                                        )}
 
-                                {/* Add custom question button */}
-                                <Button
-                                    onClick={handleAddCustom}
-                                    startIcon={<Plus size={16} />}
-                                    sx={{
-                                        width: "100%",
-                                        mt: questions.length > 0 ? 2 : 0,
-                                        py: 1.5,
-                                        border: `2px dashed ${COLORS.dashedBorder}`,
-                                        borderRadius: 2,
-                                        color: COLORS.muted,
-                                        textTransform: "none",
-                                        fontWeight: 500,
-                                        "&:hover": {
-                                            border: `2px dashed ${COLORS.limeAccent}`,
-                                            color: COLORS.limeDark,
-                                            bgcolor: "rgba(163,230,53,0.04)",
-                                        },
-                                    }}
-                                >
-                                    Add custom question
-                                </Button>
-                            </>
-                        ) : modalPhase === "contributing" ? (
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    height: "100%",
-                                    gap: 2,
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        width: 80,
-                                        height: 80,
-                                        borderRadius: "50%",
-                                        bgcolor: COLORS.sidebarBg,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <Database size={36} color={COLORS.lime} />
-                                </Box>
-                                <Typography variant="h6" fontWeight={700}>
-                                    Contributing to Bank
-                                </Typography>
-                                <Typography color="text.secondary" textAlign="center">
-                                    Syncing your verified questions with the global question bank...
-                                </Typography>
-                                <CircularProgress size={24} sx={{ color: COLORS.limeAccent, mt: 1 }} />
-                            </Box>
-                        ) : modalPhase === "success" ? (
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    height: "100%",
-                                    gap: 2,
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        width: 80,
-                                        height: 80,
-                                        borderRadius: "50%",
-                                        bgcolor: COLORS.successGreen,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <CheckCircle size={40} color="white" />
-                                </Box>
-                                <Typography variant="h6" fontWeight={700}>
-                                    Successfully Contributed!
-                                </Typography>
-                                <Typography color="text.secondary" textAlign="center">
-                                    Thank you for helping the community grow.
-                                    <br />
-                                    Your questions are now live.
-                                </Typography>
-                            </Box>
-                        ) : null}
+                                        {/* Add custom question button */}
+                                        <Button
+                                            onClick={handleAddCustom}
+                                            startIcon={<Plus size={16} />}
+                                            sx={{
+                                                width: "100%",
+                                                mt: questions.length > 0 ? 2 : 0,
+                                                py: 1.5,
+                                                border: "2px dashed #D1D5DB",
+                                                borderRadius: "14px",
+                                                color: "text.secondary",
+                                                textTransform: "none",
+                                                fontWeight: 700,
+                                                "&:hover": {
+                                                    border: "2px dashed var(--mui-palette-secondary-main)",
+                                                    color: "primary.main",
+                                                    bgcolor: "rgba(163,230,53,0.04)",
+                                                },
+                                            }}
+                                        >
+                                            Add custom question
+                                        </Button>
+                                    </motion.div>
+                                )}
+
+                                {modalPhase === "contributing" && (
+                                    <motion.div
+                                        key="contributing"
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={springTransition}
+                                        style={{ width: "100%", display: "flex", justifyContent: "center" }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: 2,
+                                            }}
+                                        >
+                                            <Box
+                                                component={motion.div}
+                                                animate={{ scale: [1, 1.08, 1] }}
+                                                transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
+                                                sx={{
+                                                    width: 80,
+                                                    height: 80,
+                                                    borderRadius: "50%",
+                                                    bgcolor: "var(--mui-palette-primary-main)",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    boxShadow: "0 0 28px rgba(190, 242, 100, 0.25)",
+                                                }}
+                                            >
+                                                <Database size={36} color="var(--mui-palette-secondary-main)" />
+                                            </Box>
+                                            <Typography variant="h6" fontWeight={800}>
+                                                Contributing to Bank
+                                            </Typography>
+                                            <Typography color="text.secondary" textAlign="center">
+                                                Syncing your verified questions with the global question bank...
+                                            </Typography>
+                                            <CircularProgress size={24} sx={{ color: "secondary.main", mt: 1 }} />
+                                        </Box>
+                                    </motion.div>
+                                )}
+
+                                {modalPhase === "success" && (
+                                    <motion.div
+                                        key="success"
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={springTransition}
+                                        style={{ width: "100%", display: "flex", justifyContent: "center" }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: 2,
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    width: 80,
+                                                    height: 80,
+                                                    borderRadius: "50%",
+                                                    bgcolor: "#22C55E",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    boxShadow: "0 0 24px rgba(34,197,94,0.35)",
+                                                }}
+                                            >
+                                                <CheckCircle size={40} color="white" />
+                                            </Box>
+                                            <Typography variant="h6" fontWeight={800}>
+                                                Successfully Contributed!
+                                            </Typography>
+                                            <Typography color="text.secondary" textAlign="center">
+                                                Thank you for helping the community grow.
+                                                <br />
+                                                Your questions are now live.
+                                            </Typography>
+                                        </Box>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        )}
                     </Box>
 
                     {/* Footer */}
                     {modalPhase === "review" && (
                         <Box
                             sx={{
-                                px: 3,
+                                px: 4,
                                 py: 2,
-                                borderTop: `1px solid ${COLORS.border}`,
+                                borderTop: "1px solid #E5E7EB",
                                 display: "flex",
                                 justifyContent: "space-between",
                                 alignItems: "center",
                             }}
                         >
-                            {/* Social proof */}
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                <AvatarGroup
-                                    max={3}
-                                    sx={{
-                                        "& .MuiAvatar-root": {
-                                            width: 28,
-                                            height: 28,
-                                            fontSize: "0.75rem",
-                                            border: "2px solid white",
-                                        },
-                                    }}
-                                >
-                                    <Avatar sx={{ bgcolor: "#6366F1" }}>A</Avatar>
-                                    <Avatar sx={{ bgcolor: "#EC4899" }}>B</Avatar>
-                                    <Avatar sx={{ bgcolor: "#F59E0B" }}>C</Avatar>
-                                </AvatarGroup>
-                                <Typography variant="caption" sx={{ color: COLORS.muted }}>
-                                    12 coaches contributed today
-                                </Typography>
-                            </Box>
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                {questions.length} question{questions.length === 1 ? "" : "s"} ready to contribute
+                            </Typography>
 
                             {/* Actions */}
                             <Box sx={{ display: "flex", gap: 1.5 }}>
-                                <Button
+                                <SecondaryButton
                                     onClick={onClose}
-                                    variant="outlined"
                                     sx={{
-                                        textTransform: "none",
-                                        fontWeight: 600,
-                                        borderColor: COLORS.border,
-                                        color: COLORS.muted,
-                                        "&:hover": { borderColor: COLORS.mutedLight, bgcolor: COLORS.cardBg },
+                                        minWidth: 120,
+                                        borderRadius: "12px",
                                     }}
                                 >
                                     Discard
-                                </Button>
-                                <Button
+                                </SecondaryButton>
+                                <PrimaryButton
                                     onClick={handleContribute}
                                     disabled={!hasValidQuestions || contributing}
-                                    variant="contained"
-                                    endIcon={<ChevronRight size={16} />}
+                                    loading={contributing}
                                     sx={{
-                                        textTransform: "none",
-                                        fontWeight: 600,
-                                        bgcolor: COLORS.sidebarBg,
-                                        color: COLORS.white,
-                                        "&:hover": { bgcolor: "#1F2937" },
-                                        "&.Mui-disabled": { bgcolor: "#E5E7EB", color: "#9CA3AF" },
+                                        minWidth: 210,
+                                        borderRadius: "12px",
                                     }}
                                 >
-                                    Confirm & Contribute
-                                </Button>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                                        Confirm & Contribute
+                                        <ChevronRight size={16} />
+                                    </Box>
+                                </PrimaryButton>
                             </Box>
                         </Box>
                     )}
                 </Box>
-            </Box>
-        </Modal>
+        </Dialog>
     );
 }
 
