@@ -11,9 +11,10 @@ const filter = createFilterOptions({
  * @param {function} onBankBinChange - Callback function to receive selected bank BIN
  *
  * */
-function BankSelection({ onBankBinChange, valueBin }) {
+function BankSelection({ selectedBin, valueBin, accountNumber, onChange, onBankBinChange }) {
     const [banks, setBanks] = useState([]);
     const [selectedBank, setSelectedBank] = useState(null);
+    const [localAccount, setLocalAccount] = useState(accountNumber || "");
 
     useEffect(() => {
         fetchBanks();
@@ -28,30 +29,54 @@ function BankSelection({ onBankBinChange, valueBin }) {
         }
     };
 
+    const actualBin = selectedBin || valueBin;
+
     // Preselect bank by BIN when provided and list is loaded
     useEffect(() => {
-        if (!valueBin || !banks?.length) return;
-        const found = banks.find((b) => String(b.bin) === String(valueBin));
+        if (!actualBin || !banks?.length) return;
+        const found = banks.find((b) => String(b.bin) === String(actualBin));
         setSelectedBank(found ?? null);
-    }, [valueBin, banks]);
+    }, [actualBin, banks]);
 
-    const handleChange = (event, value) => {
+    useEffect(() => {
+        setLocalAccount(accountNumber || "");
+    }, [accountNumber]);
+
+    const handleBankChange = (event, value) => {
         setSelectedBank(value);
-        onBankBinChange && onBankBinChange(value ? value.bin : "");
+        const newBin = value ? value.bin : "";
+        if (onBankBinChange) onBankBinChange(newBin);
+        if (onChange) onChange({ bin: newBin, accountNumber: localAccount });
+    };
+
+    const handleAccountChange = (e) => {
+        const val = e.target.value;
+        setLocalAccount(val);
+        const currentBin = selectedBank ? selectedBank.bin : "";
+        if (onChange) onChange({ bin: currentBin, accountNumber: val });
     };
 
     return (
-        <Autocomplete
-            options={banks}
-            filterOptions={filter}
-            value={selectedBank}
-            onChange={handleChange}
-            getOptionLabel={(bank) => bank?.name || ""}
-            renderInput={(params) => (
-                <TextField {...params} label="Select Bank" placeholder="Search name or code..." fullWidth />
-            )}
-            isOptionEqualToValue={(option, value) => option.bin === value.bin}
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <Autocomplete
+                options={banks}
+                filterOptions={filter}
+                value={selectedBank}
+                onChange={handleBankChange}
+                getOptionLabel={(bank) => bank?.name || ""}
+                renderInput={(params) => (
+                    <TextField {...params} label="Select Bank" placeholder="Search name or code..." fullWidth />
+                )}
+                isOptionEqualToValue={(option, value) => option.bin === value.bin}
+            />
+            <TextField
+                label="Account Number"
+                fullWidth
+                value={localAccount}
+                onChange={handleAccountChange}
+                placeholder="Enter your bank account number"
+            />
+        </div>
     );
 }
 

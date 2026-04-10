@@ -25,7 +25,7 @@ function App() {
             <SecondaryButton LinkComponent={Link} to={"/login"} sx={{ ml: 2 }}>
                 Login
             </SecondaryButton>
-            <BankSelection bankId={bankId} onBankIdChange={setBankId} />
+            <BankSelection selectedBin={bankId} onBankBinChange={setBankId} />
         </div>
     );
 }

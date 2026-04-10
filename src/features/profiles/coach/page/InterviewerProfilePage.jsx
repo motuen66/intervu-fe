@@ -9,6 +9,7 @@ import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
+import BankSelection from "./BankSelection";
 import {
     Box,
     Typography,
@@ -1550,6 +1551,36 @@ function InterviewerProfilePage() {
                                                 {email}
                                             </Typography>
                                         </Box>
+
+                                        {editMode && canManageBank && (
+                                            <Box
+                                                sx={{
+                                                    mt: 3,
+                                                    pt: 2,
+                                                    borderTop: "1px dashed",
+                                                    borderColor: "divider",
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    fontWeight={700}
+                                                    sx={{ mb: 1.5, color: "primary.main" }}
+                                                >
+                                                    Payment Settings
+                                                </Typography>
+                                                <BankSelection
+                                                    selectedBin={profile?.bankBinNumber}
+                                                    accountNumber={profile?.bankAccountNumber}
+                                                    onChange={(data) => {
+                                                        setProfile((prev) => ({
+                                                            ...prev,
+                                                            bankBinNumber: data.bin,
+                                                            bankAccountNumber: data.accountNumber,
+                                                        }));
+                                                    }}
+                                                />
+                                            </Box>
+                                        )}
                                     </SidebarCard>
 
                                     <Box className="ep-side-card ep-match-card">

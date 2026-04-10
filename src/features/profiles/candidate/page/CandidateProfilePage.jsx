@@ -415,6 +415,8 @@ function CandidateProfilePage() {
                 bio: profile.bio || "",
                 skillIds,
                 industryIds: profile.industryIds || [],
+                bankBinNumber: profile.bankBinNumber || "",
+                bankAccountNumber: String(profile.bankAccountNumber || "").trim(),
             };
 
             const res = await callApi({ method: METHOD.PUT, endpoint: ep, arg: payload, displaySuccessMessage: true });
@@ -1640,7 +1642,7 @@ function CandidateProfilePage() {
                                                 </Typography>
                                             </Box>
 
-                                            {/* {editMode && canManageBank && (
+                                            {editMode && canManageBank && (
                                                 <Box
                                                     sx={{
                                                         mt: 3,
@@ -1668,7 +1670,7 @@ function CandidateProfilePage() {
                                                         }
                                                     />
                                                 </Box>
-                                            )} */}
+                                            )}
                                         </SidebarCard>
 
                                         {isSelf && (
