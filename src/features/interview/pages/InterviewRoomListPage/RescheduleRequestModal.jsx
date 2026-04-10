@@ -195,6 +195,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                 reason: trimmedReason,
             });
             handleClose();
+            window.location.reload();
         } catch (error) {
             console.error("Failed to submit reschedule request:", error);
             const backendMessage = error?.response?.data?.message;
