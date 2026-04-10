@@ -15,6 +15,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@excalidraw/excalidraw": "^0.18.0",
     "@fullcalendar/core": "^6.1.12",
     "@fullcalendar/daygrid": "^6.1.12",
     "@fullcalendar/interaction": "^6.1.12",
