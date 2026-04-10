@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { Box, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { alpha } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
-import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
+import { PrimaryButton } from "../../../../../common/components/buttons";
+import { assessmentApi } from "../services/assessmentApi";
+import { roadmapData as fallbackRoadmap } from "../../../../roadmap/data";
+import { setAssessmentCache } from "../../../../../common/utils/assessmentCache";
+
+const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 const statusVisualMap = {
     good: {
@@ -39,9 +42,16 @@ const statusVisualMap = {
 };
 
 const ResultDashboard = () => {
-    const navigate = useNavigate();
-    const { answers, skillScores, matchPercentage, lastMatchPercentage, nextStep, saveAssessmentSnapshot } =
-        useAssessment();
+    const {
+        answers,
+        skillScores,
+        matchPercentage,
+        lastMatchPercentage,
+        nextStep,
+        saveAssessmentSnapshot,
+        setRoadmap,
+        roadmap,
+    } = useAssessment();
     const [isSaving, setIsSaving] = useState(false);
     const profile = answers?.profile || {};
     const strongestSkills = useMemo(
@@ -74,28 +84,81 @@ const ResultDashboard = () => {
         : mediumSkills.length
           ? `${mediumSkills.map((skill) => skill.skillKey).join(", ")} is already on track for ${profile.level || "your target level"}, but you still have a few core gaps to close first.`
           : `Your score reflects both your chosen level and the stack-specific answers you gave in the assessment.`;
-
-    const handleSaveAndGoHome = async () => {
-        if (isSaving) return;
-        setIsSaving(true);
-        try {
-            await saveAssessmentSnapshot();
-            navigate("/home");
-        } finally {
-            setIsSaving(false);
-        }
-    };
+    const hasRoadmap = Boolean(
+        (Array.isArray(roadmap?.today) && roadmap.today.length > 0) ||
+            (Array.isArray(roadmap?.weeks) && roadmap.weeks.length > 0),
+    );
 
     const handleViewRoadmap = async () => {
         if (isSaving) return;
         setIsSaving(true);
         try {
             await saveAssessmentSnapshot();
+
+            if (hasRoadmap) {
+                nextStep();
+                return;
+            }
+
+            const userId = answers?.userId;
+            let resolvedRoadmap = null;
+
+            if (userId && userId !== EMPTY_GUID) {
+                try {
+                    const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
+                        userId,
+                        forceRegenerate: true,
+                    });
+                    resolvedRoadmap = generateResponse?.data?.roadmap ?? generateResponse?.data?.Roadmap ?? null;
+                } catch (error) {
+                    console.error("Generate roadmap failed:", error);
+                }
+
+                if (!resolvedRoadmap) {
+                    try {
+                        const fetchResponse = await assessmentApi.getRoadmapByUserId(userId);
+                        resolvedRoadmap = fetchResponse?.data?.roadmap ?? fetchResponse?.data?.Roadmap ?? null;
+                    } catch (error) {
+                        console.error("Fetch roadmap fallback failed:", error);
+                    }
+                }
+            }
+
+            const finalRoadmap = resolvedRoadmap ?? fallbackRoadmap;
+            setRoadmap(finalRoadmap);
+
+            if (userId) {
+                setAssessmentCache(userId, {
+                    currentStep: 4,
+                    answers,
+                    surveyResult: null,
+                    skillScores,
+                    matchPercentage,
+                    roadmap: finalRoadmap,
+                });
+            }
+
             nextStep();
         } finally {
             setIsSaving(false);
         }
     };
+
+    React.useEffect(() => {
+        const userId = answers?.userId;
+        if (!userId) {
+            return;
+        }
+
+        setAssessmentCache(userId, {
+            currentStep: 3,
+            answers,
+            surveyResult: null,
+            skillScores,
+            matchPercentage,
+            roadmap: null,
+        });
+    }, [answers, matchPercentage, skillScores]);
 
     return (
         <Box sx={{ maxWidth: 1120, mx: "auto", px: 3, pb: 8 }}>
@@ -315,7 +378,7 @@ const ResultDashboard = () => {
                                     "&:hover": { bgcolor: "#a6dd41" },
                                 }}
                             >
-                                View Roadmap
+                                {hasRoadmap ? "View Roadmap" : "Generate Roadmap"}
                             </PrimaryButton>
                         </Stack>
                     </Stack>

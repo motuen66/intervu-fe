@@ -3,10 +3,7 @@ import { Box, CircularProgress, LinearProgress, Paper, Stack, Typography } from 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { alpha } from "@mui/material/styles";
 import { useAssessment } from "../context/AssessmentContext";
-import { assessmentApi } from "../services/assessmentApi";
-import { roadmapData as fallbackRoadmap } from "../../../../roadmap/data";
-
-const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+import { setAssessmentCache } from "../../../../../common/utils/assessmentCache";
 
 const levelMap = {
     none: 0,
@@ -45,7 +42,7 @@ const targetLevelMap = [
 ];
 
 const ProcessingState = () => {
-    const { answers, surveyResult, setSkillScores, updateMatchPercentage, setRoadmap, nextStep } = useAssessment();
+    const { answers, surveyResult, setSkillScores, updateMatchPercentage, nextStep } = useAssessment();
     const [progress, setProgress] = useState(0);
     const [statusIndex, setStatusIndex] = useState(0);
 
@@ -56,7 +53,7 @@ const ProcessingState = () => {
         () => [
             `Analyzing ${profile.role || "your"} assessment answers...`,
             `Mapping ${profile.techstack?.slice(0, 2).join(" / ") || "your stack"} confidence levels...`,
-            `Building your personalized roadmap...`,
+            "Finalizing your result dashboard...",
         ],
         [profile.role, profile.techstack],
     );
@@ -85,36 +82,21 @@ const ProcessingState = () => {
             setSkillScores(processedSkills);
             updateMatchPercentage(matchPercentage);
 
-            let resolvedRoadmap = null;
-            const userId = answers?.userId;
-
-            if (userId && userId !== EMPTY_GUID) {
-                try {
-                    const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
-                        userId,
-                        forceRegenerate: true,
-                    });
-
-                    resolvedRoadmap = generateResponse?.data?.roadmap ?? generateResponse?.data?.Roadmap ?? null;
-                } catch (error) {
-                    console.error("Generate roadmap failed:", error);
-                }
-
-                if (!resolvedRoadmap) {
-                    try {
-                        const fetchResponse = await assessmentApi.getRoadmapByUserId(userId);
-                        resolvedRoadmap = fetchResponse?.data?.roadmap ?? fetchResponse?.data?.Roadmap ?? null;
-                    } catch (error) {
-                        console.error("Fetch roadmap fallback failed:", error);
-                    }
-                }
+            if (answers?.userId) {
+                setAssessmentCache(answers.userId, {
+                    currentStep: 3,
+                    answers,
+                    surveyResult,
+                    skillScores: processedSkills,
+                    matchPercentage,
+                    roadmap: null,
+                });
             }
 
             if (isCancelled) {
                 return;
             }
 
-            setRoadmap(resolvedRoadmap ?? fallbackRoadmap);
             setProgress(100);
             await wait(420);
 
@@ -129,15 +111,7 @@ const ProcessingState = () => {
             isCancelled = true;
             window.clearInterval(progressInterval);
         };
-    }, [
-        answers?.userId,
-        matchPercentage,
-        nextStep,
-        processedSkills,
-        setRoadmap,
-        setSkillScores,
-        updateMatchPercentage,
-    ]);
+    }, [matchPercentage, nextStep, processedSkills, setSkillScores, updateMatchPercentage]);
 
     return (
         <Box sx={{ maxWidth: 760, mx: "auto", px: 3, py: 10 }}>

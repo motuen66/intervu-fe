@@ -6,7 +6,7 @@ import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DescriptionIcon from "@mui/icons-material/Description";
 
-export function CvDialog({ open, onClose, url }) {
+export function CvDialog({ open, onClose, url, title = "CV View" }) {
     const [scale, setScale] = useState(1);
     const [loaded, setLoaded] = useState(false);
     const [iframeSrc, setIframeSrc] = useState(null);
@@ -64,7 +64,7 @@ export function CvDialog({ open, onClose, url }) {
             >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <DescriptionIcon sx={{ color: "#afe34a", fontSize: 22 }} />
-                    <Typography sx={{ color: "white", fontWeight: 600, fontSize: "0.9rem" }}>CV View</Typography>
+                    <Typography sx={{ color: "white", fontWeight: 600, fontSize: "0.9rem" }}>{title}</Typography>
                 </Box>
 
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>

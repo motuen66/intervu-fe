@@ -288,6 +288,26 @@ function InterviewRoomPage() {
             .catch(console.error);
     }, [sendSignal, roomId, problemDescription, problemShortName, testCases]);
 
+    // In view-only mode we don't join SignalR, so hydrate workspace directly from API room payload.
+    useEffect(() => {
+        if (!roomInfo) return;
+
+        initFromRoomState(roomInfo);
+
+        const description = roomInfo?.problemDescription ?? "";
+        const shortName = roomInfo?.problemShortName ?? "";
+        const persistedTestCases = Array.isArray(roomInfo?.testCases) ? roomInfo.testCases : [];
+
+        setProblemDescription(description);
+        setProblemShortName(shortName);
+        setTestCases(persistedTestCases);
+        setReceivedProblem({
+            description,
+            shortName,
+            testCases: persistedTestCases,
+        });
+    }, [roomInfo, initFromRoomState]);
+
     // Test-case helpers
     const handleTestCaseInputChange = (tcIdx, inIdx, field, fieldVal) => {
         setTestCases((prev) => {

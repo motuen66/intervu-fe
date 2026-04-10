@@ -32,9 +32,16 @@ import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
 import SportsEsportsRoundedIcon from "@mui/icons-material/SportsEsportsRounded";
 import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
-import { assessmentEndPoints } from "../services/assessmentApi";
+import { assessmentEndPoints, saveSkippedAssessment, setAssessmentForceRequired } from "../services/assessmentApi";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
+import {
+    ASSESSMENT_PROGRESS_EXPIRY_MS,
+    clearProgressCache,
+    getProgressDataFromCache,
+    isProgressCacheValid,
+    setProgressCache,
+} from "../../../../../common/utils/assessmentCache";
 
 const setupFields = [
     {
@@ -381,6 +388,8 @@ const ChatSurvey = () => {
     const [showGenerateDialog, setShowGenerateDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isBotResponding, setIsBotResponding] = useState(false);
+    const [isSkipping, setIsSkipping] = useState(false);
+    const assessmentUserId = currentUser?.id;
 
     const currentQuestion = chatQuestions[currentIndex] || null;
     const totalQuestions = chatQuestions.length;
@@ -409,6 +418,65 @@ const ChatSurvey = () => {
     useEffect(() => {
         setChatDraft(answerMap[currentQuestion?.id] || "");
     }, [currentQuestion, answerMap]);
+
+    useEffect(() => {
+        if (!assessmentUserId) {
+            return;
+        }
+
+        if (!isProgressCacheValid(assessmentUserId, ASSESSMENT_PROGRESS_EXPIRY_MS)) {
+            clearProgressCache(assessmentUserId);
+            return;
+        }
+
+        const cached = getProgressDataFromCache(assessmentUserId);
+        if (!cached || typeof cached !== "object") {
+            return;
+        }
+
+        if (cached.stage === "chat") {
+            setStage("chat");
+        }
+
+        if (cached.setupForm && typeof cached.setupForm === "object") {
+            setSetupForm((prev) => ({ ...prev, ...cached.setupForm }));
+        }
+
+        if (Array.isArray(cached.chatQuestions) && cached.chatQuestions.length > 0) {
+            setChatQuestions(cached.chatQuestions);
+            const maxIndex = cached.chatQuestions.length - 1;
+            const safeIndex = Number.isInteger(cached.currentIndex)
+                ? Math.min(Math.max(cached.currentIndex, 0), maxIndex)
+                : 0;
+            setCurrentIndex(safeIndex);
+        }
+
+        if (cached.answerMap && typeof cached.answerMap === "object") {
+            setAnswerMap(cached.answerMap);
+        }
+    }, [assessmentUserId]);
+
+    useEffect(() => {
+        if (!assessmentUserId) {
+            return;
+        }
+
+        if (stage !== "chat") {
+            return;
+        }
+
+        if (!chatQuestions.length) {
+            return;
+        }
+
+        setProgressCache(assessmentUserId, {
+            stage,
+            setupForm,
+            chatQuestions,
+            currentIndex,
+            answerMap,
+        });
+    }, [answerMap, assessmentUserId, chatQuestions, currentIndex, setupForm, stage]);
 
     const responses = useMemo(
         () =>
@@ -514,7 +582,12 @@ const ChatSurvey = () => {
     };
 
     const handleSetupChange = (fieldId, value) => {
-        setSetupForm((prev) => ({ ...prev, [fieldId]: value }));
+        let nextValue = value;
+        if (fieldId === "free_text") {
+            nextValue = String(value || "").replace(/\r?\n+/g, " ");
+        }
+
+        setSetupForm((prev) => ({ ...prev, [fieldId]: nextValue }));
         setSetupErrors((prev) => {
             if (!prev[fieldId]) {
                 return prev;
@@ -665,6 +738,7 @@ const ChatSurvey = () => {
 
         setAnswers({
             profile: { role, level, techstack, domain, freeText: setupForm.free_text || "" },
+            userId,
             responses: finalResponses,
             derivedSkills,
             processingPayload: payload,
@@ -689,13 +763,31 @@ const ChatSurvey = () => {
             if (mountedRef.current) {
                 setIsSubmitting(false);
             }
+            clearProgressCache(currentUser?.id);
             nextStep();
         }
     };
 
-    const handleSkipAssessment = () => {
-        if (isGenerating || isSubmitting || isBotResponding) {
+    const handleSkipAssessment = async () => {
+        if (isGenerating || isSubmitting || isBotResponding || isSkipping) {
             return;
+        }
+
+        setIsSkipping(true);
+        const currentUserId = currentUser?.id;
+
+        if (currentUserId) {
+            try {
+                const skipped = await saveSkippedAssessment(currentUserId);
+                if (!skipped) {
+                    return;
+                }
+                setAssessmentForceRequired(currentUserId, false);
+            } finally {
+                setIsSkipping(false);
+            }
+        } else {
+            setIsSkipping(false);
         }
 
         setAnswers({ profile: { role: "", level: "", techstack: [], domain: [], freeText: "" }, responses: [] });
@@ -703,6 +795,7 @@ const ChatSurvey = () => {
         setSkillScores([]);
         setRoadmap({ today: [], weeks: [] });
         updateMatchPercentage(0);
+        clearProgressCache(currentUser?.id);
         navigate("/home");
     };
 
@@ -924,9 +1017,9 @@ const ChatSurvey = () => {
                                         color: "#1f2937",
                                     }}
                                 >
-                                    Let&apos;s calibrate your{" "}
+                                    Let&apos;s get to know{" "}
                                     <Box component="span" sx={{ color: "#5b8c09" }}>
-                                        profile.
+                                        you.
                                     </Box>
                                 </Typography>
                                 <Typography
@@ -1010,9 +1103,13 @@ const ChatSurvey = () => {
                                                         placeholder={field.placeholder}
                                                         inputProps={{
                                                             maxLength:
-                                                                field.id === "role" ? 40 :
-                                                                field.id === "level" ? 30 :
-                                                                field.id === "techstack" ? 100 : undefined,
+                                                                field.id === "role"
+                                                                    ? 40
+                                                                    : field.id === "level"
+                                                                      ? 30
+                                                                      : field.id === "techstack"
+                                                                        ? 100
+                                                                        : undefined,
                                                         }}
                                                         sx={{
                                                             mt: 1.5,
@@ -1067,7 +1164,8 @@ const ChatSurvey = () => {
                                                     <TextField
                                                         fullWidth
                                                         multiline
-                                                        minRows={5}
+                                                        minRows={10}
+                                                        maxRows={20}
                                                         value={setupForm[field.id]}
                                                         onChange={(event) =>
                                                             handleSetupChange(field.id, event.target.value)
@@ -1075,7 +1173,7 @@ const ChatSurvey = () => {
                                                         error={Boolean(setupErrors[field.id])}
                                                         helperText={setupErrors[field.id] || " "}
                                                         placeholder={field.placeholder}
-                                                        inputProps={{ maxLength: 300 }}
+                                                        inputProps={{ maxLength: 1000 }}
                                                         sx={{
                                                             "& .MuiOutlinedInput-root": {
                                                                 alignItems: "flex-start",
@@ -1118,10 +1216,10 @@ const ChatSurvey = () => {
                                             variant="text"
                                             color="inherit"
                                             onClick={handleSkipAssessment}
-                                            disabled={isGenerating || isSubmitting}
+                                            disabled={isGenerating || isSubmitting || isSkipping}
                                             sx={{ justifyContent: "flex-start", fontWeight: 700 }}
                                         >
-                                            Skip for now
+                                            {isSkipping ? "Saving..." : "Skip for now"}
                                         </Button>
                                         <Button
                                             variant="contained"
@@ -1442,9 +1540,9 @@ const ChatSurvey = () => {
                                     color="inherit"
                                     endIcon={<SkipNextRoundedIcon />}
                                     onClick={handleSkipAssessment}
-                                    disabled={isBotResponding || isSubmitting}
+                                    disabled={isBotResponding || isSubmitting || isSkipping}
                                 >
-                                    Skip Assessment
+                                    {isSkipping ? "Saving..." : "Skip Assessment"}
                                 </Button>
                             </Stack>
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">

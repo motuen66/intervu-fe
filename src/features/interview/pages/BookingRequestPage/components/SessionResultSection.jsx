@@ -197,17 +197,6 @@ const RoundResultItem = ({ round }) => {
                     </Typography>
 
                     <CircularGauge value={overallScore} />
-
-                    <Box sx={{
-                        px: 1.5, py: 0.5, borderRadius: '20px',
-                        bgcolor: '#f0fdf4',
-                        display: 'flex', alignItems: 'center', gap: 0.75
-                    }}>
-                        <FiberManualRecordIcon sx={{ fontSize: 8, color: '#22c55e' }} />
-                        <Typography variant="caption" fontWeight={900} color="#166534" sx={{ fontSize: '0.7rem' }}>
-                            TOP 5% IN BATCH
-                        </Typography>
-                    </Box>
                 </Box>
 
                 {/* Right: Coach Evaluation */}

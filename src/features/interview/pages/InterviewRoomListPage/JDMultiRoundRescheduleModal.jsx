@@ -1,37 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Box,
-    Checkbox,
     CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    Grow,
     IconButton,
-    Paper,
     Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableRow,
     Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CheckIcon from "@mui/icons-material/Check";
 import SaveIcon from "@mui/icons-material/Save";
-import { addMinutes, addMonths, endOfMonth, eachDayOfInterval, format, getDay, isSameDay, startOfMonth, subMonths } from "date-fns";
-import { enUS } from "date-fns/locale";
+import { addMinutes, addMonths, format, isSameDay, subMonths } from "date-fns";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status";
 import { formattedDateTime } from "../../../../common/utils/dateFormatter";
+import CalendlyCalendar from "../../../../common/components/CalendlyCalendar";
+import "../../../profiles/coach/page/PublicInterviewerProfilePage/JDBookingDialog.css";
 
-const DAYS_OF_WEEK = ["S", "M", "T", "W", "T", "F", "S"];
 const SLOT_STEP_MINUTES = 15;
 
 const normalizeIso = (value) => (value && !value.endsWith("Z") ? `${value}Z` : value);
@@ -55,6 +48,136 @@ const getRoundDisabledReason = (round) => {
     return null;
 };
 
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Grow ref={ref} {...props} timeout={400} />;
+});
+
+function RoundItem({ plan, isActive, isLast, onActivate, onDeselect }) {
+    const isDone = Boolean(plan.selected && plan.newStartTime);
+    const currentStart = toDate(plan.currentStartTime);
+
+    let statusClass = "";
+    if (!plan.canSelect) statusClass = "disabled";
+    else if (isActive) statusClass = "current active";
+    else if (isDone) statusClass = "done";
+
+    return (
+        <Box sx={{ position: "relative" }}>
+            <Box
+                className={`jd-schedule-item ${statusClass}`}
+                onClick={() => {
+                    if (plan.canSelect) onActivate(plan.roomId);
+                }}
+                sx={{ cursor: plan.canSelect ? "pointer" : "not-allowed" }}
+            >
+                <Box className="jd-schedule-marker">
+                    {isDone && !isActive ? (
+                        <CheckIcon sx={{ fontSize: 14 }} />
+                    ) : (
+                        <Typography sx={{ fontWeight: 800, fontSize: "0.875rem", lineHeight: 1 }}>
+                            {plan.roundNumber}
+                        </Typography>
+                    )}
+                </Box>
+
+                <Box sx={{ flex: 1, minWidth: 0, pr: isActive || plan.selected ? 3 : 0 }}>
+                    <Box
+                        sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            px: 0.75,
+                            py: 0.2,
+                            borderRadius: "4px",
+                            bgcolor: "rgba(99,102,241,0.08)",
+                            border: "1px solid rgba(99,102,241,0.12)",
+                            mb: 0.5,
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontWeight: 900,
+                                fontSize: "0.58rem",
+                                color: "#4f46e5",
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                            }}
+                        >
+                            ROUND {plan.roundNumber} · {plan.durationMinutes}min
+                        </Typography>
+                    </Box>
+                    <Typography
+                        sx={{
+                            fontSize: "0.875rem",
+                            fontWeight: 700,
+                            color: "#1e293b",
+                            lineHeight: 1.25,
+                            mb: 0.3,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                        }}
+                    >
+                        {plan.title}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b", lineHeight: 1.4 }}>
+                        {isDone
+                            ? `→ ${formattedDateTime(plan.newStartTime.toISOString())}`
+                            : plan.disabledReason
+                              ? plan.disabledReason
+                              : currentStart
+                                ? `Now: ${formattedDateTime(currentStart.toISOString())}`
+                                : "—"}
+                    </Typography>
+                </Box>
+
+                {isActive && (
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            top: 8,
+                            right: plan.selected ? 28 : 8,
+                            px: 0.75,
+                            py: 0.35,
+                            bgcolor: "rgba(245,158,11,0.12)",
+                            borderRadius: "5px",
+                            border: "1px solid rgba(245,158,11,0.25)",
+                        }}
+                    >
+                        <Typography
+                            sx={{ fontSize: "0.5rem", fontWeight: 900, color: "#b45309", letterSpacing: "0.06em" }}
+                        >
+                            EDITING
+                        </Typography>
+                    </Box>
+                )}
+
+                {plan.selected && (
+                    <IconButton
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDeselect(plan.roomId);
+                        }}
+                        sx={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            width: 18,
+                            height: 18,
+                            color: "#94a3b8",
+                            "&:hover": { color: "#ef4444", bgcolor: "rgba(239,68,68,0.08)" },
+                        }}
+                    >
+                        <CloseIcon sx={{ fontSize: 11 }} />
+                    </IconButton>
+                )}
+            </Box>
+
+            {!isLast && <Box sx={{ width: "2px", height: 12, bgcolor: "#e2e8f0", ml: "31px" }} />}
+        </Box>
+    );
+}
+
 function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }) {
     const [availableSlots, setAvailableSlots] = useState([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
@@ -66,10 +189,7 @@ function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }
     const [activeRoundId, setActiveRoundId] = useState(null);
 
     const coachId =
-        currentSession?.coachId ||
-        currentSession?.CoachId ||
-        currentSession?.coach?.id ||
-        currentSession?.Coach?.Id;
+        currentSession?.coachId || currentSession?.CoachId || currentSession?.coach?.id || currentSession?.Coach?.Id;
 
     const bookingRequestId = currentSession?.bookingRequestId || currentSession?.BookingRequestId;
 
@@ -90,7 +210,6 @@ function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }
         const plans = rounds.map((round, index) => {
             const roomId = round.id || round.Id;
             const disabledReason = getRoundDisabledReason(round);
-
             return {
                 roomId,
                 roundNumber: round.roundNumber ?? index + 1,
@@ -157,50 +276,84 @@ function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }
         [roundPlans, activeRoundId],
     );
 
+    // Time ranges already claimed by other (non-active) selected rounds.
+    // Used to prevent double-booking the same slot across rounds.
+    const excludedTimeRanges = useMemo(
+        () =>
+            roundPlans
+                .filter((p) => p.selected && p.newStartTime && p.roomId !== activeRoundId)
+                .map((p) => ({
+                    start: p.newStartTime,
+                    end: addMinutes(p.newStartTime, p.durationMinutes),
+                })),
+        [roundPlans, activeRoundId],
+    );
+
+    /**
+     * Merges individual 30-min availability blocks into contiguous windows,
+     * then generates all valid start times for a session of `durationMinutes`.
+     * Slots that overlap with already-booked rounds are excluded.
+     */
     const getTimeOptionsForDate = (date, durationMinutes) => {
         if (!date || !durationMinutes) return [];
 
-        const options = [];
         const now = new Date();
 
-        for (const slot of availableSlots) {
-            const slotStart = toDate(slot.startTime);
-            const slotEnd = toDate(slot.endTime);
+        // Collect and sort all blocks on this day
+        const dayBlocks = availableSlots
+            .map((s) => ({ start: toDate(s.startTime), end: toDate(s.endTime) }))
+            .filter(({ start, end }) => start && end && isSameDay(start, date))
+            .sort((a, b) => a.start - b.start);
 
-            if (!slotStart || !slotEnd || !isSameDay(slotStart, date)) continue;
+        if (dayBlocks.length === 0) return [];
 
-            const latestStart = new Date(slotEnd.getTime() - durationMinutes * 60 * 1000);
+        // Merge consecutive / overlapping blocks into contiguous windows
+        const windows = [];
+        let current = { start: new Date(dayBlocks[0].start), end: new Date(dayBlocks[0].end) };
+        for (let i = 1; i < dayBlocks.length; i++) {
+            const next = dayBlocks[i];
+            if (next.start <= current.end) {
+                // Adjacent or overlapping — extend the current window
+                if (next.end > current.end) current.end = new Date(next.end);
+            } else {
+                windows.push(current);
+                current = { start: new Date(next.start), end: new Date(next.end) };
+            }
+        }
+        windows.push(current);
+
+        // Generate start options from each merged window
+        const options = [];
+        for (const win of windows) {
+            const latestStart = new Date(win.end.getTime() - durationMinutes * 60 * 1000);
+            if (latestStart < win.start) continue; // Window too short for this duration
+
             for (
-                let cursor = new Date(slotStart);
+                let cursor = new Date(win.start);
                 cursor <= latestStart;
                 cursor = addMinutes(cursor, SLOT_STEP_MINUTES)
             ) {
-                const optionEnd = addMinutes(cursor, durationMinutes);
                 if (cursor <= now) continue;
-                options.push({
-                    key: `${slot.id}-${cursor.toISOString()}`,
-                    start: new Date(cursor),
-                    end: optionEnd,
-                });
+                const optionEnd = addMinutes(cursor, durationMinutes);
+
+                // Skip if this slot overlaps an already-booked round
+                const blocked = excludedTimeRanges.some((r) => cursor < r.end && optionEnd > r.start);
+                if (blocked) continue;
+
+                options.push({ key: cursor.toISOString(), start: new Date(cursor), end: optionEnd });
             }
         }
 
-        const uniqueOptions = [];
+        // Deduplicate by start time (shouldn't happen after merging, but kept for safety)
         const seen = new Set();
-        for (const option of options) {
-            const key = option.start.getTime();
-            if (seen.has(key)) continue;
-            seen.add(key);
-            uniqueOptions.push(option);
+        const uniqueOptions = [];
+        for (const opt of options) {
+            if (seen.has(opt.start.getTime())) continue;
+            seen.add(opt.start.getTime());
+            uniqueOptions.push(opt);
         }
 
-        uniqueOptions.sort((a, b) => a.start - b.start);
-        return uniqueOptions;
-    };
-
-    const hasTimeOptionsForDate = (date) => {
-        if (!activeRound) return false;
-        return getTimeOptionsForDate(date, activeRound.durationMinutes).length > 0;
+        return uniqueOptions; // already sorted (windows are sorted, cursor increments forward)
     };
 
     const availableDatesForActiveRound = useMemo(() => {
@@ -211,128 +364,103 @@ function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }
             const slotStart = toDate(slot.startTime);
             if (!slotStart) continue;
             const dayKey = format(slotStart, "yyyy-MM-dd");
-            if (!dateMap.has(dayKey)) {
-                dateMap.set(dayKey, slotStart);
-            }
+            if (!dateMap.has(dayKey)) dateMap.set(dayKey, slotStart);
         }
 
-        return Array.from(dateMap.values()).filter((date) => hasTimeOptionsForDate(date));
-    }, [availableSlots, activeRound]);
+        return Array.from(dateMap.values()).filter(
+            (date) => getTimeOptionsForDate(date, activeRound.durationMinutes).length > 0,
+        );
+    }, [availableSlots, activeRound, excludedTimeRanges]);
+
+    const availableDatesSet = useMemo(() => {
+        const set = new Set();
+        for (const date of availableDatesForActiveRound) {
+            set.add(format(date, "yyyy-MM-dd"));
+        }
+        return set;
+    }, [availableDatesForActiveRound]);
 
     const timeOptionsForSelectedDate = useMemo(() => {
         if (!selectedDate || !activeRound) return [];
         return getTimeOptionsForDate(selectedDate, activeRound.durationMinutes);
-    }, [selectedDate, activeRound, availableSlots]);
+    }, [selectedDate, activeRound, availableSlots, excludedTimeRanges]);
 
-    const getCalendarDays = () => {
-        const start = startOfMonth(currentMonth);
-        const end = endOfMonth(currentMonth);
-        const days = eachDayOfInterval({ start, end });
-        const firstDayOfWeek = getDay(start);
-        const emptyDays = Array(firstDayOfWeek).fill(null);
-        return [...emptyDays, ...days];
-    };
-
-    const handleSelectRound = (roomId) => {
-        setRoundPlans((prev) => {
-            const target = prev.find((plan) => plan.roomId === roomId);
-            if (!target || !target.canSelect) return prev;
-            const shouldSelect = !target.selected;
-
-            const updated = prev.map((plan) => {
-                if (plan.roomId !== roomId) return plan;
-                return {
-                    ...plan,
-                    selected: shouldSelect,
-                    newStartTime: shouldSelect ? plan.newStartTime : null,
-                };
-            });
-
-            if (shouldSelect) {
-                setActiveRoundId(roomId);
-                return updated;
-            }
-
-            const selectedPlans = updated.filter((plan) => plan.selected);
-            if (!selectedPlans.some((plan) => plan.roomId === activeRoundId)) {
-                setActiveRoundId(selectedPlans[0]?.roomId ?? updated.find((plan) => plan.canSelect)?.roomId ?? null);
-            }
-
-            return updated;
-        });
-    };
-
+    // Activate a round (auto-select if not yet selected). Resets date when switching rounds.
     const handleSetActiveRound = (roomId) => {
         const target = roundPlans.find((plan) => plan.roomId === roomId);
-        if (!target || !target.selected) return;
+        if (!target || !target.canSelect) return;
+        if (!target.selected) {
+            setRoundPlans((prev) => prev.map((plan) => (plan.roomId === roomId ? { ...plan, selected: true } : plan)));
+        }
+        if (roomId !== activeRoundId) {
+            setSelectedDate(null);
+        }
         setActiveRoundId(roomId);
+    };
+
+    // Deselect a round (× button), clear its time, and switch active to another.
+    const handleDeselectRound = (roomId) => {
+        setRoundPlans((prev) =>
+            prev.map((plan) => (plan.roomId === roomId ? { ...plan, selected: false, newStartTime: null } : plan)),
+        );
+
+        if (activeRoundId === roomId) {
+            const remaining = roundPlans.filter((p) => p.selected && p.roomId !== roomId);
+            const next =
+                remaining[0]?.roomId ?? roundPlans.find((p) => p.canSelect && p.roomId !== roomId)?.roomId ?? null;
+            setActiveRoundId(next);
+            setSelectedDate(null);
+        }
     };
 
     const handlePickTimeOption = (option) => {
         if (!activeRound) return;
         setRoundPlans((prev) =>
             prev.map((plan) =>
-                plan.roomId === activeRound.roomId
-                    ? { ...plan, selected: true, newStartTime: option.start }
-                    : plan,
+                plan.roomId === activeRound.roomId ? { ...plan, selected: true, newStartTime: option.start } : plan,
             ),
         );
     };
 
     const validateBeforeSubmit = () => {
         const selectedRounds = roundPlans.filter((plan) => plan.selected);
-        if (selectedRounds.length === 0) {
-            return "Select at least one round to reschedule.";
-        }
+        if (selectedRounds.length === 0) return "Select at least one round to reschedule.";
 
         const missingRounds = selectedRounds.filter((plan) => !plan.newStartTime).map((plan) => plan.roundNumber);
-        if (missingRounds.length > 0) {
-            return `Please choose a new time for round ${missingRounds.join(", ")}.`;
-        }
+        if (missingRounds.length > 0) return `Please choose a new time for round ${missingRounds.join(", ")}.`;
 
         const unchangedRounds = selectedRounds
             .filter((plan) => {
                 const oldTime = toDate(plan.currentStartTime);
-                if (!oldTime || !plan.newStartTime) return false;
-                return oldTime.getTime() === plan.newStartTime.getTime();
+                return oldTime && plan.newStartTime && oldTime.getTime() === plan.newStartTime.getTime();
             })
             .map((plan) => plan.roundNumber);
-
-        if (unchangedRounds.length > 0) {
-            return `Round ${unchangedRounds.join(", ")} must have a new time different from current schedule.`;
-        }
+        if (unchangedRounds.length > 0)
+            return `Round ${unchangedRounds.join(", ")} must differ from the current schedule.`;
 
         const now = new Date();
         const timeline = [...roundPlans]
             .sort((a, b) => a.roundNumber - b.roundNumber)
             .map((plan) => {
-                const current = toDate(plan.currentStartTime);
-                const start = plan.selected ? plan.newStartTime : current;
+                const start = plan.selected ? plan.newStartTime : toDate(plan.currentStartTime);
                 if (!start) return null;
-                return {
-                    roundNumber: plan.roundNumber,
-                    start,
-                    end: addMinutes(start, plan.durationMinutes),
-                };
+                return { roundNumber: plan.roundNumber, start, end: addMinutes(start, plan.durationMinutes) };
             });
 
-        if (timeline.some((entry) => !entry)) {
-            return "Some rounds are missing scheduled time information.";
-        }
+        if (timeline.some((e) => !e)) return "Some rounds are missing scheduled time information.";
 
         for (const plan of selectedRounds) {
-            if (plan.newStartTime <= now) {
-                return `Round ${plan.roundNumber} must be scheduled in the future.`;
-            }
+            if (plan.newStartTime <= now) return `Round ${plan.roundNumber} must be scheduled in the future.`;
         }
 
-        for (let i = 1; i < timeline.length; i++) {
-            const prev = timeline[i - 1];
-            const current = timeline[i];
-            if (current.start.getTime() < prev.end.getTime() + SLOT_STEP_MINUTES * 60 * 1000) {
-                return `Round ${current.roundNumber} must start at least 15 minutes after round ${prev.roundNumber}.`;
-            }
-        }
+        // Validate gap time 15mins
+        // for (let i = 1; i < timeline.length; i++) {
+        //     const prev = timeline[i - 1];
+        //     const curr = timeline[i];
+        //     if (curr.start.getTime() < prev.end.getTime() + SLOT_STEP_MINUTES * 60 * 1000) {
+        //         return `Round ${curr.roundNumber} must start at least 15 minutes after round ${prev.roundNumber}.`;
+        //     }
+        // }
 
         return null;
     };
@@ -370,12 +498,12 @@ function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }
     };
 
     const handleClose = () => {
-        if (isSubmitting) return;
-        onClose();
+        if (!isSubmitting) onClose();
     };
 
-    const calendarDays = getCalendarDays();
     const selectedTimeKey = activeRound?.newStartTime ? activeRound.newStartTime.getTime() : null;
+    const selectedRoundsCount = roundPlans.filter((p) => p.selected).length;
+    const doneRoundsCount = roundPlans.filter((p) => p.selected && p.newStartTime).length;
 
     return (
         <Dialog
@@ -383,10 +511,12 @@ function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }
             onClose={handleClose}
             maxWidth="lg"
             fullWidth
+            TransitionComponent={Transition}
             PaperProps={{
+                className: "jd-booking-dialog-paper",
                 sx: (theme) => ({
                     ...dialogStyles.paper(theme),
-                    maxHeight: "92vh",
+                    maxHeight: "90vh",
                 }),
             }}
         >
@@ -395,241 +525,218 @@ function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "flex-start",
-                    pb: 1,
+                    pb: 1.5,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
                 }}
             >
                 <Box>
-                    <Typography variant="h6" fontWeight={700}>
-                        Reschedule JD Multi-Round Booking
+                    <Typography variant="h6" fontWeight={800} sx={{ fontSize: "1.1rem" }}>
+                        Reschedule Interview Rounds
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        Select one or more rounds, then choose new time slots from coach availability.
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4 }}>
+                        Click a round · pick a date · select a time — repeat for each round
                     </Typography>
                 </Box>
-                <IconButton onClick={handleClose} size="small" disabled={isSubmitting}>
-                    <CloseIcon />
+                <IconButton onClick={handleClose} size="small" disabled={isSubmitting} sx={{ mt: -0.5 }}>
+                    <CloseIcon fontSize="small" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ pt: 2 }}>
+            <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                 {error && (
-                    <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                    <Alert severity="error" sx={{ mx: 3, mt: 2, borderRadius: 2 }} onClose={() => setError(null)}>
                         {error}
                     </Alert>
                 )}
 
-                <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.25 }}>
-                        Select Rounds To Reschedule
-                    </Typography>
-                    <Stack spacing={1}>
-                        {roundPlans.map((plan) => {
-                            const currentStartDate = toDate(plan.currentStartTime);
-                            const newStart = plan.newStartTime;
-                            const isActive = plan.roomId === activeRoundId;
-                            return (
-                                <Paper
-                                    key={plan.roomId}
-                                    onClick={() => handleSetActiveRound(plan.roomId)}
-                                    sx={{
-                                        p: 1.5,
-                                        border: "1px solid",
-                                        borderColor: isActive ? "primary.main" : "divider",
-                                        bgcolor: isActive ? "primary.lighter" : "background.paper",
-                                        cursor: plan.selected ? "pointer" : "default",
-                                    }}
-                                >
-                                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                                        <Checkbox
-                                            checked={plan.selected}
-                                            disabled={!plan.canSelect || isSubmitting}
-                                            onChange={() => handleSelectRound(plan.roomId)}
-                                            sx={{ p: 0.25, mt: 0.15 }}
-                                        />
-                                        <Box sx={{ flex: 1 }}>
-                                            <Stack
-                                                direction={{ xs: "column", sm: "row" }}
-                                                spacing={0.75}
-                                                justifyContent="space-between"
-                                            >
-                                                <Typography variant="subtitle2" fontWeight={700}>
-                                                    Round {plan.roundNumber}: {plan.title}
-                                                </Typography>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Duration: {plan.durationMinutes} min
-                                                </Typography>
-                                            </Stack>
-                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                                Current: {currentStartDate ? formattedDateTime(currentStartDate.toISOString()) : "—"}
-                                            </Typography>
-                                            {plan.selected && newStart && (
-                                                <Typography variant="body2" color="primary.main" fontWeight={600} sx={{ mt: 0.35 }}>
-                                                    New: {formattedDateTime(newStart.toISOString())}
-                                                </Typography>
-                                            )}
-                                            {plan.disabledReason && (
-                                                <Typography variant="caption" color="error.main" sx={{ mt: 0.35, display: "block" }}>
-                                                    {plan.disabledReason}
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    </Stack>
-                                </Paper>
-                            );
-                        })}
-                    </Stack>
-                </Box>
-
                 {loadingSlots ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" py={6}>
-                        <CircularProgress />
+                    <Box display="flex" justifyContent="center" alignItems="center" gap={2} py={10}>
+                        <CircularProgress size={24} />
+                        <Typography variant="body2" color="text.secondary">
+                            Loading coach availability…
+                        </Typography>
                     </Box>
                 ) : (
-                    <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
-                                Calendar
+                    <Stack direction="row" sx={{ flex: 1, overflow: "hidden", minHeight: 460 }}>
+                        {/* ── Left: round list ── */}
+                        <Box
+                            sx={{
+                                width: 350,
+                                flexShrink: 0,
+                                borderRight: "1px solid",
+                                borderColor: "divider",
+                                overflowY: "auto",
+                                p: 2.5,
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                        >
+                            <Typography className="jd-label-mini" sx={{ mb: 1.5 }}>
+                                ROUNDS TO RESCHEDULE
                             </Typography>
-                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.25 }}>
-                                <IconButton size="small" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-                                    <ChevronLeftIcon />
-                                </IconButton>
-                                <Typography variant="subtitle1" fontWeight={700}>
-                                    {format(currentMonth, "MMMM yyyy", { locale: enUS })}
-                                </Typography>
-                                <IconButton size="small" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-                                    <ChevronRightIcon />
-                                </IconButton>
-                            </Stack>
 
-                            <Table sx={{ borderCollapse: "separate", borderSpacing: "4px" }}>
-                                <TableBody>
-                                    <TableRow>
-                                        {DAYS_OF_WEEK.map((day) => (
-                                            <TableCell
-                                                key={day}
-                                                align="center"
-                                                sx={{
-                                                    p: 0.4,
-                                                    border: "none",
-                                                    fontSize: "0.75rem",
-                                                    fontWeight: 700,
-                                                    color: "text.secondary",
-                                                }}
-                                            >
-                                                {day}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                    {Array.from({ length: Math.ceil(calendarDays.length / 7) }).map((_, weekIndex) => (
-                                        <TableRow key={weekIndex}>
-                                            {calendarDays.slice(weekIndex * 7, weekIndex * 7 + 7).map((day, dayIndex) => {
-                                                const hasOptions = day && availableDatesForActiveRound.some((d) => isSameDay(d, day));
-                                                const isSelected = day && selectedDate && isSameDay(day, selectedDate);
-                                                return (
-                                                    <TableCell
-                                                        key={`${weekIndex}-${dayIndex}`}
-                                                        align="center"
-                                                        sx={{
-                                                            p: 0.4,
-                                                            border: "none",
-                                                            opacity: hasOptions ? 1 : 0.35,
-                                                            cursor: hasOptions ? "pointer" : "default",
-                                                        }}
-                                                        onClick={() => {
-                                                            if (hasOptions) {
-                                                                setSelectedDate(day);
-                                                            }
-                                                        }}
-                                                    >
-                                                        {day ? (
-                                                            <Box
-                                                                sx={{
-                                                                    width: 32,
-                                                                    height: 32,
-                                                                    borderRadius: "8px",
-                                                                    display: "flex",
-                                                                    alignItems: "center",
-                                                                    justifyContent: "center",
-                                                                    bgcolor: isSelected ? "primary.main" : "transparent",
-                                                                    color: isSelected ? "common.white" : "text.primary",
-                                                                    fontWeight: isSelected ? 700 : 500,
-                                                                    mx: "auto",
-                                                                }}
-                                                            >
-                                                                {format(day, "d")}
-                                                            </Box>
-                                                        ) : null}
-                                                    </TableCell>
-                                                );
-                                            })}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                            {roundPlans.map((plan, i) => (
+                                <RoundItem
+                                    key={plan.roomId}
+                                    plan={plan}
+                                    isActive={plan.roomId === activeRoundId}
+                                    isLast={i === roundPlans.length - 1}
+                                    onActivate={handleSetActiveRound}
+                                    onDeselect={handleDeselectRound}
+                                />
+                            ))}
+
+                            {selectedRoundsCount > 0 && (
+                                <Box
+                                    sx={{
+                                        mt: 2,
+                                        p: 1.5,
+                                        bgcolor: "#f8fafc",
+                                        border: "1px solid #e2e8f0",
+                                        borderRadius: 2,
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            fontSize: "0.65rem",
+                                            fontWeight: 800,
+                                            color: "#64748b",
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.05em",
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        PROGRESS
+                                    </Typography>
+                                    <Typography sx={{ fontSize: "0.8rem", color: "#1e293b", fontWeight: 700 }}>
+                                        {doneRoundsCount} / {selectedRoundsCount} round
+                                        {selectedRoundsCount > 1 ? "s" : ""} scheduled
+                                    </Typography>
+                                </Box>
+                            )}
+
+                            {roundPlans.length > 0 && selectedRoundsCount === 0 && (
+                                <Box
+                                    sx={{
+                                        mt: 2,
+                                        p: 1.5,
+                                        bgcolor: "rgba(99,102,241,0.04)",
+                                        border: "1px dashed rgba(99,102,241,0.2)",
+                                        borderRadius: 2,
+                                    }}
+                                >
+                                    <Typography sx={{ fontSize: "0.75rem", color: "#64748b", lineHeight: 1.5 }}>
+                                        Click any round card above to start scheduling a new time.
+                                    </Typography>
+                                </Box>
+                            )}
                         </Box>
 
-                        <Box sx={{ width: { xs: "100%", md: 360 } }}>
-                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
-                                {activeRound
-                                    ? `Pick Time For Round ${activeRound.roundNumber}`
-                                    : "Pick Time"}
+                        {/* ── Middle: Calendar ── */}
+                        <Box
+                            sx={{
+                                flex: 1,
+                                overflowY: "auto",
+                                px: 3,
+                                py: 2.5,
+                                borderRight: "1px solid",
+                                borderColor: "divider",
+                            }}
+                        >
+                            {activeRound ? (
+                                <>
+                                    <Typography className="jd-label-mini" sx={{ mb: 1.5 }}>
+                                        {`SELECT DATE — ROUND ${activeRound.roundNumber}`}
+                                    </Typography>
+                                    <CalendlyCalendar
+                                        currentMonth={currentMonth}
+                                        onPrevMonth={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                                        onNextMonth={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                                        selectedDate={selectedDate}
+                                        onDateSelect={setSelectedDate}
+                                        availableDates={availableDatesSet}
+                                    />
+                                </>
+                            ) : (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        height: "100%",
+                                    }}
+                                >
+                                    <Typography sx={{ fontSize: "0.875rem", color: "#94a3b8", textAlign: "center" }}>
+                                        No rounds available to reschedule
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+
+                        {/* ── Right: Time slots ── */}
+                        <Box
+                            sx={{
+                                width: 270,
+                                flexShrink: 0,
+                                overflowY: "auto",
+                                px: 2.5,
+                                py: 2.5,
+                            }}
+                        >
+                            <Typography className="jd-label-mini" sx={{ mb: 1.5 }}>
+                                {selectedDate && activeRound ? `ROUND ${activeRound.roundNumber} TIMES` : "TIME SLOT"}
                             </Typography>
 
                             {!activeRound ? (
-                                <Paper sx={{ p: 2, textAlign: "center", bgcolor: "grey.50" }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Select at least one eligible round first.
+                                <Typography sx={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                                    Select a round first
+                                </Typography>
+                            ) : !selectedDate ? (
+                                <Typography sx={{ fontSize: "0.8rem", color: "#94a3b8", lineHeight: 1.6 }}>
+                                    Pick a date on the calendar to see available times
+                                </Typography>
+                            ) : timeOptionsForSelectedDate.length === 0 ? (
+                                <Box
+                                    sx={{
+                                        p: 1.5,
+                                        bgcolor: "#f8fafc",
+                                        borderRadius: 2,
+                                        border: "1px solid #e2e8f0",
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            fontSize: "0.78rem",
+                                            color: "#94a3b8",
+                                            textAlign: "center",
+                                            lineHeight: 1.5,
+                                        }}
+                                    >
+                                        No slots fit this round&apos;s duration on this date
                                     </Typography>
-                                </Paper>
+                                </Box>
                             ) : (
                                 <>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                        {selectedDate
-                                            ? format(selectedDate, "EEEE, dd MMM yyyy", { locale: enUS })
-                                            : "Choose a date from calendar"}
+                                    <Typography sx={{ fontSize: "0.7rem", color: "#94a3b8", mb: 1.25 }}>
+                                        {format(selectedDate, "EEE, MMM d")} · {activeRound.durationMinutes}min
                                     </Typography>
-                                    <Box sx={{ maxHeight: 320, overflowY: "auto" }}>
-                                        {timeOptionsForSelectedDate.length === 0 ? (
-                                            <Paper sx={{ p: 2, textAlign: "center", bgcolor: "grey.50" }}>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {selectedDate
-                                                        ? "No valid start times for this round on the selected day."
-                                                        : "Select a date to see valid time options."}
-                                                </Typography>
-                                            </Paper>
-                                        ) : (
-                                            <Stack spacing={1}>
-                                                {timeOptionsForSelectedDate.map((option) => {
-                                                    const isSelected = selectedTimeKey === option.start.getTime();
-                                                    return (
-                                                        <Paper
-                                                            key={option.key}
-                                                            onClick={() => handlePickTimeOption(option)}
-                                                            sx={{
-                                                                p: 1.25,
-                                                                border: "1px solid",
-                                                                borderColor: isSelected ? "primary.main" : "divider",
-                                                                bgcolor: isSelected ? "primary.main" : "background.paper",
-                                                                color: isSelected ? "common.white" : "text.primary",
-                                                                cursor: "pointer",
-                                                            }}
-                                                        >
-                                                            <Stack direction="row" spacing={1} alignItems="center">
-                                                                <AccessTimeIcon
-                                                                    fontSize="small"
-                                                                    sx={{ color: isSelected ? "common.white" : "primary.main" }}
-                                                                />
-                                                                <Typography variant="body2" fontWeight={700}>
-                                                                    {format(option.start, "HH:mm")} - {format(option.end, "HH:mm")}
-                                                                </Typography>
-                                                            </Stack>
-                                                        </Paper>
-                                                    );
-                                                })}
-                                            </Stack>
-                                        )}
-                                    </Box>
+                                    <div className="calendly-timeslot-list">
+                                        {timeOptionsForSelectedDate.map((option) => {
+                                            const isSelected = selectedTimeKey === option.start.getTime();
+                                            return (
+                                                <div
+                                                    key={option.key}
+                                                    className={`calendly-timeslot ${isSelected ? "selected" : ""}`}
+                                                    onClick={() => handlePickTimeOption(option)}
+                                                >
+                                                    <Typography variant="body2" fontWeight={700}>
+                                                        {format(option.start, "HH:mm")} – {format(option.end, "HH:mm")}
+                                                    </Typography>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </>
                             )}
                         </Box>
@@ -637,18 +744,28 @@ function JDMultiRoundRescheduleModal({ open, onClose, onSubmit, currentSession }
                 )}
             </DialogContent>
 
-            <DialogActions sx={{ px: 3, pb: 3 }}>
-                <SecondaryButton onClick={handleClose} disabled={isSubmitting}>
-                    Cancel
-                </SecondaryButton>
-                <PrimaryButton
-                    onClick={handleSubmit}
-                    disabled={loadingSlots || isSubmitting}
-                    loading={isSubmitting}
-                    endIcon={<SaveIcon />}
-                >
-                    {isSubmitting ? "Saving..." : "Apply Reschedule"}
-                </PrimaryButton>
+            <DialogActions
+                className="jd-dialog-footer"
+                sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+            >
+                <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>
+                    {selectedRoundsCount > 0
+                        ? `${doneRoundsCount} / ${selectedRoundsCount} round${selectedRoundsCount > 1 ? "s" : ""} ready`
+                        : "Select rounds to reschedule"}
+                </Typography>
+                <Stack direction="row" spacing={1.5}>
+                    <SecondaryButton onClick={handleClose} disabled={isSubmitting}>
+                        Cancel
+                    </SecondaryButton>
+                    <PrimaryButton
+                        onClick={handleSubmit}
+                        disabled={loadingSlots || isSubmitting || doneRoundsCount === 0}
+                        loading={isSubmitting}
+                        endIcon={<SaveIcon />}
+                    >
+                        {isSubmitting ? "Saving…" : "Apply Reschedule"}
+                    </PrimaryButton>
+                </Stack>
             </DialogActions>
         </Dialog>
     );
