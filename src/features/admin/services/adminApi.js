@@ -11,7 +11,12 @@ export const adminEndPoints = {
     GET_PAYMENTS: `${ADMIN_BASE_URL}/payments`,
     GET_FEEDBACKS: `${ADMIN_BASE_URL}/feedbacks`,
     GET_INTERVIEWERS: `${ADMIN_BASE_URL}/interviewers`,
-    
+    // Dashboard Endpoints
+    GET_DASHBOARD_STATS: `${ADMIN_BASE_URL}/stats`,
+    GET_DASHBOARD_CHARTS: `${ADMIN_BASE_URL}/charts`,
+    GET_TOP_COACHES: `${ADMIN_BASE_URL}/top-coaches`,
+    GET_ATTENTION_QUEUE: `${ADMIN_BASE_URL}/attention-queue`,
+
     // User Management Endpoints
     CREATE_USER: `${ADMIN_BASE_URL}/users`,
     GET_USER_BY_ID: (id) => `${ADMIN_BASE_URL}/users/${id}`,

@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { motion, AnimatePresence } from "framer-motion";
 import "./MainLayout.css";
-import { Container, Avatar } from "@mui/material";
+import { Container, Box, IconButton, Avatar } from "@mui/material";
+import { Menu, User, Settings, LogOut } from "lucide-react";
 import { ROLES } from "../../common/constants/common";
 import { callApi } from "../../common/utils/apiConnector";
 import { METHOD } from "../../common/constants/api";
@@ -15,6 +16,7 @@ import useNotificationHub from "../../features/notification/hooks/useNotificatio
 import SuspendedGate from "../../common/components/SuspendedGate";
 import CandidateAssessmentGate from "../../common/components/CandidateAssessmentGate";
 import Navbar from "../../common/components/Navbar/Navbar";
+import AdminSidebar from "../../features/admin/components/AdminSidebar";
 import usePageTracking from "../../hooks/usePageTracking";
 import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/services/assessmentApi";
 import {
@@ -37,7 +39,9 @@ import {
 const MainLayout = () => {
     // automatic SPA page tracking for routes rendered inside MainLayout
     usePageTracking();
-    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
+    const adminDropdownRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
     const { userData, token } = useSelector((state) => state.auth || {});
@@ -69,6 +73,17 @@ const MainLayout = () => {
         window.addEventListener("storage", onStorage);
         return () => window.removeEventListener("storage", onStorage);
     }, [dispatch]);
+
+    // Close admin dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (adminDropdownRef.current && !adminDropdownRef.current.contains(e.target)) {
+                setIsAdminDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const handleLogout = async () => {
         try {
@@ -117,18 +132,6 @@ const MainLayout = () => {
     const isAdmin = userData?.role === ROLES.ADMIN;
     const isAssessmentLocked = userData?.role === ROLES.CANDIDATE && isAssessmentForceRequired(userData?.id);
 
-    // Sidebar group toggle states for Admin view
-    const [openGroups, setOpenGroups] = useState({
-        users: true,
-        income: true,
-        reports: true,
-        settings: true,
-    });
-
-    const toggleGroup = (key) => {
-        setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
-    };
-
     // Extract user ID from token and refresh profile data from server
     useEffect(() => {
         const fetchLatestUser = async () => {
@@ -170,148 +173,70 @@ const MainLayout = () => {
         fetchLatestUser();
     }, [userData?.id, dispatch]);
 
-    const adminNavItems = [
-        { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
-        { label: "Schedules", icon: Calendar, path: "/admin/schedules" },
-        { label: "Interviews", icon: Video, path: "/admin/interviews" },
-        { label: "Users", icon: Users, path: "/admin/users" },
-        { label: "Company", icon: Building2, path: "/admin/companies" },
-        { label: "Question Bank", icon: HelpCircle, path: "/admin/question-bank" },
-        {
-            label: "Income",
-            icon: CircleDollarSign,
-            key: "income",
-            children: [
-                { label: "Earnings", path: "/admin/income/earnings" },
-                { label: "Refunds", path: "/admin/income/refunds" },
-                { label: "Payouts", path: "/admin/income/payouts" },
-            ],
-        },
-        {
-            label: "Reports",
-            icon: BarChart2,
-            key: "reports",
-            children: [
-                { label: "Room Report", path: "/admin/reports/room" },
-                { label: "Question Report", path: "/admin/reports/question" },
-            ],
-        },
-    ];
-
     // ADMIN LAYOUT
     if (isAdmin) {
         return (
-            <div className="main-layout admin-layout">
-                <aside className="admin-sidebar">
-                    <div className="sidebar-brand">INTERVU</div>
-                    <nav className="sidebar-nav">
-                        <div className="sidebar-section">
-                            <div className="sidebar-section-title">Menu</div>
-                            {adminNavItems.map((item) => {
-                                const Icon = item.icon;
-                                if (item.children) {
-                                    return (
-                                        <div key={item.label} className="sidebar-group">
-                                            <button
-                                                className="sidebar-item"
-                                                onClick={() => toggleGroup(item.key)}
-                                                type="button"
-                                            >
-                                                <span className="sidebar-item-icon">
-                                                    <Icon size={20} strokeWidth={1.5} color="#64748B" />
-                                                </span>
-                                                <span className="sidebar-item-text">{item.label}</span>
-                                                <span
-                                                    className={`sidebar-item-arrow ${openGroups[item.key] ? "open" : ""}`}
-                                                >
-                                                    <ChevronDown size={16} strokeWidth={2} color="#64748B" />
-                                                </span>
-                                            </button>
-                                            {openGroups[item.key] && (
-                                                <div className="sidebar-subitems">
-                                                    {item.children.map((child) => (
-                                                        <button
-                                                            key={child.label}
-                                                            className={`sidebar-subitem ${location.pathname + location.search === child.path ? "active" : ""}`}
-                                                            onClick={() => navigate(child.path)}
-                                                            type="button"
-                                                        >
-                                                            {child.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                }
-                                return (
-                                    <button
-                                        key={item.label}
-                                        className={`sidebar-item ${location.pathname + location.search === item.path ? "active" : ""}`}
-                                        onClick={() => navigate(item.path)}
-                                        type="button"
-                                    >
-                                        <span className="sidebar-item-icon">
-                                            <Icon size={20} strokeWidth={1.5} color="#64748B" />
-                                        </span>
-                                        <span className="sidebar-item-text">{item.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <div className="sidebar-section">
-                            <div className="sidebar-section-title">Settings</div>
-                            <button
-                                className={`sidebar-item ${location.pathname + location.search === "/settings" ? "active" : ""}`}
-                                onClick={() => navigate("/settings")}
-                                type="button"
-                            >
-                                <span className="sidebar-item-icon">
-                                    <Bell size={20} strokeWidth={1.5} color="#64748B" />
-                                </span>
-                                <span className="sidebar-item-text">Notification</span>
-                            </button>
-                            <button className="sidebar-item" onClick={handleLogout} type="button">
-                                <span className="sidebar-item-icon">
-                                    <LogOut size={20} strokeWidth={1.5} color="#64748B" />
-                                </span>
-                                <span className="sidebar-item-text">Log out</span>
-                            </button>
-                        </div>
-                    </nav>
-                </aside>
-                <div className="admin-content">
-                    <header className="admin-topbar">
-                        <div className="admin-search">
-                            <input type="text" placeholder="Search..." className="admin-search-input" />
-                            <span className="admin-search-icon">
-                                <Search size={20} strokeWidth={1.5} color="#64748B" />
-                            </span>
-                        </div>
-                        <div className="admin-actions">
+            <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+                <AdminSidebar
+                    userData={userData}
+                    remoteAvatar={remoteAvatar}
+                    onLogout={handleLogout}
+                    mobileOpen={mobileOpen}
+                    onMobileClose={() => setMobileOpen(false)}
+                />
+                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+                    {/* Admin Topbar */}
+                    <Box
+                        component="header"
+                        sx={{
+                            height: 60,
+                            bgcolor: "background.paper",
+                            borderBottom: 1,
+                            borderColor: "divider",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            px: 2.5,
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 20,
+                        }}
+                    >
+                        {/* Mobile hamburger */}
+                        <IconButton
+                            onClick={() => setMobileOpen(true)}
+                            sx={{ display: { xs: "flex", lg: "none" }, color: "text.primary" }}
+                        >
+                            <Menu size={22} />
+                        </IconButton>
+                        <Box sx={{ display: { xs: "none", lg: "block" } }} />
+
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                             <NotificationDropdown />
-                            <div className="admin-user-dropdown">
-                                <button
-                                    className="admin-avatar-btn"
-                                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                            <Box sx={{ position: "relative" }} ref={adminDropdownRef}>
+                                <Avatar
+                                    src={remoteAvatar ?? userData?.profilePicture}
+                                    alt={userData?.fullName || "Admin"}
+                                    sx={{ width: 36, height: 36, cursor: "pointer" }}
+                                    onClick={() => setIsAdminDropdownOpen((v) => !v)}
                                 >
-                                    <Avatar
-                                        src={remoteAvatar ?? userData?.profilePicture}
-                                        alt={userData?.fullName || "User"}
-                                        sx={{ width: 36, height: 36 }}
-                                    >
-                                        {!(remoteAvatar ?? userData?.profilePicture) &&
-                                            (userData?.fullName?.charAt(0) || "U")}
-                                    </Avatar>
-                                </button>
+                                    {!(remoteAvatar ?? userData?.profilePicture) &&
+                                        (userData?.fullName?.charAt(0) || "A")}
+                                </Avatar>
                                 <AnimatePresence>
-                                    {isUserDropdownOpen && (
+                                    {isAdminDropdownOpen && (
                                         <motion.div
-                                            className="user-dropdown-menu admin-dropdown-menu"
-                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            className="user-dropdown-menu"
+                                            initial={{ opacity: 0, y: -8, scale: 0.95 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            transition={{ duration: 0.2 }}
+                                            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                            transition={{ duration: 0.15 }}
+                                            style={{
+                                                position: "absolute",
+                                                right: 0,
+                                                top: "calc(100% + 8px)",
+                                                minWidth: 200,
+                                            }}
                                         >
                                             <div className="dropdown-user-info">
                                                 <p className="user-name">{userData?.fullName}</p>
@@ -322,36 +247,44 @@ const MainLayout = () => {
                                                 className="dropdown-item"
                                                 onClick={() => {
                                                     navigate("/user/profile");
-                                                    setIsUserDropdownOpen(false);
+                                                    setIsAdminDropdownOpen(false);
                                                 }}
                                             >
-                                                <User size={16} /> My Profile
+                                                <User size={15} /> Profile
                                             </button>
                                             <button
                                                 className="dropdown-item"
                                                 onClick={() => {
                                                     navigate("/settings");
-                                                    setIsUserDropdownOpen(false);
+                                                    setIsAdminDropdownOpen(false);
                                                 }}
                                             >
-                                                <Settings size={16} /> Settings
+                                                <Settings size={15} /> Settings
                                             </button>
                                             <div className="dropdown-divider" />
-                                            <button className="dropdown-item logout-link" onClick={handleLogout}>
-                                                <LogOut size={16} /> Logout
+                                            <button
+                                                className="dropdown-item logout-link"
+                                                onClick={() => {
+                                                    setIsAdminDropdownOpen(false);
+                                                    handleLogout();
+                                                }}
+                                            >
+                                                <LogOut size={15} /> Logout
                                             </button>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                            </div>
-                        </div>
-                    </header>
-                    <main className="admin-main">
+                            </Box>
+                        </Box>
+                    </Box>
+
+                    {/* Admin Main Content */}
+                    <Box component="main" sx={{ flex: 1, p: { xs: 2, md: "20px 24px 32px" } }}>
                         <Outlet />
-                    </main>
-                </div>
+                    </Box>
+                </Box>
                 <SuspendedGate />
-            </div>
+            </Box>
         );
     }
 
