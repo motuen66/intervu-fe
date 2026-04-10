@@ -25,9 +25,7 @@ import { ROLES } from "../../../../common/constants/common.js";
 
 import QuestionPanel from "./QuestionPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
-const WhiteboardPanel = lazy(() =>
-    import("./WhiteboardPanel").then((m) => ({ default: m.WhiteboardPanel }))
-);
+const WhiteboardPanel = lazy(() => import("./WhiteboardPanel").then((m) => ({ default: m.WhiteboardPanel })));
 import { CameraWidget } from "./CameraWidget";
 import { JdCvPanel } from "./JdCvPanel";
 
@@ -36,6 +34,7 @@ import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
 import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useWhiteboardSync } from "../../hooks/useWhiteboardSync.js";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
+import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
 
 // Analytics
 import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
@@ -63,13 +62,18 @@ function InterviewRoomPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [roomInfo, setRoomInfo] = useState(null);
+    const [bookingDocLinks, setBookingDocLinks] = useState({
+        jobDescriptionUrl: "",
+        cvUrl: "",
+    });
 
     const checkRoomStatus = useCallback(async () => {
         if (!user) return;
         try {
             setLoading(true);
             const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom/${roomId}` });
-            const room = res?.data?.data;
+            const roomPayload = res?.data;
+            const room = roomPayload?.data ?? roomPayload ?? null;
             setRoomInfo(room);
             setLoading(false);
             try {
@@ -87,6 +91,40 @@ function InterviewRoomPage() {
     useEffect(() => {
         if (user) checkRoomStatus();
     }, [user, checkRoomStatus]);
+
+    useEffect(() => {
+        const bookingRequestId = roomInfo?.bookingRequestId;
+        if (!bookingRequestId) {
+            setBookingDocLinks({ jobDescriptionUrl: "", cvUrl: "" });
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadBookingLinks = async () => {
+            try {
+                const result = await getBookingRequestDetail(bookingRequestId);
+                const payload = result?.data ?? result ?? {};
+                if (!cancelled) {
+                    setBookingDocLinks({
+                        jobDescriptionUrl: payload?.jobDescriptionUrl ?? "",
+                        cvUrl: payload?.cvUrl ?? "",
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load booking request links:", err);
+                if (!cancelled) {
+                    setBookingDocLinks({ jobDescriptionUrl: "", cvUrl: "" });
+                }
+            }
+        };
+
+        loadBookingLinks();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [roomInfo?.bookingRequestId]);
 
     // ── Video refs ───────────────────────────────────────────────────────────
     const localVideoRef = useRef(null);
@@ -182,7 +220,7 @@ function InterviewRoomPage() {
             setMixedStream(dest.stream);
 
             return () => {
-                if (ctx.state !== 'closed') {
+                if (ctx.state !== "closed") {
                     ctx.close();
                 }
             };
@@ -194,8 +232,7 @@ function InterviewRoomPage() {
     // ── Audio Recording ────────────────────────────────────────────────────────
     useAudioRecorder({
         roomId,
-        isEnabled:
-            !loading && !error && !isViewOnly && user?.role === ROLES.INTERVIEWER,
+        isEnabled: !loading && !error && !isViewOnly && user?.role === ROLES.INTERVIEWER,
         isMicOn,
         chunkIntervalMs: 15000,
         audioStream: mixedStream,
@@ -237,9 +274,10 @@ function InterviewRoomPage() {
 
     const problemData =
         user?.role === ROLES.INTERVIEWER
-            ? ((problemDescription && problemDescription !== "<p><br></p>") || (problemShortName && problemShortName.trim() !== "") 
-                ? { description: problemDescription, shortName: problemShortName, testCases } 
-                : null)
+            ? (problemDescription && problemDescription !== "<p><br></p>") ||
+              (problemShortName && problemShortName.trim() !== "")
+                ? { description: problemDescription, shortName: problemShortName, testCases }
+                : null
             : receivedProblem;
 
     const sendProblem = useCallback(() => {
@@ -383,12 +421,12 @@ function InterviewRoomPage() {
     // Broadcast camera/mic state
     useEffect(() => {
         if (!connectionId || !roomId) return;
-        sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => { });
+        sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => {});
     }, [isCameraOn, connectionId, roomId, sendSignal]);
 
     useEffect(() => {
         if (!connectionId || !roomId) return;
-        sendSignal("SendMicState", roomId, isMicOn).catch?.(() => { });
+        sendSignal("SendMicState", roomId, isMicOn).catch?.(() => {});
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
     // ── Leave room ──────────────────────────────────────────────────────────
@@ -466,86 +504,111 @@ function InterviewRoomPage() {
             : roomInfo.candidateName || "Candidate"
         : "Peer";
     const localRoleNameInRoom = isCandidate ? roomInfo?.candidateName : roomInfo?.coachName;
-    const localPeerName = user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
+    const localPeerName =
+        user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
     const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imagePath || user?.avatar;
     // Remote avatar fetching is done inside VideoPanel logic - we'll pass null and let CameraWidget handle it
     const remoteAvatar = roomInfo
         ? isCandidate
-            ? roomInfo.coachAvatar || roomInfo.coachProfilePicture || roomInfo.coach?.profilePicture || roomInfo.coach?.avatarUrl || roomInfo.coach?.avatar || roomInfo.interviewer?.profilePicture || roomInfo.interviewer?.avatar || roomInfo.interviewer?.avatarUrl || roomInfo.interviewerAvatar
-            : roomInfo.candidateAvatar || roomInfo.candidateProfilePicture || roomInfo.candidate?.profilePicture || roomInfo.candidate?.avatarUrl || roomInfo.candidate?.avatar
+            ? roomInfo.coachAvatar ||
+              roomInfo.coachProfilePicture ||
+              roomInfo.coach?.profilePicture ||
+              roomInfo.coach?.avatarUrl ||
+              roomInfo.coach?.avatar ||
+              roomInfo.interviewer?.profilePicture ||
+              roomInfo.interviewer?.avatar ||
+              roomInfo.interviewer?.avatarUrl ||
+              roomInfo.interviewerAvatar
+            : roomInfo.candidateAvatar ||
+              roomInfo.candidateProfilePicture ||
+              roomInfo.candidate?.profilePicture ||
+              roomInfo.candidate?.avatarUrl ||
+              roomInfo.candidate?.avatar
         : null;
 
     // ── Horizontal resize drag ───────────────────────────────────────────────
     const hDragRef = useRef(null);
 
-    const startHDrag = useCallback((e) => {
-        e.preventDefault();
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        hDragRef.current = { startX: e.clientX, startPct: splitPct, containerWidth: rect.width };
+    const startHDrag = useCallback(
+        (e) => {
+            e.preventDefault();
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            hDragRef.current = { startX: e.clientX, startPct: splitPct, containerWidth: rect.width };
 
-        const onMove = (me) => {
-            if (!hDragRef.current) return;
-            const deltaPct = ((me.clientX - hDragRef.current.startX) / hDragRef.current.containerWidth) * 100;
-            const newPct = Math.max(MIN_SPLIT_PCT, Math.min(MAX_SPLIT_PCT, hDragRef.current.startPct + deltaPct));
-            setSplitPct(newPct);
-            lastSplitRef.current = newPct;
-        };
-        const onUp = () => {
-            hDragRef.current = null;
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
-        };
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
-    }, [splitPct]);
+            const onMove = (me) => {
+                if (!hDragRef.current) return;
+                const deltaPct = ((me.clientX - hDragRef.current.startX) / hDragRef.current.containerWidth) * 100;
+                const newPct = Math.max(MIN_SPLIT_PCT, Math.min(MAX_SPLIT_PCT, hDragRef.current.startPct + deltaPct));
+                setSplitPct(newPct);
+                lastSplitRef.current = newPct;
+            };
+            const onUp = () => {
+                hDragRef.current = null;
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+            };
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+        },
+        [splitPct],
+    );
 
     // ── Vertical resize drag ─────────────────────────────────────────────────
     const vDragRef = useRef(null);
 
-    const startVDrag = useCallback((e) => {
-        e.preventDefault();
-        if (!panelBRef.current) return;
-        const rect = panelBRef.current.getBoundingClientRect();
-        vDragRef.current = { startY: e.clientY, startPct: verticalSplitPct, containerHeight: rect.height };
+    const startVDrag = useCallback(
+        (e) => {
+            e.preventDefault();
+            if (!panelBRef.current) return;
+            const rect = panelBRef.current.getBoundingClientRect();
+            vDragRef.current = { startY: e.clientY, startPct: verticalSplitPct, containerHeight: rect.height };
 
-        const onMove = (me) => {
-            if (!vDragRef.current) return;
-            const deltaPct = ((me.clientY - vDragRef.current.startY) / vDragRef.current.containerHeight) * 100;
-            const newPct = Math.max(MIN_VERTICAL_PCT, Math.min(MAX_VERTICAL_PCT, vDragRef.current.startPct + deltaPct));
-            setVerticalSplitPct(newPct);
-        };
-        const onUp = () => {
-            vDragRef.current = null;
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
-        };
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
-    }, [verticalSplitPct]);
+            const onMove = (me) => {
+                if (!vDragRef.current) return;
+                const deltaPct = ((me.clientY - vDragRef.current.startY) / vDragRef.current.containerHeight) * 100;
+                const newPct = Math.max(
+                    MIN_VERTICAL_PCT,
+                    Math.min(MAX_VERTICAL_PCT, vDragRef.current.startPct + deltaPct),
+                );
+                setVerticalSplitPct(newPct);
+            };
+            const onUp = () => {
+                vDragRef.current = null;
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+            };
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+        },
+        [verticalSplitPct],
+    );
 
     // ── Notes drag ───────────────────────────────────────────────────────────
     const notesDragRef = useRef(null);
 
-    const startNotesDrag = useCallback((e) => {
-        e.preventDefault();
-        notesDragRef.current = { startX: e.clientX, startY: e.clientY, posX: notesPos.x, posY: notesPos.y };
+    const startNotesDrag = useCallback(
+        (e) => {
+            e.preventDefault();
+            notesDragRef.current = { startX: e.clientX, startY: e.clientY, posX: notesPos.x, posY: notesPos.y };
 
-        const onMove = (me) => {
-            if (!notesDragRef.current) return;
-            setNotesPos({
-                x: notesDragRef.current.posX + (me.clientX - notesDragRef.current.startX),
-                y: notesDragRef.current.posY + (me.clientY - notesDragRef.current.startY),
-            });
-        };
-        const onUp = () => {
-            notesDragRef.current = null;
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
-        };
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
-    }, [notesPos]);
+            const onMove = (me) => {
+                if (!notesDragRef.current) return;
+                setNotesPos({
+                    x: notesDragRef.current.posX + (me.clientX - notesDragRef.current.startX),
+                    y: notesDragRef.current.posY + (me.clientY - notesDragRef.current.startY),
+                });
+            };
+            const onUp = () => {
+                notesDragRef.current = null;
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+            };
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+        },
+        [notesPos],
+    );
 
     // ── Compute effective widths for panels ──────────────────────────────────
     const panelAVisible = showPanelA;
@@ -568,7 +631,15 @@ function InterviewRoomPage() {
     // ── Gate render ──────────────────────────────────────────────────────────
     if (loading || error) {
         return (
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh" }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100vh",
+                }}
+            >
                 {loading && !error && <CircularProgress />}
                 <Typography variant="h6" sx={{ mt: 2 }}>
                     {error ?? "Verifying interview status..."}
@@ -680,7 +751,16 @@ function InterviewRoomPage() {
             {/* ═══ Main Content Area ═══ */}
 
             {/* Full Camera View — always mounted, toggled via display */}
-            <Box sx={{ flex: isFullCameraView ? 1 : 0, display: isFullCameraView ? "flex" : "none", position: "relative", bgcolor: "#111827", overflow: "hidden", p: 2 }}>
+            <Box
+                sx={{
+                    flex: isFullCameraView ? 1 : 0,
+                    display: isFullCameraView ? "flex" : "none",
+                    position: "relative",
+                    bgcolor: "#111827",
+                    overflow: "hidden",
+                    p: 2,
+                }}
+            >
                 {/* Remote peer — padded with rounded border */}
                 <Box
                     sx={{
@@ -699,14 +779,35 @@ function InterviewRoomPage() {
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                     {!remoteCameraOn && (
-                        <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#1F2937" }}>
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                bgcolor: "#1F2937",
+                            }}
+                        >
                             <Avatar src={remoteAvatar} sx={{ width: 96, height: 96, fontSize: 40 }}>
                                 {remotePeerName?.[0] || "?"}
                             </Avatar>
                         </Box>
                     )}
-                    <Box sx={{ position: "absolute", bottom: 12, left: 12, bgcolor: "rgba(0,0,0,0.6)", px: 1.5, py: 0.5, borderRadius: 2 }}>
-                        <Typography sx={{ color: "#FFF", fontWeight: 700, fontSize: "0.85rem" }}>{remotePeerName || "Peer"}</Typography>
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            bottom: 12,
+                            left: 12,
+                            bgcolor: "rgba(0,0,0,0.6)",
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 2,
+                        }}
+                    >
+                        <Typography sx={{ color: "#FFF", fontWeight: 700, fontSize: "0.85rem" }}>
+                            {remotePeerName || "Peer"}
+                        </Typography>
                     </Box>
                 </Box>
                 {/* Local PiP — bottom-right corner */}
@@ -737,7 +838,15 @@ function InterviewRoomPage() {
                         }}
                     />
                     {!isCameraOn && (
-                        <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
                             <Avatar src={localAvatar} sx={{ width: 48, height: 48, fontSize: 20 }}>
                                 {localPeerName?.[0] || "?"}
                             </Avatar>
@@ -786,7 +895,11 @@ function InterviewRoomPage() {
                             >
                                 {[
                                     { key: "editor", label: "Editor", icon: <CodeIcon sx={{ fontSize: 16 }} /> },
-                                    { key: "whiteboard", label: "Whiteboard", icon: <BrushIcon sx={{ fontSize: 16 }} /> },
+                                    {
+                                        key: "whiteboard",
+                                        label: "Whiteboard",
+                                        icon: <BrushIcon sx={{ fontSize: 16 }} />,
+                                    },
                                 ].map(({ key, label, icon }) => (
                                     <Button
                                         key={key}
@@ -832,7 +945,20 @@ function InterviewRoomPage() {
                                 />
                             )}
                             {panelATab === "whiteboard" && (
-                                <Suspense fallback={<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1 }}><CircularProgress /></Box>}>
+                                <Suspense
+                                    fallback={
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "center",
+                                                alignItems: "center",
+                                                flex: 1,
+                                            }}
+                                        >
+                                            <CircularProgress />
+                                        </Box>
+                                    }
+                                >
                                     <WhiteboardPanel
                                         excalidrawAPIRef={excalidrawAPIRef}
                                         onChange={handleWhiteboardChange}
@@ -897,11 +1023,7 @@ function InterviewRoomPage() {
                     {/* Panel C: Question Panel */}
                     <Box
                         sx={{
-                            height: showPanelC
-                                ? showPanelD
-                                    ? `${verticalSplitPct}%`
-                                    : "100%"
-                                : 0,
+                            height: showPanelC ? (showPanelD ? `${verticalSplitPct}%` : "100%") : 0,
                             overflow: showPanelC ? "auto" : "hidden",
                             transition: vDragRef.current ? "none" : "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                             p: showPanelC ? 1.5 : 0,
@@ -955,11 +1077,7 @@ function InterviewRoomPage() {
                     {/* Panel D: JD / CV / Evaluate */}
                     <Box
                         sx={{
-                            height: showPanelD
-                                ? showPanelC
-                                    ? `${100 - verticalSplitPct}%`
-                                    : "100%"
-                                : 0,
+                            height: showPanelD ? (showPanelC ? `${100 - verticalSplitPct}%` : "100%") : 0,
                             overflow: showPanelD ? "hidden" : "hidden",
                             transition: vDragRef.current ? "none" : "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                         }}
@@ -968,7 +1086,8 @@ function InterviewRoomPage() {
                             <JdCvPanel
                                 roomId={roomId}
                                 user={user}
-                                roomInfo={roomInfo}
+                                jobDescriptionUrl={bookingDocLinks.jobDescriptionUrl}
+                                cvUrl={bookingDocLinks.cvUrl}
                             />
                         )}
                     </Box>
@@ -1146,7 +1265,7 @@ function HeaderToggle({ id, icon, label, active, onClick }) {
                 },
                 "& .MuiButton-startIcon": {
                     color: active ? "#D9F99D" : "#9CA3AF",
-                }
+                },
             }}
         >
             {label}

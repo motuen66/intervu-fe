@@ -137,6 +137,30 @@ export default function BookingRequestDetailPage() {
         }
     };
 
+    const getTotalDurationMinutes = (booking) => {
+        if (!booking || !Array.isArray(booking.rounds) || booking.rounds.length === 0) return 0;
+        return booking.rounds.reduce((sum, r) => {
+            try {
+                const s = r.startTime ? new Date(r.startTime).getTime() : NaN;
+                const e = r.endTime ? new Date(r.endTime).getTime() : NaN;
+                if (Number.isNaN(s) || Number.isNaN(e) || e <= s) return sum;
+                return sum + Math.round((e - s) / 60000);
+            } catch {
+                return sum;
+            }
+        }, 0);
+    };
+
+    const formatDurationLabel = (minutes) => {
+        if (!minutes) return "0 Minutes";
+        const hrs = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hrs > 0) {
+            return mins > 0 ? `${hrs} hr ${mins} min` : `${hrs} hr`;
+        }
+        return `${mins} Minutes`;
+    };
+
     const handleAccept = async () => {
         setResponding(true);
         try {
@@ -413,7 +437,10 @@ export default function BookingRequestDetailPage() {
                                 />
                             </Box>
                             <Box sx={{ flex: "1 1 auto", minWidth: "120px" }}>
-                                <DetailItem label="DURATION" value="45 Minutes" />
+                                <DetailItem
+                                    label="TOTAL DURATION"
+                                    value={formatDurationLabel(getTotalDurationMinutes(detail))}
+                                />
                             </Box>
                             {detail.rounds?.length === 1 && (
                                 <Box sx={{ flex: "1 1 auto", minWidth: "200px" }}>
@@ -522,6 +549,13 @@ export default function BookingRequestDetailPage() {
                                     const isCancelled = r.status === INTERVIEW_ROUND_STATUS.CANCELLED;
                                     const canCancelRound =
                                         !isCoach && isAccepted && !isCancelled && r.interviewRoomStatus === "Scheduled";
+                                    const roundDurationMinutes =
+                                        r.startTime && r.endTime
+                                            ? Math.round(
+                                                  (new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) /
+                                                      60000,
+                                              )
+                                            : 0;
                                     return (
                                         <Grid item key={i} sx={{ display: "flex" }}>
                                             <Box
@@ -643,8 +677,19 @@ export default function BookingRequestDetailPage() {
                                                                 hour: "2-digit",
                                                                 minute: "2-digit",
                                                             })}
+                                                            {roundDurationMinutes > 0 && (
+                                                                <span
+                                                                    style={{
+                                                                        marginLeft: 8,
+                                                                        color: "#64748b",
+                                                                        fontWeight: 600,
+                                                                    }}
+                                                                >
+                                                                    • {formatDurationLabel(roundDurationMinutes)}
+                                                                </span>
+                                                            )}
                                                         </Typography>
-                                                        <Typography
+                                                        {/* <Typography
                                                             variant="body2"
                                                             color="#64748b"
                                                             fontWeight={600}
@@ -654,7 +699,7 @@ export default function BookingRequestDetailPage() {
                                                             {r.isCoding
                                                                 ? "Coding Workspace included"
                                                                 : "Question set focused"}
-                                                        </Typography>
+                                                        </Typography> */}
                                                     </Stack>
                                                 </Box>
 
