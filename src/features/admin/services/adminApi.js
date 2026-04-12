@@ -27,7 +27,9 @@ export const adminEndPoints = {
     // Room Reports Endpoints
     GET_ROOM_REPORTS: `${ADMIN_BASE_URL}/room-reports`,
     GET_ROOM_AUDIT_LOGS: (roomId) => `${ADMIN_BASE_URL}/room-reports/${roomId}/audit-logs`,
+    GET_ROOM_REPORT_DETAIL: (roomId) => `${ADMIN_BASE_URL}/room-reports/${roomId}/detail`,
     RESOLVE_ROOM_REPORT: `${ADMIN_BASE_URL}/resolve-room-report`,
+    DOWNLOAD_FULL_RECORDING: (recordingSessionId) => `${BE_BASE_URL}/ai/play-recording/${recordingSessionId}`,
 
     // Question Reports Endpoints
     GET_QUESTIONS: `${BE_BASE_URL}/questions`,

@@ -30,14 +30,17 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ReplayIcon from "@mui/icons-material/Replay";
 import toast from "react-hot-toast";
-import { callApi } from "../../../common/utils/apiConnector";
+import { axiosInstance, callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { PrimaryButton } from "../../../common/components/buttons";
 import StatusChip from "../../../common/components/StatusChip";
 import { adminEndPoints } from "../services/adminApi";
 
-// TODO: load real BOOKING INFO
+// TODO:
+// load real BOOKING INFO (amount)
 // Load finance status
+// Review UX
+// Test download audio
 
 const statusLabels = {
     0: "Pending",
@@ -117,6 +120,7 @@ function ProblemResolutionDetail() {
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [downloadingAudio, setDownloadingAudio] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
     const [reportDetail, setReportDetail] = useState(null);
@@ -139,15 +143,10 @@ function ProblemResolutionDetail() {
         setErrorMessage("");
 
         try {
-            const [reportResponse, logsResponse] = await Promise.all([
+            const [detailResponse, logsResponse] = await Promise.all([
                 callApi({
                     method: METHOD.GET,
-                    endpoint: adminEndPoints.GET_ROOM_REPORTS,
-                    arg: {
-                        page: 1,
-                        pageSize: 100,
-                        search: routeRoomId,
-                    },
+                    endpoint: adminEndPoints.GET_ROOM_REPORT_DETAIL(routeRoomId),
                 }),
                 callApi({
                     method: METHOD.GET,
@@ -155,59 +154,61 @@ function ProblemResolutionDetail() {
                 }),
             ]);
 
-            const reportItems = reportResponse?.data?.items || [];
-            const matchedReport =
-                reportItems.find((item) => String(item?.interviewRoomId) === String(routeRoomId)) ||
-                reportItems.find((item) => String(item?.roomId) === String(routeRoomId)) ||
-                null;
+            const detail = detailResponse?.data || null;
 
-            const normalized = matchedReport
+            const normalized = detail
                 ? {
-                      reportId:
-                          matchedReport.id ||
-                          matchedReport.reportId ||
-                          matchedReport.reportID ||
-                          matchedReport.reportUuid ||
-                          null,
-                      roomId: matchedReport.interviewRoomId || matchedReport.roomId || routeRoomId,
-                      reporterName: matchedReport.reporterName || matchedReport.reporter?.fullName || "Unknown",
-                      category: reportTypeLabels[matchedReport.reportType] || matchedReport.reason || "Other",
-                      description: matchedReport.content || matchedReport.details || "N/A",
+                      reportId: detail.reportId || detail.id || detail.reportID || null,
+                      roomId: detail.interviewRoomId || detail.roomId || routeRoomId,
+                      reporterName: detail.reporterName || detail.reporter?.fullName || "Unknown",
+                      category: reportTypeLabels[detail.reportType] || detail.reason || "Other",
+                      description: detail.content || detail.details || "N/A",
                       expectTo:
-                          matchedReport.expectTo ||
-                          matchedReport.expectedTo ||
-                          matchedReport.resolution ||
-                          matchedReport.requestedResolution ||
+                          detail.expectTo ||
+                          detail.expectedTo ||
+                          detail.resolution ||
+                          detail.requestedResolution ||
                           "N/A",
-                      createdAt: matchedReport.createdAt,
-                      status: matchedReport.status ?? 0,
+                      createdAt: detail.createdAt,
+                      status: detail.status ?? 0,
                       booking: {
                           coachName:
-                              matchedReport.coachName ||
-                              matchedReport.interviewerName ||
-                              matchedReport.interviewer?.fullName ||
+                              detail.bookingContext?.coachName ||
+                              detail.coachName ||
+                              detail.interviewerName ||
+                              detail.interviewer?.fullName ||
                               "N/A",
-                          candidateName: matchedReport.candidateName || matchedReport.candidate?.fullName || "N/A",
+                          candidateName:
+                              detail.bookingContext?.candidateName ||
+                              detail.candidateName ||
+                              detail.candidate?.fullName ||
+                              "N/A",
                           serviceName:
-                              matchedReport.serviceName ||
-                              matchedReport.typeName ||
-                              matchedReport.interviewType ||
+                              detail.bookingContext?.serviceName ||
+                              detail.serviceName ||
+                              detail.typeName ||
+                              detail.interviewType ||
                               "N/A",
                           originalTime: formatDateTime(
-                              matchedReport.originalTime || matchedReport.scheduledTime || matchedReport.startTime,
+                              detail.bookingContext?.originalTime ||
+                                  detail.originalTime ||
+                                  detail.scheduledTime ||
+                                  detail.startTime,
                           ),
                       },
                       financial: {
-                          paymentStatus: matchedReport.paymentStatus || "Unknown",
+                          paymentStatus: detail.financialStatus?.paymentStatus || detail.paymentStatus || "Unknown",
                           payOsCode:
-                              matchedReport.payOsCode ||
-                              matchedReport.payosCode ||
-                              matchedReport.payOsTransactionCode ||
+                              detail.financialStatus?.payOsOrderCode ||
+                              detail.payOsCode ||
+                              detail.payosCode ||
+                              detail.payOsTransactionCode ||
                               "N/A",
                           payoutLocked: parseBoolean(
-                              matchedReport.payoutLocked ||
-                                  matchedReport.isPayoutLocked ||
-                                  matchedReport.payoutProcessed,
+                              detail.financialStatus?.payoutLocked ||
+                                  detail.payoutLocked ||
+                                  detail.isPayoutLocked ||
+                                  detail.payoutProcessed,
                           ),
                       },
                   }
@@ -284,6 +285,39 @@ function ProblemResolutionDetail() {
         }
     };
 
+    const handleDownloadAudio = async () => {
+        const recordingSessionId = reportDetail?.roomId || routeRoomId;
+
+        if (!recordingSessionId) {
+            toast.error("Missing recording session id");
+            return;
+        }
+
+        setDownloadingAudio(true);
+        try {
+            const response = await axiosInstance.get(adminEndPoints.DOWNLOAD_FULL_RECORDING(recordingSessionId), {
+                responseType: "blob",
+            });
+
+            const contentType = response?.headers?.["content-type"] || "audio/wav";
+            const blob = new Blob([response.data], { type: contentType });
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = blobUrl;
+            link.download = `recording-${recordingSessionId}.wav`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            const apiMessage = error?.response?.data?.message;
+            toast.error(apiMessage || "Failed to download recording");
+        } finally {
+            setDownloadingAudio(false);
+        }
+    };
+
     const isResolvedOrRejected = reportDetail?.status === 1 || reportDetail?.status === 2;
     const isRefundDisabled = resolutionType !== "Refund";
 
@@ -305,10 +339,6 @@ function ProblemResolutionDetail() {
                         Room ID: {routeRoomId}
                     </Typography>
                 </Box>
-
-                <PrimaryButton startIcon={<ReplayIcon />} onClick={loadDetail} loading={loading}>
-                    Refresh
-                </PrimaryButton>
             </Stack>
 
             {errorMessage && (
@@ -372,10 +402,10 @@ function ProblemResolutionDetail() {
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell sx={{ bgcolor: "background.default", fontWeight: 700 }}>
-                                                    Event
+                                                    Actor
                                                 </TableCell>
                                                 <TableCell sx={{ bgcolor: "background.default", fontWeight: 700 }}>
-                                                    Actor
+                                                    Event
                                                 </TableCell>
                                                 <TableCell sx={{ bgcolor: "background.default", fontWeight: 700 }}>
                                                     Role
@@ -389,8 +419,8 @@ function ProblemResolutionDetail() {
                                             {auditLogs.length > 0 ? (
                                                 auditLogs.map((log) => (
                                                     <TableRow key={log.id} hover>
-                                                        <TableCell>{log.message || "N/A"}</TableCell>
                                                         <TableCell>{log.userName || "System"}</TableCell>
+                                                        <TableCell>{log.message || "N/A"}</TableCell>
                                                         <TableCell>{log.roleName || log.role || "N/A"}</TableCell>
                                                         <TableCell>{formatDateTime(log.timestamp)}</TableCell>
                                                     </TableRow>
@@ -415,6 +445,16 @@ function ProblemResolutionDetail() {
                     <Grid item xs={12} md={5}>
                         <Stack spacing={3}>
                             <SectionCard title="Booking Context">
+                                <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+                                    <Button
+                                        variant="outlined"
+                                        startIcon={<ReplayIcon />}
+                                        onClick={handleDownloadAudio}
+                                        disabled={downloadingAudio || loading || !reportDetail}
+                                    >
+                                        {downloadingAudio ? "Downloading..." : "Download Audio"}
+                                    </Button>
+                                </Box>
                                 <DetailRow label="Coach" value={reportDetail?.booking?.coachName} />
                                 <DetailRow label="Candidate" value={reportDetail?.booking?.candidateName} />
                                 <DetailRow label="Service" value={reportDetail?.booking?.serviceName} />
