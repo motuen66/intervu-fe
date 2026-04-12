@@ -32,7 +32,13 @@ import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
 import SportsEsportsRoundedIcon from "@mui/icons-material/SportsEsportsRounded";
 import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
-import { assessmentEndPoints, saveSkippedAssessment, setAssessmentForceRequired } from "../services/assessmentApi";
+import {
+    assessmentEndPoints,
+    mapAssessmentPayloadToResult,
+    saveAssessmentAnswers,
+    saveSkippedAssessment,
+    setAssessmentForceRequired,
+} from "../services/assessmentApi";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import {
@@ -89,10 +95,10 @@ const setupFields = [
         required: false,
     },
     {
-        id: "free_text",
+        id: "freeText",
         label: "Tell Us More",
         step: "5.",
-        type: "free_text",
+        type: "freeText",
         placeholder: "Highlight specific projects or unique skills...",
         helper: "You can mention interview goals, strengths, weak spots, or role expectations.",
         hoverNote: "Use this to guide the assessment design with context that chips alone cannot capture.",
@@ -237,24 +243,53 @@ const toggleHintValue = (currentValue, nextValue) => {
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+const toQuestionOptions = (rawOptions) => {
+    if (!Array.isArray(rawOptions)) {
+        return [];
+    }
+
+    return rawOptions
+        .map((option) => {
+            if (typeof option === "string") {
+                const text = option.trim();
+                return text ? { text, level: text } : null;
+            }
+
+            if (!option || typeof option !== "object") {
+                return null;
+            }
+
+            const text = String(
+                option.text ?? option.Text ?? option.label ?? option.Label ?? option.level ?? "",
+            ).trim();
+            const level = String(option.level ?? option.Level ?? option.text ?? option.Text ?? "").trim();
+            if (!text) {
+                return null;
+            }
+
+            return {
+                text,
+                level: level || text,
+            };
+        })
+        .filter(Boolean);
+};
+
 const buildGeneratedQuestions = (data) => {
-    const phaseA = Array.isArray(data?.phaseA) ? data.phaseA : [];
-    const phaseB = Array.isArray(data?.phaseB) ? data.phaseB : [];
+    const phaseA = Array.isArray(data?.phaseA) ? data.phaseA : Array.isArray(data?.PhaseA) ? data.PhaseA : [];
+    const phaseB = Array.isArray(data?.phaseB) ? data.phaseB : Array.isArray(data?.PhaseB) ? data.PhaseB : [];
     const questions = [];
 
     phaseA.forEach((item, index) => {
-        const optionPairs = (item?.options || []).map((option) => ({
-            text: option?.text || option?.level || "",
-            level: option?.level || option?.text || "",
-        }));
+        const optionPairs = toQuestionOptions(item?.options || item?.Options);
         const shuffled = shuffleArray(optionPairs);
 
         questions.push({
             id: `phaseA_${index + 1}`,
             phase: "phaseA",
-            skill: item?.skill || `Phase A Skill ${index + 1}`,
+            skill: item?.skill || item?.Skill || `Phase A Skill ${index + 1}`,
             type: "single",
-            question: item?.question || `Phase A question ${index + 1}`,
+            question: item?.question || item?.Question || `Phase A question ${index + 1}`,
             helper: "Choose the option that best matches your real experience.",
             options: shuffled.map((option) => option.text).filter(Boolean),
             optionLevels: shuffled,
@@ -262,18 +297,15 @@ const buildGeneratedQuestions = (data) => {
     });
 
     phaseB.forEach((item, index) => {
-        const optionPairs = (item?.options || []).map((option) => ({
-            text: option?.text || option?.level || "",
-            level: option?.level || option?.text || "",
-        }));
+        const optionPairs = toQuestionOptions(item?.options || item?.Options);
         const shuffled = shuffleArray(optionPairs);
 
         questions.push({
             id: `phaseB_${index + 1}`,
             phase: "phaseB",
-            skill: item?.skill || `Phase B Skill ${index + 1}`,
+            skill: item?.skill || item?.Skill || `Phase B Skill ${index + 1}`,
             type: "single",
-            question: item?.question || `Phase B question ${index + 1}`,
+            question: item?.question || item?.Question || `Phase B question ${index + 1}`,
             helper: "Choose the target level you want to reach.",
             options: shuffled.map((option) => option.text).filter(Boolean),
             optionLevels: shuffled,
@@ -284,13 +316,27 @@ const buildGeneratedQuestions = (data) => {
 };
 
 const buildGeneratedAssessment = (data) => {
-    const source = data?.phaseA || data?.phaseB || data?.context_question ? data : data?.data || {};
+    const response = data || {};
+    const nested = response?.data || {};
+    const assessmentRoot =
+        response?.assessment || response?.Assessment || nested?.assessment || nested?.Assessment || null;
+    const source = assessmentRoot && typeof assessmentRoot === "object" ? assessmentRoot : response;
+    const sourceWithFallback = source?.phaseA || source?.PhaseA || source?.phaseB || source?.PhaseB ? source : nested;
+    const contextQuestion =
+        sourceWithFallback?.contextQuestion ||
+        sourceWithFallback?.ContextQuestion ||
+        sourceWithFallback?.context_question ||
+        response?.contextQuestion ||
+        response?.ContextQuestion ||
+        response?.context_question ||
+        sourceWithFallback?.question ||
+        sourceWithFallback?.Question;
 
     return {
         introText:
-            source?.context_question ||
+            contextQuestion ||
             "Profile calibrated. I'm generating a focused interview conversation based on your setup.",
-        questions: buildGeneratedQuestions(source),
+        questions: buildGeneratedQuestions(sourceWithFallback),
     };
 };
 
@@ -375,7 +421,7 @@ const ChatSurvey = () => {
         level: "Junior Associate",
         techstack: "",
         domain: "",
-        free_text: "",
+        freeText: "",
     });
     const [setupErrors, setSetupErrors] = useState({});
     const [chatQuestions, setChatQuestions] = useState([]);
@@ -454,6 +500,10 @@ const ChatSurvey = () => {
         if (cached.answerMap && typeof cached.answerMap === "object") {
             setAnswerMap(cached.answerMap);
         }
+
+        if (Array.isArray(cached.messages)) {
+            setMessages(cached.messages);
+        }
     }, [assessmentUserId]);
 
     useEffect(() => {
@@ -461,22 +511,22 @@ const ChatSurvey = () => {
             return;
         }
 
-        if (stage !== "chat") {
-            return;
-        }
-
-        if (!chatQuestions.length) {
-            return;
-        }
-
-        setProgressCache(assessmentUserId, {
+        const cachePayload = {
             stage,
             setupForm,
-            chatQuestions,
-            currentIndex,
-            answerMap,
-        });
-    }, [answerMap, assessmentUserId, chatQuestions, currentIndex, setupForm, stage]);
+        };
+
+        if (stage === "chat" && chatQuestions.length > 0) {
+            Object.assign(cachePayload, {
+                chatQuestions,
+                currentIndex,
+                answerMap,
+                messages,
+            });
+        }
+
+        setProgressCache(assessmentUserId, cachePayload);
+    }, [answerMap, assessmentUserId, chatQuestions, currentIndex, setupForm, stage, messages]);
 
     const responses = useMemo(
         () =>
@@ -583,7 +633,7 @@ const ChatSurvey = () => {
 
     const handleSetupChange = (fieldId, value) => {
         let nextValue = value;
-        if (fieldId === "free_text") {
+        if (fieldId === "freeText") {
             nextValue = String(value || "").replace(/\r?\n+/g, " ");
         }
 
@@ -659,7 +709,7 @@ const ChatSurvey = () => {
             level: setupForm.level || "",
             techstack: normalizeToArray(setupForm.techstack || ""),
             domain: normalizeToArray(setupForm.domain || ""),
-            free_text: setupForm.free_text || "",
+            freeText: setupForm.freeText || "",
         };
 
         setIsGenerating(true);
@@ -716,7 +766,28 @@ const ChatSurvey = () => {
         const derivedSkills = buildStackDrivenSkills(techstack, finalResponses);
         const missingSkills = derivedSkills.filter((item) => item.status === "missing").map((item) => item.skillKey);
         const weakSkills = derivedSkills.filter((item) => item.status === "weak").map((item) => item.skillKey);
+        const answerJson = {
+            profile: {
+                role,
+                level,
+                techstack,
+                domain,
+                freeText: setupForm.freeText || "",
+            },
+            responses: finalResponses,
+            derivedSkills,
+        };
 
+        const answerSnapshot = {
+            profile: {
+                role,
+                level,
+                techstack,
+                domain,
+                freeText: setupForm.freeText || "",
+            },
+            responses: finalResponses,
+        };
         const payload = {
             UserId: userId,
             AssessmentName: `${role || "Candidate"} Assessment`,
@@ -734,13 +805,23 @@ const ChatSurvey = () => {
                 })),
             },
             Gap: { Missing: missingSkills, Weak: weakSkills },
+            Roadmap: {
+                roadmap_metadata: {
+                    target_role: role,
+                    target_level: level,
+                    total_phases: 0,
+                },
+                phases: [],
+            },
+            Answer: answerSnapshot,
         };
 
         setAnswers({
-            profile: { role, level, techstack, domain, freeText: setupForm.free_text || "" },
+            profile: { role, level, techstack, domain, freeText: setupForm.freeText || "" },
             userId,
             responses: finalResponses,
             derivedSkills,
+            answerJson,
             processingPayload: payload,
         });
 
@@ -748,16 +829,69 @@ const ChatSurvey = () => {
         await runBotMessage("Thanks. I'm analyzing your answers now.", { processingMs: 1500 });
 
         try {
-            const apiResult = await callApi({
-                method: METHOD.POST,
-                endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
-                arg: payload,
-                alertErrorMessage: true,
-            });
+            let processResult;
+            try {
+                processResult = await callApi({
+                    method: METHOD.POST,
+                    endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
+                    arg: payload,
+                    alertErrorMessage: false,
+                });
+            } catch (error) {
+                const processUserIdError = error?.response?.data?.errors?.userId?.[0] || "";
+                if (!String(processUserIdError).includes("'process'")) {
+                    throw error;
+                }
 
-            setSurveyResult(apiResult?.data || buildFallbackSurveyResult(finalResponses));
+                processResult = await callApi({
+                    method: METHOD.POST,
+                    endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES_FALLBACK(),
+                    arg: payload,
+                    alertErrorMessage: true,
+                });
+            }
+
+            if (!processResult?.success) {
+                throw new Error("Process survey failed.");
+            }
+
+            try {
+                await saveAssessmentAnswers(payload);
+            } catch (saveError) {
+                console.warn("Save assessment answers failed:", saveError);
+            }
+
+            const mappedResult = mapAssessmentPayloadToResult(processResult?.data, userId);
+
+            if (mappedResult) {
+                setAnswers({
+                    ...mappedResult.answers,
+                    answerJson: {
+                        ...answerJson,
+                        skillScores: mappedResult.skillScores || [],
+                        matchPercentage: mappedResult.matchPercentage || 0,
+                    },
+                    processingPayload: payload,
+                });
+                setRoadmap(mappedResult.roadmap || { today: [], weeks: [] });
+                setSurveyResult(
+                    processResult?.data || mappedResult.surveyResult || buildFallbackSurveyResult(finalResponses),
+                );
+            } else {
+                setAnswers((prev) => ({
+                    ...(prev || {}),
+                    answerJson,
+                    processingPayload: payload,
+                }));
+                setSurveyResult(processResult?.data || buildFallbackSurveyResult(finalResponses));
+            }
         } catch (error) {
             console.error(error);
+            setAnswers((prev) => ({
+                ...(prev || {}),
+                answerJson,
+                processingPayload: payload,
+            }));
             setSurveyResult(buildFallbackSurveyResult(finalResponses));
         } finally {
             if (mountedRef.current) {
@@ -1156,7 +1290,7 @@ const ChatSurvey = () => {
                                         ))}
 
                                     {setupFields
-                                        .filter((field) => field.id === "free_text")
+                                        .filter((field) => field.id === "freeText")
                                         .map((field) => (
                                             <Box key={field.id}>
                                                 {renderSectionHeader(field)}
