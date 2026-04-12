@@ -28,6 +28,7 @@ import {
     FormControlLabel,
     TextField,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import HistoryIcon from "@mui/icons-material/History";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SearchIcon from "@mui/icons-material/Search";
@@ -36,6 +37,7 @@ import PolicyIcon from "@mui/icons-material/Policy";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import BlockIcon from "@mui/icons-material/Block";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import toast from "react-hot-toast";
 import DataTable from "../components/DataTable";
 import StatusChip from "../../../common/components/StatusChip";
@@ -66,6 +68,7 @@ const reportTypeLabels = {
 };
 
 export const AdminRoomReportsPage = () => {
+    const navigate = useNavigate();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedRoomId, setSelectedRoomId] = useState(null);
@@ -771,6 +774,25 @@ export const AdminRoomReportsPage = () => {
             </Dialog>
 
             <ActionMenu anchorEl={actionMenuAnchor} open={Boolean(actionMenuAnchor)} onClose={handleCloseMenu}>
+                <MenuItem
+                    onClick={() => {
+                        const roomId = actionMenuRow?.interviewRoomId || actionMenuRow?.roomId;
+                        if (!roomId) {
+                            toast.error("Missing room id");
+                            return;
+                        }
+                        navigate(`/admin/reports/room/${roomId}`);
+                        handleCloseMenu();
+                    }}
+                >
+                    <ListItemIcon>
+                        <VisibilityIcon fontSize="small" color="info" />
+                    </ListItemIcon>
+                    <ListItemText
+                        primary="Resolution Detail"
+                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
+                    />
+                </MenuItem>
                 <MenuItem
                     onClick={() => {
                         handleViewAuditLog(actionMenuRow);

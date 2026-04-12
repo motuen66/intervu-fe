@@ -1,6 +1,22 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
-import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from "@mui/material";
+import {
+    Box,
+    CircularProgress,
+    Typography,
+    IconButton,
+    Button,
+    Avatar,
+    Chip,
+    Tooltip,
+    Stack,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+} from "@mui/material";
+import toast from "react-hot-toast";
 
 // Icons
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -49,6 +65,56 @@ const MIN_SPLIT_PCT = 30;
 const MAX_SPLIT_PCT = 70;
 const MIN_VERTICAL_PCT = 15;
 const MAX_VERTICAL_PCT = 85;
+
+function formatSecondsToClock(totalSeconds) {
+    const safeSeconds = Math.max(0, totalSeconds);
+    const h = Math.floor(safeSeconds / 3600);
+    const m = Math.floor((safeSeconds % 3600) / 60);
+    const s = safeSeconds % 60;
+
+    if (h > 0) {
+        return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    }
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+function parseServerDateToMs(value) {
+    if (!value) return NaN;
+
+    if (value instanceof Date) {
+        return value.getTime();
+    }
+
+    const raw = String(value).trim();
+    if (!raw) return NaN;
+
+    // If backend omits timezone (e.g. "2026-04-12T09:00:00"), treat as UTC.
+    const hasTimezone = /[zZ]$|[+-]\d{2}:\d{2}$/.test(raw);
+    const normalized = hasTimezone ? raw : `${raw}Z`;
+
+    return new Date(normalized).getTime();
+}
+
+function resolveRoomEndTime(room) {
+    if (!room) return null;
+
+    const directEndTime = room.endTime ?? room.endAt;
+    if (directEndTime) {
+        const parsed = parseServerDateToMs(directEndTime);
+        if (!Number.isNaN(parsed)) return parsed;
+    }
+
+    if (!room.scheduledTime || !room.durationMinutes) {
+        return null;
+    }
+
+    const scheduled = parseServerDateToMs(room.scheduledTime);
+    if (Number.isNaN(scheduled)) {
+        return null;
+    }
+
+    return scheduled + Number(room.durationMinutes) * 60 * 1000;
+}
 
 // ---------------------------------------------------------------------------
 // InterviewRoomPage — Clean Orchestrator
@@ -500,49 +566,52 @@ function InterviewRoomPage() {
 
     // ── Report room modal ──────────────────────────────────────────────────────
     const [reportModalOpen, setReportModalOpen] = useState(false);
-    const [isReportSubmitting, setIsReportSubmitting] = useState(false);
-
-    const handleReportRoomSubmit = async (payload) => {
-        setIsReportSubmitting(true);
-        try {
-            await callApi({
-                method: METHOD.POST,
-                endpoint: `/interviewroom/${roomId}/report`,
-                arg: {
-                    reason: payload.reason,
-                    details: payload.details,
-                },
-                displaySuccessMessage: true,
-            });
-            setReportModalOpen(false);
-            return true;
-        } catch (error) {
-            console.error("Failed to report room:", error);
-            return false;
-        } finally {
-            setIsReportSubmitting(false);
-        }
-    };
 
     // ── Timer ────────────────────────────────────────────────────────────────
-    const elapsedSecondsRef = useRef(0);
+    const notifiedThresholdsRef = useRef({ tenMinutes: false, fiveMinutes: false, timeUp: false });
     const [displayTime, setDisplayTime] = useState("00:00");
+    const [remainingSeconds, setRemainingSeconds] = useState(TIMER_SECONDS);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            elapsedSecondsRef.current += 1;
-            const h = Math.floor(elapsedSecondsRef.current / 3600);
-            const m = Math.floor((elapsedSecondsRef.current % 3600) / 60);
-            const s = elapsedSecondsRef.current % 60;
+        notifiedThresholdsRef.current = { tenMinutes: false, fiveMinutes: false, timeUp: false };
+    }, [roomId, roomInfo?.scheduledTime, roomInfo?.durationMinutes, roomInfo?.endTime, roomInfo?.endAt]);
 
-            if (h > 0) {
-                setDisplayTime(`${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
-            } else {
-                setDisplayTime(`${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
+    useEffect(() => {
+        const endTimeMs = resolveRoomEndTime(roomInfo);
+        if (!endTimeMs) {
+            const fallback = formatSecondsToClock(TIMER_SECONDS);
+            setDisplayTime(fallback);
+            setRemainingSeconds(TIMER_SECONDS);
+            return;
+        }
+
+        const tick = () => {
+            const remainingSeconds = Math.max(0, Math.floor((endTimeMs - Date.now()) / 1000));
+            setRemainingSeconds(remainingSeconds);
+            setDisplayTime(formatSecondsToClock(remainingSeconds));
+
+            if (isViewOnly) return;
+
+            if (remainingSeconds <= 600 && !notifiedThresholdsRef.current.tenMinutes) {
+                toast("10 minutes left in this interview", { id: `room-time-10-${roomId}` });
+                notifiedThresholdsRef.current.tenMinutes = true;
             }
-        }, 1000);
+
+            if (remainingSeconds <= 300 && !notifiedThresholdsRef.current.fiveMinutes) {
+                toast("5 minutes left in this interview", { id: `room-time-5-${roomId}` });
+                notifiedThresholdsRef.current.fiveMinutes = true;
+            }
+
+            if (remainingSeconds <= 0 && !notifiedThresholdsRef.current.timeUp) {
+                toast("Room reached end time", { id: `room-time-up-${roomId}` });
+                notifiedThresholdsRef.current.timeUp = true;
+            }
+        };
+
+        tick();
+        const interval = setInterval(tick, 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [roomInfo, roomId, isViewOnly]);
 
     // ── Peer info for camera widget ──────────────────────────────────────────
     const isCandidate = user?.role === ROLES.CANDIDATE;
@@ -759,7 +828,12 @@ function InterviewRoomPage() {
                         sx={{
                             fontWeight: 700,
                             fontSize: "1.1rem",
-                            color: "#111827",
+                            color:
+                                remainingSeconds <= 300
+                                    ? "error.main"
+                                    : remainingSeconds <= 600
+                                      ? "warning.main"
+                                      : "text.primary",
                             fontVariantNumeric: "tabular-nums",
                         }}
                     >
@@ -1209,7 +1283,7 @@ function InterviewRoomPage() {
                         id="footer-btn-end-interview"
                         onClick={handleLeaveRoom}
                         startIcon={<CallEndIcon />}
-                        aria-label="End Interview"
+                        aria-label="Leave"
                         sx={{
                             bgcolor: "#E11D48",
                             color: "#FFFFFF",
@@ -1299,12 +1373,7 @@ function InterviewRoomPage() {
             )}
 
             {/* ═══ Report Room Modal ═══ */}
-            <RoomReportModal
-                open={reportModalOpen}
-                onClose={() => setReportModalOpen(false)}
-                onSubmit={handleReportRoomSubmit}
-                isSubmitting={isReportSubmitting}
-            />
+            <RoomReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} roomId={roomId} />
         </Box>
     );
 }

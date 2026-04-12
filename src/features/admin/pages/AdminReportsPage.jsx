@@ -97,6 +97,7 @@ const normalizeReport = (raw) => ({
         raw?.question?.questionID,
     status: getRawStatus(raw),
     reason: raw?.reason,
+    expectTo: raw?.expectTo,
     createdAt: raw?.createdAt,
     updatedAt: raw?.updatedAt,
     questionTitle: raw?.questionTitle || raw?.question?.title || "-",
@@ -279,6 +280,25 @@ export default function AdminReportsPage() {
                             fontSize: "12px",
                             color: "text.secondary",
                             maxWidth: 320,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                        }}
+                        title={value || "-"}
+                    >
+                        {value || "-"}
+                    </Typography>
+                ),
+            },
+            {
+                field: "expectTo",
+                headerName: "Expected Action",
+                render: (value) => (
+                    <Typography
+                        sx={{
+                            fontSize: "12px",
+                            color: "text.secondary",
+                            maxWidth: 260,
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",

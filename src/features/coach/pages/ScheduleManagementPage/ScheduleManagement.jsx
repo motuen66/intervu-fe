@@ -241,6 +241,34 @@ const ScheduleManagement = () => {
         selectInfo.view.calendar.unselect();
     };
 
+    const handleDateClick = (clickInfo) => {
+        if (clickInfo.view.type !== "dayGridMonth") return;
+
+        const clickedDate = startOfDay(clickInfo.date);
+        if (clickedDate < todayStart) {
+            toast.error("Cannot create availability in the past");
+            return;
+        }
+
+        setEditingId(null);
+        setOriginalRange(null);
+
+        const year = clickedDate.getFullYear();
+        const month = String(clickedDate.getMonth() + 1).padStart(2, "0");
+        const day = String(clickedDate.getDate()).padStart(2, "0");
+        const localDateStr = `${year}-${month}-${day}`;
+
+        setFormData({
+            date: localDateStr,
+            startHour: 9,
+            startMinute: 0,
+            endHour: 10,
+            endMinute: 0,
+            duplicateDates: [],
+        });
+        setOpenModal(true);
+    };
+
     const handleEventChange = async (info) => {
         const event = info.event;
 
@@ -593,6 +621,7 @@ const ScheduleManagement = () => {
                                     selectable={true}
                                     selectMirror={true}
                                     select={handleDateSelect}
+                                    dateClick={handleDateClick}
                                     selectAllow={(selectInfo) => {
                                         if (selectInfo.view.type !== "dayGridMonth") return true;
                                         return startOfDay(selectInfo.start) >= todayStart;

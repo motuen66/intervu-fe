@@ -113,7 +113,7 @@ export function JdCvPanel({ roomId, user, jobDescriptionUrl, cvUrl }) {
             >
                 <Tab label="Job Description" />
                 <Tab label="Candidate CV" />
-                <Tab label="Evaluate" />
+                {user?.role !== ROLES.CANDIDATE && <Tab label="Evaluate" />}
             </Tabs>
 
             <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
@@ -124,7 +124,7 @@ export function JdCvPanel({ roomId, user, jobDescriptionUrl, cvUrl }) {
                 {tab === 1 && <DocumentLinkTab url={cvUrl} emptyText="CV was not provided." />}
 
                 {/* Tab 2: Evaluate */}
-                {tab === 2 && <EvaluateTab roomId={roomId} user={user} />}
+                {tab === 2 && user?.role !== ROLES.CANDIDATE && <EvaluateTab roomId={roomId} user={user} />}
             </Box>
         </Box>
     );
@@ -261,19 +261,7 @@ function DocumentLinkTab({ title, url, emptyText, icon }) {
 }
 
 function EvaluateTab({ roomId, user }) {
-    if (user?.role === ROLES.CANDIDATE) {
-        return (
-            <Stack alignItems="center" justifyContent="center" spacing={2} sx={{ py: 6 }}>
-                <LockIcon sx={{ fontSize: 48, color: "#9CA3AF" }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "#111827" }}>
-                    Evaluation Panel
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#6B7280", textAlign: "center" }}>
-                    This panel is only available to the interviewer.
-                </Typography>
-            </Stack>
-        );
+    if (user?.role !== ROLES.CANDIDATE) {
+        return <EvaluationForm roomId={roomId} />;
     }
-
-    return <EvaluationForm roomId={roomId} />;
 }

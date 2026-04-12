@@ -6,13 +6,7 @@ import { METHOD } from "../../../../common/constants/api";
 import CreateCoachServiceDialog from "./CreateCoachServiceDialog";
 import UpdateCoachServiceDialog from "./UpdateCoachServiceDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import {
-    Box,
-    Toolbar,
-    Typography,
-    CircularProgress,
-    IconButton,
-} from "@mui/material";
+import { Box, Toolbar, Typography, CircularProgress, IconButton } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import toast from "react-hot-toast";
@@ -108,9 +102,7 @@ export default function CoachInterviewServicePage() {
                         </Typography>
                     </Box>
                     <Box>
-                        <PrimaryButton onClick={() => setOpenCreate(true)}>
-                            Add Service
-                        </PrimaryButton>
+                        <PrimaryButton onClick={() => setOpenCreate(true)}>Add Service</PrimaryButton>
                     </Box>
                 </Toolbar>
 
@@ -124,9 +116,6 @@ export default function CoachInterviewServicePage() {
                         <div className="coach-service-empty-subtitle">
                             Add your first interview service to start accepting bookings from candidates.
                         </div>
-                        <PrimaryButton onClick={() => setOpenCreate(true)} sx={{ mt: 1 }}>
-                            Add Service
-                        </PrimaryButton>
                     </Box>
                 ) : (
                     <Box className="coach-service-grid">

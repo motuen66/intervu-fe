@@ -57,9 +57,6 @@ export default function AdminDashboardPage() {
     return (
         <Box sx={{ p: { xs: 2, md: 4 } }}>
             <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" fontWeight={700} gutterBottom>
-                    Admin Dashboard
-                </Typography>
                 <Typography variant="body1" color="text.secondary">
                     Welcome back! Here's what's happening on the platform today.
                 </Typography>
