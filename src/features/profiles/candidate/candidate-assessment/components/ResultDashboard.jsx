@@ -6,7 +6,6 @@ import { useAssessment } from "../context/AssessmentContext";
 import { PrimaryButton } from "../../../../../common/components/buttons";
 import { assessmentApi } from "../services/assessmentApi";
 import { roadmapData as fallbackRoadmap } from "../../../../roadmap/data";
-import { setAssessmentCache } from "../../../../../common/utils/assessmentCache";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -86,7 +85,8 @@ const ResultDashboard = () => {
           : `Your score reflects both your chosen level and the stack-specific answers you gave in the assessment.`;
     const hasRoadmap = Boolean(
         (Array.isArray(roadmap?.today) && roadmap.today.length > 0) ||
-            (Array.isArray(roadmap?.weeks) && roadmap.weeks.length > 0),
+            (Array.isArray(roadmap?.weeks) && roadmap.weeks.length > 0) ||
+            (Array.isArray(roadmap?.phases) && roadmap.phases.length > 0),
     );
 
     const handleViewRoadmap = async () => {
@@ -127,38 +127,11 @@ const ResultDashboard = () => {
             const finalRoadmap = resolvedRoadmap ?? fallbackRoadmap;
             setRoadmap(finalRoadmap);
 
-            if (userId) {
-                setAssessmentCache(userId, {
-                    currentStep: 4,
-                    answers,
-                    surveyResult: null,
-                    skillScores,
-                    matchPercentage,
-                    roadmap: finalRoadmap,
-                });
-            }
-
             nextStep();
         } finally {
             setIsSaving(false);
         }
     };
-
-    React.useEffect(() => {
-        const userId = answers?.userId;
-        if (!userId) {
-            return;
-        }
-
-        setAssessmentCache(userId, {
-            currentStep: 3,
-            answers,
-            surveyResult: null,
-            skillScores,
-            matchPercentage,
-            roadmap: null,
-        });
-    }, [answers, matchPercentage, skillScores]);
 
     return (
         <Box sx={{ maxWidth: 1120, mx: "auto", px: 3, pb: 8 }}>

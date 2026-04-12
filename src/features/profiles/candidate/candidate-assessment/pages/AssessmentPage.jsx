@@ -7,11 +7,7 @@ import ChatSurvey from "../components/ChatSurvey";
 import ProcessingState from "../components/ProcessingState";
 import ResultDashboard from "../components/ResultDashboard";
 import RoadmapDashboard from "../../../../roadmap/RoadmapDashboard";
-import {
-    getAssessmentDataFromCache,
-    isAssessmentCacheValid,
-    setAssessmentCache,
-} from "../../../../../common/utils/assessmentCache";
+import { getAssessmentDataFromCache, isAssessmentCacheValid } from "../../../../../common/utils/assessmentCache";
 import { ASSESSMENT_DATA_STATE, getAssessmentState, mapAssessmentPayloadToResult } from "../services/assessmentApi";
 
 const steps = ["Survey", "Analysis", "Results", "Roadmap"];
@@ -35,7 +31,8 @@ function AssessmentFlow() {
     const hasRoadmap = Boolean(
         roadmap &&
             ((Array.isArray(roadmap?.today) && roadmap.today.length > 0) ||
-                (Array.isArray(roadmap?.weeks) && roadmap.weeks.length > 0)),
+                (Array.isArray(roadmap?.weeks) && roadmap.weeks.length > 0) ||
+                (Array.isArray(roadmap?.phases) && roadmap.phases.length > 0)),
     );
 
     useEffect(() => {
@@ -127,15 +124,6 @@ function AssessmentFlow() {
                         setSurveyResult(mapped.surveyResult);
                         setSkillScores(mapped.skillScores);
                         updateMatchPercentage(mapped.matchPercentage);
-
-                        setAssessmentCache(userId, {
-                            currentStep: 3,
-                            answers: mapped.answers,
-                            surveyResult: mapped.surveyResult,
-                            skillScores: mapped.skillScores,
-                            matchPercentage: mapped.matchPercentage,
-                            roadmap: null,
-                        });
                     }
 
                     setCurrentStep(3);

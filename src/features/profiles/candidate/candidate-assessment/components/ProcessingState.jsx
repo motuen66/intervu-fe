@@ -3,21 +3,16 @@ import { Box, CircularProgress, LinearProgress, Paper, Stack, Typography } from 
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { alpha } from "@mui/material/styles";
 import { useAssessment } from "../context/AssessmentContext";
-import { setAssessmentCache } from "../../../../../common/utils/assessmentCache";
 
 const levelMap = {
     none: 0,
-    beginner: 1,
-    basic: 2,
-    comfortable: 2,
-    entry: 2,
-    junior: 3,
-    intermediate: 4,
-    mid: 4,
-    confident: 4,
-    advanced: 6,
-    senior: 6,
-    expert: 7,
+    beginner: 0,
+    basic: 1,
+    comfortable: 1,
+    intermediate: 2,
+    confident: 2,
+    advanced: 3,
+    expert: 3,
 };
 
 const stackKeywordMap = {
@@ -34,11 +29,11 @@ const stackKeywordMap = {
 };
 
 const targetLevelMap = [
-    { keywords: ["staff", "lead", "principal"], level: 7 },
-    { keywords: ["senior"], level: 6 },
-    { keywords: ["mid", "intermediate"], level: 5 },
-    { keywords: ["junior", "associate"], level: 4 },
-    { keywords: ["fresher", "entry", "intern", "graduate"], level: 3 },
+    { keywords: ["staff", "lead", "principal", "expert"], level: 3 },
+    { keywords: ["senior", "advanced"], level: 3 },
+    { keywords: ["mid", "intermediate", "confident"], level: 2 },
+    { keywords: ["junior", "associate", "basic", "comfortable"], level: 1 },
+    { keywords: ["fresher", "entry", "intern", "graduate", "beginner"], level: 0 },
 ];
 
 const ProcessingState = () => {
@@ -47,13 +42,26 @@ const ProcessingState = () => {
     const [statusIndex, setStatusIndex] = useState(0);
 
     const profile = answers?.profile || {};
-    const processedSkills = useMemo(() => buildSkillScores(surveyResult, answers), [surveyResult, answers]);
-    const matchPercentage = useMemo(() => calculateMatchPercentage(processedSkills), [processedSkills]);
+    const processedSkills = useMemo(() => {
+        if (Array.isArray(answers?.answerJson?.skillScores) && answers.answerJson.skillScores.length > 0) {
+            return answers.answerJson.skillScores;
+        }
+
+        return buildSkillScores(surveyResult, answers);
+    }, [answers, surveyResult]);
+    const matchPercentage = useMemo(() => {
+        if (Number.isFinite(Number(answers?.answerJson?.matchPercentage))) {
+            return Number(answers.answerJson.matchPercentage);
+        }
+
+        return calculateMatchPercentage(processedSkills);
+    }, [answers, processedSkills]);
     const statuses = useMemo(
         () => [
             `Analyzing ${profile.role || "your"} assessment answers...`,
             `Mapping ${profile.techstack?.slice(0, 2).join(" / ") || "your stack"} confidence levels...`,
-            "Finalizing your result dashboard...",
+            "Calibrating skill gaps and readiness score...",
+            "Preparing your result dashboard...",
         ],
         [profile.role, profile.techstack],
     );
@@ -63,42 +71,31 @@ const ProcessingState = () => {
         const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
         const progressInterval = window.setInterval(() => {
-            setProgress((prev) => (prev >= 94 ? 94 : Math.min(94, prev + Math.random() * 14)));
-        }, 320);
+            setProgress((prev) => (prev >= 90 ? 90 : Math.min(90, prev + Math.random() * 6 + 1)));
+        }, 300);
+
+        const statusInterval = window.setInterval(() => {
+            setStatusIndex((prev) => (prev >= statuses.length - 1 ? prev : prev + 1));
+        }, 1100);
 
         const run = async () => {
-            await wait(950);
+            await wait(2500);
             if (isCancelled) {
                 return;
             }
-            setStatusIndex(1);
-
-            await wait(950);
-            if (isCancelled) {
-                return;
-            }
-            setStatusIndex(2);
+            window.clearInterval(progressInterval);
+            window.clearInterval(statusInterval);
 
             setSkillScores(processedSkills);
             updateMatchPercentage(matchPercentage);
-
-            if (answers?.userId) {
-                setAssessmentCache(answers.userId, {
-                    currentStep: 3,
-                    answers,
-                    surveyResult,
-                    skillScores: processedSkills,
-                    matchPercentage,
-                    roadmap: null,
-                });
-            }
 
             if (isCancelled) {
                 return;
             }
 
             setProgress(100);
-            await wait(420);
+            setStatusIndex(statuses.length - 1);
+            await wait(500);
 
             if (!isCancelled) {
                 nextStep();
@@ -110,8 +107,9 @@ const ProcessingState = () => {
         return () => {
             isCancelled = true;
             window.clearInterval(progressInterval);
+            window.clearInterval(statusInterval);
         };
-    }, [matchPercentage, nextStep, processedSkills, setSkillScores, updateMatchPercentage]);
+    }, [matchPercentage, nextStep, processedSkills, setSkillScores, statuses.length, updateMatchPercentage]);
 
     return (
         <Box sx={{ maxWidth: 760, mx: "auto", px: 3, py: 10 }}>
@@ -195,7 +193,7 @@ function buildSkillScores(surveyResult, answers) {
             ...evaluateSkillReadiness(skill.scoreValue || 0, targetLevel),
             skillKey: skill.skillKey,
             sfiaLevel: Math.max(0, Math.round(skill.scoreValue || 0)),
-            baseScore: Math.min(100, Math.round(((skill.scoreValue || 0) / 7) * 100)),
+            baseScore: Math.min(100, Math.round(((skill.scoreValue || 0) / 3) * 100)),
             selectedLevel: skill.selectedLevel,
         }));
     }
@@ -233,7 +231,7 @@ function buildSkillScores(surveyResult, answers) {
                 ...evaluateSkillReadiness(sfiaLevel, targetLevel),
                 skillKey: item.skill || item.Skill || answerSkill?.skill || "Unknown Skill",
                 sfiaLevel,
-                baseScore: Math.min(100, Math.round((sfiaLevel / 7) * 100)),
+                baseScore: Math.min(100, Math.round((sfiaLevel / 3) * 100)),
                 selectedLevel: rawLevel,
             };
         })
@@ -242,7 +240,7 @@ function buildSkillScores(surveyResult, answers) {
     return dedupeSkills(normalizedSkills);
 }
 
-function buildStackDrivenSkills(techstack = [], responses = [], targetLevel = 4) {
+function buildStackDrivenSkills(techstack = [], responses = [], targetLevel = 2) {
     return techstack.map((stack) => {
         const normalizedStack = String(stack || "")
             .trim()
@@ -274,13 +272,13 @@ function buildStackDrivenSkills(techstack = [], responses = [], targetLevel = 4)
             ...evaluateSkillReadiness(roundedLevel, targetLevel),
             skillKey: stack,
             sfiaLevel: Math.max(0, Math.round(roundedLevel)),
-            baseScore: Math.min(100, Math.round((roundedLevel / 7) * 100)),
+            baseScore: Math.min(100, Math.round((roundedLevel / 3) * 100)),
             selectedLevel:
-                roundedLevel <= 1
+                roundedLevel <= 0
                     ? "Missing"
-                    : roundedLevel <= 3
+                    : roundedLevel <= 1
                       ? "Weak"
-                      : roundedLevel <= 5
+                      : roundedLevel <= 2
                         ? "Intermediate"
                         : "Advanced",
         };
@@ -309,7 +307,7 @@ function getTargetLevel(level) {
         }
     }
 
-    return 4;
+    return 2;
 }
 
 function evaluateSkillReadiness(skillLevel, targetLevel) {

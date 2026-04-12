@@ -9,6 +9,8 @@ const ASSESSMENT_FORCE_REQUIRED_PREFIX = "assessment_force_required:";
 export const assessmentEndPoints = {
     GENERATE_ASSESSMENT: AI_GENERATOR_URL,
     PROCESS_SURVEY_RESPONSES: () => `${ASSESSMENT_BASE}/process`,
+    PROCESS_SURVEY_RESPONSES_FALLBACK: () => `${ASSESSMENT_BASE}`,
+    SAVE_ANSWERS: () => `${ASSESSMENT_BASE}/answers`,
     GENERATE_ROADMAP: () => `${ASSESSMENT_BASE}/roadmap/generate`,
     GET_ROADMAP: (userId) => `${ASSESSMENT_BASE}/roadmap/${userId}`,
     GET_SKILL_GAPS: (userId) => `${ASSESSMENT_BASE}/${userId}`,
@@ -17,6 +19,13 @@ export const assessmentEndPoints = {
 export const assessmentApi = {
     generateRoadmapFromSurvey: (payload) => axiosInstance.post(assessmentEndPoints.GENERATE_ROADMAP(), payload),
     getRoadmapByUserId: (userId) => axiosInstance.get(assessmentEndPoints.GET_ROADMAP(userId)),
+    saveAnswers: (payload) =>
+        callApi({
+            method: METHOD.POST,
+            endpoint: assessmentEndPoints.SAVE_ANSWERS(),
+            arg: payload,
+            alertErrorMessage: true,
+        }),
 };
 
 export const ASSESSMENT_DATA_STATE = {
@@ -45,6 +54,95 @@ const toArray = (value) => {
         .filter(Boolean);
 };
 
+const toObject = (value) => {
+    if (!value) {
+        return null;
+    }
+
+    if (typeof value === "string") {
+        try {
+            const parsed = JSON.parse(value);
+            return parsed && typeof parsed === "object" ? parsed : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    return typeof value === "object" ? value : null;
+};
+
+const toNumberOrNull = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+};
+
+const normalizeSkillObject = (item) => {
+    if (!item) {
+        return null;
+    }
+
+    if (typeof item === "string") {
+        const skill = item.trim();
+        return skill ? { skill, level: "", sfiaLevel: null } : null;
+    }
+
+    if (typeof item !== "object") {
+        return null;
+    }
+
+    const skill = String(item.skill ?? item.Skill ?? "").trim();
+    if (!skill) {
+        return null;
+    }
+
+    return {
+        skill,
+        level: String(item.level ?? item.Level ?? item.selectedLevel ?? "").trim(),
+        sfiaLevel: toNumberOrNull(item.sfiaLevel ?? item.SfiaLevel),
+        status: String(item.status ?? item.Status ?? "")
+            .trim()
+            .toLowerCase(),
+        score: toNumberOrNull(item.score ?? item.Score),
+        scoreValue: toNumberOrNull(item.scoreValue),
+    };
+};
+
+const toSkillObjects = (value) => {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.map(normalizeSkillObject).filter(Boolean);
+};
+
+const deriveSkillsFromAnswer = (answerObject) => {
+    if (!answerObject || typeof answerObject !== "object") {
+        return [];
+    }
+
+    const derivedSkills = toSkillObjects(answerObject.derivedSkills);
+    if (derivedSkills.length > 0) {
+        return derivedSkills;
+    }
+
+    const responseSkills = (answerObject.responses || [])
+        .map((item) => normalizeSkillObject({ skill: item?.skill, level: item?.selectedLevel || item?.answer }))
+        .filter(Boolean);
+
+    if (responseSkills.length > 0) {
+        const dedupedMap = new Map();
+        responseSkills.forEach((item) => {
+            const key = item.skill.toLowerCase();
+            if (!dedupedMap.has(key)) {
+                dedupedMap.set(key, item);
+            }
+        });
+        return Array.from(dedupedMap.values());
+    }
+
+    return toArray(answerObject?.profile?.techstack).map((skill) => ({ skill, level: "", sfiaLevel: null }));
+};
+
 const mapTargetLevel = (levelLabel) => {
     const normalized = String(levelLabel || "").toLowerCase();
 
@@ -61,28 +159,48 @@ export const normalizeAssessmentPayload = (data) => {
     const target = source?.Target || source?.target || {};
     const current = source?.Current || source?.current || {};
     const gap = source?.Gap || source?.gap || {};
+    const answerObject = toObject(source?.Answer ?? source?.answer ?? source?.AnswerJson ?? source?.answerJson);
+    const roadmap =
+        toObject(source?.RoadMapJson ?? source?.roadMapJson) ||
+        toObject(source?.Roadmap ?? source?.roadmap) ||
+        source?.Roadmap ||
+        source?.roadmap ||
+        null;
 
-    const roles = toArray(target?.Roles || target?.roles);
-    const level = String(target?.Level || target?.level || "").trim();
-    const skillsTarget = toArray(target?.SkillsTarget || target?.skillsTarget || target?.skills);
-    const currentSkills = toArray(current?.Skills || current?.skills);
+    const roles = toArray(target?.Roles || target?.roles || answerObject?.target?.roles).length
+        ? toArray(target?.Roles || target?.roles || answerObject?.target?.roles)
+        : toArray(answerObject?.profile?.role ? [answerObject.profile.role] : []);
+    const level = String(
+        target?.Level || target?.level || answerObject?.target?.level || answerObject?.profile?.level || "",
+    ).trim();
+    const skillsTarget = toArray(
+        target?.SkillsTarget ||
+            target?.skillsTarget ||
+            target?.skills ||
+            answerObject?.target?.skillsTarget ||
+            answerObject?.profile?.techstack,
+    );
+    const currentSkills = toSkillObjects(current?.Skills || current?.skills || answerObject?.current?.skills);
+    const fallbackAnswerSkills = currentSkills.length ? [] : deriveSkillsFromAnswer(answerObject);
     const missing = toArray(gap?.Missing || gap?.missing);
     const weak = toArray(gap?.Weak || gap?.weak);
 
     return {
         source,
+        answer: answerObject,
         target: {
             roles,
             level,
             skillsTarget,
         },
         current: {
-            skills: currentSkills,
+            skills: currentSkills.length ? currentSkills : fallbackAnswerSkills,
         },
         gap: {
             missing,
             weak,
         },
+        roadmap,
     };
 };
 
@@ -134,28 +252,47 @@ export const mapAssessmentPayloadToResult = (data, userId) => {
     const missingSet = new Set(normalized.gap.missing.map((item) => item.toLowerCase()));
     const weakSet = new Set(normalized.gap.weak.map((item) => item.toLowerCase()));
 
+    const currentSkillMap = new Map(
+        normalized.current.skills.map((item) => [String(item.skill || "").toLowerCase(), item]),
+    );
+
     const mergedSkills = Array.from(
         new Set([
             ...normalized.target.skillsTarget,
-            ...normalized.current.skills,
+            ...normalized.current.skills.map((item) => item.skill),
             ...normalized.gap.missing,
             ...normalized.gap.weak,
         ]),
-    );
+    ).filter(Boolean);
 
     const skillScores = mergedSkills.map((skill) => {
         const normalizedSkill = String(skill || "").toLowerCase();
-        const status = missingSet.has(normalizedSkill) ? "missing" : weakSet.has(normalizedSkill) ? "weak" : "good";
-        const score = statusScore[status] ?? 70;
+        const currentSkill = currentSkillMap.get(normalizedSkill);
+        const status = missingSet.has(normalizedSkill)
+            ? "missing"
+            : weakSet.has(normalizedSkill)
+              ? "weak"
+              : ["missing", "weak", "medium", "good"].includes(currentSkill?.status)
+                ? currentSkill.status
+                : "good";
+        const inferredScore =
+            currentSkill?.score ??
+            (currentSkill?.scoreValue != null ? Math.round((currentSkill.scoreValue / 7) * 100) : null) ??
+            (currentSkill?.sfiaLevel != null ? Math.round((Math.max(currentSkill.sfiaLevel, 0) / 7) * 100) : null);
+        const score = Math.max(0, Math.min(100, inferredScore ?? statusScore[status] ?? 70));
+        const sfiaLevel =
+            currentSkill?.sfiaLevel != null
+                ? Math.max(0, Math.round(currentSkill.sfiaLevel))
+                : Math.max(1, Math.round((score / 100) * targetLevel));
 
         return {
             skillKey: skill,
             status,
             score,
-            sfiaLevel: Math.max(1, Math.round((score / 100) * targetLevel)),
+            sfiaLevel,
             targetLevel,
             baseScore: score,
-            selectedLevel: status,
+            selectedLevel: currentSkill?.level || status,
         };
     });
 
@@ -174,30 +311,40 @@ export const mapAssessmentPayloadToResult = (data, userId) => {
         answers: {
             userId,
             profile: {
-                role: normalized.target.roles[0] || "Candidate",
-                level: normalized.target.level || "Mid-Level",
-                techstack: normalized.target.skillsTarget,
-                domain: [],
-                freeText: "Loaded from existing assessment data.",
+                role: normalized.answer?.profile?.role || normalized.target.roles[0] || "Candidate",
+                level: normalized.answer?.profile?.level || normalized.target.level || "Mid-Level",
+                techstack: normalized.answer?.profile?.techstack || normalized.target.skillsTarget,
+                domain: normalized.answer?.profile?.domain || [],
+                freeText: normalized.answer?.profile?.freeText || "Loaded from existing assessment data.",
             },
-            responses: normalized.current.skills.map((skill) => ({
-                skill,
-                selectedLevel: "Current",
-            })),
+            responses:
+                normalized.answer?.responses ||
+                normalized.current.skills.map((skill) => ({
+                    skill: skill.skill,
+                    selectedLevel: skill.level || "Current",
+                })),
         },
         surveyResult: {
             summaryObject: {
                 loaded: {
                     Questions: normalized.current.skills.map((skill) => ({
-                        Skill: skill,
-                        SelectedLevel: weakSet.has(String(skill || "").toLowerCase()) ? "Weak" : "Current",
+                        Skill: skill.skill,
+                        SelectedLevel: weakSet.has(String(skill?.skill || "").toLowerCase())
+                            ? "Weak"
+                            : skill.level || "Current",
                     })),
                 },
             },
         },
         skillScores,
         matchPercentage,
+        roadmap: normalized.roadmap,
     };
+};
+
+export const saveAssessmentAnswers = async (payload) => {
+    const result = await assessmentApi.saveAnswers(payload);
+    return result;
 };
 
 export const hasSkillGapData = (data) => {
