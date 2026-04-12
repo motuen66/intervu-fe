@@ -7,6 +7,9 @@ import {
     CircularProgress,
     Button,
     Alert,
+    Chip,
+    Autocomplete,
+    TextField,
 } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -19,22 +22,44 @@ import {
     Check,
     Plus,
     Sparkles,
+    Tag as TagIcon,
 } from "lucide-react";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import toast from "react-hot-toast";
 
 const springTransition = { type: "spring", damping: 25, stiffness: 200 };
 
 function GeneratedQuestionsModal({ open, onClose, roomId }) {
     const [questions, setQuestions] = useState([]);
+    const [availableTags, setAvailableTags] = useState([]);
     const [deletedExistingIds, setDeletedExistingIds] = useState([]);
     const [modalPhase, setModalPhase] = useState("review");
     const [loading, setLoading] = useState(false);
+    const [tagsLoading, setTagsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [contributing, setContributing] = useState(false);
     const newCardRef = useRef(null);
+
+    const fetchTags = async () => {
+        setTagsLoading(true);
+        try {
+            const res = await callApi({
+                method: METHOD.GET,
+                endpoint: "/Tags",
+                arg: { page: 1, pageSize: 100 }
+            });
+            if (res?.success) {
+                setAvailableTags(res.data.items || []);
+            }
+        } catch (err) {
+            console.error("Failed to fetch tags:", err);
+        } finally {
+            setTagsLoading(false);
+        }
+    };
 
     const fetchQuestions = async () => {
         if (!roomId) return;
@@ -47,10 +72,22 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             });
             if (res?.success) {
                 const pending = (res.data || []).filter((q) => q.status === 0);
+                
+                if (pending.length === 0) {
+                    onClose();
+                    toast("No pending questions to review for this session.", {
+                        icon: "ℹ️",
+                        duration: 4000,
+                    });
+                    return;
+                }
+
                 setQuestions(
                     pending.map((q) => ({
                         ...q,
                         localContent: q.content,
+                        localTitle: q.title,
+                        localTags: q.tags || [],
                         isCustom: false,
                         isNew: false,
                     }))
@@ -71,12 +108,25 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             setError(null);
             setContributing(false);
             fetchQuestions();
+            fetchTags();
         }
     }, [open, roomId]);
 
     const handleContentChange = (id, value) => {
         setQuestions((prev) =>
             prev.map((q) => (q.id === id ? { ...q, localContent: value } : q))
+        );
+    };
+
+    const handleTitleChange = (id, value) => {
+        setQuestions((prev) =>
+            prev.map((q) => (q.id === id ? { ...q, localTitle: value } : q))
+        );
+    };
+
+    const handleTagsChange = (id, newTags) => {
+        setQuestions((prev) =>
+            prev.map((q) => (q.id === id ? { ...q, localTags: newTags } : q))
         );
     };
 
@@ -90,8 +140,9 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
     const handleAddCustom = () => {
         const newQ = {
             id: crypto.randomUUID(),
-            title: "",
+            localTitle: "",
             localContent: "",
+            localTags: [],
             isCustom: true,
             isNew: true,
         };
@@ -118,6 +169,10 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 ),
                 // Approve/create remaining questions
                 ...questions.map(async (q) => {
+                    const tagIds = q.localTags
+                        .map(name => availableTags.find(t => t.name === name)?.id)
+                        .filter(id => !!id);
+
                     if (q.isNew) {
                         const createRes = await callApi({
                             method: METHOD.POST,
@@ -125,20 +180,29 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                             arg: {
                                 interviewRoomId: roomId,
                                 content: q.localContent,
-                                title: q.title || "",
+                                title: q.localTitle || "",
+                                tags: q.localTags,
                             },
                         });
                         const newId = createRes.data.id;
                         await callApi({
                             method: METHOD.PUT,
                             endpoint: interviewEndPoints.APPROVE_GENERATED_QUESTION(newId),
-                            arg: { content: q.localContent, title: q.title || "" },
+                            arg: { 
+                                content: q.localContent, 
+                                title: q.localTitle || "",
+                                tagIds: tagIds
+                            },
                         });
                     } else {
                         await callApi({
                             method: METHOD.PUT,
                             endpoint: interviewEndPoints.APPROVE_GENERATED_QUESTION(q.id),
-                            arg: { content: q.localContent, title: q.title || "" },
+                            arg: { 
+                                content: q.localContent, 
+                                title: q.localTitle || "",
+                                tagIds: tagIds
+                            },
                         });
                     }
                 }),
@@ -165,7 +229,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
         }
     };
 
-    const hasValidQuestions = questions.length > 0 && questions.some((q) => q.localContent.trim().length >= 5);
+    const hasValidQuestions = questions.length > 0 && questions.every((q) => q.localContent.trim().length >= 5);
 
     const handleDialogClose = (_, reason) => {
         if (modalPhase !== "review") return;
@@ -257,7 +321,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
         </motion.div>
     );
 
-    // --- Question Card Renderer (kept as render fn to avoid remount/focus loss while typing) ---
+    // --- Question Card Renderer ---
     const renderQuestionCard = (question, index, isLast) => (
         <Box
             key={question.id}
@@ -318,6 +382,23 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 </Typography>
             </Box>
 
+            {/* Title Input */}
+            <TextField
+                fullWidth
+                size="small"
+                value={question.localTitle}
+                onChange={(e) => handleTitleChange(question.id, e.target.value)}
+                placeholder="Question Title (e.g., React Hooks, SQL Joins)"
+                variant="outlined"
+                sx={{
+                    mb: 1.5,
+                    "& .MuiOutlinedInput-root": {
+                        bgcolor: "white",
+                        borderRadius: "8px",
+                    }
+                }}
+            />
+
             {/* Editable textarea */}
             <Box
                 component="textarea"
@@ -337,6 +418,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                     bgcolor: "#fff",
                     color: "text.primary",
                     outline: "none",
+                    mb: 1.5,
                     transition: "border-color 0.2s ease, box-shadow 0.2s ease",
                     "&:focus": {
                         borderColor: "var(--mui-palette-secondary-main)",
@@ -345,6 +427,53 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 }}
             />
 
+            {/* Tags Autocomplete */}
+            <Autocomplete
+                multiple
+                id={`tags-${question.id}`}
+                options={availableTags.map(t => t.name)}
+                value={question.localTags}
+                onChange={(_, newValue) => handleTagsChange(question.id, newValue)}
+                renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                        <Chip
+                            variant="outlined"
+                            label={option}
+                            size="small"
+                            {...getTagProps({ index })}
+                            sx={{
+                                bgcolor: "rgba(190, 242, 100, 0.1)",
+                                borderColor: "secondary.light",
+                                color: "primary.main",
+                                fontWeight: 700,
+                            }}
+                        />
+                    ))
+                }
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        variant="outlined"
+                        size="small"
+                        placeholder="Add tags..."
+                        InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                                <>
+                                    <TagIcon size={14} style={{ marginRight: 8, color: "var(--mui-palette-text-secondary)" }} />
+                                    {params.InputProps.startAdornment}
+                                </>
+                            ),
+                        }}
+                        sx={{
+                            "& .MuiOutlinedInput-root": {
+                                bgcolor: "white",
+                                borderRadius: "8px",
+                            }
+                        }}
+                    />
+                )}
+            />
         </Box>
     );
 
