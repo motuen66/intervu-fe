@@ -311,12 +311,7 @@ function HomePage() {
                 {error && <div className="error-message">⚠️ {error}</div>}
 
                 {/* Loading State */}
-                {loading && interviewersList.length === 0 ? (
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading interviewers...</p>
-                    </div>
-                ) : (
+                {loading && interviewersList.length === 0 ? null : (
                     <>
                         {/* Interviewer Grid */}
                         <div className="interviewers-grid">

@@ -1,6 +1,5 @@
 import { useForm } from "react-hook-form";
 import { useCallback, useEffect, useRef, useState } from "react";
-import useLoading from "../../../../common/hooks/useLoading";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { authEndPoints } from "../../services/authApi";
@@ -22,13 +21,13 @@ import { trackLogin } from "../../../../utils/analytics";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 
 function LoginPage() {
-    const isLoading = useLoading();
     const navigate = useNavigate();
     const theme = useTheme();
     const dispatch = useDispatch();
     const googleButtonRef = useRef(null);
     const [googleReady, setGoogleReady] = useState(false);
     const [googleSubmitting, setGoogleSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleAuthSuccess = useCallback(
         async (responseData) => {
@@ -160,27 +159,32 @@ function LoginPage() {
     };
 
     const onSubmit = async (data) => {
-        const response = await callApi({
-            method: METHOD.POST,
-            endpoint: authEndPoints.LOGIN_API,
-            arg: {
-                email: data.email,
-                password: data.password,
-            },
-            alertErrorMessage: true,
-        });
+        setIsSubmitting(true);
+        try {
+            const response = await callApi({
+                method: METHOD.POST,
+                endpoint: authEndPoints.LOGIN_API,
+                arg: {
+                    email: data.email,
+                    password: data.password,
+                },
+                alertErrorMessage: true,
+            });
 
-        if (!response) return;
-        const { success, data: responseData } = response;
+            if (!response) return;
+            const { success, data: responseData } = response;
 
-        if (success && responseData) {
-            try {
-                trackLogin(responseData?.user?.id ?? null, "email");
-            } catch (e) {}
-            await handleAuthSuccess(responseData);
+            if (success && responseData) {
+                try {
+                    trackLogin(responseData?.user?.id ?? null, "email");
+                } catch (e) {}
+                await handleAuthSuccess(responseData);
+            }
+
+            resetForm();
+        } finally {
+            setIsSubmitting(false);
         }
-
-        resetForm();
     };
 
     return (
@@ -353,27 +357,24 @@ function LoginPage() {
                                 </div>
 
                                 <div style={{ display: "flex", justifyContent: "center" }}>
-                                    {isLoading ? (
-                                        <Typography color="#666">...Loading</Typography>
-                                    ) : (
-                                        <PrimaryButton
-                                            type="submit"
-                                            loading={isLoading}
-                                            fullWidth
-                                            sx={{
-                                                padding: "14px 28px",
-                                                borderRadius: "10px",
-                                                fontSize: "17px",
-                                                backgroundColor: theme.palette.secondary.main,
-                                                color: theme.palette.secondary.contrastText,
-                                                "&:hover": {
-                                                    backgroundColor: theme.palette.secondary.dark,
-                                                },
-                                            }}
-                                        >
-                                            Login
-                                        </PrimaryButton>
-                                    )}
+                                    <PrimaryButton
+                                        type="submit"
+                                        loading={false}
+                                        disabled={isSubmitting || googleSubmitting}
+                                        fullWidth
+                                        sx={{
+                                            padding: "14px 28px",
+                                            borderRadius: "10px",
+                                            fontSize: "17px",
+                                            backgroundColor: theme.palette.secondary.main,
+                                            color: theme.palette.secondary.contrastText,
+                                            "&:hover": {
+                                                backgroundColor: theme.palette.secondary.dark,
+                                            },
+                                        }}
+                                    >
+                                        Login
+                                    </PrimaryButton>
                                 </div>
 
                                 <div
