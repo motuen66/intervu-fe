@@ -102,9 +102,12 @@ export const callApi = async ({
     headers,
     displaySuccessMessage = false,
     alertErrorMessage = false,
+    useGlobalLoading = true,
 }) => {
     try {
-        store.dispatch(startGlobalLoading());
+        if (useGlobalLoading) {
+            store.dispatch(startGlobalLoading());
+        }
         const isGetOrDelete = method === METHOD.GET || method === METHOD.DELETE;
         const response = await axiosInstance({
             method,
@@ -141,6 +144,8 @@ export const callApi = async ({
             throw error;
         }
     } finally {
-        store.dispatch(stopGlobalLoading());
+        if (useGlobalLoading) {
+            store.dispatch(stopGlobalLoading());
+        }
     }
 };

@@ -742,6 +742,7 @@ const ChatSurvey = () => {
                 endpoint: assessmentEndPoints.GENERATE_ASSESSMENT,
                 arg: payload,
                 alertErrorMessage: true,
+                useGlobalLoading: false,
             });
             const { introText, questions: generatedQuestions } = buildGeneratedAssessment(apiResult?.data || apiResult);
             if (!generatedQuestions.length) {
@@ -857,6 +858,7 @@ const ChatSurvey = () => {
                     endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
                     arg: payload,
                     alertErrorMessage: false,
+                    useGlobalLoading: false,
                 });
             } catch (error) {
                 const processUserIdError = error?.response?.data?.errors?.userId?.[0] || "";
@@ -869,6 +871,7 @@ const ChatSurvey = () => {
                     endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES_FALLBACK(),
                     arg: payload,
                     alertErrorMessage: true,
+                    useGlobalLoading: false,
                 });
             }
 
@@ -933,10 +936,48 @@ const ChatSurvey = () => {
 
         if (currentUserId) {
             try {
-                const skipped = await saveSkippedAssessment(currentUserId);
-                if (!skipped) {
-                    return;
+                // To allow redo later, we send completely empty structure on skip
+                const payload = {
+                    UserId: currentUserId,
+                    AssessmentName: "Skipped Assessment (Reset)",
+                    Responses: [],
+                    Target: {
+                        Roles: [],
+                        Level: "",
+                        SkillsTarget: [],
+                    },
+                    Current: {
+                        Skills: [],
+                    },
+                    Gap: { Missing: [], Weak: [] },
+                    Roadmap: {
+                        roadmap_metadata: {
+                            target_role: "",
+                            target_level: "",
+                            total_phases: 0,
+                        },
+                        phases: [],
+                    },
+                    Answer: {
+                        profile: {
+                            role: "",
+                            level: "",
+                            techstack: [],
+                            domain: [],
+                            freeText: "",
+                        },
+                        responses: [],
+                    },
+                };
+
+                // Use the API to reset state on server
+                const isSkipped = await saveSkippedAssessment(currentUserId, payload);
+                if (!isSkipped) {
+                    console.warn("Skip assessment API failed, continuing with local reset.");
                 }
+                setAssessmentForceRequired(currentUserId, false);
+            } catch (error) {
+                console.warn("Skip assessment failed:", error);
                 setAssessmentForceRequired(currentUserId, false);
             } finally {
                 setIsSkipping(false);
