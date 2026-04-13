@@ -34,6 +34,7 @@ import CallEndIcon from "@mui/icons-material/CallEnd";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FlagIcon from "@mui/icons-material/Flag";
+import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -297,13 +298,23 @@ function InterviewRoomPage() {
         }
     }, [user?.role, localStream, remoteStream]);
 
-    // ── Audio Recording ────────────────────────────────────────────────────────
-    useAudioRecorder({
+    // ── Audio Recording & Transcription ────────────────────────────────────────
+    const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(false);
+    
+    // Broadcast transcript to others in room
+    const handleTranscriptUpdate = useCallback((final, interim) => {
+        sendSignal("SendTranscript", roomId, final, interim).catch(e => console.warn("SendTranscript failed", e));
+    }, [sendSignal, roomId]);
+
+    const { transcript, interimTranscript, setTranscript, isTranscribing } = useAudioRecorder({
         roomId,
         isEnabled: !loading && !error && !isViewOnly && user?.role === ROLES.INTERVIEWER,
         isMicOn,
         chunkIntervalMs: 15000,
         audioStream: mixedStream,
+        isTranscriptionEnabled: true, // Always transcribing internally to stay in sync
+        onTranscriptUpdate: handleTranscriptUpdate,
+        user: user
     });
 
     // Sync full camera view video srcObject via useEffect (not ref callbacks).
@@ -330,6 +341,7 @@ function InterviewRoomPage() {
     // ── Remote peer media state ──────────────────────────────────────────────
     const [remoteCameraOn, setRemoteCameraOn] = useState(false);
     const [remoteMicOn, setRemoteMicOn] = useState(false);
+    const [remoteTranscript, setRemoteTranscript] = useState({ final: "", interim: "" });
 
     // ── Problem / test-case state (Interviewer editing) ──────────────────────
     const [problemDescription, setProblemDescription] = useState("");
@@ -442,6 +454,7 @@ function InterviewRoomPage() {
             closePeerConnection();
             setRemoteCameraOn(false);
             setRemoteMicOn(false);
+            setRemoteTranscript({ final: "", interim: "" });
         },
         onReceiveCode: applyExternalCode,
         onReceiveLanguage: applyExternalLanguage,
@@ -484,6 +497,9 @@ function InterviewRoomPage() {
         onReceiveCameraState: (_fromId, isOn) => setRemoteCameraOn(isOn),
         onReceiveMicState: (_fromId, isOn) => setRemoteMicOn(isOn),
         onReceiveWhiteboardState: applyExternalWhiteboardState,
+        onReceiveTranscript: (_fromId, final, interim) => {
+            setRemoteTranscript({ final, interim });
+        }
     };
 
     // ── Wire video streams ──────────────────────────────────────────────────
@@ -563,6 +579,9 @@ function InterviewRoomPage() {
     const [notesOpen, setNotesOpen] = useState(false);
     const [noteText, setNoteText] = useState("");
     const [notesPos, setNotesPos] = useState({ x: 80, y: 80 });
+
+    // ── Transcript window ────────────────────────────────────────────────────
+    const [transcriptPos, setTranscriptPos] = useState({ x: window.innerWidth / 2 - 300, y: window.innerHeight - 250 });
 
     // ── Report room modal ──────────────────────────────────────────────────────
     const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -725,6 +744,32 @@ function InterviewRoomPage() {
             document.addEventListener("mouseup", onUp);
         },
         [notesPos],
+    );
+
+    // ── Transcript drag ──────────────────────────────────────────────────────
+    const transcriptDragRef = useRef(null);
+
+    const startTranscriptDrag = useCallback(
+        (e) => {
+            e.preventDefault();
+            transcriptDragRef.current = { startX: e.clientX, startY: e.clientY, posX: transcriptPos.x, posY: transcriptPos.y };
+
+            const onMove = (me) => {
+                if (!transcriptDragRef.current) return;
+                setTranscriptPos({
+                    x: transcriptDragRef.current.posX + (me.clientX - transcriptDragRef.current.startX),
+                    y: transcriptDragRef.current.posY + (me.clientY - transcriptDragRef.current.startY),
+                });
+            };
+            const onUp = () => {
+                transcriptDragRef.current = null;
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+            };
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+        },
+        [transcriptPos],
     );
 
     // ── Compute effective widths for panels ──────────────────────────────────
@@ -1269,6 +1314,15 @@ function InterviewRoomPage() {
                         ariaLabel={isCameraOn ? "Turn off camera" : "Turn on camera"}
                     />
 
+                    <FooterMediaButton
+                        id="footer-btn-transcript"
+                        on={isTranscriptionEnabled}
+                        onClick={() => setIsTranscriptionEnabled((v) => !v)}
+                        iconOn={<ClosedCaptionIcon />}
+                        iconOff={<ClosedCaptionIcon />}
+                        ariaLabel={isTranscriptionEnabled ? "Disable Transcript" : "Enable Transcript"}
+                    />
+
                     <FooterNeutralButton
                         id="footer-btn-notes"
                         icon={<EditNoteIcon />}
@@ -1369,6 +1423,117 @@ function InterviewRoomPage() {
                             color: "#3E2723",
                         }}
                     />
+                </Box>
+            )}
+
+            {/* ═══ Draggable Transcript Overlay ═══ */}
+            {isTranscriptionEnabled && (
+                <Box
+                    id="transcript-window"
+                    sx={{
+                        position: "fixed",
+                        top: transcriptPos.y,
+                        left: transcriptPos.x,
+                        width: 500,
+                        minHeight: 100,
+                        zIndex: 1100,
+                        bgcolor: "rgba(15, 23, 42, 0.9)",
+                        color: "white",
+                        borderRadius: "16px",
+                        boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+                        display: "flex",
+                        flexDirection: "column",
+                        overflow: "hidden",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        backdropFilter: "blur(12px)",
+                    }}
+                >
+                    {/* Drag Handle Header */}
+                    <Box
+                        onMouseDown={startTranscriptDrag}
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            px: 2,
+                            py: 1,
+                            cursor: "grab",
+                            userSelect: "none",
+                            bgcolor: "rgba(0,0,0,0.3)",
+                            borderBottom: "1px solid rgba(255,255,255,0.1)",
+                            "&:active": { cursor: "grabbing" },
+                        }}
+                    >
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Box sx={{ 
+                                width: 8, 
+                                height: 8, 
+                                borderRadius: "50%", 
+                                bgcolor: isTranscribing ? "#A3E635" : "#EF4444",
+                                boxShadow: isTranscribing ? "0 0 10px #A3E635" : "none",
+                                animation: isTranscribing ? "pulse 2s infinite" : "none",
+                                "@keyframes pulse": {
+                                    "0%": { opacity: 1 },
+                                    "50%": { opacity: 0.5 },
+                                    "100%": { opacity: 1 }
+                                }
+                            }} />
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: "#D9F99D", textTransform: "uppercase", letterSpacing: 1 }}>
+                                {isTranscribing ? "Live Transcript" : "Disconnected"}
+                            </Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={0.5}>
+                            <IconButton
+                                size="small"
+                                onClick={() => setTranscript("")}
+                                title="Clear transcript"
+                                sx={{ color: "rgba(255,255,255,0.4)", p: 0.5, "&:hover": { color: "#D9F99D" } }}
+                            >
+                                <EditNoteIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                            <IconButton
+                                size="small"
+                                onClick={() => setIsTranscriptionEnabled(false)}
+                                sx={{ color: "rgba(255,255,255,0.4)", p: 0.5, "&:hover": { color: "#EF4444" } }}
+                            >
+                                <CloseIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                        </Stack>
+                    </Box>
+                    {/* Transcript Content */}
+                    <Box sx={{ p: 2, maxHeight: 200, overflowY: "auto", scrollBehavior: "smooth" }}>
+                        <Typography 
+                            variant="body2" 
+                            sx={{ 
+                                lineHeight: 1.6,
+                                fontStyle: (transcript || interimTranscript || remoteTranscript.final || remoteTranscript.interim) ? "normal" : "italic",
+                                color: (transcript || interimTranscript || remoteTranscript.final || remoteTranscript.interim) ? "white" : "rgba(255,255,255,0.4)",
+                                fontSize: "0.9rem",
+                                whiteSpace: "pre-wrap"
+                            }}
+                        >
+                            {/* Local side */}
+                            {transcript}{" "}
+                            <span style={{ color: "rgba(255,255,255,0.6)" }}>
+                                {interimTranscript}
+                            </span>
+
+                            {/* Remote side synchronization fallback (if for some reason local mix is missing something) */}
+                            {/* This is a visual merge of both people's transcripts if they are being sent via SignalR */}
+                            {remoteTranscript.final && !transcript.includes(remoteTranscript.final) && (
+                                <Box component="span" sx={{ display: 'block', mt: 1, color: '#D9F99D' }}>
+                                    {remoteTranscript.final}
+                                </Box>
+                            )}
+                            {remoteTranscript.interim && (
+                                <Box component="span" sx={{ display: 'block', color: 'rgba(217, 249, 157, 0.6)' }}>
+                                    {remoteTranscript.interim}
+                                </Box>
+                            )}
+
+                            {!transcript && !interimTranscript && !remoteTranscript.final && !remoteTranscript.interim && (isTranscribing ? "Waiting for speech..." : "Connecting to Deepgram...")}
+                        </Typography>
+                    </Box>
                 </Box>
             )}
 
