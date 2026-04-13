@@ -384,6 +384,26 @@ const domainIconMap = {
     Other: AddCircleOutlineRoundedIcon,
 };
 
+const getOptionHintText = (field, option) => {
+    if (field.id === "role") {
+        return `Choose only your current target role. ${option} should reflect what you are practicing now.`;
+    }
+
+    if (field.id === "level") {
+        return "Pick your current level today, not your ideal future level.";
+    }
+
+    if (field.id === "techstack") {
+        return `Select focused stack only. ${option} should be in your active interview prep scope.`;
+    }
+
+    if (field.id === "domain") {
+        return `Pick domains you are currently targeting. ${option} helps context, not full history.`;
+    }
+
+    return "Choose only what you are focusing on right now.";
+};
+
 const TypingIndicator = () => (
     <Stack direction="row" spacing={0.7} alignItems="center" sx={{ minHeight: 24 }}>
         {[0, 1, 2].map((dot) => (
@@ -441,6 +461,7 @@ const ChatSurvey = () => {
     const totalQuestions = chatQuestions.length;
     const answeredCount = Object.keys(answerMap).length;
     const progress = totalQuestions ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+    const hasResumableAssessment = totalQuestions > 0;
     const selectedTechstackValues = normalizeToArray(setupForm.techstack);
     const selectedDomainValues = normalizeToArray(setupForm.domain);
 
@@ -516,7 +537,7 @@ const ChatSurvey = () => {
             setupForm,
         };
 
-        if (stage === "chat" && chatQuestions.length > 0) {
+        if (chatQuestions.length > 0) {
             Object.assign(cachePayload, {
                 chatQuestions,
                 currentIndex,
@@ -962,11 +983,17 @@ const ChatSurvey = () => {
         sequenceRef.current += 1;
         setIsBotResponding(false);
         setStage("setup");
-        setChatQuestions([]);
-        setCurrentIndex(0);
         setChatDraft("");
-        setAnswerMap({});
-        setMessages([]);
+    };
+
+    const handleContinueAssessment = () => {
+        if (isGenerating || isSubmitting || !hasResumableAssessment) {
+            return;
+        }
+
+        setStage("chat");
+        const currentQuestionId = chatQuestions[currentIndex]?.id;
+        setChatDraft(currentQuestionId ? answerMap[currentQuestionId] || "" : "");
     };
 
     const renderSectionHeader = (field) => (
@@ -1018,44 +1045,45 @@ const ChatSurvey = () => {
                             : setupForm[field.id].trim().toLowerCase() === option.toLowerCase();
 
                     return (
-                        <Button
-                            key={option}
-                            variant="outlined"
-                            onClick={() =>
-                                handleSetupChange(
-                                    field.id,
-                                    field.type === "multi" ? toggleHintValue(setupForm[field.id], option) : option,
-                                )
-                            }
-                            startIcon={
-                                isStack && isActive ? (
-                                    <CheckCircleRoundedIcon sx={{ fontSize: 16, color: "#4d7c0f" }} />
-                                ) : null
-                            }
-                            sx={{
-                                width: "100%",
-                                minHeight: isStack ? 40 : 44,
-                                justifyContent: "center",
-                                borderRadius: 2,
-                                px: isStack ? 1.5 : 2,
-                                py: isStack ? 0.8 : 1.1,
-                                textTransform: "none",
-                                fontWeight: isActive ? 800 : 700,
-                                fontSize: isStack ? "0.78rem" : "0.88rem",
-                                whiteSpace: "normal",
-                                textAlign: "center",
-                                lineHeight: 1.3,
-                                borderColor: isActive ? alpha("#84cc16", 0.55) : "transparent",
-                                bgcolor: isActive ? "#b7ef4e" : "#e7eef3",
-                                color: isActive ? "#456500" : "#64707b",
-                                "&:hover": {
-                                    borderColor: alpha("#84cc16", 0.42),
-                                    bgcolor: isActive ? "#a6dd41" : "#dde6ed",
-                                },
-                            }}
-                        >
-                            {option}
-                        </Button>
+                        <Tooltip key={option} title={getOptionHintText(field, option)} arrow>
+                            <Button
+                                variant="outlined"
+                                onClick={() =>
+                                    handleSetupChange(
+                                        field.id,
+                                        field.type === "multi" ? toggleHintValue(setupForm[field.id], option) : option,
+                                    )
+                                }
+                                startIcon={
+                                    isStack && isActive ? (
+                                        <CheckCircleRoundedIcon sx={{ fontSize: 16, color: "#4d7c0f" }} />
+                                    ) : null
+                                }
+                                sx={{
+                                    width: "100%",
+                                    minHeight: isStack ? 40 : 44,
+                                    justifyContent: "center",
+                                    borderRadius: 2,
+                                    px: isStack ? 1.5 : 2,
+                                    py: isStack ? 0.8 : 1.1,
+                                    textTransform: "none",
+                                    fontWeight: isActive ? 800 : 700,
+                                    fontSize: isStack ? "0.78rem" : "0.88rem",
+                                    whiteSpace: "normal",
+                                    textAlign: "center",
+                                    lineHeight: 1.3,
+                                    borderColor: isActive ? alpha("#84cc16", 0.55) : "transparent",
+                                    bgcolor: isActive ? "#b7ef4e" : "#e7eef3",
+                                    color: isActive ? "#456500" : "#64707b",
+                                    "&:hover": {
+                                        borderColor: alpha("#84cc16", 0.42),
+                                        bgcolor: isActive ? "#a6dd41" : "#dde6ed",
+                                    },
+                                }}
+                            >
+                                {option}
+                            </Button>
+                        </Tooltip>
                     );
                 })}
             </Box>
@@ -1072,31 +1100,34 @@ const ChatSurvey = () => {
                     const IconComponent = domainIconMap[option] || AddCircleOutlineRoundedIcon;
 
                     return (
-                        <Button
-                            key={option}
-                            variant="outlined"
-                            onClick={() => handleSetupChange(field.id, toggleHintValue(setupForm[field.id], option))}
-                            sx={{
-                                minHeight: 86,
-                                borderRadius: 2.5,
-                                borderColor: isActive ? alpha("#84cc16", 0.85) : "transparent",
-                                bgcolor: isActive ? "#bff365" : "#eaf0f4",
-                                color: isActive ? "#456500" : "#44515a",
-                                justifyContent: "flex-start",
-                                alignItems: "flex-start",
-                                p: 1.7,
-                                textTransform: "none",
-                                "&:hover": {
-                                    borderColor: alpha("#84cc16", 0.55),
-                                    bgcolor: isActive ? "#b3ea57" : "#e2eaef",
-                                },
-                            }}
-                        >
-                            <Stack spacing={1.3} alignItems="flex-start">
-                                <IconComponent sx={{ fontSize: 20 }} />
-                                <Typography sx={{ fontSize: "0.82rem", fontWeight: 800 }}>{option}</Typography>
-                            </Stack>
-                        </Button>
+                        <Tooltip key={option} title={getOptionHintText(field, option)} arrow>
+                            <Button
+                                variant="outlined"
+                                onClick={() =>
+                                    handleSetupChange(field.id, toggleHintValue(setupForm[field.id], option))
+                                }
+                                sx={{
+                                    minHeight: 86,
+                                    borderRadius: 2.5,
+                                    borderColor: isActive ? alpha("#84cc16", 0.85) : "transparent",
+                                    bgcolor: isActive ? "#bff365" : "#eaf0f4",
+                                    color: isActive ? "#456500" : "#44515a",
+                                    justifyContent: "flex-start",
+                                    alignItems: "flex-start",
+                                    p: 1.7,
+                                    textTransform: "none",
+                                    "&:hover": {
+                                        borderColor: alpha("#84cc16", 0.55),
+                                        bgcolor: isActive ? "#b3ea57" : "#e2eaef",
+                                    },
+                                }}
+                            >
+                                <Stack spacing={1.3} alignItems="flex-start">
+                                    <IconComponent sx={{ fontSize: 20 }} />
+                                    <Typography sx={{ fontSize: "0.82rem", fontWeight: 800 }}>{option}</Typography>
+                                </Stack>
+                            </Button>
+                        </Tooltip>
                     );
                 })}
             </Box>
@@ -1358,7 +1389,11 @@ const ChatSurvey = () => {
                                         <Button
                                             variant="contained"
                                             size="large"
-                                            onClick={requestGeneratedQuestions}
+                                            onClick={
+                                                hasResumableAssessment
+                                                    ? handleContinueAssessment
+                                                    : requestGeneratedQuestions
+                                            }
                                             disabled={isGenerating || isSubmitting}
                                             sx={{
                                                 minWidth: 220,
@@ -1378,11 +1413,21 @@ const ChatSurvey = () => {
                                                     <AutoAwesomeRoundedIcon fontSize="small" />
                                                 )}
                                                 <Box component="span">
-                                                    {isGenerating ? "Generating Questions..." : "Continue Assessment"}
+                                                    {isGenerating
+                                                        ? "Generating Questions..."
+                                                        : hasResumableAssessment
+                                                          ? `Continue Assessment (Q${Math.min(currentIndex + 1, totalQuestions)}/${totalQuestions})`
+                                                          : "Generate Assessment"}
                                                 </Box>
                                             </Stack>
                                         </Button>
                                     </Stack>
+                                    {hasResumableAssessment ? (
+                                        <Typography variant="caption" color="text.secondary">
+                                            Unfinished assessment found. Continue from question{" "}
+                                            {Math.min(currentIndex + 1, totalQuestions)} with your previous answers.
+                                        </Typography>
+                                    ) : null}
                                 </Stack>
                             </Box>
                         </Box>
