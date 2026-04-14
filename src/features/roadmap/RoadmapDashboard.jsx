@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Layers3, Sparkles, Target, UserRound } from "lucide-react";
+import { Alert } from "@mui/material";
+import { Layers3, RefreshCw, Sparkles, Target, UserRound } from "lucide-react";
 import Roadmap from "./Roadmap";
 import NodeDetail from "./NodeDetail";
-import { roadmapData } from "./data";
+import RoadmapSkeleton from "./RoadmapSkeleton";
 import { theme } from "../../common/constants/theme";
 import { assessmentApi } from "../profiles/candidate/candidate-assessment/services/assessmentApi";
+import { PrimaryButton } from "../../common/components/buttons";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -125,10 +128,34 @@ const hasRoadmapContent = (value) => {
 };
 
 function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
+    const navigate = useNavigate();
     const authenticatedUserId = useSelector((state) => state.auth?.userData?.id);
     const effectiveUserId = userIdProp ?? authenticatedUserId ?? null;
     const [resolvedRoadmap, setResolvedRoadmap] = useState(() => (hasRoadmapContent(roadmap) ? roadmap : null));
     const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(false);
+    const [error, setError] = useState(null);
+
+    const handleRegenerate = useCallback(async () => {
+        if (!effectiveUserId || effectiveUserId === EMPTY_GUID || isLoadingRoadmap) return;
+        setIsLoadingRoadmap(true);
+        setError(null);
+        try {
+            const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
+                userId: effectiveUserId,
+                forceRegenerate: true,
+            });
+            const nextRoadmap = extractRoadmapFromResponse(generateResponse);
+            if (hasRoadmapContent(nextRoadmap)) {
+                setResolvedRoadmap(nextRoadmap);
+            } else {
+                setError("Regeneration returned no content. Please try again.");
+            }
+        } catch (err) {
+            setError("Regeneration failed. Please try again.");
+        } finally {
+            setIsLoadingRoadmap(false);
+        }
+    }, [effectiveUserId, isLoadingRoadmap]);
 
     useEffect(() => {
         if (hasRoadmapContent(roadmap)) {
@@ -147,39 +174,45 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
 
         const syncRoadmap = async () => {
             setIsLoadingRoadmap(true);
+            setError(null);
 
             let nextRoadmap = null;
             let shouldGenerateRoadmap = false;
+            let syncError = null;
 
             try {
                 const fetchResponse = await assessmentApi.getRoadmapByUserId(effectiveUserId);
                 nextRoadmap = extractRoadmapFromResponse(fetchResponse);
                 shouldGenerateRoadmap = !hasRoadmapContent(nextRoadmap);
-            } catch (error) {
-                if (error?.response?.status === 404) {
+            } catch (err) {
+                if (err?.response?.status === 404) {
                     shouldGenerateRoadmap = true;
                 } else {
-                    console.error("Fetch roadmap failed:", error);
+                    syncError = "Failed to load your roadmap. Please try again.";
                 }
             }
 
-            if (shouldGenerateRoadmap) {
+            if (!syncError && shouldGenerateRoadmap) {
                 try {
                     const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
                         userId: effectiveUserId,
                         forceRegenerate: false,
                     });
                     nextRoadmap = extractRoadmapFromResponse(generateResponse);
-                } catch (error) {
-                    console.error("Generate roadmap fallback failed:", error);
+                    if (!hasRoadmapContent(nextRoadmap)) {
+                        syncError = "Could not generate your roadmap. Please complete your assessment first.";
+                    }
+                } catch (err) {
+                    syncError = "Could not generate your roadmap. Please try again later.";
                 }
             }
 
-            if (!cancelled && hasRoadmapContent(nextRoadmap)) {
-                setResolvedRoadmap(nextRoadmap);
-            }
-
             if (!cancelled) {
+                if (!syncError && hasRoadmapContent(nextRoadmap)) {
+                    setResolvedRoadmap(nextRoadmap);
+                } else if (syncError) {
+                    setError(syncError);
+                }
                 setIsLoadingRoadmap(false);
             }
         };
@@ -191,14 +224,14 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
         };
     }, [effectiveUserId]);
 
-    const sourceRoadmap = useMemo(() => normalizeRoadmapPayload(resolvedRoadmap ?? roadmap) ?? roadmapData, [resolvedRoadmap, roadmap]);
-    const roadmapMetadata = sourceRoadmap.roadmap_metadata ?? {};
+    const sourceRoadmap = useMemo(() => normalizeRoadmapPayload(resolvedRoadmap ?? roadmap) ?? null, [resolvedRoadmap, roadmap]);
+    const roadmapMetadata = sourceRoadmap?.roadmap_metadata ?? {};
 
     const { phaseDetailsById, nodeDetailsById } = useMemo(() => {
         const phaseMap = {};
         const nodeMap = {};
 
-        sourceRoadmap.phases.forEach((phase) => {
+        (sourceRoadmap?.phases ?? []).forEach((phase) => {
             const normalizedNodes = phase.nodes.map((node) => ({
                 ...node,
                 child_skills: getChildSkillNames(node.child_skills ?? []),
@@ -223,7 +256,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
     }, [sourceRoadmap]);
 
     const [selection, setSelection] = useState(() => {
-        const firstPhase = sourceRoadmap.phases[0];
+        const firstPhase = sourceRoadmap?.phases?.[0];
         return {
             phase_id: firstPhase?.phase_id ?? null,
             skill_id: firstPhase?.nodes?.[0]?.skill_id ?? null,
@@ -231,7 +264,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
     });
 
     useEffect(() => {
-        const firstPhase = sourceRoadmap.phases[0];
+        const firstPhase = sourceRoadmap?.phases?.[0];
         setSelection({
             phase_id: firstPhase?.phase_id ?? null,
             skill_id: firstPhase?.nodes?.[0]?.skill_id ?? null,
@@ -277,6 +310,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
                 background: theme.palette.background.default,
             }}
         >
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             <div
                 style={{
                     borderRadius: "28px",
@@ -323,6 +357,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
                         marginTop: "22px",
                         display: "flex",
                         flexWrap: "wrap",
+                        alignItems: "center",
                         gap: "20px",
                     }}
                 >
@@ -409,34 +444,119 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
                             </div>
                         </div>
                     </div>
+
+                    <button
+                        onClick={handleRegenerate}
+                        disabled={isLoadingRoadmap}
+                        style={{
+                            marginLeft: "auto",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "10px 20px",
+                            borderRadius: "999px",
+                            border: "1px solid rgba(255,255,255,0.3)",
+                            background: "rgba(255,255,255,0.12)",
+                            color: "inherit",
+                            fontSize: "14px",
+                            fontWeight: 700,
+                            cursor: isLoadingRoadmap ? "not-allowed" : "pointer",
+                            opacity: isLoadingRoadmap ? 0.6 : 1,
+                            transition: "background 0.2s",
+                        }}
+                    >
+                        <RefreshCw size={15} style={{ animation: isLoadingRoadmap ? "spin 1s linear infinite" : "none" }} />
+                        {isLoadingRoadmap ? "Regenerating..." : "Regenerate"}
+                    </button>
                 </div>
             </div>
 
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(0, 2fr) minmax(380px, 1fr)",
-                    flex: 1,
-                    minHeight: 0,
-                    overflow: "hidden",
-                    background: theme.palette.background.default,
-                    borderRadius: "18px",
-                    border: `1px solid ${theme.palette.divider}`,
-                }}
-            >
-                <div style={{ borderRight: `1px solid ${theme.palette.divider}`, minWidth: 0, minHeight: 0 }}>
-                    <Roadmap
-                        roadmapData={sourceRoadmap}
-                        onSelectNode={handleRoadmapSelect}
-                        showHeader={false}
-                        height="100%"
-                    />
+            {isLoadingRoadmap && !resolvedRoadmap ? (
+                <RoadmapSkeleton />
+            ) : error && !resolvedRoadmap ? (
+                <div
+                    style={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "16px",
+                        padding: "40px 24px",
+                    }}
+                >
+                    <Alert
+                        severity="error"
+                        onClose={() => setError(null)}
+                        sx={{ width: "100%", maxWidth: 520, borderRadius: "12px" }}
+                    >
+                        {error}
+                    </Alert>
+                    <PrimaryButton
+                        size="small"
+                        onClick={handleRegenerate}
+                        loading={isLoadingRoadmap}
+                        sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                        Retry
+                    </PrimaryButton>
                 </div>
+            ) : !sourceRoadmap ? (
+                <div
+                    style={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "12px",
+                        padding: "40px 24px",
+                        color: theme.palette.text.secondary,
+                        textAlign: "center",
+                    }}
+                >
+                    <div style={{ fontSize: "48px", lineHeight: 1 }}>🗺️</div>
+                    <div style={{ fontSize: "20px", fontWeight: 700, color: theme.palette.text.primary }}>
+                        No roadmap yet
+                    </div>
+                    <div style={{ fontSize: "14px", maxWidth: "360px", lineHeight: 1.6 }}>
+                        Complete your skills assessment to generate a personalized learning roadmap.
+                    </div>
+                    <PrimaryButton
+                        size="small"
+                        onClick={() => navigate("/assessment")}
+                        sx={{ mt: 1, textTransform: "none", fontWeight: 700 }}
+                    >
+                        Go to Assessment
+                    </PrimaryButton>
+                </div>
+            ) : (
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "minmax(0, 2fr) minmax(380px, 1fr)",
+                        flex: 1,
+                        minHeight: 0,
+                        overflow: "hidden",
+                        background: theme.palette.background.default,
+                        borderRadius: "18px",
+                        border: `1px solid ${theme.palette.divider}`,
+                    }}
+                >
+                    <div style={{ borderRight: `1px solid ${theme.palette.divider}`, minWidth: 0, minHeight: 0 }}>
+                        <Roadmap
+                            roadmapData={sourceRoadmap}
+                            onSelectNode={handleRoadmapSelect}
+                            showHeader={false}
+                            height="100%"
+                        />
+                    </div>
 
-                <div style={{ background: theme.palette.background.paper, minWidth: 0, minHeight: 0 }}>
-                    <NodeDetail phase={selectedPhase} node={selectedSkill} />
+                    <div style={{ background: theme.palette.background.paper, minWidth: 0, minHeight: 0 }}>
+                        <NodeDetail phase={selectedPhase} node={selectedSkill} />
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
