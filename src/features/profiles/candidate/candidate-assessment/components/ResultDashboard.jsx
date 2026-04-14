@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Accordion,
     AccordionDetails,
@@ -13,14 +14,11 @@ import {
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { alpha } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
 import { PrimaryButton } from "../../../../../common/components/buttons";
 import { assessmentApi, setAssessmentForceRequired } from "../services/assessmentApi";
 import { roadmapData as fallbackRoadmap } from "../../../../roadmap/data";
 import skillReferences from "../../../../../utils/skill-references.json";
-
-const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 const statusVisualMap = {
     good: {
@@ -287,9 +285,7 @@ const ResultDashboard = () => {
         skillScores,
         matchPercentage,
         lastMatchPercentage,
-        nextStep,
         saveAssessmentSnapshot,
-        setRoadmap,
         roadmap,
     } = useAssessment();
     const [isSaving, setIsSaving] = useState(false);
@@ -648,40 +644,7 @@ const ResultDashboard = () => {
         setIsSaving(true);
         try {
             await saveAssessmentSnapshot();
-
-            if (hasRoadmap) {
-                nextStep();
-                return;
-            }
-
-            const userId = answers?.userId;
-            let resolvedRoadmap = null;
-
-            if (userId && userId !== EMPTY_GUID) {
-                try {
-                    const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
-                        userId,
-                        forceRegenerate: true,
-                    });
-                    resolvedRoadmap = generateResponse?.data?.roadmap ?? generateResponse?.data?.Roadmap ?? null;
-                } catch (error) {
-                    console.error("Generate roadmap failed:", error);
-                }
-
-                if (!resolvedRoadmap) {
-                    try {
-                        const fetchResponse = await assessmentApi.getRoadmapByUserId(userId);
-                        resolvedRoadmap = fetchResponse?.data?.roadmap ?? fetchResponse?.data?.Roadmap ?? null;
-                    } catch (error) {
-                        console.error("Fetch roadmap fallback failed:", error);
-                    }
-                }
-            }
-
-            const finalRoadmap = resolvedRoadmap ?? fallbackRoadmap;
-            setRoadmap(finalRoadmap);
-
-            nextStep();
+            navigate("/roadmap");
         } finally {
             setIsSaving(false);
         }

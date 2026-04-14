@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from "react";
 import { Background, Controls, MarkerType, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import RoadmapNode from "./RoadmapNode";
-import { roadmapData } from "./data";
 
 const NODE_WIDTH = 280;
 const NODE_HEIGHT = 165;
@@ -94,7 +93,13 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
         const nodes = [];
         const edges = [];
         const nodeDetailsById = {};
-        const sourceRoadmap = roadmapInput?.phases?.length ? roadmapInput : roadmapData;
+        const phases = roadmapInput?.phases ?? [];
+
+        if (!phases.length) {
+            return { nodes, edges, nodeDetailsById };
+        }
+
+        const sourceRoadmap = roadmapInput;
 
         const maxNodesPerPhase = sourceRoadmap.phases.reduce((maxCount, phase) => {
             return Math.max(maxCount, phase.nodes.length);
@@ -219,18 +224,33 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
             ) : null}
 
             <div style={{ height: showHeader ? "85%" : "100%" }}>
-                <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    nodeTypes={nodeTypes}
-                    fitView
-                    fitViewOptions={{ padding: 0.18 }}
-                    onNodeClick={handleNodeClick}
-                    proOptions={{ hideAttribution: true }}
-                >
-                    <Background color="#e2e2e2" gap={20} />
-                    <Controls />
-                </ReactFlow>
+                {nodes.length === 0 ? (
+                    <div
+                        style={{
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#64748b",
+                            fontSize: "14px",
+                        }}
+                    >
+                        No phases to display.
+                    </div>
+                ) : (
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        nodeTypes={nodeTypes}
+                        fitView
+                        fitViewOptions={{ padding: 0.18 }}
+                        onNodeClick={handleNodeClick}
+                        proOptions={{ hideAttribution: true }}
+                    >
+                        <Background color="#e2e2e2" gap={20} />
+                        <Controls />
+                    </ReactFlow>
+                )}
             </div>
         </div>
     );

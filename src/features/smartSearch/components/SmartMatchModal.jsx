@@ -970,10 +970,10 @@ function StepVerification({ extractedJsonStr, setExtractedJsonStr, onConfirm, lo
             style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}
         >
             <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
-                Step 2: Verify Profile Data
+                Step 2: Verify Search Profile
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
-                Review and dynamically edit the extracted context before continuing.
+                Review and edit the key details that will drive your coach matching.
             </Typography>
 
             <Box sx={{ flex: 1, overflowY: "auto", pr: 1.5, mb: 2, minHeight: 0, display: "flex", flexDirection: "column" }}>
@@ -1440,12 +1440,25 @@ export default function SmartMatchModal({ open, onClose }) {
         ? (step === 0 ? 0 : step === 3 ? 1 : step === 4 ? 2 : 0) // No verify
         : (step <= 1 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3);   // With verify
 
-    // Sync extracted data to local string for editing
+    // Sync extracted data to local string for editing.
+    // Show only the distilled search_profile fields — compact and user-friendly.
     useEffect(() => {
         if (extractedData) {
-            const cleanData = { ...extractedData };
-            delete cleanData.error;
-            setExtractedJsonStr(JSON.stringify(cleanData, null, 2));
+            const searchProfile = {};
+            if (extractedData.cv?.search_profile) {
+                searchProfile.cv = extractedData.cv.search_profile;
+            }
+            if (extractedData.jd?.search_profile) {
+                searchProfile.jd = extractedData.jd.search_profile;
+            }
+            // Fallback: if no search_profile found, use raw data minus noise
+            if (Object.keys(searchProfile).length === 0) {
+                const cleanData = { ...extractedData };
+                delete cleanData.error;
+                setExtractedJsonStr(JSON.stringify(cleanData, null, 2));
+            } else {
+                setExtractedJsonStr(JSON.stringify(searchProfile, null, 2));
+            }
         }
     }, [extractedData]);
 
@@ -1454,14 +1467,13 @@ export default function SmartMatchModal({ open, onClose }) {
             if (cvFile || jdFile) {
                 setStep(1); // Show extraction OCR scanning screen
                 let combinedExtraction = {};
-                let hasError = false;
 
                 // Document Extraction Track (Process sequentially if both)
                 if (cvFile) {
                     const res = await dispatch(extractDocument({ file: cvFile, docType: "cv" })).unwrap();
                     if (res?.data) combinedExtraction.cv = res.data;
                 }
-                
+
                 if (jdFile) {
                     const res = await dispatch(extractDocument({ file: jdFile, docType: "jd" })).unwrap();
                     if (res?.data) combinedExtraction.jd = res.data;

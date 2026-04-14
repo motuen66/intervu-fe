@@ -113,9 +113,24 @@ function NodeDetail({ phase, node }) {
 
     if (!phase) {
         return (
-            <div style={{ padding: "28px" }}>
-                <h2 style={{ marginTop: 0, marginBottom: "8px", color: "#111827" }}>Phase Detail</h2>
-                <p style={{ margin: 0, color: "#6b7280" }}>Select a phase or skill to view detailed guidance.</p>
+            <div
+                style={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "10px",
+                    padding: "28px",
+                    textAlign: "center",
+                    color: "#64748b",
+                }}
+            >
+                <div style={{ fontSize: "36px", lineHeight: 1 }}>🗂️</div>
+                <div style={{ fontWeight: 700, fontSize: "16px", color: "#0f172a" }}>Nothing selected</div>
+                <p style={{ margin: 0, fontSize: "13px", lineHeight: 1.6, maxWidth: "220px" }}>
+                    Click a phase or skill in the roadmap to view detailed guidance here.
+                </p>
             </div>
         );
     }
@@ -201,7 +216,24 @@ function NodeDetail({ phase, node }) {
                         <Users size={18} /> Recommended Coaches
                     </h3>
                     {recommendedCoaches.length === 0 ? (
-                        <p style={{ margin: 0, color: "#64748b" }}>No recommended coaches for this phase.</p>
+                        <div
+                            style={{
+                                padding: "20px",
+                                borderRadius: "14px",
+                                border: "1px solid #e2e8f0",
+                                background: "#f8fafc",
+                                textAlign: "center",
+                                color: "#64748b",
+                            }}
+                        >
+                            <div style={{ fontSize: "24px", lineHeight: 1, marginBottom: "8px" }}>👥</div>
+                            <div style={{ fontWeight: 600, fontSize: "14px", color: "#0f172a", marginBottom: "4px" }}>
+                                No coaches assigned
+                            </div>
+                            <p style={{ margin: 0, fontSize: "12px", lineHeight: 1.5 }}>
+                                Coach recommendations will appear here once assigned for this phase.
+                            </p>
+                        </div>
                     ) : (
                         <div style={{ display: "grid", gap: "10px" }}>
                             {recommendedCoaches.map((coach) => (
@@ -255,7 +287,24 @@ function NodeDetail({ phase, node }) {
                         <History size={18} /> Mock History
                     </h3>
                     {mockHistory.length === 0 ? (
-                        <p style={{ margin: 0, color: "#64748b" }}>No mock interview history for this phase.</p>
+                        <div
+                            style={{
+                                padding: "20px",
+                                borderRadius: "14px",
+                                border: "1px solid #e2e8f0",
+                                background: "#f8fafc",
+                                textAlign: "center",
+                                color: "#64748b",
+                            }}
+                        >
+                            <div style={{ fontSize: "24px", lineHeight: 1, marginBottom: "8px" }}>🕐</div>
+                            <div style={{ fontWeight: 600, fontSize: "14px", color: "#0f172a", marginBottom: "4px" }}>
+                                No mock interviews yet
+                            </div>
+                            <p style={{ margin: 0, fontSize: "12px", lineHeight: 1.5 }}>
+                                Complete a mock interview for this phase to see your history and scores here.
+                            </p>
+                        </div>
                     ) : (
                         <div style={{ display: "grid", gap: "10px" }}>
                             {mockHistory.map((mock) => (
