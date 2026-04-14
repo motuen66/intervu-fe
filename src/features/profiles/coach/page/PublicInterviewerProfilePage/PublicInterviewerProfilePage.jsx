@@ -10,7 +10,6 @@ import toast from "react-hot-toast";
 import { PAYOS_TRANSACTION_STATUS, TRANSACTION_STATUS } from "../../../../../common/constants/status";
 import BookingSlotDialog from "./BookingSlotDialog";
 import JDBookingDialog from "./JDBookingDialog";
-import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
 import "./EliteCoachProfile.css";
 import { useSelector } from "react-redux";
 import { ROLES } from "../../../../../common/constants/common";
@@ -25,7 +24,7 @@ const PublicInterviewerProfilePage = () => {
     // State
     const [profile, setProfile] = useState(null);
     const [services, setServices] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [hasLoaded, setHasLoaded] = useState(false);
     const [error, setError] = useState(null);
     const [availableDates, setAvailableDates] = useState([]);
 
@@ -47,7 +46,7 @@ const PublicInterviewerProfilePage = () => {
     }, [slugProfileUrl, orderCode, paymentStatus]);
 
     const loadData = async () => {
-        setLoading(true);
+        setHasLoaded(false);
         try {
             // Fetch Profile
             const profileRes = await callApi({
@@ -71,7 +70,7 @@ const PublicInterviewerProfilePage = () => {
         } catch (e) {
             setError("Failed to load coach profile.");
         } finally {
-            setLoading(false);
+            setHasLoaded(true);
         }
     };
 
@@ -186,12 +185,8 @@ const PublicInterviewerProfilePage = () => {
         return parsed.toLocaleDateString("en-US", { month: "numeric", year: "numeric" });
     };
 
-    if (loading) {
-        return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh" }}>
-                <CommonLoader text="Loading Profile" subtext="Preparing the coach's details for you..." />
-            </Box>
-        );
+    if (!hasLoaded && slugProfileUrl) {
+        return null;
     }
 
     if (error || !profile) {

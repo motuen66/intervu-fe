@@ -115,6 +115,7 @@ export default function UserManagementPage() {
             const response = await callApi({
                 method: METHOD.GET,
                 endpoint: `${adminEndPoints.FILTER_USERS}?${params.join('&')}`,
+                useGlobalLoading: false,
             });
 
             if (response?.success) {

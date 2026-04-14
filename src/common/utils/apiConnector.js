@@ -2,7 +2,7 @@ import axios from "axios";
 import { BE_BASE_URL } from "../constants/env";
 import { HTTP_RESPONSE_STATUS_CODE, METHOD } from "../constants/api";
 import toast from "react-hot-toast";
-import { setLoading } from "../store/authSlice";
+import { startGlobalLoading, stopGlobalLoading } from "../store/authSlice";
 import { store } from "../../main";
 
 export const axiosInstance = axios.create({
@@ -102,9 +102,12 @@ export const callApi = async ({
     headers,
     displaySuccessMessage = false,
     alertErrorMessage = false,
+    useGlobalLoading = true,
 }) => {
     try {
-        store.dispatch(setLoading(true));
+        if (useGlobalLoading) {
+            store.dispatch(startGlobalLoading());
+        }
         const isGetOrDelete = method === METHOD.GET || method === METHOD.DELETE;
         const response = await axiosInstance({
             method,
@@ -141,6 +144,8 @@ export const callApi = async ({
             throw error;
         }
     } finally {
-        store.dispatch(setLoading(false));
+        if (useGlobalLoading) {
+            store.dispatch(stopGlobalLoading());
+        }
     }
 };

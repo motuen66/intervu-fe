@@ -198,7 +198,11 @@ const fetchProfilesByIds = async (ids = []) => {
     const pairs = await Promise.all(
         unique.map(async (id) => {
             try {
-                const res = await callApi({ method: METHOD.GET, endpoint: profileEndPoints.GET_PROFILE(id) });
+                const res = await callApi({
+                    method: METHOD.GET,
+                    endpoint: profileEndPoints.GET_PROFILE(id),
+                    useGlobalLoading: false,
+                });
                 const profile = res?.data || {};
                 const name = profile.fullName || profile.name || profile.username || profile.email || id;
                 return [id, name];
@@ -256,6 +260,7 @@ const PaymentHistoryPage = () => {
             const res = await callApi({
                 method: METHOD.GET,
                 endpoint: interviewEndPoints.GET_PAYMENT_HISTORY,
+                useGlobalLoading: false,
             });
             const sanitized = sanitizeTransactions(res?.data);
 
@@ -384,7 +389,7 @@ const PaymentHistoryPage = () => {
 
                 {loading ? (
                     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 320 }}>
-                        <CircularProgress />
+                        <CircularProgress size={32} />
                     </Box>
                 ) : (
                     <>

@@ -60,6 +60,7 @@ export default function AdminQuestionBankPage() {
                     pageSize,
                     ...(searchTerm && { searchTerm }),
                 },
+                useGlobalLoading: false,
             });
 
             if (response?.success) {

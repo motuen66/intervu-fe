@@ -9,6 +9,7 @@ import RoadmapSkeleton from "./RoadmapSkeleton";
 import { theme } from "../../common/constants/theme";
 import { assessmentApi } from "../profiles/candidate/candidate-assessment/services/assessmentApi";
 import { PrimaryButton } from "../../common/components/buttons";
+import useGlobalLoading from "../../common/hooks/useGlobalLoading";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -131,6 +132,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
     const navigate = useNavigate();
     const authenticatedUserId = useSelector((state) => state.auth?.userData?.id);
     const effectiveUserId = userIdProp ?? authenticatedUserId ?? null;
+    const { withLoading } = useGlobalLoading();
     const [resolvedRoadmap, setResolvedRoadmap] = useState(() => (hasRoadmapContent(roadmap) ? roadmap : null));
     const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(false);
     const [error, setError] = useState(null);
@@ -222,7 +224,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
         return () => {
             cancelled = true;
         };
-    }, [effectiveUserId]);
+    }, [effectiveUserId, withLoading]);
 
     const sourceRoadmap = useMemo(() => normalizeRoadmapPayload(resolvedRoadmap ?? roadmap) ?? null, [resolvedRoadmap, roadmap]);
     const roadmapMetadata = sourceRoadmap?.roadmap_metadata ?? {};

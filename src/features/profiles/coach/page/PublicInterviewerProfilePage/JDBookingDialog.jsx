@@ -25,7 +25,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckIcon from "@mui/icons-material/Check";
 import LanguageIcon from "@mui/icons-material/Language";
-import CircularProgress from "@mui/material/CircularProgress";
 import { Link, FileUser, ArrowRight, Target, Search, Terminal, CheckCircle, Edit2, UploadCloud } from "lucide-react";
 import { uploadMedia } from "../../../../../common/services/mediaApi";
 
@@ -792,11 +791,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     disabled={uploadingJd}
                                                     sx={{ color: "#6366f1" }}
                                                 >
-                                                    {uploadingJd ? (
-                                                        <CircularProgress size={16} color="inherit" />
-                                                    ) : (
-                                                        <UploadCloud size={18} />
-                                                    )}
+                                                    <UploadCloud size={18} />
                                                 </IconButton>
                                                 <input
                                                     type="file"
@@ -862,11 +857,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     disabled={uploadingCv}
                                                     sx={{ color: "#6366f1" }}
                                                 >
-                                                    {uploadingCv ? (
-                                                        <CircularProgress size={16} color="inherit" />
-                                                    ) : (
-                                                        <UploadCloud size={18} />
-                                                    )}
+                                                    <UploadCloud size={18} />
                                                 </IconButton>
                                                 <input
                                                     type="file"
@@ -1011,11 +1002,9 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
                                     {loadingServices ? (
                                         <Box display="flex" justifyContent="center" py={8}>
-                                            <CircularProgress
-                                                size={40}
-                                                thickness={5}
-                                                sx={{ color: "var(--ep-accent)" }}
-                                            />
+                                            <Typography color="text.secondary" fontWeight={600}>
+                                                Loading interview services...
+                                            </Typography>
                                         </Box>
                                     ) : (
                                         <DndContext
@@ -1077,7 +1066,9 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                             <Box sx={{ flex: 1, minWidth: 0 }}>
                                 {loadingSlots ? (
                                     <Box display="flex" justifyContent="center" py={10}>
-                                        <CircularProgress />
+                                        <Typography color="text.secondary" fontWeight={600}>
+                                            Loading available slots...
+                                        </Typography>
                                     </Box>
                                 ) : (
                                     <Stack direction={{ xs: "column", sm: "row" }} spacing={0} sx={{ minHeight: 400 }}>

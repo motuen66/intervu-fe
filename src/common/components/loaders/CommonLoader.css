@@ -13,7 +13,19 @@
     width: 160px;
     height: 160px;
     margin-bottom: 2rem;
-    transform-style: preserve-3d;
+}
+
+.loader-avatar-wrapper::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -22px;
+    width: 110px;
+    height: 18px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.22), rgba(15, 23, 42, 0));
+    filter: blur(2px);
 }
 
 .loader-avatar-circle {
@@ -36,34 +48,6 @@
     object-fit: cover;
 }
 
-/* Advanced High-Tech Orbit */
-.loader-orbit-ring {
-    position: absolute;
-    top: -20px;
-    left: -20px;
-    right: -20px;
-    bottom: -20px;
-    border: 2px solid transparent;
-    border-top-color: #bef264;
-    border-bottom-color: #0f172a;
-    border-radius: 50%;
-    animation: tech-spin 2s cubic-bezier(0.53, 0.21, 0.29, 0.67) infinite;
-    filter: drop-shadow(0 0 8px rgba(190, 242, 100, 0.5));
-    transform: rotateX(70deg);
-}
-
-.loader-orbit-ring-inner {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    right: 5px;
-    bottom: 5px;
-    border: 1px dashed rgba(190, 242, 100, 0.3);
-    border-radius: 50%;
-    animation: tech-spin-reverse 3s linear infinite;
-    transform: rotateX(70deg);
-}
-
 .loader-text {
     margin-top: 2rem;
     font-weight: 800;
@@ -77,26 +61,6 @@
     font-size: 0.9rem;
     color: #64748b;
     font-weight: 500;
-}
-
-@keyframes tech-spin {
-    0% {
-        transform: rotateX(70deg) rotateZ(0deg);
-    }
-
-    100% {
-        transform: rotateX(70deg) rotateZ(360deg);
-    }
-}
-
-@keyframes tech-spin-reverse {
-    0% {
-        transform: rotateX(70deg) rotateZ(360deg);
-    }
-
-    100% {
-        transform: rotateX(70deg) rotateZ(0deg);
-    }
 }
 
 @keyframes avatar-pulse {

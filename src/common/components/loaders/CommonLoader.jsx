@@ -4,7 +4,7 @@ import './CommonLoader.css';
 import loaderImg from '../../../assets/illustrations/interviewer-loader-3d.png';
 
 /**
- * CommonLoader - A minimalist, high-tech 3D avatar loader.
+ * CommonLoader - Shared premium loader UI for pages and global loading gate.
  * @param {string} text - Main message
  * @param {string} subtext - Supporting message
  */
@@ -15,11 +15,6 @@ const CommonLoader = ({
   return (
     <Box className="common-loader-container">
       <Box className="loader-avatar-wrapper">
-        {/* Orbital Rings */}
-        <Box className="loader-orbit-ring" />
-        <Box className="loader-orbit-ring-inner" />
-
-        {/* Circular Avatar */}
         <Box className="loader-avatar-circle">
           <img
             src={loaderImg}

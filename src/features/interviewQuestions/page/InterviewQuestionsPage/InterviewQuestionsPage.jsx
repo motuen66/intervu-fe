@@ -14,12 +14,12 @@ import FormSelect from "../../../../common/components/form/FormSelect";
 export default function InterviewQuestionsPage() {
     const navigate = useNavigate();
     const [questions, setQuestions] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(null);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [sidebarSearch, setSidebarSearch] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const [companies, setCompanies] = useState([]);
 
@@ -30,6 +30,7 @@ export default function InterviewQuestionsPage() {
             method: METHOD.GET,
             endpoint: homeEndPoints.GET_ALL_COMPANIES,
             arg: { page: 1, pageSize: 200 },
+            useGlobalLoading: false,
         })
             .then(({ data }) => {
                 const payload = data ?? {};
@@ -79,6 +80,7 @@ export default function InterviewQuestionsPage() {
                 method: METHOD.GET,
                 endpoint: interviewQuestionEndPoints.GET_LIST,
                 arg: params,
+                useGlobalLoading: false,
             });
             const payload = data ?? {};
             const items = payload.items ?? payload.data ?? (Array.isArray(payload) ? payload : []);
@@ -144,8 +146,8 @@ export default function InterviewQuestionsPage() {
                 {/* Question list */}
                 <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     {loading ? (
-                        <Box sx={{ display: "flex", justifyContent: "center", py: 7.5 }}>
-                            <CircularProgress />
+                        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                            <CircularProgress size={30} />
                         </Box>
                     ) : questions.length === 0 ? (
                         <Typography align="center" color="text.secondary" py={7.5}>

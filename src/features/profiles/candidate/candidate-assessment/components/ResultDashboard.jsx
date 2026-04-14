@@ -14,8 +14,11 @@ import {
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { alpha } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
 import { PrimaryButton } from "../../../../../common/components/buttons";
+import { assessmentApi, setAssessmentForceRequired } from "../services/assessmentApi";
+import { roadmapData as fallbackRoadmap } from "../../../../roadmap/data";
 import skillReferences from "../../../../../utils/skill-references.json";
 
 const statusVisualMap = {
@@ -66,6 +69,66 @@ const TECHSTACK_GROUP_HINTS = {
 };
 
 const DATABASE_KEYWORDS = ["sql", "database", "query", "schema", "table", "join", "postgres", "mysql", "mssql"];
+const GENERIC_BACKEND_KEYWORDS = [
+    "backend",
+    "api",
+    "service",
+    "microservice",
+    "endpoint",
+    "authorize",
+    "authorization",
+    "auth",
+    "authentication",
+    "jwt",
+    "oauth",
+    "deployment",
+    "deploy",
+    "docker",
+    "kubernetes",
+    "ci/cd",
+    "pipeline",
+    "monitoring",
+    "logging",
+    "queue",
+    "cache",
+    "caching",
+    "security",
+    "identity",
+    "token",
+    "session",
+    "permissions",
+    "rbac",
+    "authz",
+];
+
+const BACKEND_STACK_FALLBACK_KEYWORDS = [
+    "backend",
+    "api",
+    "server",
+    "service",
+    "node",
+    "express",
+    ".net",
+    "dotnet",
+    "asp.net",
+    "c#",
+    "java",
+    "spring",
+    "go",
+    "golang",
+    "python",
+    "django",
+    "flask",
+    "fastapi",
+    "graphql",
+    "sql",
+    "postgres",
+    "mysql",
+    "mssql",
+    "aws",
+    "cloud",
+    "deployment",
+];
 
 const LEVEL_TO_SFIA_FALLBACK = {
     0: 0,
@@ -117,6 +180,31 @@ const normalizeText = (value) =>
     String(value || "")
         .trim()
         .toLowerCase();
+
+const getStackHint = (stack) => {
+    const normalizedStack = normalizeText(stack);
+    const directHint = TECHSTACK_GROUP_HINTS[normalizedStack];
+    if (directHint) {
+        return directHint;
+    }
+
+    const matchedHintKey = Object.keys(TECHSTACK_GROUP_HINTS).find(
+        (key) => normalizedStack.includes(key) || key.includes(normalizedStack),
+    );
+
+    return matchedHintKey ? TECHSTACK_GROUP_HINTS[matchedHintKey] : null;
+};
+
+const isLikelyBackendStack = (stack) => {
+    const normalizedStack = normalizeText(stack);
+    const hint = getStackHint(stack) || {};
+    const categories = (hint.categories || []).map((item) => normalizeText(item));
+    if (categories.includes("backend")) {
+        return true;
+    }
+
+    return BACKEND_STACK_FALLBACK_KEYWORDS.some((keyword) => keyword && normalizedStack.includes(keyword));
+};
 
 const toDisplayLevel = (avgMapLevel) => {
     if (avgMapLevel <= 0.5) return "None";
@@ -192,6 +280,7 @@ const mapDerivedSkillToScore = (derivedSkill) => {
 };
 
 const ResultDashboard = () => {
+    const navigate = useNavigate();
     const {
         answers,
         skillScores,
@@ -368,6 +457,8 @@ const ResultDashboard = () => {
 
         const bucketMap = new Map(selectedStacks.map((stack) => [stack, []]));
         const unmatched = [];
+        const backendStacks = selectedStacks.filter((stack) => isLikelyBackendStack(stack));
+        let backendRoundRobinIndex = 0;
         const sqlStack = selectedStacks.find((stack) => {
             const normalized = normalizeText(stack);
             return ["sql", "postgresql", "postgres", "mysql", "mssql", "sql server"].includes(normalized);
@@ -384,7 +475,7 @@ const ResultDashboard = () => {
             }
 
             const keywordMatches = selectedStacks.filter((stack) => {
-                const hint = TECHSTACK_GROUP_HINTS[normalizeText(stack)] || {};
+                const hint = getStackHint(stack) || {};
                 const keywords = hint.keywords || [normalizeText(stack)];
                 return keywords.some((keyword) => keyword && skillName.includes(keyword));
             });
@@ -400,13 +491,23 @@ const ResultDashboard = () => {
             }
 
             const categoryMatches = selectedStacks.filter((stack) => {
-                const hint = TECHSTACK_GROUP_HINTS[normalizeText(stack)] || {};
+                const hint = getStackHint(stack) || {};
                 const categories = (hint.categories || []).map((item) => normalizeText(item));
                 return categories.includes(skillCategory);
             });
 
             if (categoryMatches.length > 0) {
                 bucketMap.get(categoryMatches[0]).push(skill);
+                return;
+            }
+
+            const isGenericBackendSkill =
+                skillCategory === "backend" ||
+                GENERIC_BACKEND_KEYWORDS.some((keyword) => keyword && skillName.includes(keyword));
+            if (isGenericBackendSkill && backendStacks.length > 0) {
+                const assignedStack = backendStacks[backendRoundRobinIndex % backendStacks.length];
+                backendRoundRobinIndex += 1;
+                bucketMap.get(assignedStack)?.push(skill);
                 return;
             }
 
@@ -549,6 +650,13 @@ const ResultDashboard = () => {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleGoHome = () => {
+        if (answers?.userId) {
+            setAssessmentForceRequired(answers.userId, false);
+        }
+        navigate("/home");
     };
 
     return (
@@ -770,6 +878,24 @@ const ResultDashboard = () => {
                             </Typography>
                         </Box>
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+                            <PrimaryButton
+                                size="small"
+                                onClick={handleGoHome}
+                                sx={{
+                                    minWidth: 120,
+                                    minHeight: 38,
+                                    py: 0.55,
+                                    textTransform: "none",
+                                    fontWeight: 800,
+                                    bgcolor: alpha("#ffffff", 0.12),
+                                    color: "#ffffff",
+                                    border: "1px solid",
+                                    borderColor: alpha("#ffffff", 0.32),
+                                    "&:hover": { bgcolor: alpha("#ffffff", 0.2) },
+                                }}
+                            >
+                                Go Home
+                            </PrimaryButton>
                             <PrimaryButton
                                 size="small"
                                 loading={isSaving}

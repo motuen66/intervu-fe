@@ -91,6 +91,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
             method: METHOD.GET,
             endpoint: commentEndPoints.GET_LIST(item.id),
             arg: { page: 1, pageSize: 1 },
+            useGlobalLoading: false,
         })
             .then(({ data }) => {
                 const count = data?.totalCount ?? data?.total ?? null;
@@ -112,6 +113,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
             const { data: res } = await callApi({
                 method: METHOD.POST,
                 endpoint: interactionEndPoints.LIKE_QUESTION(item.id),
+                useGlobalLoading: false,
             });
             const serverLiked = typeof res === "boolean" ? res : (res?.isLiked ?? !prevLiked);
             setLiked(serverLiked);
@@ -141,6 +143,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                 endpoint: interactionEndPoints.SAVE_QUESTION(item.id),
                 arg: nextSaved,
                 headers: { "Content-Type": "application/json" },
+                useGlobalLoading: false,
             });
 
             const serverSaved = res?.isSaved ?? (typeof res === "boolean" ? res : nextSaved);

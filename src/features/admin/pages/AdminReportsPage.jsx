@@ -151,6 +151,7 @@ export default function AdminReportsPage() {
             const response = await callApi({
                 method: METHOD.GET,
                 endpoint: `${adminEndPoints.GET_QUESTION_REPORTS}?${params.join("&")}`,
+                useGlobalLoading: false,
             });
 
             if (response?.success) {

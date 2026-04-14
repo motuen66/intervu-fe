@@ -35,6 +35,7 @@ export default defineConfig(({ mode, command }) => {
 
     return {
         plugins: [react()],
+        assetsInclude: ["**/*.lottie"],
         server: {
             host: true,
             allowedHosts,

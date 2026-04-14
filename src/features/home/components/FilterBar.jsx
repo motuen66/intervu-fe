@@ -12,7 +12,7 @@ import {
   Stack,
   Collapse
 } from '@mui/material';
-import { fetchInterviewers, fetchIndustries, setFilters, clearFilters } from '../store/homeSlice';
+import { fetchIndustries, setFilters, clearFilters } from '../store/homeSlice';
 import { PrimaryButton, SecondaryButton, DangerButton } from '../../../common/components/buttons';
 import FormTextField from '../../../common/components/form/FormTextField';
 import FormSelect from '../../../common/components/form/FormSelect';
@@ -113,21 +113,6 @@ function FilterBar({ onOpenSmartMatch }) {
   const applySearch = () => {
     // Sync local filters to Redux
     dispatch(setFilters(localFilters));
-    
-    // Trigger the search immediately
-    dispatch(
-      fetchInterviewers({
-        page: 1,
-        searchTerm: localFilters.searchTerm.trim() || undefined,
-        companyId: localFilters.company || undefined,
-        industryId: localFilters.industry || undefined,
-        skillIds: localFilters.skillIds?.length ? localFilters.skillIds.join(',') : undefined,
-        minExperienceYears: localFilters.minExperienceYears || undefined,
-        maxExperienceYears: localFilters.maxExperienceYears || undefined,
-        minPrice: localFilters.minPrice || undefined,
-        maxPrice: localFilters.maxPrice || undefined,
-      })
-    );
   };
 
   const handleLocalFilterChange = (field, value) => {
@@ -156,9 +141,6 @@ function FilterBar({ onOpenSmartMatch }) {
     };
     setLocalFilters(cleared);
     dispatch(clearFilters());
-    
-    // Immediately fetch all coaches when clearing
-    dispatch(fetchInterviewers({ page: 1 }));
   };
 
   const companiesList = Array.isArray(companies) ? companies : [];

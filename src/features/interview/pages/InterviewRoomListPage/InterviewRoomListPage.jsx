@@ -1,5 +1,5 @@
-import { Box, Typography, Stack, Tabs, Tab, Container } from "@mui/material";
-import CommonLoader from "../../../../common/components/loaders/CommonLoader";
+import { Box, Typography, Stack, Tabs, Tab, Container, CircularProgress } from "@mui/material";
+// import CommonLoader from "../../../../common/components/loaders/CommonLoader";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
@@ -7,7 +7,7 @@ import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import toast from "react-hot-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 import { ROLES } from "../../../../common/constants/common.js";
 import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
@@ -54,10 +54,10 @@ function InterviewRoomListPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const user = useUser();
+    const [loading, setLoading] = useState(false);
     const [upcomingRooms, setUpcomingRooms] = useState([]);
     const [pastRooms, setPastRooms] = useState([]);
     const [rescheduleRequests, setRescheduleRequests] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [rescheduleLoading, setRescheduleLoading] = useState(false);
     const [hasPendingFeedbacks, setHasPendingFeedbacks] = useState(false);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mode: "pending" });
@@ -71,6 +71,8 @@ function InterviewRoomListPage() {
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
     const [viewFeedbackState, setViewFeedbackState] = useState({ open: false, interviewRoomId: null });
     const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null, nextSessionIn: "—" });
+    const hasInitializedRef = useRef(false);
+    const isFetchingRoomsRef = useRef(false);
     // const [aiCvModalState, setAiCvModalState] = useState({ open: false, room: null });
 
     // New state for Generated Questions Modal
@@ -78,6 +80,8 @@ function InterviewRoomListPage() {
 
     // Precheck modal state
     const [precheckState, setPrecheckState] = useState({ open: false, room: null });
+
+    const callApiLocal = (options) => callApi({ ...options, useGlobalLoading: false });
 
     // Helper function to get the label from the type value
     const getRoomTypeLabel = (typeValue) => {
@@ -102,35 +106,29 @@ function InterviewRoomListPage() {
         }
     }, [location, navigate]);
 
-    // Fetch initial data once on mount
     useEffect(() => {
-        if (!user) return;
+        if (!user?.id) return;
 
-        // Fetch data for initial tab (Upcoming)
-        fetchRooms([0, 1]);
-        fetchRescheduleRequests();
-        if (user.role === ROLES.CANDIDATE) {
-            checkPendingFeedbacks();
-        }
-        if (user.role === ROLES.INTERVIEWER) {
-            checkPendingCoachEvaluations();
-        }
+        const loadData = async () => {
+            if (!hasInitializedRef.current) {
+                hasInitializedRef.current = true;
+                await fetchRescheduleRequests();
+
+                if (user.role === ROLES.CANDIDATE) {
+                    await checkPendingFeedbacks();
+                }
+            }
+
+            if (activeTab === 0) {
+                await fetchRooms([0, 1]);
+            } else if (activeTab === 1) {
+                await fetchRooms([2, 3]);
+            }
+        };
+
+        loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Only run once on mount
-
-    // Refetch data when switching tabs
-    useEffect(() => {
-        if (!user) return;
-
-        if (activeTab === 0) {
-            // Upcoming: Fetch SCHEDULED (0) and ON_GOING (1)
-            fetchRooms([0, 1]);
-        } else if (activeTab === 1) {
-            // Past History: Fetch COMPLETED (2) and CANCELLED (3)
-            fetchRooms([2, 3]);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab]); // Refetch when tab changes
+    }, [user?.id, user?.role, activeTab]);
 
     const groupRoomsByBooking = (roomsList) => {
         if (!Array.isArray(roomsList)) return [];
@@ -183,14 +181,21 @@ function InterviewRoomListPage() {
     };
 
     const fetchRooms = async (statuses = null) => {
+        if (isFetchingRoomsRef.current) return;
+
+        isFetchingRoomsRef.current = true;
         setLoading(true);
         try {
             // Fetch ALL rooms to properly group multi-round bookings
-            const allRoomsRes = await callApi({
+            const allRoomsRes = await callApiLocal({
                 method: METHOD.GET,
                 endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
             });
             const allRoomsData = allRoomsRes?.data?.items || allRoomsRes?.data || [];
+
+            if (user?.role === ROLES.INTERVIEWER) {
+                checkPendingCoachEvaluations(allRoomsData);
+            }
 
             // Group rooms
             const groupedRooms = groupRoomsByBooking(allRoomsData);
@@ -259,14 +264,16 @@ function InterviewRoomListPage() {
             });
         } catch (error) {
             console.error("Failed to fetch rooms:", error);
+        } finally {
+            isFetchingRoomsRef.current = false;
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const fetchRescheduleRequests = async () => {
         setRescheduleLoading(true);
         try {
-            const res = await callApi({
+            const res = await callApiLocal({
                 method: METHOD.GET,
                 endpoint: interviewEndPoints.GET_ALL_RESCHEDULE_REQUESTS,
             });
@@ -279,7 +286,7 @@ function InterviewRoomListPage() {
 
     const checkPendingFeedbacks = async () => {
         try {
-            const res = await callApi({
+            const res = await callApiLocal({
                 method: METHOD.GET,
                 endpoint: interviewEndPoints.GET_FEEDBACKS,
             });
@@ -297,13 +304,9 @@ function InterviewRoomListPage() {
         }
     };
 
-    const checkPendingCoachEvaluations = async () => {
+    const checkPendingCoachEvaluations = async (prefetchedRooms = null) => {
         try {
-            const res = await callApi({
-                method: METHOD.GET,
-                endpoint: `${interviewEndPoints.INTERVIEW_ROOMS}?PageSize=1000`, // Increased limit to find rounds
-            });
-            const rooms = res?.data?.items || res?.data || [];
+            const rooms = prefetchedRooms || [];
             
             if (!Array.isArray(rooms)) return;
             // not just the ones currently marked as 'COMPLETED' in the top-level grouping.
@@ -335,7 +338,7 @@ function InterviewRoomListPage() {
     const handleSubmitReschedule = async (data) => {
         try {
             if (data?.type === "multi-round") {
-                await callApi({
+                await callApiLocal({
                     method: METHOD.POST,
                     endpoint: interviewEndPoints.RESCHEDULE_JD_BOOKING(data.bookingRequestId),
                     arg: {
@@ -351,7 +354,7 @@ function InterviewRoomListPage() {
                 return;
             }
 
-            await callApi({
+            await callApiLocal({
                 method: METHOD.POST,
                 endpoint: interviewEndPoints.CREATE_RESCHEDULE_REQUEST,
                 arg: {
@@ -403,7 +406,7 @@ function InterviewRoomListPage() {
                 ? interviewEndPoints.CANCEL_BOOKING_REQUEST(room.bookingRequestId)
                 : interviewEndPoints.CANCEL_INTERVIEW(room.id);
 
-            const response = await callApi({
+            const response = await callApiLocal({
                 method: METHOD.POST,
                 endpoint: endpoint,
                 displaySuccessMessage: false,
@@ -425,7 +428,7 @@ function InterviewRoomListPage() {
 
     const handleApproveReschedule = async (request) => {
         try {
-            await callApi({
+            await callApiLocal({
                 method: METHOD.POST,
                 endpoint: interviewEndPoints.RESPOND_RESCHEDULE_REQUEST(request.id),
                 arg: { isApproved: true },
@@ -439,7 +442,7 @@ function InterviewRoomListPage() {
 
     const handleRejectReschedule = async (request, rejectionReason) => {
         try {
-            await callApi({
+            await callApiLocal({
                 method: METHOD.POST,
                 endpoint: interviewEndPoints.RESPOND_RESCHEDULE_REQUEST(request.id),
                 arg: {
@@ -461,7 +464,6 @@ function InterviewRoomListPage() {
     const handleCoachEvaluationSubmitted = async () => {
         setCoachEvaluationState({ open: false, room: null });
         await fetchRooms([2, 3]);
-        await checkPendingCoachEvaluations();
     };
 
     const handleViewFeedback = (room) => {
@@ -498,7 +500,7 @@ function InterviewRoomListPage() {
     if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
         return (
             <Box sx={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <CommonLoader />
+                <CircularProgress size={34} />
             </Box>
         );
     }

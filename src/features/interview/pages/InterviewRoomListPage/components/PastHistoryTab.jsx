@@ -4,8 +4,8 @@ import {
     Typography,
     Stack,
     Pagination,
+    CircularProgress,
 } from "@mui/material";
-import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
 import RecentInterviewItem from "./RecentInterviewItem";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
@@ -40,7 +40,7 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestion
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CommonLoader />
+                <CircularProgress size={30} />
             </Box>
         );
     }

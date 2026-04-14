@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
+import { Box, CircularProgress } from "@mui/material";
 import { fetchInterviewers, fetchCompanies, fetchSkills, setPage } from "../store/homeSlice";
 import FilterBar from "../components/FilterBar";
 import CoachCar from "../components/CoachCard";
@@ -57,6 +58,7 @@ const workflowSteps = [
 function HomePage() {
     const dispatch = useDispatch();
     const browseSectionRef = useRef(null);
+    const hasFetchedInterviewersRef = useRef(false);
     const [smartMatchOpen, setSmartMatchOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -83,8 +85,10 @@ function HomePage() {
 
     // Initial load
     useEffect(() => {
-        dispatch(fetchCompanies());
-        dispatch(fetchSkills());
+        Promise.all([
+            dispatch(fetchCompanies({ useGlobalLoading: true })),
+            dispatch(fetchSkills({ useGlobalLoading: true })),
+        ]);
     }, [dispatch]);
 
     // GSAP Animations
@@ -139,20 +143,25 @@ function HomePage() {
 
     // Re-fetch when filters or page changes
     useEffect(() => {
+        const shouldUseGlobalLoading = !hasFetchedInterviewersRef.current;
+        hasFetchedInterviewersRef.current = true;
+
         dispatch(
             fetchInterviewers({
                 page: pagination.currentPage,
-                searchTerm: filters.searchTerm,
+                searchTerm: filters.searchTerm?.trim() || undefined,
                 companyId: filters.company,
+                industryId: filters.industry,
                 skillId: filters.skill,
                 skillIds: filters.skillIds?.length ? filters.skillIds.join(",") : undefined,
                 minExperienceYears: filters.minExperienceYears || undefined,
                 maxExperienceYears: filters.maxExperienceYears || undefined,
                 minPrice: filters.minPrice || undefined,
                 maxPrice: filters.maxPrice || undefined,
+                useGlobalLoading: shouldUseGlobalLoading,
             }),
         );
-    }, [dispatch, pagination.currentPage]);
+    }, [dispatch, pagination.currentPage, filters]);
 
     // Ensure interviewers is an array
     const interviewersList = Array.isArray(interviewers) ? interviewers : [];
@@ -312,12 +321,17 @@ function HomePage() {
 
                 {/* Loading State */}
                 {loading && interviewersList.length === 0 ? (
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading interviewers...</p>
-                    </div>
+                    <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                        <CircularProgress size={32} />
+                    </Box>
                 ) : (
                     <>
+                        {loading && interviewersList.length > 0 && (
+                            <Box sx={{ display: "flex", justifyContent: "center", pb: 2 }}>
+                                <CircularProgress size={24} />
+                            </Box>
+                        )}
+
                         {/* Interviewer Grid */}
                         <div className="interviewers-grid">
                             {interviewersList.map((interviewer) => (

@@ -3,7 +3,7 @@ import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { authEndPoints } from "../services/authApi";
 import { useNavigate } from "react-router-dom";
-import useLoading from "../../../common/hooks/useLoading";
+import { useState } from "react";
 import SplitText from "./LoginPage/SplitText";
 import { TextField, Typography } from "@mui/material";
 import { PrimaryButton } from "../../../common/components/buttons";
@@ -12,7 +12,7 @@ import { trackRegister } from "../../../utils/analytics";
 
 function SignUpPage() {
     const navigate = useNavigate();
-    const isLoading = useLoading();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const {
         register,
         handleSubmit,
@@ -25,6 +25,7 @@ function SignUpPage() {
     };
 
     const onSubmit = async (data) => {
+        setIsSubmitting(true);
         try {
             const {
                 success,
@@ -56,6 +57,7 @@ function SignUpPage() {
                 navigate("/login");
             }
         } finally {
+            setIsSubmitting(false);
             resetForm();
         }
     };
@@ -361,22 +363,19 @@ function SignUpPage() {
                             </div>
 
                             <div style={{ display: "flex", justifyContent: "center" }}>
-                                {isLoading ? (
-                                    <Typography color="#666">...Loading</Typography>
-                                ) : (
-                                    <PrimaryButton
-                                        type="submit"
-                                        loading={isLoading}
-                                        fullWidth
-                                        sx={{
-                                            padding: "14px 28px",
-                                            borderRadius: "10px",
-                                            fontSize: "17px",
-                                        }}
-                                    >
-                                        Sign up
-                                    </PrimaryButton>
-                                )}
+                                <PrimaryButton
+                                    type="submit"
+                                    loading={false}
+                                    disabled={isSubmitting}
+                                    fullWidth
+                                    sx={{
+                                        padding: "14px 28px",
+                                        borderRadius: "10px",
+                                        fontSize: "17px",
+                                    }}
+                                >
+                                    Sign up
+                                </PrimaryButton>
                             </div>
 
                             <div style={{ textAlign: "center", marginTop: "16px" }}>

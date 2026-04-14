@@ -416,7 +416,7 @@ function RescheduleRequestsTab({
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
+                <CircularProgress size={30} />
             </Box>
         );
     }
