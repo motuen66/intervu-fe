@@ -67,6 +67,7 @@ function PaymentHistoryModal({ open, onClose }) {
             const res = await callApi({
                 method: METHOD.GET,
                 endpoint: interviewEndPoints.GET_PAYMENT_HISTORY,
+                useGlobalLoading: false,
             });
             const incoming = res?.data;
             const normalized = Array.isArray(incoming)

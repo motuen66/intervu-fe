@@ -5,6 +5,10 @@ import { axiosInstance, callApi } from "../../../../../common/utils/apiConnector
 const ASSESSMENT_BASE = `${BE_BASE_URL}/assessment`;
 const AI_GENERATOR_URL = `${BE_BASE_URL}/generate-assessment`;
 const ASSESSMENT_FORCE_REQUIRED_PREFIX = "assessment_force_required:";
+const ASSESSMENT_DATA_CACHE_TTL_MS = 30 * 1000;
+
+const assessmentDataInFlightMap = new Map();
+const assessmentDataCacheMap = new Map();
 
 export const assessmentEndPoints = {
     GENERATE_ASSESSMENT: AI_GENERATOR_URL,
@@ -403,18 +407,40 @@ export const getAssessmentData = async (userId) => {
         return null;
     }
 
-    const res = await callApi({
-        method: METHOD.GET,
-        endpoint: assessmentEndPoints.GET_SKILL_GAPS(userId),
-        alertErrorMessage: false,
-        useGlobalLoading: false,
-    });
-
-    if (!res?.success) {
-        return null;
+    const cached = assessmentDataCacheMap.get(userId);
+    if (cached && Date.now() - cached.timestamp < ASSESSMENT_DATA_CACHE_TTL_MS) {
+        return cached.data;
     }
 
-    return res?.data ?? null;
+    const inFlight = assessmentDataInFlightMap.get(userId);
+    if (inFlight) {
+        return inFlight;
+    }
+
+    const requestPromise = (async () => {
+        const res = await callApi({
+            method: METHOD.GET,
+            endpoint: assessmentEndPoints.GET_SKILL_GAPS(userId),
+            alertErrorMessage: false,
+            useGlobalLoading: false,
+        });
+
+        if (!res?.success) {
+            return null;
+        }
+
+        const data = res?.data ?? null;
+        assessmentDataCacheMap.set(userId, { data, timestamp: Date.now() });
+        return data;
+    })();
+
+    assessmentDataInFlightMap.set(userId, requestPromise);
+
+    try {
+        return await requestPromise;
+    } finally {
+        assessmentDataInFlightMap.delete(userId);
+    }
 };
 
 export const getAssessmentState = async (userId) => {

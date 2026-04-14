@@ -1608,7 +1608,7 @@ function InterviewerProfilePage() {
                             <Box sx={{ mt: 1 }}>
                                 {loadingSaved ? (
                                     <Box display="flex" justifyContent="center" py={4}>
-                                        <CircularProgress />
+                                        {/* <CircularProgress /> */}
                                     </Box>
                                 ) : savedQuestions.length === 0 ? (
                                     <Typography align="center" color="text.secondary" py={4}>

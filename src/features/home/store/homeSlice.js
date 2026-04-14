@@ -6,31 +6,39 @@ import { startGlobalLoading, stopGlobalLoading } from '../../../common/store/aut
 export const fetchInterviewers = createAsyncThunk(
     'home/fetchInterviewers',
     async (params = {}, {rejectWithValue, getState, dispatch}) => {
+        const { useGlobalLoading = false, ...requestParams } = params || {};
         try{
-            dispatch(startGlobalLoading());
+            if (useGlobalLoading) {
+                dispatch(startGlobalLoading());
+            }
             const { home } = getState();
             const { currentPage, pageSize } = home.pagination;
             const response = await axios.get(homeEndPoints.GET_ALL_INTERVIEWERS, {
                 params: {
-                    page: params.page || currentPage,
-                    pageSize: params.pageSize || pageSize,
-                    ...params
+                    page: requestParams.page || currentPage,
+                    pageSize: requestParams.pageSize || pageSize,
+                    ...requestParams
                 }
             });
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch interviewers');
         } finally {
-            dispatch(stopGlobalLoading());
+            if (useGlobalLoading) {
+                dispatch(stopGlobalLoading());
+            }
         }
     }
 );
 
 export const fetchCompanies = createAsyncThunk(
     'home/fetchCompanies',
-    async (_, {rejectWithValue, dispatch}) => {
+    async (options = {}, {rejectWithValue, dispatch}) => {
+        const { useGlobalLoading = false } = options || {};
         try{
-            dispatch(startGlobalLoading());
+            if (useGlobalLoading) {
+                dispatch(startGlobalLoading());
+            }
             const response = await axios.get(homeEndPoints.GET_ALL_COMPANIES, {
                 params: {
                     page: 1,
@@ -41,16 +49,21 @@ export const fetchCompanies = createAsyncThunk(
         } catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch companies');
         } finally {
-            dispatch(stopGlobalLoading());
+            if (useGlobalLoading) {
+                dispatch(stopGlobalLoading());
+            }
         }
     }
 );
 
 export const fetchSkills = createAsyncThunk(
     'home/fetchSkills',
-    async (_, {rejectWithValue, dispatch}) => {
+    async (options = {}, {rejectWithValue, dispatch}) => {
+        const { useGlobalLoading = false } = options || {};
         try{
-            dispatch(startGlobalLoading());
+            if (useGlobalLoading) {
+                dispatch(startGlobalLoading());
+            }
             const response = await axios.get(homeEndPoints.GET_ALL_SKILLS, {
                 params: {
                     page: 1,
@@ -62,16 +75,21 @@ export const fetchSkills = createAsyncThunk(
         catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch skills');
         } finally {
-            dispatch(stopGlobalLoading());
+            if (useGlobalLoading) {
+                dispatch(stopGlobalLoading());
+            }
         }
     }
 );
 
 export const fetchIndustries = createAsyncThunk(
     'home/fetchIndustries',
-    async (_, {rejectWithValue, dispatch}) => {
+    async (options = {}, {rejectWithValue, dispatch}) => {
+        const { useGlobalLoading = false } = options || {};
         try{
-            dispatch(startGlobalLoading());
+            if (useGlobalLoading) {
+                dispatch(startGlobalLoading());
+            }
             const response = await axios.get(homeEndPoints.GET_ALL_INDUSTRIES, {
                 params: {
                     page: 1,
@@ -83,7 +101,9 @@ export const fetchIndustries = createAsyncThunk(
         catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch industries');
         } finally {
-            dispatch(stopGlobalLoading());
+            if (useGlobalLoading) {
+                dispatch(stopGlobalLoading());
+            }
         }
     }
 );

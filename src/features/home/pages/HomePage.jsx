@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
+import { Box, CircularProgress } from "@mui/material";
 import { fetchInterviewers, fetchCompanies, fetchSkills, setPage } from "../store/homeSlice";
-import useGlobalLoading from "../../../common/hooks/useGlobalLoading";
 import FilterBar from "../components/FilterBar";
 import CoachCar from "../components/CoachCard";
 import SmartMatchModal from "../../smartSearch/components/SmartMatchModal";
@@ -57,8 +57,8 @@ const workflowSteps = [
 
 function HomePage() {
     const dispatch = useDispatch();
-    const { withLoading } = useGlobalLoading();
     const browseSectionRef = useRef(null);
+    const hasFetchedInterviewersRef = useRef(false);
     const [smartMatchOpen, setSmartMatchOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -85,10 +85,11 @@ function HomePage() {
 
     // Initial load
     useEffect(() => {
-        withLoading(async () => {
-            await Promise.all([dispatch(fetchCompanies()), dispatch(fetchSkills())]);
-        });
-    }, [dispatch, withLoading]);
+        Promise.all([
+            dispatch(fetchCompanies({ useGlobalLoading: true })),
+            dispatch(fetchSkills({ useGlobalLoading: true })),
+        ]);
+    }, [dispatch]);
 
     // GSAP Animations
     useEffect(() => {
@@ -142,22 +143,25 @@ function HomePage() {
 
     // Re-fetch when filters or page changes
     useEffect(() => {
-        withLoading(async () => {
-            await dispatch(
-                fetchInterviewers({
-                    page: pagination.currentPage,
-                    searchTerm: filters.searchTerm,
-                    companyId: filters.company,
-                    skillId: filters.skill,
-                    skillIds: filters.skillIds?.length ? filters.skillIds.join(",") : undefined,
-                    minExperienceYears: filters.minExperienceYears || undefined,
-                    maxExperienceYears: filters.maxExperienceYears || undefined,
-                    minPrice: filters.minPrice || undefined,
-                    maxPrice: filters.maxPrice || undefined,
-                }),
-            );
-        });
-    }, [dispatch, pagination.currentPage, withLoading]);
+        const shouldUseGlobalLoading = !hasFetchedInterviewersRef.current;
+        hasFetchedInterviewersRef.current = true;
+
+        dispatch(
+            fetchInterviewers({
+                page: pagination.currentPage,
+                searchTerm: filters.searchTerm?.trim() || undefined,
+                companyId: filters.company,
+                industryId: filters.industry,
+                skillId: filters.skill,
+                skillIds: filters.skillIds?.length ? filters.skillIds.join(",") : undefined,
+                minExperienceYears: filters.minExperienceYears || undefined,
+                maxExperienceYears: filters.maxExperienceYears || undefined,
+                minPrice: filters.minPrice || undefined,
+                maxPrice: filters.maxPrice || undefined,
+                useGlobalLoading: shouldUseGlobalLoading,
+            }),
+        );
+    }, [dispatch, pagination.currentPage, filters]);
 
     // Ensure interviewers is an array
     const interviewersList = Array.isArray(interviewers) ? interviewers : [];
@@ -316,8 +320,18 @@ function HomePage() {
                 {error && <div className="error-message">⚠️ {error}</div>}
 
                 {/* Loading State */}
-                {loading && interviewersList.length === 0 ? null : (
+                {loading && interviewersList.length === 0 ? (
+                    <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                        <CircularProgress size={32} />
+                    </Box>
+                ) : (
                     <>
+                        {loading && interviewersList.length > 0 && (
+                            <Box sx={{ display: "flex", justifyContent: "center", pb: 2 }}>
+                                <CircularProgress size={24} />
+                            </Box>
+                        )}
+
                         {/* Interviewer Grid */}
                         <div className="interviewers-grid">
                             {interviewersList.map((interviewer) => (

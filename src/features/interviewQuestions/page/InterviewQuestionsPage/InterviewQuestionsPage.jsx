@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Button, MenuItem, Pagination, Stack, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, MenuItem, Pagination, Stack, Typography } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -19,6 +19,7 @@ export default function InterviewQuestionsPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [sidebarSearch, setSidebarSearch] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const [companies, setCompanies] = useState([]);
 
@@ -29,6 +30,7 @@ export default function InterviewQuestionsPage() {
             method: METHOD.GET,
             endpoint: homeEndPoints.GET_ALL_COMPANIES,
             arg: { page: 1, pageSize: 200 },
+            useGlobalLoading: false,
         })
             .then(({ data }) => {
                 const payload = data ?? {};
@@ -56,6 +58,7 @@ export default function InterviewQuestionsPage() {
     }, [pageSize]);
 
     const fetchData = useCallback(async () => {
+        setLoading(true);
         try {
             const keyword = sidebarSearch.trim();
             const params = {
@@ -77,6 +80,7 @@ export default function InterviewQuestionsPage() {
                 method: METHOD.GET,
                 endpoint: interviewQuestionEndPoints.GET_LIST,
                 arg: params,
+                useGlobalLoading: false,
             });
             const payload = data ?? {};
             const items = payload.items ?? payload.data ?? (Array.isArray(payload) ? payload : []);
@@ -86,6 +90,8 @@ export default function InterviewQuestionsPage() {
         } catch (err) {
             console.error(err);
             setQuestions([]);
+        } finally {
+            setLoading(false);
         }
     }, [page, pageSize, filters, sidebarSearch]);
 
@@ -139,7 +145,11 @@ export default function InterviewQuestionsPage() {
             <Box sx={{ display: "flex", gap: 3.5, alignItems: "flex-start", flexWrap: { xs: "wrap", md: "nowrap" } }}>
                 {/* Question list */}
                 <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-                    {questions.length === 0 ? (
+                    {loading ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                            <CircularProgress size={30} />
+                        </Box>
+                    ) : questions.length === 0 ? (
                         <Typography align="center" color="text.secondary" py={7.5}>
                             No questions found. Try changing filters.
                         </Typography>

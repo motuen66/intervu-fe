@@ -48,7 +48,6 @@ import {
 import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
-import useGlobalLoading from "../../../../common/hooks/useGlobalLoading";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import UploadCv from "../../components/UploadCv.jsx";
 import AiCvEvaluationModal from "../components/AiCvEvaluationModal.jsx";
@@ -240,7 +239,7 @@ function CandidateProfilePage() {
     const [openAiEval, setOpenAiEval] = useState(false);
 
     const dispatch = useDispatch();
-    const { showLoading, hideLoading } = useGlobalLoading();
+    const callApiLocal = (options) => callApi({ ...options, useGlobalLoading: false });
 
     const endpoint = useMemo(() => {
         const slug = slugProfileUrl || profileUrl;
@@ -254,11 +253,10 @@ function CandidateProfilePage() {
         if (!endpoint) return;
         if (!silent) {
             setHasLoaded(false);
-            showLoading();
         }
         setError(null);
         try {
-            const res = await callApi({ method: METHOD.GET, endpoint });
+            const res = await callApiLocal({ method: METHOD.GET, endpoint });
             const slug = slugProfileUrl || profileUrl;
             if (slug && (!res || !res.success || !res.data)) {
                 navigate(`/profile/${slug}`);
@@ -270,7 +268,7 @@ function CandidateProfilePage() {
                     const idToUse = res.data.id || routeId || user?.id;
                     if (idToUse) {
                         const ep = candidateProfileEndPoints.GET_CANDIDATE_RATING.replace("{id}", idToUse);
-                        const r = await callApi({ method: METHOD.GET, endpoint: ep });
+                        const r = await callApiLocal({ method: METHOD.GET, endpoint: ep });
                         if (r?.success && r.data) {
                             const payload = r.data?.data || r.data;
                             const val = Number(
@@ -297,7 +295,6 @@ function CandidateProfilePage() {
         } finally {
             if (!silent) {
                 setHasLoaded(true);
-                hideLoading();
             }
         }
     };
@@ -313,7 +310,7 @@ function CandidateProfilePage() {
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                const skillsRes = await callApi({
+                const skillsRes = await callApiLocal({
                     method: METHOD.GET,
                     endpoint: candidateProfileEndPoints.GET_ALL_SKILLS.replace("{page}", "1").replace(
                         "{pageSize}",
@@ -329,7 +326,7 @@ function CandidateProfilePage() {
                     setAllSkills(skills);
                     setAllSkillNames(skills.map((sk) => (sk && (sk.name || String(sk))) || "").filter(Boolean));
                 }
-                const industriesRes = await callApi({
+                const industriesRes = await callApiLocal({
                     method: METHOD.GET,
                     endpoint: candidateProfileEndPoints.GET_ALL_INDUSTRIES.replace("{page}", "1").replace(
                         "{pageSize}",
@@ -354,7 +351,7 @@ function CandidateProfilePage() {
                     user?.role === ROLES.CANDIDATE || String(user?.role).toLowerCase() === "candidate";
                 let res;
                 if (isCandidateUser) {
-                    res = await callApi({
+                    res = await callApiLocal({
                         method: METHOD.GET,
                         endpoint: homeEndPoints.GET_ALL_COMPANIES,
                         arg: { page: 1, pageSize: 50 },
@@ -364,7 +361,7 @@ function CandidateProfilePage() {
                         "{pageSize}",
                         "50",
                     );
-                    res = await callApi({ method: METHOD.GET, endpoint: ep });
+                    res = await callApiLocal({ method: METHOD.GET, endpoint: ep });
                 }
                 if (res?.success) {
                     const items = res.data?.items ?? res.data?.data ?? res.data ?? [];
@@ -392,7 +389,7 @@ function CandidateProfilePage() {
     useEffect(() => {
         if (tabValue !== 1 || !isSelf || !isCandidate) return;
         setLoadingSaved(true);
-        callApi({ method: METHOD.GET, endpoint: interactionEndPoints.GET_SAVED_QUESTIONS })
+        callApiLocal({ method: METHOD.GET, endpoint: interactionEndPoints.GET_SAVED_QUESTIONS })
             .then(({ data }) => {
                 const items = data?.items ?? data?.data ?? (Array.isArray(data) ? data : []);
                 setSavedQuestions(items);
@@ -404,7 +401,7 @@ function CandidateProfilePage() {
     const refreshProfile = async () => {
         if (!profile?.id) return;
         const ep = candidateProfileEndPoints.VIEW_OWN_CANDIDATE_PROFILE.replace("{id}", profile.id);
-        const res = await callApi({ method: METHOD.GET, endpoint: ep });
+        const res = await callApiLocal({ method: METHOD.GET, endpoint: ep });
         if (res?.success) {
             setProfile(normalizeCandidateProfile(res.data));
         }
@@ -436,7 +433,7 @@ function CandidateProfilePage() {
                 bankAccountNumber: String(profile.bankAccountNumber || "").trim(),
             };
 
-            const res = await callApi({ method: METHOD.PUT, endpoint: ep, arg: payload, displaySuccessMessage: true });
+            const res = await callApiLocal({ method: METHOD.PUT, endpoint: ep, arg: payload, displaySuccessMessage: true });
             if (!res?.success) throw new Error(res?.message || "Failed to save profile.");
 
             setEditMode(false);
@@ -526,14 +523,14 @@ function CandidateProfilePage() {
                     "{profileId}",
                     profile.id,
                 ).replace("{workExperienceId}", exp.id);
-                const res = await callApi({ method: METHOD.PUT, endpoint, arg: payload, displaySuccessMessage: true });
+                const res = await callApiLocal({ method: METHOD.PUT, endpoint, arg: payload, displaySuccessMessage: true });
                 if (!res?.success) throw new Error(res?.message || "Failed to update work experience.");
             } else {
                 const endpoint = candidateProfileEndPoints.CREATE_CANDIDATE_WORK_EXPERIENCE.replace(
                     "{profileId}",
                     profile.id,
                 );
-                const res = await callApi({ method: METHOD.POST, endpoint, arg: payload, displaySuccessMessage: true });
+                const res = await callApiLocal({ method: METHOD.POST, endpoint, arg: payload, displaySuccessMessage: true });
                 if (!res?.success) throw new Error(res?.message || "Failed to create work experience.");
             }
 
@@ -554,7 +551,7 @@ function CandidateProfilePage() {
                 "{profileId}",
                 profile.id,
             ).replace("{workExperienceId}", id);
-            const res = await callApi({ method: METHOD.DELETE, endpoint, displaySuccessMessage: true });
+            const res = await callApiLocal({ method: METHOD.DELETE, endpoint, displaySuccessMessage: true });
             if (!res?.success) throw new Error(res?.message || "Failed to delete work experience.");
             await refreshProfile();
         } catch (err) {
@@ -578,14 +575,14 @@ function CandidateProfilePage() {
                     "{profileId}",
                     profile.id,
                 ).replace("{certificateId}", certificateId);
-                const res = await callApi({ method: METHOD.PUT, endpoint, arg: payload, displaySuccessMessage: true });
+                const res = await callApiLocal({ method: METHOD.PUT, endpoint, arg: payload, displaySuccessMessage: true });
                 if (!res?.success) throw new Error(res?.message || "Failed to update certificate.");
             } else {
                 const endpoint = candidateProfileEndPoints.CREATE_CANDIDATE_CERTIFICATE.replace(
                     "{profileId}",
                     profile.id,
                 );
-                const res = await callApi({ method: METHOD.POST, endpoint, arg: payload, displaySuccessMessage: true });
+                const res = await callApiLocal({ method: METHOD.POST, endpoint, arg: payload, displaySuccessMessage: true });
                 if (!res?.success) throw new Error(res?.message || "Failed to add certificate.");
             }
 
@@ -605,7 +602,7 @@ function CandidateProfilePage() {
                 "{profileId}",
                 profile.id,
             ).replace("{certificateId}", certificate.id);
-            const res = await callApi({ method: METHOD.DELETE, endpoint, displaySuccessMessage: true });
+            const res = await callApiLocal({ method: METHOD.DELETE, endpoint, displaySuccessMessage: true });
             if (!res?.success) throw new Error(res?.message || "Failed to delete certificate.");
             setCertificateDialogOpen(false);
             setEditingCertificate(null);
@@ -1788,7 +1785,7 @@ function CandidateProfilePage() {
                             <Box>
                                 {loadingSaved ? (
                                     <Box display="flex" justifyContent="center" py={4}>
-                                        <CircularProgress />
+                                        {/* <CircularProgress /> */}
                                     </Box>
                                 ) : savedQuestions.length === 0 ? (
                                     <Typography align="center" color="text.secondary" py={4}>
