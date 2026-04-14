@@ -6,7 +6,6 @@ import NodeDetail from "./NodeDetail";
 import { roadmapData } from "./data";
 import { theme } from "../../common/constants/theme";
 import { assessmentApi } from "../profiles/candidate/candidate-assessment/services/assessmentApi";
-import useGlobalLoading from "../../common/hooks/useGlobalLoading";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -128,7 +127,6 @@ const hasRoadmapContent = (value) => {
 function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
     const authenticatedUserId = useSelector((state) => state.auth?.userData?.id);
     const effectiveUserId = userIdProp ?? authenticatedUserId ?? null;
-    const { withLoading } = useGlobalLoading();
     const [resolvedRoadmap, setResolvedRoadmap] = useState(() => (hasRoadmapContent(roadmap) ? roadmap : null));
     const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(false);
 
@@ -151,38 +149,36 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
             setIsLoadingRoadmap(true);
 
             try {
-                await withLoading(async () => {
-                    let nextRoadmap = null;
-                    let shouldGenerateRoadmap = false;
+                let nextRoadmap = null;
+                let shouldGenerateRoadmap = false;
 
+                try {
+                    const fetchResponse = await assessmentApi.getRoadmapByUserId(effectiveUserId);
+                    nextRoadmap = extractRoadmapFromResponse(fetchResponse);
+                    shouldGenerateRoadmap = !hasRoadmapContent(nextRoadmap);
+                } catch (error) {
+                    if (error?.response?.status === 404) {
+                        shouldGenerateRoadmap = true;
+                    } else {
+                        console.error("Fetch roadmap failed:", error);
+                    }
+                }
+
+                if (shouldGenerateRoadmap) {
                     try {
-                        const fetchResponse = await assessmentApi.getRoadmapByUserId(effectiveUserId);
-                        nextRoadmap = extractRoadmapFromResponse(fetchResponse);
-                        shouldGenerateRoadmap = !hasRoadmapContent(nextRoadmap);
+                        const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
+                            userId: effectiveUserId,
+                            forceRegenerate: false,
+                        });
+                        nextRoadmap = extractRoadmapFromResponse(generateResponse);
                     } catch (error) {
-                        if (error?.response?.status === 404) {
-                            shouldGenerateRoadmap = true;
-                        } else {
-                            console.error("Fetch roadmap failed:", error);
-                        }
+                        console.error("Generate roadmap fallback failed:", error);
                     }
+                }
 
-                    if (shouldGenerateRoadmap) {
-                        try {
-                            const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
-                                userId: effectiveUserId,
-                                forceRegenerate: false,
-                            });
-                            nextRoadmap = extractRoadmapFromResponse(generateResponse);
-                        } catch (error) {
-                            console.error("Generate roadmap fallback failed:", error);
-                        }
-                    }
-
-                    if (!cancelled && hasRoadmapContent(nextRoadmap)) {
-                        setResolvedRoadmap(nextRoadmap);
-                    }
-                });
+                if (!cancelled && hasRoadmapContent(nextRoadmap)) {
+                    setResolvedRoadmap(nextRoadmap);
+                }
             } finally {
                 if (!cancelled) {
                     setIsLoadingRoadmap(false);
@@ -195,7 +191,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
         return () => {
             cancelled = true;
         };
-    }, [effectiveUserId, withLoading]);
+    }, [effectiveUserId]);
 
     const sourceRoadmap = useMemo(() => normalizeRoadmapPayload(resolvedRoadmap ?? roadmap) ?? roadmapData, [resolvedRoadmap, roadmap]);
     const roadmapMetadata = sourceRoadmap.roadmap_metadata ?? {};

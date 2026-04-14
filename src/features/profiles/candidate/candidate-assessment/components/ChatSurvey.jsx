@@ -923,6 +923,7 @@ const ChatSurvey = () => {
             }
             clearProgressCache(currentUser?.id);
             nextStep();
+            navigate("/home");
         }
     };
 

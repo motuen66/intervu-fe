@@ -25,6 +25,7 @@ export const assessmentApi = {
             endpoint: assessmentEndPoints.SAVE_ANSWERS(),
             arg: payload,
             alertErrorMessage: true,
+            useGlobalLoading: false,
         }),
 };
 
@@ -406,6 +407,7 @@ export const getAssessmentData = async (userId) => {
         method: METHOD.GET,
         endpoint: assessmentEndPoints.GET_SKILL_GAPS(userId),
         alertErrorMessage: false,
+        useGlobalLoading: false,
     });
 
     if (!res?.success) {
@@ -464,12 +466,12 @@ export const setAssessmentForceRequired = (userId, required) => {
     }
 };
 
-export const saveSkippedAssessment = async (userId) => {
+export const saveSkippedAssessment = async (userId, customPayload = null) => {
     if (!userId) {
         return false;
     }
 
-    const payload = {
+    const payload = customPayload || {
         UserId: userId,
         AssessmentName: "Skipped Assessment",
         Responses: [],
@@ -485,14 +487,57 @@ export const saveSkippedAssessment = async (userId) => {
             Missing: [],
             Weak: [],
         },
+        Roadmap: {
+            roadmap_metadata: {
+                target_role: "",
+                target_level: "",
+                total_phases: 0,
+            },
+            phases: [],
+        },
+        Answer: {
+            profile: {
+                role: "",
+                level: "",
+                techstack: [],
+                domain: [],
+                freeText: "",
+            },
+            responses: [],
+        },
     };
 
-    const res = await callApi({
-        method: METHOD.POST,
-        endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
-        arg: payload,
-        alertErrorMessage: false,
-    });
+    try {
+        try {
+            const res = await callApi({
+                method: METHOD.POST,
+                endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
+                arg: payload,
+                alertErrorMessage: false,
+                useGlobalLoading: false,
+            });
 
-    return Boolean(res?.success);
+            return Boolean(res?.success) || Boolean(res);
+        } catch (error) {
+            try {
+                const primary = await axiosInstance.post(assessmentEndPoints.PROCESS_SURVEY_RESPONSES(), payload);
+                if (primary?.status >= 200 && primary?.status < 300) {
+                    return true;
+                }
+            } catch (primaryError) {
+                try {
+                    const fb = await axiosInstance.post(assessmentEndPoints.PROCESS_SURVEY_RESPONSES_FALLBACK(), payload);
+                    if (fb?.status >= 200 && fb?.status < 300) {
+                        return true;
+                    }
+                } catch (fbError) {
+                    throw error;
+                }
+            }
+            return false;
+        }
+    } catch (error) {
+        console.warn("Save skipped assessment failed:", error);
+        return false;
+    }
 };

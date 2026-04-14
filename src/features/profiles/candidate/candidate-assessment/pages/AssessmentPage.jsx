@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import { AssessmentProvider, useAssessment } from "../context/AssessmentContext";
+import { useAssessment } from "../context/AssessmentContext";
 import StepperHeader from "../components/StepperHeader";
 import ChatSurvey from "../components/ChatSurvey";
 import ProcessingState from "../components/ProcessingState";
@@ -35,7 +35,7 @@ function AssessmentFlow() {
                 (Array.isArray(roadmap?.phases) && roadmap.phases.length > 0)),
     );
 
-    useEffect(() => {
+    useEffect(() => {   
         if (!userId || !isAssessmentCacheValid(userId)) {
             return;
         }
@@ -166,9 +166,5 @@ function AssessmentFlow() {
 }
 
 export default function AssessmentPage() {
-    return (
-        <AssessmentProvider>
-            <AssessmentFlow />
-        </AssessmentProvider>
-    );
+    return <AssessmentFlow />;
 }

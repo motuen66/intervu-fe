@@ -75,9 +75,11 @@ export default function QuestionDetailPage() {
     const [savingEdit, setSavingEdit] = useState(false);
     const [allCompanies, setAllCompanies] = useState([]);
     const [editCompanies, setEditCompanies] = useState([]);
+    const callApiLocal = (options) => callApi({ ...options, useGlobalLoading: false });
+    const getQuestionLikeCount = (question) => question?.vote ?? question?.likeCount ?? 0;
 
     useEffect(() => {
-        callApi({ method: METHOD.GET, endpoint: homeEndPoints.GET_ALL_COMPANIES, arg: { page: 1, pageSize: 200 } })
+        callApiLocal({ method: METHOD.GET, endpoint: homeEndPoints.GET_ALL_COMPANIES, arg: { page: 1, pageSize: 200 } })
             .then(({ data: d }) => {
                 const items = d?.items ?? d?.data ?? (Array.isArray(d) ? d : []);
                 const mapped = items
@@ -119,7 +121,7 @@ export default function QuestionDetailPage() {
         if (!id) return;
         setLoadingAnswers(true);
         try {
-            const { data } = await callApi({
+            const { data } = await callApiLocal({
                 method: METHOD.GET,
                 endpoint: commentEndPoints.GET_LIST(id),
                 arg: { page, pageSize: 10, sortBy: answerSort },
@@ -139,7 +141,7 @@ export default function QuestionDetailPage() {
     useEffect(() => {
         if (!id) return;
         setLoading(true);
-        callApi({ method: METHOD.GET, endpoint: interviewQuestionEndPoints.GET_DETAIL(id) })
+        callApiLocal({ method: METHOD.GET, endpoint: interviewQuestionEndPoints.GET_DETAIL(id) })
             .then(({ data }) => {
                 setData(data ?? null);
                 setSaved(data?.isSavedByUser ?? false);
@@ -166,25 +168,28 @@ export default function QuestionDetailPage() {
         }
 
         const prev = questionLiked;
-        const prevVote = data?.vote ?? 0;
+        const prevVote = getQuestionLikeCount(data);
 
         // optimistic update
         setQuestionLiked(!prev);
-        setData((d) => ({ ...(d ?? {}), vote: prevVote + (!prev ? 1 : -1) }));
+        setData((d) => {
+            const nextVote = prevVote + (!prev ? 1 : -1);
+            return { ...(d ?? {}), vote: nextVote, likeCount: nextVote };
+        });
 
         try {
-            const { data: res } = await callApi({
+            const { data: res } = await callApiLocal({
                 method: METHOD.POST,
                 endpoint: interactionEndPoints.LIKE_QUESTION(id),
             });
             const serverLiked = typeof res === "boolean" ? res : (res?.isLiked ?? !prev);
             setQuestionLiked(serverLiked);
-            // reconcile vote count with server response
-            setData((d) => ({ ...(d ?? {}), vote: d?.vote ?? prevVote }));
+            const nextVote = prevVote + (serverLiked ? 1 : 0) - (prev ? 1 : 0);
+            setData((d) => ({ ...(d ?? {}), vote: nextVote, likeCount: nextVote }));
         } catch {
             // revert
             setQuestionLiked(prev);
-            setData((d) => ({ ...(d ?? {}), vote: prevVote }));
+            setData((d) => ({ ...(d ?? {}), vote: prevVote, likeCount: prevVote }));
         }
     };
 
@@ -200,7 +205,7 @@ export default function QuestionDetailPage() {
         setSaved(nextSaved);
         setSaveCount(prevCount + (nextSaved ? 1 : -1));
         try {
-            const { data: res } = await callApi({
+            const { data: res } = await callApiLocal({
                 method: METHOD.POST,
                 endpoint: interactionEndPoints.SAVE_QUESTION(id),
                 arg: nextSaved,
@@ -219,7 +224,7 @@ export default function QuestionDetailPage() {
     const handleVoteComment = async (commentId) => {
         const current = answers.find((a) => String(a.id) === String(commentId));
         if (!current) {
-            const { data: res } = await callApi({
+            const { data: res } = await callApiLocal({
                 method: METHOD.POST,
                 endpoint: interactionEndPoints.LIKE_COMMENT(id, commentId),
             });
@@ -227,18 +232,23 @@ export default function QuestionDetailPage() {
         }
 
         const prevLiked = current.isLikedByUser ?? false;
-        const prevVote = current.vote ?? 0;
+        const prevVote = current.vote ?? current.voteCount ?? 0;
 
         setAnswers((prev) =>
             prev.map((a) =>
                 String(a.id) === String(commentId)
-                    ? { ...a, isLikedByUser: !prevLiked, vote: prevVote + (!prevLiked ? 1 : -1) }
+                    ? {
+                          ...a,
+                          isLikedByUser: !prevLiked,
+                          vote: prevVote + (!prevLiked ? 1 : -1),
+                          voteCount: prevVote + (!prevLiked ? 1 : -1),
+                      }
                     : a,
             ),
         );
 
         try {
-            const { data: res } = await callApi({
+            const { data: res } = await callApiLocal({
                 method: METHOD.POST,
                 endpoint: interactionEndPoints.LIKE_COMMENT(id, commentId),
             });
@@ -252,8 +262,11 @@ export default function QuestionDetailPage() {
                                   ...a,
                                   isLikedByUser: serverLiked,
                                   vote: serverLiked
-                                      ? Math.max(a.vote ?? 0, prevVote + 1)
-                                      : Math.max((a.vote ?? 0) - 1, 0),
+                                      ? Math.max(a.vote ?? a.voteCount ?? 0, prevVote + 1)
+                                      : Math.max((a.vote ?? a.voteCount ?? 0) - 1, 0),
+                                  voteCount: serverLiked
+                                      ? Math.max(a.vote ?? a.voteCount ?? 0, prevVote + 1)
+                                      : Math.max((a.vote ?? a.voteCount ?? 0) - 1, 0),
                               }
                             : a,
                     ),
@@ -264,7 +277,9 @@ export default function QuestionDetailPage() {
         } catch (err) {
             setAnswers((prev) =>
                 prev.map((a) =>
-                    String(a.id) === String(commentId) ? { ...a, isLikedByUser: prevLiked, vote: prevVote } : a,
+                    String(a.id) === String(commentId)
+                        ? { ...a, isLikedByUser: prevLiked, vote: prevVote, voteCount: prevVote }
+                        : a,
                 ),
             );
             throw err;
@@ -277,7 +292,7 @@ export default function QuestionDetailPage() {
         if (!content) return;
         setSubmittingAnswer(true);
         try {
-            const { data: res } = await callApi({
+            const { data: res } = await callApiLocal({
                 method: METHOD.POST,
                 endpoint: commentEndPoints.ADD_COMMENT(id),
                 arg: { content },
@@ -301,7 +316,7 @@ export default function QuestionDetailPage() {
     /* ── Update comment ── */
     const handleUpdateComment = async (commentId, newContent) => {
         try {
-            await callApi({
+            await callApiLocal({
                 method: METHOD.PUT,
                 endpoint: commentEndPoints.UPDATE_COMMENT(id, commentId),
                 arg: { content: newContent },
@@ -316,7 +331,7 @@ export default function QuestionDetailPage() {
     /* ── Delete comment ── */
     const handleDeleteComment = async (commentId) => {
         try {
-            await callApi({
+            await callApiLocal({
                 method: METHOD.DELETE,
                 endpoint: commentEndPoints.DELETE_COMMENT(id, commentId),
                 displaySuccessMessage: true,
@@ -331,7 +346,7 @@ export default function QuestionDetailPage() {
     /* ── Delete question ── */
     const handleDeleteQuestion = async () => {
         try {
-            await callApi({
+            await callApiLocal({
                 method: METHOD.DELETE,
                 endpoint: interviewQuestionEndPoints.DELETE_QUESTION(id),
                 displaySuccessMessage: true,
@@ -364,7 +379,7 @@ export default function QuestionDetailPage() {
         setSavingEdit(true);
 
         try {
-            await callApi({
+            await callApiLocal({
                 method: METHOD.PUT,
                 endpoint: interviewQuestionEndPoints.UPDATE_QUESTION(id),
                 arg: {
@@ -682,7 +697,7 @@ export default function QuestionDetailPage() {
                                 "&:hover": { bgcolor: "action.hover" },
                             }}
                         >
-                            Like {data.vote != null ? ` ${data.vote}` : ""}
+                            Like {` ${getQuestionLikeCount(data)}`}
                         </Button>
                     </Tooltip>
                     {actionBtns.map(({ icon, label, onClick, active, tooltip }) => (

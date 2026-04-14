@@ -83,7 +83,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         setLiked(item?.isLikedByUser ?? false);
         setSaved(item?.isSavedByUser ?? false);
         setSaveCount(item?.saveCount ?? 0);
-    }, []);
+    }, [item]);
 
     useEffect(() => {
         if (!item.id) return;
@@ -100,7 +100,8 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
             .catch(() => {});
     }, [item.id]);
 
-    const handleLike = async () => {
+    const handleLike = async (event) => {
+        event?.stopPropagation();
         if (!currentUser) {
             navigate("/login");
             return;
@@ -124,7 +125,8 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = async (event) => {
+        event?.stopPropagation();
         if (!currentUser) {
             navigate("/login");
             return;
@@ -243,6 +245,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                                         "&:hover": item.authorSlug ? { color: "primary.main" } : {},
                                     }}
                                     onClick={() => item.authorSlug && navigate(`/profile/${item.authorSlug}`)}
+                                    onClickCapture={(event) => event.stopPropagation()}
                                 >
                                     {item.authorName}
                                 </Typography>
@@ -323,7 +326,10 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                                 key={label}
                                 size="small"
                                 startIcon={icon}
-                                onClick={onClick}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onClick?.(event);
+                                }}
                                 sx={{
                                     color: active ? "primary.main" : "text.secondary",
                                     p: 0,
@@ -342,7 +348,10 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
             {previewAnswer && (
                 <Box sx={{ mt: 1.5 }}>
                     <Box
-                        onClick={() => setExpanded((v) => !v)}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            setExpanded((v) => !v);
+                        }}
                         sx={{
                             display: "flex",
                             alignItems: "flex-start",

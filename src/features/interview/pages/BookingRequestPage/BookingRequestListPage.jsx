@@ -148,7 +148,7 @@ export default function BookingRequestListPage() {
             {/* Table */}
             {loading ? (
                 <Box display="flex" justifyContent="center" mt={6} mb={6}>
-                    <CircularProgress size={30} />
+                    {/* <CircularProgress size={30} /> */}
                 </Box>
             ) : items.length === 0 ? (
                 <Box textAlign="center" py={6}>

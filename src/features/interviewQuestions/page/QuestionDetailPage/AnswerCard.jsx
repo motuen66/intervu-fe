@@ -30,7 +30,7 @@ export default function AnswerCard({
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState(comment.content ?? "");
     const [saving, setSaving] = useState(false);
-    const [voteCount, setVoteCount] = useState(comment.vote);
+    const [voteCount, setVoteCount] = useState(comment.vote ?? comment.voteCount ?? 0);
     const [voted, setVoted] = useState(comment.isLikedByUser ?? false);
     const [expandedPreview, setExpandedPreview] = useState(false);
 
@@ -51,6 +51,12 @@ export default function AnswerCard({
 
         return () => clearTimeout(t);
     }, [comment.content, expandedPreview]);
+
+    useEffect(() => {
+        setEditContent(comment.content ?? "");
+        setVoteCount(comment.vote ?? comment.voteCount ?? 0);
+        setVoted(comment.isLikedByUser ?? false);
+    }, [comment.id, comment.content, comment.vote, comment.voteCount, comment.isLikedByUser]);
 
     const handleVote = async () => {
         if (!currentUserId) {
