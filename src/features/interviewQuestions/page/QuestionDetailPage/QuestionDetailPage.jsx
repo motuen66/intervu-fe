@@ -407,7 +407,7 @@ export default function QuestionDetailPage() {
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" py={10}>
-                <CircularProgress />
+                {/* <CircularProgress /> */}
             </Box>
         );
     }

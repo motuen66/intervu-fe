@@ -6,7 +6,6 @@ import {
     Typography,
     Stack,
     Paper,
-    CircularProgress,
     Alert,
     Chip,
     Divider,
@@ -304,7 +303,9 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                     <Box className="booking-service-list">
                         {loadingServices ? (
                             <Box display="flex" justifyContent="center" py={10}>
-                                <CircularProgress color="primary" />
+                                <Typography color="text.secondary" fontWeight={600}>
+                                    Loading services...
+                                </Typography>
                             </Box>
                         ) : services.length === 0 ? (
                             <Paper sx={{ p: 6, textAlign: "center", bgcolor: "background.default", borderRadius: "16px", border: "none" }}>
@@ -358,7 +359,9 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                     <Box sx={{ px: 5, pb: 4 }}>
                         {loadingSlots ? (
                             <Box display="flex" justifyContent="center" py={10}>
-                                <CircularProgress color="primary" />
+                                <Typography color="text.secondary" fontWeight={600}>
+                                    Loading available slots...
+                                </Typography>
                             </Box>
                         ) : (
                             <Stack direction={{ xs: "column", md: "row" }} spacing={0} sx={{ minHeight: 420 }}>

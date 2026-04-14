@@ -48,6 +48,7 @@ import {
 import { uploadImage } from "../../../../firebase/service/storage";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../../common/store/authSlice";
+import useGlobalLoading from "../../../../common/hooks/useGlobalLoading";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import UploadCv from "../../components/UploadCv.jsx";
 import AiCvEvaluationModal from "../components/AiCvEvaluationModal.jsx";
@@ -197,7 +198,7 @@ function CandidateProfilePage() {
     const navigate = useNavigate();
 
     const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [hasLoaded, setHasLoaded] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [expandedWorkExp, setExpandedWorkExp] = useState({});
@@ -239,6 +240,7 @@ function CandidateProfilePage() {
     const [openAiEval, setOpenAiEval] = useState(false);
 
     const dispatch = useDispatch();
+    const { showLoading, hideLoading } = useGlobalLoading();
 
     const endpoint = useMemo(() => {
         const slug = slugProfileUrl || profileUrl;
@@ -250,7 +252,10 @@ function CandidateProfilePage() {
 
     const fetchProfile = async (silent = false) => {
         if (!endpoint) return;
-        if (!silent) setLoading(true);
+        if (!silent) {
+            setHasLoaded(false);
+            showLoading();
+        }
         setError(null);
         try {
             const res = await callApi({ method: METHOD.GET, endpoint });
@@ -290,7 +295,10 @@ function CandidateProfilePage() {
         } catch (err) {
             setError(err.message || "An error occurred while fetching the profile.");
         } finally {
-            if (!silent) setLoading(false);
+            if (!silent) {
+                setHasLoaded(true);
+                hideLoading();
+            }
         }
     };
 
@@ -627,17 +635,8 @@ function CandidateProfilePage() {
         );
     }
 
-    if (loading) {
-        return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <Stack alignItems="center" spacing={2}>
-                    <CircularProgress size={48} />
-                    <Typography variant="h6" color="text.secondary">
-                        Loading profile...
-                    </Typography>
-                </Stack>
-            </Box>
-        );
+    if (!hasLoaded && endpoint) {
+        return null;
     }
 
     const avatarUrl = profile?.profilePicture || profile?.user?.profilePicture || "";

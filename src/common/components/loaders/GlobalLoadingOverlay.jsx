@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Backdrop, Box } from "@mui/material";
 import { useSelector } from "react-redux";
-import CommonLoader from "./CommonLoader";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "./GlobalLoadingOverlay.css";
+import trailLoading from "../../../assets/illustrations/Trail loading.lottie";
 
-const SHOW_DELAY_MS = 120;
-const MIN_VISIBLE_MS = 420;
+const SHOW_DELAY_MS = 0;
+const MIN_VISIBLE_MS = 500;
 
 function GlobalLoadingOverlay() {
     const isLoading = useSelector((state) => Boolean(state.auth?.loading));
@@ -40,7 +41,13 @@ function GlobalLoadingOverlay() {
             sx={{ zIndex: (theme) => theme.zIndex.modal + 100 }}
         >
             <Box className="global-loader-content">
-                <CommonLoader text="Loading data" subtext="Intervu is preparing your content..." />
+                <DotLottieReact
+                    src={trailLoading}
+                    loop
+                    autoplay
+                    className="global-loader-lottie"
+                />
+                {/* <Box className="global-loader-title">Loading...</Box> */}
             </Box>
         </Backdrop>
     );

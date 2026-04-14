@@ -65,7 +65,7 @@ function PublicProfilePage() {
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh" }}>
-                <CommonLoader text="Loading Profile" subtext="Preparing profile details..." />
+                {/* <CommonLoader text="Loading Profile" subtext="Preparing profile details..." /> */}
             </Box>
         );
     }

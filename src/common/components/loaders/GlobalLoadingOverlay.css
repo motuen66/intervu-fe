@@ -7,21 +7,26 @@
     background: transparent;
     border: 0;
     box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     animation: loader-content-in 220ms ease-out;
 }
 
-.global-loader-content .common-loader-container {
-    padding: 1rem;
+.global-loader-lottie {
+    width: min(220px, 40vw);
+    height: min(220px, 40vw);
 }
 
-.global-loader-content .loader-text {
-    color: #000;
-    text-shadow: none;
-}
-
-.global-loader-content .loader-subtext {
-    color: #000;
-    text-shadow: none;
+.global-loader-title {
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-shadow: 0 3px 16px rgba(2, 6, 23, 0.5);
 }
 
 @keyframes loader-content-in {
