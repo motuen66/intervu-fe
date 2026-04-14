@@ -42,6 +42,7 @@ export default function InterviewTypeManagementPage() {
                 const result = await callApi({
                     method: METHOD.GET,
                     endpoint: url,
+                    useGlobalLoading: false,
                 });
 
                 const itemsList = result.data.items || [];

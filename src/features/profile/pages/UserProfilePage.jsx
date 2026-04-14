@@ -238,7 +238,7 @@ export default function UserProfilePage() {
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-                <CircularProgress />
+                {/* <CircularProgress /> */}
             </Box>
         );
     }

@@ -4,8 +4,8 @@ import {
     Typography,
     Stack,
     Pagination,
+    CircularProgress,
 } from "@mui/material";
-import CommonLoader from "../../../../../common/components/loaders/CommonLoader";
 import toast from "react-hot-toast";
 import InterviewCard from "./InterviewCard";
 import RecentInterviewItem from "./RecentInterviewItem";
@@ -83,7 +83,7 @@ function UpcomingTab({
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                {/* <CommonLoader /> */}
+                <CircularProgress size={30} />
             </Box>
         );
     }

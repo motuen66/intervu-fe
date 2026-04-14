@@ -22,6 +22,7 @@ export default function CompanyManagementPage() {
         const response = await callApi({
             method: METHOD.GET,
             endpoint: `${adminEndPoints.GET_COMPANIES}?page=${page + 1}&pageSize=${pageSize}`,
+            useGlobalLoading: false,
         });
         if (response?.success) {
             setCompaniesData({

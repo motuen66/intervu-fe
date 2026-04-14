@@ -53,6 +53,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                 method: METHOD.GET,
                 endpoint: interviewQuestionEndPoints.SEARCH,
                 arg: { keyword: kw, limit: 10 },
+                useGlobalLoading: false,
             });
             const items = Array.isArray(data) ? data : (data?.items ?? data?.data ?? []);
             setSuggestions(items);

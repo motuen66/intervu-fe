@@ -64,6 +64,7 @@ export default function ShareExperiencePage() {
             method: METHOD.GET,
             endpoint: homeEndPoints.GET_ALL_COMPANIES,
             arg: { page: 1, pageSize: 200 },
+            useGlobalLoading: false,
         })
             .then(({ data }) => {
                 const payload = data ?? {};

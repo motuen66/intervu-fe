@@ -791,7 +791,7 @@ export default function QuestionDetailPage() {
                 {/* Answers list */}
                 {loadingAnswers ? (
                     <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-                        <CircularProgress size={24} />
+                        {/* <CircularProgress size={24} /> */}
                     </Box>
                 ) : (
                     answers.length > 0 && (
