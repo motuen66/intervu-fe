@@ -14,7 +14,6 @@ import {
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { alpha } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
 import { PrimaryButton } from "../../../../../common/components/buttons";
 import { assessmentApi, setAssessmentForceRequired } from "../services/assessmentApi";
@@ -289,7 +288,6 @@ const ResultDashboard = () => {
         saveAssessmentSnapshot,
         roadmap,
     } = useAssessment();
-    const navigate = useNavigate();
     const [isSaving, setIsSaving] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState({});
     const profile = answers?.profile || {};
