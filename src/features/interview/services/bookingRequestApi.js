@@ -63,6 +63,7 @@ export const getBookingRequests = async (filters = {}) => {
     const result = await callApi({
         method: METHOD.GET,
         endpoint: url,
+        useGlobalLoading: false,
     });
     return result.data; // { items, totalCount, page, pageSize }
 };

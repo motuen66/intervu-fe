@@ -31,6 +31,7 @@ export default function SavedQuestionsPage() {
             method: METHOD.GET,
             endpoint: interactionEndPoints.GET_SAVED_QUESTIONS,
             arg: { page, pageSize: PAGE_SIZE },
+            useGlobalLoading: false,
         })
             .then(({ data }) => {
                 const payload = data ?? {};

@@ -54,6 +54,7 @@ export default function NotificationDropdown() {
                 const result = await callApi({
                     method: METHOD.GET,
                     endpoint,
+                    useGlobalLoading: false,
                 });
                 if (result?.success && result.data) {
                     if (append) {
@@ -86,6 +87,7 @@ export default function NotificationDropdown() {
                 const result = await callApi({
                     method: METHOD.GET,
                     endpoint: notificationEndPoints.GET_UNREAD_COUNT,
+                    useGlobalLoading: false,
                 });
                 if (result?.success && result.data) {
                     dispatch(setUnreadCount(result.data.count ?? result.data));
@@ -132,6 +134,7 @@ export default function NotificationDropdown() {
                 await callApi({
                     method: METHOD.PATCH,
                     endpoint: `${notificationEndPoints.MARK_AS_READ}${notification.id}/read`,
+                    useGlobalLoading: false,
                 });
             } catch (err) {
                 console.error("Failed to mark as read:", err);
@@ -158,6 +161,7 @@ export default function NotificationDropdown() {
             await callApi({
                 method: METHOD.PATCH,
                 endpoint: notificationEndPoints.MARK_ALL_AS_READ,
+                useGlobalLoading: false,
             });
         } catch (err) {
             console.error("Failed to mark all as read:", err);

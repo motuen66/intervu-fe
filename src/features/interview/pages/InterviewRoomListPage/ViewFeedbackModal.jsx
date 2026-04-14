@@ -117,7 +117,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
             <DialogContent>
                 {loading && (
                     <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                        <CircularProgress />
+                        {/* <CircularProgress /> */}
                     </Box>
                 )}
 

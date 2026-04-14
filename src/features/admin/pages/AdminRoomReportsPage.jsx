@@ -118,6 +118,7 @@ export const AdminRoomReportsPage = () => {
             const response = await callApi({
                 method: METHOD.GET,
                 endpoint: `${adminEndPoints.GET_ROOM_REPORTS}?${params.join("&")}`,
+                useGlobalLoading: false,
             });
             if (response?.success) {
                 setReports(response.data?.items || []);
@@ -136,6 +137,7 @@ export const AdminRoomReportsPage = () => {
             const response = await callApi({
                 method: METHOD.GET,
                 endpoint: adminEndPoints.GET_ROOM_AUDIT_LOGS(roomId),
+                useGlobalLoading: false,
             });
             if (response?.success) {
                 setAuditLogs(response.data?.items || []);

@@ -802,7 +802,7 @@ function InterviewRoomPage() {
                     height: "100vh",
                 }}
             >
-                {loading && !error && <CircularProgress />}
+                {loading && !error}
                 <Typography variant="h6" sx={{ mt: 2 }}>
                     {error ?? "Verifying interview status..."}
                 </Typography>
