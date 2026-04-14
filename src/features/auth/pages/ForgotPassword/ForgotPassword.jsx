@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import { TextField, Typography, Alert } from '@mui/material';
-import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { PrimaryButton } from "../../../../common/components/buttons";
 import { callApi } from '../../../../common/utils/apiConnector';
 import { METHOD } from '../../../../common/constants/api';
 import { authEndPoints } from '../../services/authApi';
@@ -12,12 +11,13 @@ function ForgotPassword() {
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
-    const loading = useSelector((state) => state.auth.loading);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSubmitting(true);
 
         try {
             const { success, message } = await callApi({
@@ -35,6 +35,8 @@ function ForgotPassword() {
             }
         } catch (err) {
             setError(err.message || 'An unexpected error occurred. Please try again.');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -81,7 +83,8 @@ function ForgotPassword() {
                         <PrimaryButton
                             fullWidth
                             type="submit"
-                            loading={loading}
+                            loading={false}
+                            disabled={submitting}
                             sx={{
                                 padding: '12px',
                                 fontSize: '15px',

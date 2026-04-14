@@ -25,6 +25,7 @@ export const assessmentApi = {
             endpoint: assessmentEndPoints.SAVE_ANSWERS(),
             arg: payload,
             alertErrorMessage: true,
+            useGlobalLoading: false,
         }),
 };
 
@@ -406,6 +407,7 @@ export const getAssessmentData = async (userId) => {
         method: METHOD.GET,
         endpoint: assessmentEndPoints.GET_SKILL_GAPS(userId),
         alertErrorMessage: false,
+        useGlobalLoading: false,
     });
 
     if (!res?.success) {
@@ -464,12 +466,12 @@ export const setAssessmentForceRequired = (userId, required) => {
     }
 };
 
-export const saveSkippedAssessment = async (userId) => {
+export const saveSkippedAssessment = async (userId, customPayload = null) => {
     if (!userId) {
         return false;
     }
 
-    const payload = {
+    const payload = customPayload || {
         UserId: userId,
         AssessmentName: "Skipped Assessment",
         Responses: [],
@@ -485,14 +487,29 @@ export const saveSkippedAssessment = async (userId) => {
             Missing: [],
             Weak: [],
         },
+        Answer: {
+            profile: {
+                role: "",
+                level: "",
+                techstack: [],
+                domain: [],
+                freeText: "",
+            },
+            responses: [],
+        },
     };
 
-    const res = await callApi({
-        method: METHOD.POST,
-        endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
-        arg: payload,
-        alertErrorMessage: false,
-    });
+    try {
+        const res = await callApi({
+            method: METHOD.POST,
+            endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
+            arg: payload,
+            alertErrorMessage: false,
+            useGlobalLoading: false,
+        });
 
-    return Boolean(res?.success);
+        return Boolean(res?.success);
+    } catch (error) {
+        return false;
+    }
 };

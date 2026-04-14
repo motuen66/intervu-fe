@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import toast, { ToastBar, Toaster } from "react-hot-toast"; // Thư viện bạn đang dùng
+import toast, { ToastBar, Toaster } from "react-hot-toast";
 import "./index.css";
 import { routes } from "./app/routes/index.jsx";
 import { Provider } from "react-redux";
@@ -12,27 +12,22 @@ import { theme } from "./common/constants/theme.jsx";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { initGA, trackAppOpen } from "./utils/analytics";
+import GlobalLoadingOverlay from "./common/components/loaders/GlobalLoadingOverlay";
 
 const router = createBrowserRouter(routes);
 export const store = configureStore({ reducer: rootReducer });
 
-// Premium multi-layer background — config here, not in any CSS file
 const appBackground = {
     backgroundColor: "#F8FAFC",
     backgroundImage: [
-        // Lime atmospheric glow — top-left
         "radial-gradient(at 0% 0%, rgba(217, 249, 157, 0.07) 0px, transparent 50%)",
-        // Indigo glow — top-right (soft light source)
         "radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.11) 0px, transparent 50%)",
-        // Secondary Indigo blob — bottom-right (depth layer)
         "radial-gradient(at 80% 100%, rgba(165, 180, 252, 0.09) 0px, transparent 40%)",
     ].join(","),
     minHeight: "100vh",
 };
 
-// Initialize Google Analytics once at app startup
 initGA();
-// Emit app_open event
 try {
     trackAppOpen();
 } catch (err) {
@@ -44,6 +39,7 @@ createRoot(document.getElementById("root")).render(
         <GlobalStyles styles={{ html: { scrollBehavior: "smooth" }, body: appBackground }} />
         <Provider store={store}>
             <RouterProvider router={router} />
+            <GlobalLoadingOverlay />
             <Toaster
                 position="top-right"
                 toastOptions={{
@@ -71,7 +67,7 @@ createRoot(document.getElementById("root")).render(
                                             padding: "0 4px",
                                         }}
                                     >
-                                        ✕
+                                        x
                                     </button>
                                 )}
                             </>

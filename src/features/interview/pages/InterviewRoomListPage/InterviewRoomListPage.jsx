@@ -1,9 +1,10 @@
 import { Box, Typography, Stack, Tabs, Tab, Container } from "@mui/material";
-import CommonLoader from "../../../../common/components/loaders/CommonLoader";
+// import CommonLoader from "../../../../common/components/loaders/CommonLoader";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { Plus as AddIcon } from "lucide-react";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
+import useGlobalLoading from "../../../../common/hooks/useGlobalLoading";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import toast from "react-hot-toast";
@@ -54,10 +55,10 @@ function InterviewRoomListPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const user = useUser();
+    const { loading, showLoading, hideLoading } = useGlobalLoading();
     const [upcomingRooms, setUpcomingRooms] = useState([]);
     const [pastRooms, setPastRooms] = useState([]);
     const [rescheduleRequests, setRescheduleRequests] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [rescheduleLoading, setRescheduleLoading] = useState(false);
     const [hasPendingFeedbacks, setHasPendingFeedbacks] = useState(false);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mode: "pending" });
@@ -183,7 +184,7 @@ function InterviewRoomListPage() {
     };
 
     const fetchRooms = async (statuses = null) => {
-        setLoading(true);
+        showLoading();
         try {
             // Fetch ALL rooms to properly group multi-round bookings
             const allRoomsRes = await callApi({
@@ -260,7 +261,7 @@ function InterviewRoomListPage() {
         } catch (error) {
             console.error("Failed to fetch rooms:", error);
         }
-        setLoading(false);
+        hideLoading();
     };
 
     const fetchRescheduleRequests = async () => {
@@ -498,7 +499,7 @@ function InterviewRoomListPage() {
     if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
         return (
             <Box sx={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <CommonLoader />
+                {/* <CommonLoader /> */}
             </Box>
         );
     }

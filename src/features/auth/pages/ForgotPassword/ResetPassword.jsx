@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import { callApi } from '../../../../common/utils/apiConnector';
 import { METHOD } from '../../../../common/constants/api';
 import { authEndPoints } from '../../services/authApi';
@@ -9,13 +8,13 @@ import styles from './ResetPassword.module.css';
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const loading = useSelector((state) => state.auth.loading);
 
     const [token, setToken] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [message, setMessage] = useState("");
     const [tokenValid, setTokenValid] = useState(null); // null = validating, true = valid, false = invalid
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         const tokenFromURL = searchParams.get("token");
@@ -64,6 +63,7 @@ const ResetPassword = () => {
         }
 
         setMessage("");
+        setSubmitting(true);
 
         try {
             const { success, message: responseMessage } = await callApi({
@@ -88,6 +88,8 @@ const ResetPassword = () => {
             }
         } catch (error) {
             setMessage(error.message || "An unexpected error occurred. Please try again.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -134,7 +136,7 @@ const ResetPassword = () => {
                         required
                         minLength={6}
                         placeholder="Enter new password"
-                        disabled={loading}
+                        disabled={submitting}
                     />
                 </div>
 
@@ -147,12 +149,12 @@ const ResetPassword = () => {
                         required
                         minLength={6}
                         placeholder="Confirm new password"
-                        disabled={loading}
+                        disabled={submitting}
                     />
                 </div>
 
-                <button type="submit" disabled={loading} className={styles.button}>
-                    {loading ? 'Resetting...' : 'Reset Password'}
+                <button type="submit" disabled={submitting} className={styles.button}>
+                    {submitting ? 'Resetting...' : 'Reset Password'}
                 </button>
             </form>
         </div>

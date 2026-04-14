@@ -1,11 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { homeEndPoints } from "../services/homeApi";
+import { startGlobalLoading, stopGlobalLoading } from '../../../common/store/authSlice';
 
 export const fetchInterviewers = createAsyncThunk(
     'home/fetchInterviewers',
-    async (params = {}, {rejectWithValue, getState}) => {
+    async (params = {}, {rejectWithValue, getState, dispatch}) => {
         try{
+            dispatch(startGlobalLoading());
             const { home } = getState();
             const { currentPage, pageSize } = home.pagination;
             const response = await axios.get(homeEndPoints.GET_ALL_INTERVIEWERS, {
@@ -18,14 +20,17 @@ export const fetchInterviewers = createAsyncThunk(
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch interviewers');
+        } finally {
+            dispatch(stopGlobalLoading());
         }
     }
 );
 
 export const fetchCompanies = createAsyncThunk(
     'home/fetchCompanies',
-    async (_, {rejectWithValue}) => {
+    async (_, {rejectWithValue, dispatch}) => {
         try{
+            dispatch(startGlobalLoading());
             const response = await axios.get(homeEndPoints.GET_ALL_COMPANIES, {
                 params: {
                     page: 1,
@@ -35,14 +40,17 @@ export const fetchCompanies = createAsyncThunk(
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch companies');
+        } finally {
+            dispatch(stopGlobalLoading());
         }
     }
 );
 
 export const fetchSkills = createAsyncThunk(
     'home/fetchSkills',
-    async (_, {rejectWithValue}) => {
+    async (_, {rejectWithValue, dispatch}) => {
         try{
+            dispatch(startGlobalLoading());
             const response = await axios.get(homeEndPoints.GET_ALL_SKILLS, {
                 params: {
                     page: 1,
@@ -53,14 +61,17 @@ export const fetchSkills = createAsyncThunk(
         }
         catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch skills');
+        } finally {
+            dispatch(stopGlobalLoading());
         }
     }
 );
 
 export const fetchIndustries = createAsyncThunk(
     'home/fetchIndustries',
-    async (_, {rejectWithValue}) => {
+    async (_, {rejectWithValue, dispatch}) => {
         try{
+            dispatch(startGlobalLoading());
             const response = await axios.get(homeEndPoints.GET_ALL_INDUSTRIES, {
                 params: {
                     page: 1,
@@ -71,6 +82,8 @@ export const fetchIndustries = createAsyncThunk(
         }
         catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch industries');
+        } finally {
+            dispatch(stopGlobalLoading());
         }
     }
 );

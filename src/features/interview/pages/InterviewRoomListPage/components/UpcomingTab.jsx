@@ -83,7 +83,7 @@ function UpcomingTab({
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CommonLoader />
+                {/* <CommonLoader /> */}
             </Box>
         );
     }

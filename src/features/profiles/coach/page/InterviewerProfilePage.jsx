@@ -14,7 +14,6 @@ import {
     Box,
     Typography,
     Stack,
-    CircularProgress,
     Avatar,
     IconButton,
     TextField,
@@ -203,7 +202,7 @@ function InterviewerProfilePage() {
     const user = useUser();
     const dispatch = useDispatch();
     const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [hasLoaded, setHasLoaded] = useState(false);
     const [error, setError] = useState(null);
     const [expandedBio, setExpandedBio] = useState(false);
     const [expandedWorkExp, setExpandedWorkExp] = useState({});
@@ -263,7 +262,7 @@ function InterviewerProfilePage() {
     useEffect(() => {
         const fetchProfile = async () => {
             if (!endpoint) return;
-            setLoading(true);
+            setHasLoaded(false);
             setError(null);
             try {
                 const res = await callApi({ method: METHOD.GET, endpoint });
@@ -275,7 +274,7 @@ function InterviewerProfilePage() {
             } catch (err) {
                 setError(err.message || "An error occurred while fetching the profile.");
             } finally {
-                setLoading(false);
+                setHasLoaded(true);
             }
         };
         fetchProfile();
@@ -624,17 +623,8 @@ function InterviewerProfilePage() {
         return expandedBio ? bio : bio.slice(0, 240) + "...";
     }, [bio, expandedBio]);
 
-    if (loading) {
-        return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <Stack alignItems="center" spacing={2}>
-                    <CircularProgress size={48} />
-                    <Typography variant="h6" color="text.secondary">
-                        Loading profile...
-                    </Typography>
-                </Stack>
-            </Box>
-        );
+    if (!hasLoaded && endpoint) {
+        return null;
     }
 
     return (
@@ -1676,7 +1666,7 @@ function InterviewerProfilePage() {
                     />
                 )}
 
-                {!loading && !profile && !error && (
+                {hasLoaded && !profile && !error && (
                     <Paper
                         elevation={0}
                         sx={{ p: 4, textAlign: "center", border: "1px solid", borderColor: "divider" }}
