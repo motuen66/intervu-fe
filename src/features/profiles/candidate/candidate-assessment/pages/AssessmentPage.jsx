@@ -124,20 +124,12 @@ function AssessmentFlow() {
                         setSurveyResult(mapped.surveyResult);
                         setSkillScores(mapped.skillScores);
                         updateMatchPercentage(mapped.matchPercentage);
-                        setRoadmap(mapped.roadmap);
                     }
 
                     setCurrentStep(3);
                     return;
                 }
 
-                // If status is not HAS_DATA (e.g., ALL_EMPTY or NO_RECORD), 
-                // ensure we start with clean state
-                setAnswers({ profile: { role: "", level: "", techstack: [], domain: [], freeText: "" }, responses: [] });
-                setSurveyResult(null);
-                setSkillScores([]);
-                setRoadmap({ today: [], weeks: [] });
-                updateMatchPercentage(0);
                 setCurrentStep(1);
             } catch (error) {
                 if (!cancelled) {

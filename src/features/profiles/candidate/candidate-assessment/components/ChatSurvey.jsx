@@ -936,48 +936,10 @@ const ChatSurvey = () => {
 
         if (currentUserId) {
             try {
-                // To allow redo later, we send completely empty structure on skip
-                const payload = {
-                    UserId: currentUserId,
-                    AssessmentName: "Skipped Assessment (Reset)",
-                    Responses: [],
-                    Target: {
-                        Roles: [],
-                        Level: "",
-                        SkillsTarget: [],
-                    },
-                    Current: {
-                        Skills: [],
-                    },
-                    Gap: { Missing: [], Weak: [] },
-                    Roadmap: {
-                        roadmap_metadata: {
-                            target_role: "",
-                            target_level: "",
-                            total_phases: 0,
-                        },
-                        phases: [],
-                    },
-                    Answer: {
-                        profile: {
-                            role: "",
-                            level: "",
-                            techstack: [],
-                            domain: [],
-                            freeText: "",
-                        },
-                        responses: [],
-                    },
-                };
-
-                // Use the API to reset state on server
-                const isSkipped = await saveSkippedAssessment(currentUserId, payload);
-                if (!isSkipped) {
-                    console.warn("Skip assessment API failed, continuing with local reset.");
+                const skipped = await saveSkippedAssessment(currentUserId);
+                if (!skipped) {
+                    return;
                 }
-                setAssessmentForceRequired(currentUserId, false);
-            } catch (error) {
-                console.warn("Skip assessment failed:", error);
                 setAssessmentForceRequired(currentUserId, false);
             } finally {
                 setIsSkipping(false);
