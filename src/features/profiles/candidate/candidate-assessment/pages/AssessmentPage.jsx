@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import { AssessmentProvider, useAssessment } from "../context/AssessmentContext";
+import { useAssessment } from "../context/AssessmentContext";
 import StepperHeader from "../components/StepperHeader";
 import ChatSurvey from "../components/ChatSurvey";
 import ProcessingState from "../components/ProcessingState";
@@ -35,7 +35,7 @@ function AssessmentFlow() {
                 (Array.isArray(roadmap?.phases) && roadmap.phases.length > 0)),
     );
 
-    useEffect(() => {
+    useEffect(() => {   
         if (!userId || !isAssessmentCacheValid(userId)) {
             return;
         }
@@ -124,20 +124,12 @@ function AssessmentFlow() {
                         setSurveyResult(mapped.surveyResult);
                         setSkillScores(mapped.skillScores);
                         updateMatchPercentage(mapped.matchPercentage);
-                        setRoadmap(mapped.roadmap);
                     }
 
                     setCurrentStep(3);
                     return;
                 }
 
-                // If status is not HAS_DATA (e.g., ALL_EMPTY or NO_RECORD), 
-                // ensure we start with clean state
-                setAnswers({ profile: { role: "", level: "", techstack: [], domain: [], freeText: "" }, responses: [] });
-                setSurveyResult(null);
-                setSkillScores([]);
-                setRoadmap({ today: [], weeks: [] });
-                updateMatchPercentage(0);
                 setCurrentStep(1);
             } catch (error) {
                 if (!cancelled) {
@@ -174,9 +166,5 @@ function AssessmentFlow() {
 }
 
 export default function AssessmentPage() {
-    return (
-        <AssessmentProvider>
-            <AssessmentFlow />
-        </AssessmentProvider>
-    );
+    return <AssessmentFlow />;
 }

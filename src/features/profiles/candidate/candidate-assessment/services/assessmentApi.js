@@ -5,10 +5,6 @@ import { axiosInstance, callApi } from "../../../../../common/utils/apiConnector
 const ASSESSMENT_BASE = `${BE_BASE_URL}/assessment`;
 const AI_GENERATOR_URL = `${BE_BASE_URL}/generate-assessment`;
 const ASSESSMENT_FORCE_REQUIRED_PREFIX = "assessment_force_required:";
-const ASSESSMENT_DATA_CACHE_TTL_MS = 30 * 1000;
-
-const assessmentDataInFlightMap = new Map();
-const assessmentDataCacheMap = new Map();
 
 export const assessmentEndPoints = {
     GENERATE_ASSESSMENT: AI_GENERATOR_URL,
@@ -407,40 +403,18 @@ export const getAssessmentData = async (userId) => {
         return null;
     }
 
-    const cached = assessmentDataCacheMap.get(userId);
-    if (cached && Date.now() - cached.timestamp < ASSESSMENT_DATA_CACHE_TTL_MS) {
-        return cached.data;
+    const res = await callApi({
+        method: METHOD.GET,
+        endpoint: assessmentEndPoints.GET_SKILL_GAPS(userId),
+        alertErrorMessage: false,
+        useGlobalLoading: false,
+    });
+
+    if (!res?.success) {
+        return null;
     }
 
-    const inFlight = assessmentDataInFlightMap.get(userId);
-    if (inFlight) {
-        return inFlight;
-    }
-
-    const requestPromise = (async () => {
-        const res = await callApi({
-            method: METHOD.GET,
-            endpoint: assessmentEndPoints.GET_SKILL_GAPS(userId),
-            alertErrorMessage: false,
-            useGlobalLoading: false,
-        });
-
-        if (!res?.success) {
-            return null;
-        }
-
-        const data = res?.data ?? null;
-        assessmentDataCacheMap.set(userId, { data, timestamp: Date.now() });
-        return data;
-    })();
-
-    assessmentDataInFlightMap.set(userId, requestPromise);
-
-    try {
-        return await requestPromise;
-    } finally {
-        assessmentDataInFlightMap.delete(userId);
-    }
+    return res?.data ?? null;
 };
 
 export const getAssessmentState = async (userId) => {
@@ -513,6 +487,14 @@ export const saveSkippedAssessment = async (userId, customPayload = null) => {
             Missing: [],
             Weak: [],
         },
+        Roadmap: {
+            roadmap_metadata: {
+                target_role: "",
+                target_level: "",
+                total_phases: 0,
+            },
+            phases: [],
+        },
         Answer: {
             profile: {
                 role: "",
@@ -526,16 +508,36 @@ export const saveSkippedAssessment = async (userId, customPayload = null) => {
     };
 
     try {
-        const res = await callApi({
-            method: METHOD.POST,
-            endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
-            arg: payload,
-            alertErrorMessage: false,
-            useGlobalLoading: false,
-        });
+        try {
+            const res = await callApi({
+                method: METHOD.POST,
+                endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
+                arg: payload,
+                alertErrorMessage: false,
+                useGlobalLoading: false,
+            });
 
-        return Boolean(res?.success);
+            return Boolean(res?.success) || Boolean(res);
+        } catch (error) {
+            try {
+                const primary = await axiosInstance.post(assessmentEndPoints.PROCESS_SURVEY_RESPONSES(), payload);
+                if (primary?.status >= 200 && primary?.status < 300) {
+                    return true;
+                }
+            } catch (primaryError) {
+                try {
+                    const fb = await axiosInstance.post(assessmentEndPoints.PROCESS_SURVEY_RESPONSES_FALLBACK(), payload);
+                    if (fb?.status >= 200 && fb?.status < 300) {
+                        return true;
+                    }
+                } catch (fbError) {
+                    throw error;
+                }
+            }
+            return false;
+        }
     } catch (error) {
+        console.warn("Save skipped assessment failed:", error);
         return false;
     }
 };

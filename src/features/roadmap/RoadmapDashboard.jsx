@@ -132,7 +132,6 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
     const navigate = useNavigate();
     const authenticatedUserId = useSelector((state) => state.auth?.userData?.id);
     const effectiveUserId = userIdProp ?? authenticatedUserId ?? null;
-    const { withLoading } = useGlobalLoading();
     const [resolvedRoadmap, setResolvedRoadmap] = useState(() => (hasRoadmapContent(roadmap) ? roadmap : null));
     const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(false);
     const [error, setError] = useState(null);
@@ -224,7 +223,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
         return () => {
             cancelled = true;
         };
-    }, [effectiveUserId, withLoading]);
+    }, [effectiveUserId]);
 
     const sourceRoadmap = useMemo(() => normalizeRoadmapPayload(resolvedRoadmap ?? roadmap) ?? null, [resolvedRoadmap, roadmap]);
     const roadmapMetadata = sourceRoadmap?.roadmap_metadata ?? {};

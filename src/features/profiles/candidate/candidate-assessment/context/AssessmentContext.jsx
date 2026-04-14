@@ -43,6 +43,7 @@ export function AssessmentProvider({ children }) {
                     endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
                     arg: payload,
                     alertErrorMessage: true,
+                    useGlobalLoading: false,
                 });
                 if (apiResult?.data) {
                     setSurveyResult(apiResult.data);

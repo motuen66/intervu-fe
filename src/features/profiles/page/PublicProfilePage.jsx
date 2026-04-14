@@ -33,6 +33,7 @@ function PublicProfilePage() {
                         "{slugProfileUrl}",
                         slugProfileUrl,
                     ),
+                    useGlobalLoading: false,
                 });
 
                 if (coachRes?.success && coachRes?.data) {
@@ -48,6 +49,7 @@ function PublicProfilePage() {
                         "{slugProfileUrl}",
                         slugProfileUrl,
                     ),
+                    useGlobalLoading: false,
                 });
 
                 if (candidateRes?.success && candidateRes?.data) {

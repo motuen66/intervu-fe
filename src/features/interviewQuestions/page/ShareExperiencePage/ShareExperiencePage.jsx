@@ -150,6 +150,7 @@ export default function ShareExperiencePage() {
                     isInterestedInContact: allowContact,
                     questions: payloadQuestions,
                 },
+                useGlobalLoading: false,
             });
 
             try {
