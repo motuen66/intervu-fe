@@ -35,6 +35,20 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const parseEvaluationStructure = (data) => {
+        const raw = data?.evaluationStructureJson ?? data?.EvaluationStructureJson ?? data?.evaluationStructure ?? data?.EvaluationStructure;
+        if (!raw) return null;
+        if (typeof raw === "string") {
+            try {
+                return JSON.parse(raw);
+            } catch (err) {
+                return null;
+            }
+        }
+        if (typeof raw === "object") return raw;
+        return null;
+    };
+
     useEffect(() => {
         if (open && interviewRoomId && user) {
             fetchFeedback();
@@ -91,6 +105,13 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
         onClose();
     };
 
+    const evaluationStructure = parseEvaluationStructure(feedback || {});
+    const evaluationResults = feedback?.evaluationResults || evaluationStructure?.results || [];
+    const resolvedOthers = feedback?.others ?? evaluationStructure?.others;
+    const resolvedHireDecision =
+        feedback?.hireDecision ?? feedback?.hideDecision ?? evaluationStructure?.hireDecision ?? evaluationStructure?.hideDecision;
+    const resolvedIsHire = feedback?.isHire ?? feedback?.IsHire;
+
     return (
         <Dialog
             open={open}
@@ -135,7 +156,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
 
                 {!loading && feedback && (
                     <Stack spacing={3}>
-                        {feedback.evaluationResults ? (
+                        {evaluationResults.length > 0 ? (
                             /* Evaluation Results View (Questions + Scores) */
                             <Box>
                                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
@@ -151,7 +172,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {feedback.evaluationResults?.map((item, index) => (
+                                            {evaluationResults?.map((item, index) => (
                                                 <TableRow key={index} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                                                     <TableCell component="th" scope="row">
                                                         <Typography variant="body2" fontWeight={600}>
@@ -184,6 +205,34 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
+                                            {(resolvedHireDecision !== undefined || resolvedIsHire !== undefined) && (
+                                                <TableRow>
+                                                    <TableCell sx={{ fontWeight: 600 }}>Hire Decision</TableCell>
+                                                    <TableCell align="center">-</TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            {resolvedHireDecision
+                                                                ? String(resolvedHireDecision).toLowerCase() === "yes"
+                                                                    ? "Yes"
+                                                                    : "No"
+                                                                : resolvedIsHire
+                                                                  ? "Yes"
+                                                                  : "No"}
+                                                        </Typography>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                            {resolvedOthers && (
+                                                <TableRow>
+                                                    <TableCell sx={{ fontWeight: 600 }}>Others</TableCell>
+                                                    <TableCell align="center">-</TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+                                                            {resolvedOthers}
+                                                        </Typography>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
@@ -199,6 +248,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                         />
                                     </Stack>
                                 </Box>
+
                             </Box>
                         ) : (
                             /* Candidate View: Standard Feedback (Rating + Comments) */

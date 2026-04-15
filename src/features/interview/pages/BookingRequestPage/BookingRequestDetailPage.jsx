@@ -289,6 +289,9 @@ export default function BookingRequestDetailPage() {
     const isPaid = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
     const isPending = detail.status === BOOKING_REQUEST_STATUS.PENDING;
     const isAccepted = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
+    const hasCompletedInterview = (detail.rounds || []).some(
+        (round) => String(round?.interviewRoomStatus || "").toUpperCase() === "COMPLETED",
+    );
 
     return (
         <Box sx={{ minHeight: "100vh", pt: 3, pb: 6, px: { xs: 3, md: 4 } }}>
@@ -321,7 +324,7 @@ export default function BookingRequestDetailPage() {
 
                     {/* Primary Action Context Dependent */}
                     <Stack direction="row" spacing={2}>
-                        {isCoach && isPaid && (
+                        {isCoach && isPaid && !hasCompletedInterview && (
                             <>
                                 <SecondaryButton
                                     onClick={handleAccept}
@@ -343,7 +346,7 @@ export default function BookingRequestDetailPage() {
                             </>
                         )}
 
-                        {!isCoach && (
+                        {!isCoach && !hasCompletedInterview && (
                             <>
                                 {isPending && (
                                     <SecondaryButton
