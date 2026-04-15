@@ -36,6 +36,23 @@ class PCMProcessor extends AudioWorkletProcessor {
 registerProcessor('pcm-processor', PCMProcessor);
 `;
 
+function getPreferredMediaRecorderOptions() {
+    const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+    ];
+
+    if (typeof MediaRecorder === "undefined") return null;
+    for (const mimeType of candidates) {
+        if (typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(mimeType)) {
+            return { mimeType };
+        }
+    }
+
+    return null;
+}
+
 export function useSpeechmaticsTranscript({
     roomId,
     isEnabled = false,
@@ -51,6 +68,10 @@ export function useSpeechmaticsTranscript({
     const workletNodeRef = useRef(null);
     const speechmaticsClientRef = useRef(null);
     const speechmaticsSessionIdRef = useRef(0);
+    const isStartingRecorderRef = useRef(false);
+    const recorderSessionIdRef = useRef(0);
+    const isStartingSpeechmaticsRef = useRef(false);
+    const reconnectTimerRef = useRef(null);
     const accumulatedBlobs = useRef([]);
     const lastUploadTime = useRef(Date.now());
     const chunkSequenceRef = useRef(0);
@@ -128,8 +149,34 @@ export function useSpeechmaticsTranscript({
     }, [uploadChunk]);
 
     // --- Speechmatics ---
+    const clearReconnectTimer = useCallback(() => {
+        if (reconnectTimerRef.current) {
+            clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = null;
+        }
+    }, []);
+
+    const scheduleReconnect = useCallback(() => {
+        if (reconnectTimerRef.current) return;
+        reconnectTimerRef.current = setTimeout(() => {
+            reconnectTimerRef.current = null;
+            if (
+                isEnabled &&
+                isMicOn &&
+                isTranscriptionEnabled &&
+                audioStream &&
+                !speechmaticsClientRef.current &&
+                !isStartingSpeechmaticsRef.current
+            ) {
+                startSpeechmatics();
+            }
+        }, 1500);
+    }, [audioStream, isEnabled, isMicOn, isTranscriptionEnabled]);
+
     const stopSpeechmatics = useCallback(async () => {
         speechmaticsSessionIdRef.current += 1;
+        clearReconnectTimer();
+        isStartingSpeechmaticsRef.current = false;
         if (speechmaticsClientRef.current) {
             try {
                 console.log("[Speechmatics] Stopping client...");
@@ -141,9 +188,10 @@ export function useSpeechmaticsTranscript({
         }
         setIsTranscribing(false);
         setInterimTranscript("");
-    }, []);
+    }, [clearReconnectTimer]);
 
     const startSpeechmatics = useCallback(async () => {
+        if (speechmaticsClientRef.current || isStartingSpeechmaticsRef.current) return;
         if (!speechmaticsApiKey || !audioStream || !isTranscriptionEnabled) return;
         const hasEnabledAudioTrack = audioStream
             ?.getAudioTracks()
@@ -152,6 +200,8 @@ export function useSpeechmaticsTranscript({
 
         const sessionId = speechmaticsSessionIdRef.current + 1;
         speechmaticsSessionIdRef.current = sessionId;
+        isStartingSpeechmaticsRef.current = true;
+        clearReconnectTimer();
 
         try {
             const client = new RealtimeClient();
@@ -159,13 +209,12 @@ export function useSpeechmaticsTranscript({
             client.addEventListener("receiveMessage", ({ data }) => {
                 if (speechmaticsSessionIdRef.current !== sessionId) return;
 
-                // Any successful message from Speechmatics means we are active
                 if (data.message === "RecognitionStarted") {
                     setIsTranscribing(true);
                 }
 
                 if (data.message === "AddTranscript") {
-                    setIsTranscribing(true); // Fallback: ensure online if transcripts are arriving
+                    setIsTranscribing(true);
                     let text = "";
                     for (const result of data.results) {
                         text += (result.type === "word" ? " " : "") + result.alternatives?.[0].content;
@@ -176,7 +225,7 @@ export function useSpeechmaticsTranscript({
                         if (onTranscriptUpdate) onTranscriptUpdate(text, true, user?.role);
                     }
                 } else if (data.message === "AddPartialTranscript") {
-                     setIsTranscribing(true); // Fallback
+                     setIsTranscribing(true);
                      let partialText = "";
                      for (const result of data.results) {
                         partialText += (result.type === "word" ? " " : "") + result.alternatives?.[0].content;
@@ -187,6 +236,11 @@ export function useSpeechmaticsTranscript({
                     }
                 } else if (data.message === "Error") {
                     console.error("[Speechmatics] Error:", data);
+                    if (speechmaticsSessionIdRef.current === sessionId) {
+                        speechmaticsClientRef.current = null;
+                        setInterimTranscript("");
+                        scheduleReconnect();
+                    }
                     setIsTranscribing(false);
                 }
             });
@@ -195,6 +249,15 @@ export function useSpeechmaticsTranscript({
                 if (speechmaticsSessionIdRef.current !== sessionId) return;
                 console.log("[Speechmatics] Recognition started event");
                 setIsTranscribing(true);
+            });
+
+            client.addEventListener("close", () => {
+                if (speechmaticsSessionIdRef.current !== sessionId) return;
+                console.warn("[Speechmatics] Connection closed, scheduling reconnect...");
+                speechmaticsClientRef.current = null;
+                setIsTranscribing(false);
+                setInterimTranscript("");
+                scheduleReconnect();
             });
 
             const jwt = await createSpeechmaticsJWT({
@@ -224,19 +287,32 @@ export function useSpeechmaticsTranscript({
             });
 
             speechmaticsClientRef.current = client;
-            
-            // Set transcribing true after successful start()
             setIsTranscribing(true);
 
         } catch (err) {
             console.error("[Speechmatics] Setup failed:", err);
+            speechmaticsClientRef.current = null;
             setIsTranscribing(false);
+            scheduleReconnect();
+        } finally {
+            isStartingSpeechmaticsRef.current = false;
         }
-    }, [speechmaticsApiKey, audioStream, isTranscriptionEnabled, onTranscriptUpdate, addTranscriptItem, user?.role]);
+    }, [
+        speechmaticsApiKey,
+        audioStream,
+        isTranscriptionEnabled,
+        onTranscriptUpdate,
+        addTranscriptItem,
+        user?.role,
+        clearReconnectTimer,
+        scheduleReconnect,
+    ]);
 
     // --- Recorder Lifecycle ---
     const stopRecording = useCallback(async () => {
         console.log("[Recorder] Stopping...");
+        recorderSessionIdRef.current += 1;
+        isStartingRecorderRef.current = false;
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
             mediaRecorderRef.current.stop();
             if (Number(user?.role) === ROLES.INTERVIEWER) flushAndUpload();
@@ -258,6 +334,20 @@ export function useSpeechmaticsTranscript({
 
     const startRecording = useCallback(async () => {
         if (!isEnabled || !roomId || !audioStream || !isMicOn) return;
+        if (isStartingRecorderRef.current) return;
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") return;
+
+        const hasLiveTrack = audioStream
+            ?.getAudioTracks()
+            ?.some((track) => track.readyState === "live");
+        if (!hasLiveTrack) {
+            console.warn("[Recorder] Skip start: no live audio track.");
+            return;
+        }
+
+        isStartingRecorderRef.current = true;
+        const sessionId = recorderSessionIdRef.current + 1;
+        recorderSessionIdRef.current = sessionId;
         console.log("[Recorder] Starting...");
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -282,9 +372,15 @@ export function useSpeechmaticsTranscript({
             source.connect(workletNode);
             workletNode.connect(audioContext.destination);
 
-            const options = { mimeType: "audio/webm;codecs=opus" };
-            const mediaRecorder = new MediaRecorder(audioStream, options);
+            const options = getPreferredMediaRecorderOptions();
+            const mediaRecorder = options
+                ? new MediaRecorder(audioStream, options)
+                : new MediaRecorder(audioStream);
             mediaRecorderRef.current = mediaRecorder;
+
+            mediaRecorder.onerror = (event) => {
+                console.error("[Recorder] MediaRecorder error:", event?.error || event);
+            };
 
             mediaRecorder.ondataavailable = (event) => {
                 if (!(event.data && event.data.size > 0)) return;
@@ -298,10 +394,24 @@ export function useSpeechmaticsTranscript({
                 }
             };
 
-            mediaRecorder.start(1000); 
+            if (recorderSessionIdRef.current !== sessionId) return;
+            mediaRecorder.start(1000);
             if (isTranscriptionEnabled) await startSpeechmatics();
 
-        } catch (error) { console.error("[Recorder] Start failed:", error); }
+        } catch (error) {
+            console.error("[Recorder] Start failed:", error);
+            mediaRecorderRef.current = null;
+            if (workletNodeRef.current) {
+                workletNodeRef.current.disconnect();
+                workletNodeRef.current = null;
+            }
+            if (audioContextRef.current) {
+                try { await audioContextRef.current.close(); } catch (e) {}
+                audioContextRef.current = null;
+            }
+        } finally {
+            isStartingRecorderRef.current = false;
+        }
     }, [isEnabled, roomId, audioStream, isMicOn, isTranscriptionEnabled, startSpeechmatics, user?.role, flushAndUpload]);
 
     useEffect(() => {
@@ -313,10 +423,36 @@ export function useSpeechmaticsTranscript({
     }, [isEnabled, roomId, audioStream, isMicOn, startRecording, stopRecording]);
 
     useEffect(() => {
+        const shouldConnect =
+            isEnabled &&
+            roomId &&
+            audioStream &&
+            isMicOn &&
+            isTranscriptionEnabled;
+
+        if (shouldConnect) {
+            if (!speechmaticsClientRef.current && !isStartingSpeechmaticsRef.current) {
+                startSpeechmatics();
+            }
+        } else {
+            stopSpeechmatics();
+        }
+    }, [
+        isEnabled,
+        roomId,
+        audioStream,
+        isMicOn,
+        isTranscriptionEnabled,
+        startSpeechmatics,
+        stopSpeechmatics,
+    ]);
+
+    useEffect(() => {
         return () => {
+            clearReconnectTimer();
             stopRecording();
         };
-    }, [stopRecording]);
+    }, [stopRecording, clearReconnectTimer]);
 
     return {
         transcriptHistory,
