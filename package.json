@@ -28,8 +28,6 @@
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
     "@reduxjs/toolkit": "^2.9.0",
-    "@speechmatics/auth": "^0.1.0",
-    "@speechmatics/real-time-client": "^8.3.1",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "@xyflow/react": "^12.10.2",

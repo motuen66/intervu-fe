@@ -13,6 +13,7 @@ function PublicProfilePage() {
     const { slugProfileUrl } = useParams();
     const [loading, setLoading] = useState(true);
     const [profileType, setProfileType] = useState(null);
+    const [coachRatingData, setCoachRatingData] = useState(null);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -25,6 +26,7 @@ function PublicProfilePage() {
 
             setLoading(true);
             setError(null);
+            setCoachRatingData(null);
 
             try {
                 const coachRes = await callApi({
@@ -37,6 +39,17 @@ function PublicProfilePage() {
                 });
 
                 if (coachRes?.success && coachRes?.data) {
+                    const coachId = coachRes.data?.id || coachRes.data?.user?.id;
+                    if (coachId) {
+                        try {
+                            const ratingRes = await callApi({
+                                method: METHOD.GET,
+                                endpoint: interviewerProfileEndPoints.GET_COACH_RATING.replace("{id}", coachId),
+                                useGlobalLoading: false,
+                            });
+                            setCoachRatingData(ratingRes || null);
+                        } catch (_) {}
+                    }
                     setProfileType("coach");
                     return;
                 }
@@ -84,7 +97,7 @@ function PublicProfilePage() {
 
     if (profileType === "candidate") return <PublicCandidateProfilePage />;
 
-    return <PublicInterviewerProfilePage />;
+    return <PublicInterviewerProfilePage initialRatingData={coachRatingData} />;
 }
 
 export default PublicProfilePage;

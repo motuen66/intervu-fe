@@ -37,7 +37,6 @@ const tLog = (tag, ...args) =>
 //       onReceiveExecutionResult: (result) => void
 //       onReceiveTestResults:   (results) => void
 //       onReceiveWhiteboardState: (elementsJson, appStateJson) => void
-//       onReceiveTranscript:    (fromId, final, interim, role) => void
 //   }>
 //
 // Outputs
@@ -191,11 +190,6 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       callbacks.current?.onReceiveWhiteboardState?.(elementsJson);
     });
 
-    // ── Transcript sync ────────────────────────────────────────────────────
-    conn.on("ReceiveTranscript", (fromId, final, interim, role) => {
-        callbacks.current?.onReceiveTranscript?.(fromId, final, interim, role);
-    });
-
     // ── Start the connection ───────────────────────────────────────────────
     conn
       .start()
@@ -227,7 +221,6 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       conn.off("ReceiveCameraState");
       conn.off("ReceiveMicState");
       conn.off("ReceiveWhiteboardState");
-      conn.off("ReceiveTranscript");
 
       conn.invoke("LeaveRoom", roomId, userId, safeRole, safeUserName).catch(() => {});
       conn.stop();

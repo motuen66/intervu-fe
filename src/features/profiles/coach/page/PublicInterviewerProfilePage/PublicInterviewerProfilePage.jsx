@@ -15,7 +15,7 @@ import { useSelector } from "react-redux";
 import { ROLES } from "../../../../../common/constants/common";
 import { CompanyLogo } from "../../../../../common/utils/logoImageGenerator";
 
-const PublicInterviewerProfilePage = () => {
+const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
     const navigate = useNavigate();
     const { slugProfileUrl } = useParams();
     const [searchParams] = useSearchParams();
@@ -27,6 +27,14 @@ const PublicInterviewerProfilePage = () => {
     const [hasLoaded, setHasLoaded] = useState(false);
     const [error, setError] = useState(null);
     const [availableDates, setAvailableDates] = useState([]);
+    const [coachRating, setCoachRating] = useState(() => {
+        const payload = initialRatingData?.data?.data || initialRatingData?.data || initialRatingData || {};
+        return Number(payload?.rating ?? 0);
+    });
+    const [coachRatingCount, setCoachRatingCount] = useState(() => {
+        const payload = initialRatingData?.data?.data || initialRatingData?.data || initialRatingData || {};
+        return Number(payload?.totalRatings ?? 0);
+    });
 
     // UI State
     const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
@@ -119,6 +127,24 @@ const PublicInterviewerProfilePage = () => {
         }
     };
 
+    useEffect(() => {
+        const fetchRating = async () => {
+            if (!profile?.id) return;
+            try {
+                const res = await callApi({
+                    endpoint: interviewerProfileEndPoints.GET_COACH_RATING.replace("{id}", profile.id),
+                    method: METHOD.GET,
+                    useGlobalLoading: false,
+                });
+                const payload = res?.data?.data || res?.data || {};
+                setCoachRating(Number(payload?.rating ?? 0));
+                setCoachRatingCount(Number(payload?.totalRatings ?? 0));
+            } catch (_) {}
+        };
+
+        fetchRating();
+    }, [profile?.id]);
+
     const checkTransactionStatus = async () => {
         const { data } = await callApi({
             method: METHOD.GET,
@@ -205,6 +231,10 @@ const PublicInterviewerProfilePage = () => {
     const currentTitle = profile.jobTitle || "Senior Interviewer";
     const currentCompany = profile.companyName || (profile.companies?.length > 0 ? profile.companies[0].name : "");
     const displayName = profile?.user?.fullName || profile?.fullName || "Interviewer";
+    const averageRating = Number.isFinite(Number(coachRating)) ? Number(coachRating) : Number(profile.rating || 0);
+    const totalRatings = Number.isFinite(Number(coachRatingCount))
+        ? Number(coachRatingCount)
+        : Number(profile.sessionsCount || 0);
 
     return (
         <div className="elite-profile-container" style={{ paddingTop: "2rem" }}>
@@ -242,14 +272,14 @@ const PublicInterviewerProfilePage = () => {
                             </div>
                             <div className="ep-stat-item">
                                 <span className="ep-stat-value">
-                                    {(profile.rating || 0).toFixed(1)}{" "}
+                                    {averageRating.toFixed(1)}{" "}
                                     <span style={{ color: "#fbbf24", fontSize: "1.2rem" }}>★</span>
                                 </span>
                                 <span className="ep-stat-label">Candidate Rating</span>
                             </div>
                             <div className="ep-stat-item">
-                                <span className="ep-stat-value">{profile.sessionsCount || 0}</span>
-                                <span className="ep-stat-label">Mock Interviews</span>
+                                <span className="ep-stat-value">{totalRatings}</span>
+                                <span className="ep-stat-label">Ratings</span>
                             </div>
                         </div>
 
