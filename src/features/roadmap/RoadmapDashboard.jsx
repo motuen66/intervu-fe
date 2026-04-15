@@ -1,17 +1,28 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Alert } from "@mui/material";
-import { Layers3, RefreshCw, Sparkles, Target, UserRound } from "lucide-react";
+import { Alert, Box, Chip, Stack, Typography, alpha } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import { Check, Layers3, Link2, RefreshCw, Sparkles, Target, TrendingUp, UserRound } from "lucide-react";
 import Roadmap from "./Roadmap";
 import NodeDetail from "./NodeDetail";
 import RoadmapSkeleton from "./RoadmapSkeleton";
-import { theme } from "../../common/constants/theme";
 import { assessmentApi } from "../profiles/candidate/candidate-assessment/services/assessmentApi";
-import { PrimaryButton } from "../../common/components/buttons";
+import { PrimaryButton, SecondaryButton } from "../../common/components/buttons";
 import useGlobalLoading from "../../common/hooks/useGlobalLoading";
+import { getMonthlyWins, recordRoadmapSnapshot } from "./utils/roadmapSnapshots";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+const REGENERATE_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const REGENERATE_STORAGE_PREFIX = "roadmap:lastRegenerate:";
+const PROGRESS_STEPS = [
+    "Analyzing your skills…",
+    "Identifying gaps and strengths…",
+    "Drafting phase structure…",
+    "Matching recommended coaches…",
+    "Finalizing your roadmap…",
+];
+const PROGRESS_STEP_INTERVAL_MS = 2800;
 
 const getChildSkillNames = (childSkills = []) => {
     return childSkills
@@ -56,6 +67,7 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                 role: coach.role ?? coach.Role ?? "",
                 rating: coach.rating ?? coach.Rating ?? 0,
                 avatar: coach.avatar ?? coach.Avatar ?? "",
+                profileUrl: coach.profileUrl ?? coach.ProfileUrl ?? coach.slugProfileUrl ?? coach.SlugProfileUrl ?? null,
             })),
             mock_history: mockHistorySource.map((mock, mockIndex) => ({
                 mock_id: mock.mock_id ?? mock.mockId ?? mock.MockId ?? `mock_${phaseIndex}_${mockIndex}`,
@@ -128,35 +140,169 @@ const hasRoadmapContent = (value) => {
     return Boolean(normalized?.phases?.length);
 };
 
-function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
+const getCooldownKey = (userId) => `${REGENERATE_STORAGE_PREFIX}${userId}`;
+
+const readLastRegenerate = (userId) => {
+    if (!userId) return 0;
+    try {
+        const stored = window.localStorage.getItem(getCooldownKey(userId));
+        const parsed = Number(stored);
+        return Number.isFinite(parsed) ? parsed : 0;
+    } catch {
+        return 0;
+    }
+};
+
+const writeLastRegenerate = (userId, timestamp) => {
+    if (!userId) return;
+    try {
+        window.localStorage.setItem(getCooldownKey(userId), String(timestamp));
+    } catch {
+        // localStorage may be unavailable; cooldown simply won't persist
+    }
+};
+
+const formatRemaining = (ms) => {
+    if (ms <= 0) return "now";
+    const totalMinutes = Math.ceil(ms / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h`;
+    return `${totalMinutes}m`;
+};
+
+function HeroStat({ icon: Icon, label, value }) {
+    return (
+        <Stack direction="row" alignItems="center" spacing={1.25} sx={{ minWidth: 0 }}>
+            <Box
+                sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "999px",
+                    bgcolor: "rgba(255,255,255,0.14)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                }}
+            >
+                <Icon size={16} />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" sx={{ opacity: 0.75, display: "block", lineHeight: 1.2 }}>
+                    {label}
+                </Typography>
+                <Typography
+                    sx={{
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                        lineHeight: 1.2,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                    }}
+                >
+                    {value}
+                </Typography>
+            </Box>
+        </Stack>
+    );
+}
+
+function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly = false }) {
     const navigate = useNavigate();
+    const theme = useTheme();
     const authenticatedUserId = useSelector((state) => state.auth?.userData?.id);
     const effectiveUserId = userIdProp ?? authenticatedUserId ?? null;
+    const { withLoading } = useGlobalLoading();
     const [resolvedRoadmap, setResolvedRoadmap] = useState(() => (hasRoadmapContent(roadmap) ? roadmap : null));
     const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(false);
     const [error, setError] = useState(null);
+    const [progressStepIndex, setProgressStepIndex] = useState(0);
+    const [cooldownTick, setCooldownTick] = useState(0);
+    const [shareCopied, setShareCopied] = useState(false);
+    const progressTimerRef = useRef(null);
+
+    // X3: Rotate through step messages while the LLM call is in flight
+    useEffect(() => {
+        if (isLoadingRoadmap) {
+            setProgressStepIndex(0);
+            progressTimerRef.current = window.setInterval(() => {
+                setProgressStepIndex((prev) => Math.min(prev + 1, PROGRESS_STEPS.length - 1));
+            }, PROGRESS_STEP_INTERVAL_MS);
+            return () => {
+                if (progressTimerRef.current) {
+                    window.clearInterval(progressTimerRef.current);
+                    progressTimerRef.current = null;
+                }
+            };
+        }
+        return undefined;
+    }, [isLoadingRoadmap]);
+
+    // Tick once a minute so the cooldown countdown stays fresh
+    useEffect(() => {
+        const id = window.setInterval(() => setCooldownTick((t) => t + 1), 60_000);
+        return () => window.clearInterval(id);
+    }, []);
+
+    const lastRegenerateAt = readLastRegenerate(effectiveUserId);
+    const cooldownRemainingMs = Math.max(0, lastRegenerateAt + REGENERATE_COOLDOWN_MS - Date.now());
+    const regenerateBlocked = cooldownRemainingMs > 0;
+    void cooldownTick;
+
+    const runGenerate = useCallback(
+        async ({ forceRegenerate }) => {
+            if (!effectiveUserId || effectiveUserId === EMPTY_GUID) return null;
+            const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
+                userId: effectiveUserId,
+                forceRegenerate,
+            });
+            return extractRoadmapFromResponse(generateResponse);
+        },
+        [effectiveUserId],
+    );
 
     const handleRegenerate = useCallback(async () => {
         if (!effectiveUserId || effectiveUserId === EMPTY_GUID || isLoadingRoadmap) return;
+        // if (regenerateBlocked) return;
+
         setIsLoadingRoadmap(true);
         setError(null);
         try {
-            const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
-                userId: effectiveUserId,
-                forceRegenerate: true,
-            });
-            const nextRoadmap = extractRoadmapFromResponse(generateResponse);
+            const nextRoadmap = await runGenerate({ forceRegenerate: true });
             if (hasRoadmapContent(nextRoadmap)) {
                 setResolvedRoadmap(nextRoadmap);
+                writeLastRegenerate(effectiveUserId, Date.now());
+                setCooldownTick((t) => t + 1);
             } else {
                 setError("Regeneration returned no content. Please try again.");
             }
-        } catch (err) {
+        } catch {
             setError("Regeneration failed. Please try again.");
         } finally {
             setIsLoadingRoadmap(false);
         }
-    }, [effectiveUserId, isLoadingRoadmap]);
+    }, [effectiveUserId, isLoadingRoadmap, regenerateBlocked, runGenerate]);
+
+    const handleGenerateFirstTime = useCallback(async () => {
+        if (!effectiveUserId || effectiveUserId === EMPTY_GUID || isLoadingRoadmap) return;
+        setIsLoadingRoadmap(true);
+        setError(null);
+        try {
+            const nextRoadmap = await runGenerate({ forceRegenerate: false });
+            if (hasRoadmapContent(nextRoadmap)) {
+                setResolvedRoadmap(nextRoadmap);
+            } else {
+                setError("Could not generate your roadmap. Please complete your assessment first.");
+            }
+        } catch {
+            setError("Could not generate your roadmap. Please try again later.");
+        } finally {
+            setIsLoadingRoadmap(false);
+        }
+    }, [effectiveUserId, isLoadingRoadmap, runGenerate]);
 
     useEffect(() => {
         if (hasRoadmapContent(roadmap)) {
@@ -195,15 +341,11 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
 
             if (!syncError && shouldGenerateRoadmap) {
                 try {
-                    const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
-                        userId: effectiveUserId,
-                        forceRegenerate: false,
-                    });
-                    nextRoadmap = extractRoadmapFromResponse(generateResponse);
+                    nextRoadmap = await runGenerate({ forceRegenerate: false });
                     if (!hasRoadmapContent(nextRoadmap)) {
                         syncError = "Could not generate your roadmap. Please complete your assessment first.";
                     }
-                } catch (err) {
+                } catch {
                     syncError = "Could not generate your roadmap. Please try again later.";
                 }
             }
@@ -223,22 +365,55 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
         return () => {
             cancelled = true;
         };
-    }, [effectiveUserId]);
+    }, [effectiveUserId, withLoading, runGenerate]);
 
-    const sourceRoadmap = useMemo(() => normalizeRoadmapPayload(resolvedRoadmap ?? roadmap) ?? null, [resolvedRoadmap, roadmap]);
+    const sourceRoadmap = useMemo(
+        () => normalizeRoadmapPayload(resolvedRoadmap ?? roadmap) ?? null,
+        [resolvedRoadmap, roadmap],
+    );
     const roadmapMetadata = sourceRoadmap?.roadmap_metadata ?? {};
+
+    // B3: record a snapshot whenever the roadmap changes so we can show wins later
+    useEffect(() => {
+        if (!readOnly && effectiveUserId && sourceRoadmap) {
+            recordRoadmapSnapshot(effectiveUserId, sourceRoadmap);
+        }
+    }, [readOnly, effectiveUserId, sourceRoadmap]);
+
+    const monthlyWins = useMemo(() => {
+        if (readOnly) return null;
+        return getMonthlyWins(effectiveUserId, sourceRoadmap);
+    }, [readOnly, effectiveUserId, sourceRoadmap]);
+
+    // B4: copy a public link to the clipboard
+    const handleShare = useCallback(async () => {
+        if (!effectiveUserId) return;
+        const shareUrl = `${window.location.origin}/roadmap/public/${effectiveUserId}`;
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setShareCopied(true);
+            window.setTimeout(() => setShareCopied(false), 2000);
+        } catch {
+            window.prompt("Copy this link to share your roadmap:", shareUrl);
+        }
+    }, [effectiveUserId]);
 
     const { phaseDetailsById, nodeDetailsById } = useMemo(() => {
         const phaseMap = {};
         const nodeMap = {};
 
         (sourceRoadmap?.phases ?? []).forEach((phase) => {
-            const normalizedNodes = phase.nodes.map((node) => ({
-                ...node,
-                child_skills: getChildSkillNames(node.child_skills ?? []),
-                phase_id: phase.phase_id,
-                phase_name: phase.phase_name,
-            }));
+            const normalizedNodes = phase.nodes.map((node) => {
+                const rawChildSkills = node.child_skills ?? [];
+                return {
+                    ...node,
+                    // X6: keep the structured form so NodeDetail can surface per-skill questions
+                    child_skills: rawChildSkills,
+                    child_skill_names: getChildSkillNames(rawChildSkills),
+                    phase_id: phase.phase_id,
+                    phase_name: phase.phase_name,
+                };
+            });
 
             phaseMap[phase.phase_id] = {
                 ...phase,
@@ -264,13 +439,24 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
         };
     });
 
+    // X4: Preserve selection across roadmap refetches when the IDs still exist
     useEffect(() => {
-        const firstPhase = sourceRoadmap?.phases?.[0];
-        setSelection({
-            phase_id: firstPhase?.phase_id ?? null,
-            skill_id: firstPhase?.nodes?.[0]?.skill_id ?? null,
+        if (!sourceRoadmap) {
+            return;
+        }
+        setSelection((prev) => {
+            const phaseStillExists = prev.phase_id && phaseDetailsById[prev.phase_id];
+            const skillStillExists = prev.skill_id && nodeDetailsById[prev.skill_id];
+            if (phaseStillExists && skillStillExists) {
+                return prev;
+            }
+            const firstPhase = sourceRoadmap.phases?.[0];
+            return {
+                phase_id: firstPhase?.phase_id ?? null,
+                skill_id: firstPhase?.nodes?.[0]?.skill_id ?? null,
+            };
         });
-    }, [sourceRoadmap]);
+    }, [sourceRoadmap, phaseDetailsById, nodeDetailsById]);
 
     const handleRoadmapSelect = useCallback(
         (nextSelection) => {
@@ -283,7 +469,8 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
                 const fallbackSkillId = phaseDetailsById[phaseId]?.nodes?.[0]?.skill_id ?? null;
                 const requestedSkillId = nextSelection.skill_id ?? prevSelection.skill_id;
 
-                const skillBelongsToPhase = requestedSkillId && nodeDetailsById[requestedSkillId]?.phase_id === phaseId;
+                const skillBelongsToPhase =
+                    requestedSkillId && nodeDetailsById[requestedSkillId]?.phase_id === phaseId;
                 const skillId = skillBelongsToPhase ? requestedSkillId : fallbackSkillId;
 
                 return {
@@ -298,193 +485,239 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
     const selectedPhase = selection.phase_id ? (phaseDetailsById[selection.phase_id] ?? null) : null;
     const selectedSkill = selection.skill_id ? (nodeDetailsById[selection.skill_id] ?? null) : null;
 
+    const heroGradient = `linear-gradient(110deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 56%, ${alpha(
+        theme.palette.primary.light,
+        0.85,
+    )} 100%)`;
+    const regenerateTitle = regenerateBlocked
+        ? `Available again in ${formatRemaining(cooldownRemainingMs)}`
+        : "Regenerate your roadmap from scratch";
+
     return (
-        <div
-            style={{
+        <Box
+            sx={{
                 display: "flex",
                 flexDirection: "column",
                 width: "100%",
                 height: "100vh",
-                padding: "20px",
+                p: 2.5,
                 boxSizing: "border-box",
-                gap: "16px",
-                background: theme.palette.background.default,
+                gap: 2,
+                bgcolor: "background.default",
             }}
         >
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-            <div
-                style={{
-                    borderRadius: "28px",
-                    padding: "28px 34px",
-                    background: `linear-gradient(110deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 56%, #3f4f46 100%)`,
-                    color: theme.palette.primary.contrastText,
-                    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.25)",
+
+            {/* U4: Compact hero header */}
+            <Box
+                sx={{
+                    borderRadius: "20px",
+                    px: { xs: 2.5, md: 3.5 },
+                    py: { xs: 2, md: 2.25 },
+                    background: heroGradient,
+                    color: "primary.contrastText",
+                    boxShadow: (t) => `0 10px 30px ${alpha(t.palette.primary.main, 0.25)}`,
                 }}
             >
-                <div
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        borderRadius: "999px",
-                        padding: "6px 14px",
-                        border: `1px solid rgba(255, 255, 255, 0.2)`,
-                        background: "rgba(255, 255, 255, 0.08)",
-                        marginBottom: "18px",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        letterSpacing: "0.05em",
-                    }}
+                <Stack
+                    direction={{ xs: "column", md: "row" }}
+                    alignItems={{ xs: "flex-start", md: "center" }}
+                    spacing={{ xs: 1.5, md: 3 }}
+                    divider={
+                        <Box
+                            sx={{
+                                display: { xs: "none", md: "block" },
+                                width: "1px",
+                                alignSelf: "stretch",
+                                bgcolor: "rgba(255,255,255,0.2)",
+                            }}
+                        />
+                    }
                 >
-                    <Sparkles size={14} color={theme.palette.secondary.main} />
-                    {isLoadingRoadmap ? "SYNCING ROADMAP..." : "YOUR PERSONALIZED ROADMAP"}
-                </div>
+                    <Stack spacing={0.75} sx={{ minWidth: 0, flexShrink: 0 }}>
+                        <Chip
+                            icon={<Sparkles size={13} color={theme.palette.secondary.main} />}
+                            label={isLoadingRoadmap ? "Syncing roadmap…" : "Your personalized roadmap"}
+                            size="small"
+                            sx={{
+                                bgcolor: "rgba(255,255,255,0.1)",
+                                color: "inherit",
+                                border: "1px solid rgba(255,255,255,0.2)",
+                                fontWeight: 700,
+                                letterSpacing: "0.04em",
+                                "& .MuiChip-icon": { color: theme.palette.secondary.main, ml: 0.75 },
+                                alignSelf: "flex-start",
+                            }}
+                        />
+                        <Typography
+                            sx={{
+                                fontFamily: theme.typography.h2.fontFamily,
+                                fontWeight: 800,
+                                fontSize: { xs: "1.4rem", md: "1.65rem" },
+                                lineHeight: 1.15,
+                                letterSpacing: "-0.01em",
+                            }}
+                        >
+                            {roadmapMetadata.target_role || "Personalized Learning Path"}
+                        </Typography>
+                    </Stack>
 
-                <h1
-                    style={{
-                        margin: 0,
-                        fontSize: "clamp(30px, 4vw, 56px)",
-                        lineHeight: 1.06,
-                        fontWeight: 800,
-                        letterSpacing: "-0.02em",
-                        maxWidth: "900px",
-                    }}
-                >
-                    {roadmapMetadata.target_role ?? "Personalized Learning Path"}
-                </h1>
+                    <HeroStat icon={UserRound} label="TARGET ROLE" value={roadmapMetadata.target_role || "N/A"} />
+                    <HeroStat icon={Target} label="TARGET LEVEL" value={roadmapMetadata.target_level || "N/A"} />
+                    <HeroStat
+                        icon={Layers3}
+                        label="PHASES"
+                        value={`${roadmapMetadata.total_phases ?? 0} phases`}
+                    />
 
-                <div
-                    style={{
-                        marginTop: "22px",
+                    <Box sx={{ flex: 1 }} />
+
+                    <Stack spacing={0.5} alignItems={{ xs: "flex-start", md: "flex-end" }} direction={{ xs: "column", sm: "row" }}>
+                        {/* B4: Share button — copies a public read-only link */}
+                        {!readOnly && effectiveUserId ? (
+                            <SecondaryButton
+                                size="small"
+                                onClick={handleShare}
+                                aria-label="Copy public roadmap link"
+                                startIcon={shareCopied ? <Check size={14} /> : <Link2 size={14} />}
+                                sx={{
+                                    bgcolor: "rgba(255,255,255,0.14)",
+                                    color: "primary.contrastText",
+                                    borderColor: "rgba(255,255,255,0.3)",
+                                    "&:hover": {
+                                        bgcolor: "rgba(255,255,255,0.22)",
+                                        borderColor: "rgba(255,255,255,0.5)",
+                                    },
+                                }}
+                            >
+                                {shareCopied ? "Copied" : "Share"}
+                            </SecondaryButton>
+                        ) : null}
+                        {readOnly ? (
+                            <Chip
+                                size="small"
+                                label="Read-only view"
+                                sx={{
+                                    bgcolor: "rgba(255,255,255,0.14)",
+                                    color: "inherit",
+                                    border: "1px solid rgba(255,255,255,0.3)",
+                                    fontWeight: 700,
+                                }}
+                            />
+                        ) : (
+                        <>
+                        <SecondaryButton
+                            size="small"
+                            onClick={handleRegenerate}
+                            // disabled={isLoadingRoadmap || regenerateBlocked}
+                            disabled={isLoadingRoadmap}
+                            title={regenerateTitle}
+                            aria-label={
+                                regenerateBlocked
+                                    ? `Regenerate unavailable, next available in ${formatRemaining(cooldownRemainingMs)}`
+                                    : "Regenerate roadmap from scratch"
+                            }
+                            startIcon={
+                                <RefreshCw
+                                    size={14}
+                                    style={{ animation: isLoadingRoadmap ? "spin 1s linear infinite" : "none" }}
+                                />
+                            }
+                            sx={{
+                                bgcolor: "rgba(255,255,255,0.14)",
+                                color: "primary.contrastText",
+                                borderColor: "rgba(255,255,255,0.3)",
+                                "&:hover": {
+                                    bgcolor: "rgba(255,255,255,0.22)",
+                                    borderColor: "rgba(255,255,255,0.5)",
+                                },
+                                "&.Mui-disabled": {
+                                    bgcolor: "rgba(255,255,255,0.08)",
+                                    color: "rgba(255,255,255,0.6)",
+                                    borderColor: "rgba(255,255,255,0.15)",
+                                },
+                            }}
+                        >
+                            {isLoadingRoadmap ? "Regenerating…" : "Regenerate"}
+                        </SecondaryButton>
+                        {regenerateBlocked && !isLoadingRoadmap ? (
+                            <Typography
+                                variant="caption"
+                                sx={{ opacity: 0.85, fontSize: "0.7rem", letterSpacing: "0.02em" }}
+                            >
+                                Next available in {formatRemaining(cooldownRemainingMs)}
+                            </Typography>
+                        ) : null}
+                        </>
+                        )}
+                    </Stack>
+                </Stack>
+            </Box>
+
+            {/* B3: progress wins banner */}
+            {!readOnly && monthlyWins && (monthlyWins.completedThisMonth > 0 || monthlyWins.improvedThisMonth > 0) ? (
+                <Box
+                    sx={{
                         display: "flex",
-                        flexWrap: "wrap",
                         alignItems: "center",
-                        gap: "20px",
+                        gap: 1.5,
+                        px: 2,
+                        py: 1.25,
+                        borderRadius: "12px",
+                        bgcolor: alpha(theme.palette.success.main, 0.08),
+                        border: `1px solid ${alpha(theme.palette.success.main, 0.25)}`,
+                        color: "text.primary",
                     }}
                 >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            minWidth: "170px",
-                            paddingRight: "20px",
-                            borderRight: "1px solid rgba(255,255,255,0.2)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: "44px",
-                                height: "44px",
-                                borderRadius: "999px",
-                                background: "rgba(255,255,255,0.12)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <UserRound size={18} />
-                        </div>
-                        <div>
-                            <div style={{ fontSize: "12px", opacity: 0.8, letterSpacing: "0.08em" }}>TARGET ROLE</div>
-                            <div style={{ fontSize: "24px", fontWeight: 700 }}>
-                                {roadmapMetadata.target_role ?? "N/A"}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            minWidth: "170px",
-                            paddingRight: "20px",
-                            borderRight: "1px solid rgba(255,255,255,0.2)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: "44px",
-                                height: "44px",
-                                borderRadius: "999px",
-                                background: "rgba(255,255,255,0.12)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <Target size={18} />
-                        </div>
-                        <div>
-                            <div style={{ fontSize: "12px", opacity: 0.8, letterSpacing: "0.08em" }}>TARGET LEVEL</div>
-                            <div style={{ fontSize: "24px", fontWeight: 700 }}>
-                                {roadmapMetadata.target_level ?? "N/A"}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: "170px" }}>
-                        <div
-                            style={{
-                                width: "44px",
-                                height: "44px",
-                                borderRadius: "999px",
-                                background: "rgba(255,255,255,0.12)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <Layers3 size={18} />
-                        </div>
-                        <div>
-                            <div style={{ fontSize: "12px", opacity: 0.8, letterSpacing: "0.08em" }}>TOTAL PHASES</div>
-                            <div style={{ fontSize: "24px", fontWeight: 700 }}>
-                                {roadmapMetadata.total_phases ?? 0} Phases
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={handleRegenerate}
-                        disabled={isLoadingRoadmap}
-                        style={{
-                            marginLeft: "auto",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "10px 20px",
-                            borderRadius: "999px",
-                            border: "1px solid rgba(255,255,255,0.3)",
-                            background: "rgba(255,255,255,0.12)",
-                            color: "inherit",
-                            fontSize: "14px",
-                            fontWeight: 700,
-                            cursor: isLoadingRoadmap ? "not-allowed" : "pointer",
-                            opacity: isLoadingRoadmap ? 0.6 : 1,
-                            transition: "background 0.2s",
-                        }}
-                    >
-                        <RefreshCw size={15} style={{ animation: isLoadingRoadmap ? "spin 1s linear infinite" : "none" }} />
-                        {isLoadingRoadmap ? "Regenerating..." : "Regenerate"}
-                    </button>
-                </div>
-            </div>
+                    <TrendingUp size={16} color={theme.palette.success.main} />
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {monthlyWins.completedThisMonth > 0
+                            ? `You moved ${monthlyWins.completedThisMonth} skill${monthlyWins.completedThisMonth === 1 ? "" : "s"} to Complete this month`
+                            : `You improved ${monthlyWins.improvedThisMonth} skill${monthlyWins.improvedThisMonth === 1 ? "" : "s"} from Missing to Weak this month`}
+                        {monthlyWins.completedThisMonth > 0 && monthlyWins.improvedThisMonth > 0
+                            ? ` · and improved ${monthlyWins.improvedThisMonth} more`
+                            : ""}
+                    </Typography>
+                </Box>
+            ) : null}
 
             {isLoadingRoadmap && !resolvedRoadmap ? (
-                <RoadmapSkeleton />
+                <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                            px: 2,
+                            py: 1.25,
+                            borderRadius: "12px",
+                            bgcolor: "background.paper",
+                            border: `1px solid ${theme.palette.divider}`,
+                        }}
+                    >
+                        <RefreshCw
+                            size={16}
+                            color={theme.palette.primary.main}
+                            style={{ animation: "spin 1.2s linear infinite" }}
+                        />
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
+                            {PROGRESS_STEPS[progressStepIndex]}
+                        </Typography>
+                        <Box sx={{ flex: 1 }} />
+                        <Typography variant="caption" color="text.secondary">
+                            Step {progressStepIndex + 1} of {PROGRESS_STEPS.length}
+                        </Typography>
+                    </Box>
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
+                        <RoadmapSkeleton />
+                    </Box>
+                </Stack>
             ) : error && !resolvedRoadmap ? (
-                <div
-                    style={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "16px",
-                        padding: "40px 24px",
-                    }}
+                <Stack
+                    alignItems="center"
+                    justifyContent="center"
+                    spacing={2}
+                    sx={{ flex: 1, p: { xs: 3, md: 5 } }}
                 >
                     <Alert
                         severity="error"
@@ -493,72 +726,77 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null }) {
                     >
                         {error}
                     </Alert>
-                    <PrimaryButton
-                        size="small"
-                        onClick={handleRegenerate}
-                        loading={isLoadingRoadmap}
-                        sx={{ textTransform: "none", fontWeight: 700 }}
-                    >
+                    <PrimaryButton size="small" onClick={handleRegenerate} loading={isLoadingRoadmap}>
                         Retry
                     </PrimaryButton>
-                </div>
+                </Stack>
             ) : !sourceRoadmap ? (
-                <div
-                    style={{
+                // X2: Offer inline generation in addition to the assessment link
+                <Stack
+                    alignItems="center"
+                    justifyContent="center"
+                    spacing={1.25}
+                    sx={{
                         flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "12px",
-                        padding: "40px 24px",
-                        color: theme.palette.text.secondary,
+                        p: { xs: 3, md: 5 },
+                        color: "text.secondary",
                         textAlign: "center",
                     }}
                 >
-                    <div style={{ fontSize: "48px", lineHeight: 1 }}>🗺️</div>
-                    <div style={{ fontSize: "20px", fontWeight: 700, color: theme.palette.text.primary }}>
+                    <Typography sx={{ fontSize: "48px", lineHeight: 1 }}>🗺️</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary" }}>
                         No roadmap yet
-                    </div>
-                    <div style={{ fontSize: "14px", maxWidth: "360px", lineHeight: 1.6 }}>
-                        Complete your skills assessment to generate a personalized learning roadmap.
-                    </div>
-                    <PrimaryButton
-                        size="small"
-                        onClick={() => navigate("/assessment")}
-                        sx={{ mt: 1, textTransform: "none", fontWeight: 700 }}
-                    >
-                        Go to Assessment
-                    </PrimaryButton>
-                </div>
+                    </Typography>
+                    <Typography variant="body2" sx={{ maxWidth: 400, lineHeight: 1.6 }}>
+                        Generate your personalized learning path now. If you haven&apos;t finished your skills
+                        assessment, we&apos;ll ask you to complete it first.
+                    </Typography>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 1 }}>
+                        <PrimaryButton size="small" onClick={handleGenerateFirstTime} loading={isLoadingRoadmap}>
+                            Generate roadmap
+                        </PrimaryButton>
+                        <SecondaryButton size="small" onClick={() => navigate("/assessment")}>
+                            Go to assessment
+                        </SecondaryButton>
+                    </Stack>
+                </Stack>
             ) : (
-                <div
-                    style={{
+                <Box
+                    sx={{
                         display: "grid",
-                        gridTemplateColumns: "minmax(0, 2fr) minmax(380px, 1fr)",
+                        // U5: Stack graph above detail panel on narrow screens
+                        gridTemplateColumns: { xs: "1fr", md: "minmax(0, 2fr) minmax(380px, 1fr)" },
+                        gridTemplateRows: { xs: "minmax(320px, 55vh) minmax(0, 1fr)", md: "1fr" },
                         flex: 1,
                         minHeight: 0,
                         overflow: "hidden",
-                        background: theme.palette.background.default,
+                        bgcolor: "background.default",
                         borderRadius: "18px",
                         border: `1px solid ${theme.palette.divider}`,
                     }}
                 >
-                    <div style={{ borderRight: `1px solid ${theme.palette.divider}`, minWidth: 0, minHeight: 0 }}>
+                    <Box
+                        sx={{
+                            borderRight: { xs: "none", md: `1px solid ${theme.palette.divider}` },
+                            borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: "none" },
+                            minWidth: 0,
+                            minHeight: 0,
+                        }}
+                    >
                         <Roadmap
                             roadmapData={sourceRoadmap}
                             onSelectNode={handleRoadmapSelect}
                             showHeader={false}
                             height="100%"
                         />
-                    </div>
+                    </Box>
 
-                    <div style={{ background: theme.palette.background.paper, minWidth: 0, minHeight: 0 }}>
-                        <NodeDetail phase={selectedPhase} node={selectedSkill} />
-                    </div>
-                </div>
+                    <Box sx={{ bgcolor: "background.paper", minWidth: 0, minHeight: 0, overflow: "auto" }}>
+                        <NodeDetail phase={selectedPhase} node={selectedSkill} readOnly={readOnly} />
+                    </Box>
+                </Box>
             )}
-        </div>
+        </Box>
     );
 }
 
