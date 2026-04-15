@@ -616,12 +616,7 @@ function InterviewerProfilePage() {
     const email = profile?.user?.email || user?.email || "-";
     const years = profile?.experienceYears ?? profile?.yearsOfExperience;
     const bio = profile?.bio || profile?.description || "";
-
-    const truncatedBio = useMemo(() => {
-        if (!bio) return "";
-        if (bio.length <= 240) return bio;
-        return expandedBio ? bio : bio.slice(0, 240) + "...";
-    }, [bio, expandedBio]);
+    const bioLimit = 400;
 
     if (!hasLoaded && endpoint) {
         return null;
@@ -866,6 +861,7 @@ function InterviewerProfilePage() {
                                 ) : (
                                     <Box sx={{ mt: 1 }}>
                                         <Typography
+                                            className="ep-about-text"
                                             sx={{
                                                 whiteSpace: "pre-wrap",
                                                 fontSize: { xs: "1rem", md: "1.15rem" },
@@ -874,18 +870,20 @@ function InterviewerProfilePage() {
                                                 maxWidth: 800,
                                             }}
                                         >
-                                            {truncatedBio || "No bio provided yet."}
+                                            {bio
+                                                ? expandedBio
+                                                    ? bio
+                                                    : `${bio.slice(0, bioLimit)}${bio.length > bioLimit ? "..." : ""}`
+                                                : "No bio provided yet."}
+                                            {bio && bio.length > bioLimit && (
+                                                <button
+                                                    onClick={() => setExpandedBio(!expandedBio)}
+                                                    className="ep-view-more-btn"
+                                                >
+                                                    {expandedBio ? "View Less" : "View More"}
+                                                </button>
+                                            )}
                                         </Typography>
-                                        {bio.length > 240 && (
-                                            <Link
-                                                component="button"
-                                                type="button"
-                                                onClick={() => setExpandedBio((v) => !v)}
-                                                sx={{ mt: 1, fontWeight: 600 }}
-                                            >
-                                                {expandedBio ? "Show less" : "Read more"}
-                                            </Link>
-                                        )}
                                     </Box>
                                 )}
                             </Box>
