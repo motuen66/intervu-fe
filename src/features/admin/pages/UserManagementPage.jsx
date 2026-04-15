@@ -1,21 +1,6 @@
 import { useState, useEffect } from 'react';
-import {
-    Container,
-    Typography,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    FormControl,
-    Select,
-    MenuItem,
-    IconButton,
-    Menu,
-    ListItemIcon,
-    ListItemText,
-} from '@mui/material';
+import { Container } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -24,62 +9,27 @@ import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import UserFormModal from '../components/UserFormModal';
-import DataTable from '../components/DataTable';
+import DataTable from '../../../common/components/table/DataTable';
 import ConfirmModal from '../../../common/components/ConfirmModal';
 import { PrimaryButton } from '../../../common/components/buttons';
+
+import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
+import SearchInput from '../../../common/components/admin/SearchInput';
+import FilterDropdown from '../../../common/components/admin/FilterDropdown';
+import TableActionsMenu from '../../../common/components/table/TableActionsMenu';
+import useTableState from '../../../hooks/useTableState';
 import './AdminDashboard.css';
 
-function RowActionsMenu({ user, onEdit, onDeactivate, onActivate }) {
-    const [anchorEl, setAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
-
-    const handleClick = (event) => setAnchorEl(event.currentTarget);
-    const handleClose = () => setAnchorEl(null);
-
-    const isDeactivated = user.status === 1 || user.status === 'Inactive';
-
-    return (
-        <div>
-            <IconButton onClick={handleClick} size="small">
-                <MoreVertIcon fontSize="small" />
-            </IconButton>
-            <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                PaperProps={{
-                    sx: { minWidth: 140, borderRadius: '8px', boxShadow: '0 8px 24px rgba(17,24,39,0.1)' }
-                }}
-            >
-                <MenuItem onClick={() => { handleClose(); onEdit(user); }}>
-                    <ListItemIcon><EditIcon fontSize="small" sx={{ color: 'primary.main' }} /></ListItemIcon>
-                    <ListItemText primaryTypographyProps={{ fontSize: '13px', fontWeight: 500 }}>Edit</ListItemText>
-                </MenuItem>
-                {isDeactivated ? (
-                    <MenuItem onClick={() => { handleClose(); onActivate(user); }}>
-                        <ListItemIcon><CheckCircleOutlineIcon fontSize="small" color="success" /></ListItemIcon>
-                        <ListItemText primaryTypographyProps={{ fontSize: '13px', fontWeight: 500 }}>Activate</ListItemText>
-                    </MenuItem>
-                ) : (
-                    <MenuItem onClick={() => { handleClose(); onDeactivate(user); }}>
-                        <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
-                        <ListItemText primaryTypographyProps={{ fontSize: '13px', fontWeight: 500 }}>Deactivate</ListItemText>
-                    </MenuItem>
-                )}
-            </Menu>
-        </div>
-    );
-}
-
 export default function UserManagementPage() {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
-    const [totalItems, setTotalItems] = useState(0);
-    const [searchInput, setSearchInput] = useState('');
+    const { 
+        data: users, setData: setUsers, 
+        loading, setLoading, 
+        page, setPage, 
+        pageSize, setPageSize, 
+        totalItems, setTotalItems, 
+        handlePageChange, handlePageSizeChange 
+    } = useTableState(10);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
 
@@ -89,17 +39,11 @@ export default function UserManagementPage() {
     const [openActivateDialog, setOpenActivateDialog] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [formMode, setFormMode] = useState('create');
+
     useEffect(() => {
         fetchUsers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, pageSize, roleFilter, searchTerm]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setSearchTerm(searchInput.trim());
-        }, 400);
-
-        return () => clearTimeout(timer);
-    }, [searchInput]);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -135,13 +79,13 @@ export default function UserManagementPage() {
         setOpenFormModal(true);
     };
 
-    const handleSearchChange = (event) => {
-        setSearchInput(event.target.value);
+    const handleSearchChange = (value) => {
+        setSearchTerm(value);
         setPage(0);
     };
 
-    const handleRoleChange = (event) => {
-        setRoleFilter(event.target.value);
+    const handleRoleChange = (value) => {
+        setRoleFilter(value);
         setPage(0);
     };
 
@@ -237,7 +181,6 @@ export default function UserManagementPage() {
     const handleFormSubmit = async (formData, onError) => {
         try {
             let response;
-
             if (formMode === 'create') {
                 response = await callApi({
                     method: METHOD.POST,
@@ -279,14 +222,10 @@ export default function UserManagementPage() {
 
     const getRoleColor = (role) => {
         switch (getRoleLabel(role).toUpperCase()) {
-            case 'ADMIN':
-                return 'rgba(248,113,113,0.3)';
-            case 'INTERVIEWER':
-                return 'rgba(59,130,246,0.3)';
-            case 'CANDIDATE':
-                return 'rgba(34,197,94,0.3)';
-            default:
-                return 'rgba(123,97,255,0.3)';
+            case 'ADMIN': return 'rgba(248,113,113,0.3)';
+            case 'INTERVIEWER': return 'rgba(59,130,246,0.3)';
+            case 'CANDIDATE': return 'rgba(34,197,94,0.3)';
+            default: return 'rgba(123,97,255,0.3)';
         }
     };
 
@@ -321,100 +260,65 @@ export default function UserManagementPage() {
         {
             field: 'actions',
             headerName: 'Actions',
-            render: (_, row) => (
-                <RowActionsMenu 
-                    user={row} 
-                    onEdit={handleEditUser} 
-                    onDeactivate={handleDeleteClick} 
-                    onActivate={handleActivateClick} 
-                />
-            )
+            render: (_, row) => {
+                const isDeactivated = row.status === 1 || row.status === 'Inactive';
+                const actions = [
+                    { label: 'Edit', icon: <EditIcon fontSize="small" sx={{ color: 'primary.main' }} />, onClick: () => handleEditUser(row) },
+                    isDeactivated 
+                        ? { label: 'Activate', icon: <CheckCircleOutlineIcon fontSize="small" color="success" />, onClick: () => handleActivateClick(row) }
+                        : { label: 'Deactivate', icon: <DeleteIcon fontSize="small" color="error" />, onClick: () => handleDeleteClick(row) }
+                ];
+                return <TableActionsMenu actions={actions} />;
+            }
         }
     ];
 
+    const roleOptions = [
+        { label: 'Candidate', value: 'Candidate' },
+        { label: 'Interviewer', value: 'Interviewer' },
+        { label: 'Admin', value: 'Admin' },
+        { label: 'Coach', value: 'Coach' }
+    ];
+
     return (
-        <Container maxWidth="xl" className="admin-page">
-            <div className="admin-page-header">
-                <div>
-                    <h2 className="admin-page-title">User</h2>
-                    <p className="admin-page-subtitle">Manage user accounts and details.</p>
-                </div>
-                <PrimaryButton
-                    startIcon={<AddIcon />}
-                    onClick={handleCreateUser}
-                    sx={{
-                        textTransform: 'none',
-                        px: 3,
-                        py: 1,
-                        borderRadius: '999px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                    }}
-                >
-                    Create User
-                </PrimaryButton>
-            </div>
+        <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
+            <AdminPageHeader 
+                title="Users Management" 
+                subtitle="Manage user accounts and details."
+                actionButton={
+                    <PrimaryButton
+                        startIcon={<AddIcon />}
+                        onClick={handleCreateUser}
+                        sx={{
+                            textTransform: 'none',
+                            px: 3,
+                            py: 1,
+                            borderRadius: '999px',
+                            fontSize: '14px',
+                            fontWeight: 600,
+                        }}
+                    >
+                        Create User
+                    </PrimaryButton>
+                }
+            />
 
             <div className="admin-card">
-                <div className="admin-table-toolbar">
-                    <div className="admin-toolbar-left">
-                        <input
-                            className="admin-search-input"
-                            placeholder="Search by name, email, or phone"
-                            value={searchInput}
-                            onChange={handleSearchChange}
-                        />
-                        <FormControl
-                            size="small"
-                            sx={{ minWidth: 140 }}
-                        >
-                            <Select
-                                displayEmpty
-                                value={roleFilter}
-                                onChange={handleRoleChange}
-                                sx={{
-                                    height: 32,
-                                    borderRadius: '10px',
-                                    background: 'linear-gradient(180deg, #ffffff 0%, #f7f8ff 100%)',
-                                    boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 6px 16px rgba(17, 24, 39, 0.06)',
-                                    '.MuiSelect-select': {
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        color: '#1f2937',
-                                        padding: '6px 10px'
-                                    },
-                                    '& .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: 'rgba(102, 126, 234, 0.25)'
-                                    },
-                                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: 'rgba(102, 126, 234, 0.5)'
-                                    },
-                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: '#4F46E5'
-                                    }
-                                }}
-                                MenuProps={{
-                                    PaperProps: {
-                                        sx: {
-                                            mt: 1,
-                                            borderRadius: 2,
-                                            border: '1px solid #eef0f5',
-                                            boxShadow: '0 18px 40px rgba(15, 23, 42, 0.12)'
-                                        }
-                                    }
-                                }}
-                            >
-                                <MenuItem value="all" sx={{ fontSize: '12px', minHeight: 32 }}>All roles</MenuItem>
-                                <MenuItem value="Candidate" sx={{ fontSize: '12px', minHeight: 32 }}>Candidate</MenuItem>
-                                <MenuItem value="Interviewer" sx={{ fontSize: '12px', minHeight: 32 }}>Interviewer</MenuItem>
-                                <MenuItem value="Admin" sx={{ fontSize: '12px', minHeight: 32 }}>Admin</MenuItem>
-                                <MenuItem value="Coach" sx={{ fontSize: '12px', minHeight: 32 }}>Coach</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </div>
+                <div style={{ display: 'flex', gap: '16px', padding: '16px 20px', borderBottom: '1px solid #E2E8F0', backgroundColor: '#fff' }}>
+                    <SearchInput 
+                        placeholder="Search by name, email, or phone" 
+                        onSearch={handleSearchChange} 
+                    />
+                    <FilterDropdown 
+                        options={roleOptions} 
+                        value={roleFilter} 
+                        onChange={handleRoleChange} 
+                        placeholder="All roles" 
+                    />
                 </div>
+                
                 <DataTable
-                    title="Users Management"
+                    title="Users Table"
                     showHeader={false}
                     showIndex
                     columns={usersColumns}
@@ -422,11 +326,8 @@ export default function UserManagementPage() {
                     totalItems={totalItems}
                     page={page}
                     pageSize={pageSize}
-                    onPageChange={(newPage) => setPage(newPage)}
-                    onPageSizeChange={(newSize) => {
-                        setPageSize(newSize);
-                        setPage(0);
-                    }}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
                     loading={loading}
                     actions={false}
                 />

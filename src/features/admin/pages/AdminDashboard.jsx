@@ -22,7 +22,7 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import StarIcon from "@mui/icons-material/Star";
 import StatsCard from "../components/StatsCard";
-import DataTable from "../components/DataTable";
+import DataTable from "../../../common/components/table/DataTable";
 import UserFormModal from "../components/UserFormModal";
 import AnalyticsCharts from "../components/AnalyticsCharts";
 import toast from "react-hot-toast";

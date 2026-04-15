@@ -16,7 +16,7 @@ import { alpha } from "@mui/material/styles";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import StatusChip from '../../../common/components/StatusChip';
+import StatusChip from '../../components/StatusChip'; // Updated path to StatusChip
 
 export default function DataTable({
     title,
@@ -50,7 +50,6 @@ export default function DataTable({
     const renderCellValue = (row, column) => {
         const value = row[column.field];
 
-        // Get display value (after render function if exists)
         const displayValue = column.render ? column.render(value, row) : value;
 
         if (column.type === 'chip') {
@@ -119,7 +118,7 @@ export default function DataTable({
             )}
 
             <TableContainer>
-                <Table>
+                <Table size="small"> {/* Density optimization */}
                     <TableHead>
                         <TableRow sx={{ bgcolor: "action.hover" }}>
                             {showIndex && (
@@ -127,12 +126,14 @@ export default function DataTable({
                                     sx={{
                                         borderBottom: "1px solid",
                                         borderBottomColor: "divider",
-                                        width: 56,
+                                        width: 50,
                                         color: "text.secondary",
                                         fontWeight: 700,
                                         fontSize: "10px",
                                         textTransform: "uppercase",
-                                        letterSpacing: "0.6px",
+                                        letterSpacing: "0.5px",
+                                        py: 1, // Minimize padding
+                                        px: 1.5,
                                     }}
                                 >
                                     STT
@@ -146,9 +147,11 @@ export default function DataTable({
                                         fontWeight: 700,
                                         fontSize: "10px",
                                         textTransform: "uppercase",
-                                        letterSpacing: "0.6px",
+                                        letterSpacing: "0.5px",
                                         borderBottom: "1px solid",
                                         borderBottomColor: "divider",
+                                        py: 1, // Minimize padding
+                                        px: 1.5,
                                     }}
                                 >
                                     {column.headerName}
@@ -163,6 +166,8 @@ export default function DataTable({
                                         textTransform: "uppercase",
                                         borderBottom: "1px solid",
                                         borderBottomColor: "divider",
+                                        py: 1, // Minimize padding
+                                        px: 1.5,
                                     }}
                                 >
                                     Actions
@@ -201,9 +206,11 @@ export default function DataTable({
                                                 borderBottomColor: "divider",
                                                 color: "text.secondary",
                                                 fontSize: "12px",
+                                                py: '6px', // Dense padding
+                                                px: 1.5,
                                             }}
                                         >
-                                            {index + 1}
+                                            {page * pageSize + index + 1}
                                         </TableCell>
                                     )}
                                     {columns.map((column) => (
@@ -214,13 +221,15 @@ export default function DataTable({
                                                 fontSize: "12px",
                                                 borderBottom: "1px solid",
                                                 borderBottomColor: "divider",
+                                                py: '6px', // Dense padding
+                                                px: 1.5,
                                             }}
                                         >
                                             {renderCellValue(row, column)}
                                         </TableCell>
                                     ))}
                                     {actions && (
-                                        <TableCell sx={{ borderBottom: "1px solid", borderBottomColor: "divider" }}>
+                                        <TableCell sx={{ borderBottom: "1px solid", borderBottomColor: "divider", py: '6px', px: 1.5 }}>
                                             <Box sx={{ display: 'flex', gap: 0.5 }}>
                                                 {onView && (
                                                     <IconButton
@@ -229,9 +238,10 @@ export default function DataTable({
                                                         sx={{
                                                             color: "text.secondary",
                                                             "&:hover": { bgcolor: "action.hover" },
+                                                            padding: '4px'
                                                         }}
                                                     >
-                                                        <VisibilityIcon fontSize="small" />
+                                                        <VisibilityIcon sx={{ fontSize: '18px' }} />
                                                     </IconButton>
                                                 )}
                                                 {onEdit && (
@@ -243,9 +253,10 @@ export default function DataTable({
                                                             "&:hover": (theme) => ({
                                                                 bgcolor: alpha(theme.palette.success.main, 0.12),
                                                             }),
+                                                            padding: '4px'
                                                         }}
                                                     >
-                                                        <EditIcon fontSize="small" />
+                                                        <EditIcon sx={{ fontSize: '18px' }} />
                                                     </IconButton>
                                                 )}
                                                 {onDelete && (
@@ -257,9 +268,10 @@ export default function DataTable({
                                                             "&:hover": (theme) => ({
                                                                 bgcolor: alpha(theme.palette.error.main, 0.12),
                                                             }),
+                                                            padding: '4px'
                                                         }}
                                                     >
-                                                        <DeleteIcon fontSize="small" />
+                                                        <DeleteIcon sx={{ fontSize: '18px' }} />
                                                     </IconButton>
                                                 )}
                                             </Box>
@@ -275,11 +287,13 @@ export default function DataTable({
                                     {showIndex && (
                                         <TableCell
                                             sx={{
-                                                borderBottom: "1px solid",
+                                                borderBottom: "none",
                                                 borderBottomColor: "divider",
                                                 color: "transparent",
                                                 fontSize: "12px",
-                                                height: 53,
+                                                py: '6px',
+                                                px: 1.5,
+                                                height: 38, // Match standard dense row height
                                             }}
                                         >
                                             &nbsp;
@@ -291,9 +305,11 @@ export default function DataTable({
                                             sx={{
                                                 color: "transparent",
                                                 fontSize: "12px",
-                                                borderBottom: "1px solid",
+                                                borderBottom: "none",
                                                 borderBottomColor: "divider",
-                                                height: 53,
+                                                py: '6px',
+                                                px: 1.5,
+                                                height: 38,
                                             }}
                                         >
                                             &nbsp;
@@ -302,9 +318,11 @@ export default function DataTable({
                                     {actions && (
                                         <TableCell
                                             sx={{
-                                                borderBottom: "1px solid",
+                                                borderBottom: "none",
                                                 borderBottomColor: "divider",
-                                                height: 53,
+                                                py: '6px',
+                                                px: 1.5,
+                                                height: 38,
                                             }}
                                         >
                                             &nbsp;
@@ -329,10 +347,15 @@ export default function DataTable({
                     borderTop: "1px solid",
                     borderTopColor: "divider",
                     '.MuiTablePagination-toolbar': {
-                        paddingRight: 12
+                        minHeight: 40, // More compact
+                        paddingRight: 2
                     },
                     '.MuiTablePagination-select': {
                         color: "text.primary",
+                        fontSize: '13px'
+                    },
+                    '.MuiTablePagination-displayedRows': {
+                        fontSize: '13px'
                     },
                     '.MuiTablePagination-selectIcon': {
                         color: "text.secondary",

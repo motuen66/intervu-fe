@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Container, IconButton, ListItemIcon, ListItemText, MenuItem, Tooltip, Typography } from "@mui/material";
+import { Box, Container, Tooltip, Typography } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import toast from "react-hot-toast";
-import DataTable from "../components/DataTable";
+
+import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
+import SearchInput from "../../../common/components/admin/SearchInput";
+import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
+import DataTable from "../../../common/components/table/DataTable";
 import ConfirmModal from "../../../common/components/ConfirmModal";
-import ActionMenu from "../../../common/components/ActionMenu";
 import { PrimaryButton } from "../../../common/components/buttons";
+import useTableState from "../../../hooks/useTableState";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
@@ -24,25 +27,18 @@ const formatEnumLabel = (value) => {
 
 export default function AdminQuestionBankPage() {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const [questions, setQuestions] = useState([]);
-    const [totalItems, setTotalItems] = useState(0);
-    const [page, setPage] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
-    const [searchInput, setSearchInput] = useState("");
+
+    const {
+        data: questions, setData: setQuestions,
+        loading, setLoading,
+        page, setPage,
+        pageSize, setPageSize,
+        totalItems, setTotalItems,
+        handlePageChange, handlePageSizeChange
+    } = useTableState(10);
+
     const [searchTerm, setSearchTerm] = useState("");
     const [deleteTarget, setDeleteTarget] = useState(null);
-    const [actionMenuAnchor, setActionMenuAnchor] = useState(null);
-    const [actionMenuRow, setActionMenuRow] = useState(null);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setSearchTerm(searchInput.trim());
-            setPage(0);
-        }, 400);
-
-        return () => clearTimeout(timer);
-    }, [searchInput]);
 
     useEffect(() => {
         fetchQuestions();
@@ -95,9 +91,9 @@ export default function AdminQuestionBankPage() {
         }
     };
 
-    const handleCloseMenu = () => {
-        setActionMenuAnchor(null);
-        setActionMenuRow(null);
+    const handleSearchChange = (val) => {
+        setSearchTerm(val);
+        setPage(0);
     };
 
     const columns = useMemo(
@@ -192,47 +188,44 @@ export default function AdminQuestionBankPage() {
                 field: "actions",
                 headerName: "Actions",
                 width: 80,
-                render: (_, row) => (
-                    <Box sx={{ display: "flex", justifyContent: "center" }}>
-                        <IconButton
-                            size="small"
-                            onClick={(e) => {
-                                setActionMenuAnchor(e.currentTarget);
-                                setActionMenuRow(row);
-                            }}
-                        >
-                            <MoreVertIcon fontSize="small" />
-                        </IconButton>
-                    </Box>
-                ),
+                render: (_, row) => {
+                    const actions = [
+                        {
+                            label: 'View question',
+                            icon: <VisibilityIcon fontSize="small" />,
+                            onClick: () => {
+                                if (row?.id) navigate(`/questions/${row.id}`);
+                            },
+                        },
+                        {
+                            label: 'Delete question',
+                            icon: <DeleteOutlineIcon fontSize="small" sx={{ color: "error.main" }} />,
+                            onClick: () => setDeleteTarget({ id: row.id, title: row.title }),
+                            color: "error.main"
+                        }
+                    ];
+                    return <Box sx={{ display: "flex", justifyContent: "center" }}><TableActionsMenu actions={actions} /></Box>;
+                },
             },
         ],
-        [],
+        [navigate],
     );
 
     return (
-        <Container maxWidth="xl" className="admin-page">
-            <Box className="admin-page-header">
-                <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                        Question Bank
-                    </Typography>
-                    <Typography className="admin-page-subtitle">Manage all questions in the platform.</Typography>
-                </Box>
-                <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchQuestions}>
-                    Refresh
-                </PrimaryButton>
-            </Box>
+        <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
+            <AdminPageHeader 
+                title="Question Bank" 
+                subtitle="Manage all questions in the platform."
+                actionButton={
+                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchQuestions} sx={{ borderRadius: "12px", px: 3, py: 1 }}>
+                        Refresh
+                    </PrimaryButton>
+                }
+            />
 
             <Box className="admin-card">
-                <Box sx={{ mb: 2, display: "flex", gap: 1.5, alignItems: "center" }}>
-                    <input
-                        className="admin-search-input"
-                        placeholder="Search by question title..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        style={{ maxWidth: 420 }}
-                    />
+                <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', display: 'flex', gap: 1.5, alignItems: 'center', bgcolor: '#fff' }}>
+                    <SearchInput placeholder="Search by question title..." onSearch={handleSearchChange} />
                 </Box>
 
                 <DataTable
@@ -245,45 +238,11 @@ export default function AdminQuestionBankPage() {
                     totalItems={totalItems}
                     page={page}
                     pageSize={pageSize}
-                    onPageChange={setPage}
-                    onPageSizeChange={(size) => {
-                        setPage(0);
-                        setPageSize(size);
-                    }}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
                     loading={loading}
                 />
             </Box>
-
-            <ActionMenu anchorEl={actionMenuAnchor} open={Boolean(actionMenuAnchor)} onClose={handleCloseMenu}>
-                <MenuItem
-                    disabled={!actionMenuRow?.id}
-                    onClick={() => {
-                        navigate(`/questions/${actionMenuRow.id}`);
-                        handleCloseMenu();
-                    }}
-                >
-                    <ListItemIcon>
-                        <VisibilityIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText primary="View question" primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }} />
-                </MenuItem>
-                <MenuItem
-                    disabled={!actionMenuRow?.id}
-                    onClick={() => {
-                        setDeleteTarget({ id: actionMenuRow.id, title: actionMenuRow.title });
-                        handleCloseMenu();
-                    }}
-                    sx={{ color: "error.main" }}
-                >
-                    <ListItemIcon>
-                        <DeleteOutlineIcon fontSize="small" sx={{ color: "error.main" }} />
-                    </ListItemIcon>
-                    <ListItemText
-                        primary="Delete question"
-                        primaryTypographyProps={{ fontSize: "13px", fontWeight: 600 }}
-                    />
-                </MenuItem>
-            </ActionMenu>
 
             <ConfirmModal
                 show={!!deleteTarget}
