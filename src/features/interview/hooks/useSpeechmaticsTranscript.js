@@ -21,14 +21,30 @@ function getRoleTranscriptStorageKey(roomId, role) {
     return `transcript_role_${roomId}_${getDisplayRole(role)}`;
 }
 
-// Inline AudioWorklet script to handle PCM audio processing
+// Optimized AudioWorklet script with buffering to reduce main-thread traffic
 const workletCode = `
 class PCMProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.bufferSize = 4096;
+    this.buffer = new Float32Array(this.bufferSize);
+    this.bufferIndex = 0;
+  }
+
   process(inputs, outputs, parameters) {
     const input = inputs[0];
     if (input && input.length > 0) {
       const channelData = input[0];
-      this.port.postMessage(channelData);
+      
+      for (let i = 0; i < channelData.length; i++) {
+        this.buffer[this.bufferIndex++] = channelData[i];
+        
+        if (this.bufferIndex >= this.bufferSize) {
+          // Send a copy of the buffer to the main thread
+          this.port.postMessage(this.buffer);
+          this.bufferIndex = 0;
+        }
+      }
     }
     return true;
   }
@@ -65,6 +81,7 @@ export function useSpeechmaticsTranscript({
 }) {
     const mediaRecorderRef = useRef(null);
     const audioContextRef = useRef(null);
+    const audioSourceRef = useRef(null);
     const workletNodeRef = useRef(null);
     const speechmaticsClientRef = useRef(null);
     const speechmaticsSessionIdRef = useRef(0);
@@ -117,6 +134,10 @@ export function useSpeechmaticsTranscript({
 
     const addTranscriptItem = useCallback((text, role) => {
         if (!text || !text.trim()) return;
+        
+        // ONLY take transcript from user with role coach/interviewer
+        if (Number(role) !== ROLES.INTERVIEWER) return;
+
         const displayRole = getDisplayRole(role);
 
         setTranscriptHistory((prev) => {
@@ -258,7 +279,10 @@ export function useSpeechmaticsTranscript({
                         partialText += (result.type === "word" ? " " : "") + result.alternatives?.[0].content;
                     }
                     if (partialText.trim()) {
-                        setInterimTranscript(partialText);
+                        // For interim, we also filter by role if we want to only show coach interim
+                        if (Number(user?.role) === ROLES.INTERVIEWER) {
+                            setInterimTranscript(partialText);
+                        }
                         if (onTranscriptUpdate) onTranscriptUpdate(partialText, false, user?.role);
                     }
                 } else if (data.message === "Error") {
@@ -346,6 +370,11 @@ export function useSpeechmaticsTranscript({
         }
         mediaRecorderRef.current = null;
 
+        if (audioSourceRef.current) {
+            audioSourceRef.current.disconnect();
+            audioSourceRef.current = null;
+        }
+
         if (workletNodeRef.current) {
             workletNodeRef.current.disconnect();
             workletNodeRef.current = null;
@@ -386,6 +415,7 @@ export function useSpeechmaticsTranscript({
             URL.revokeObjectURL(workletUrl);
 
             const source = audioContext.createMediaStreamSource(audioStream);
+            audioSourceRef.current = source;
             const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
             workletNodeRef.current = workletNode;
 
@@ -428,6 +458,10 @@ export function useSpeechmaticsTranscript({
         } catch (error) {
             console.error("[Recorder] Start failed:", error);
             mediaRecorderRef.current = null;
+            if (audioSourceRef.current) {
+                audioSourceRef.current.disconnect();
+                audioSourceRef.current = null;
+            }
             if (workletNodeRef.current) {
                 workletNodeRef.current.disconnect();
                 workletNodeRef.current = null;
