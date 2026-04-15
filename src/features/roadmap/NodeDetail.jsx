@@ -26,7 +26,7 @@ const MAX_EVALUATION_SCORE = 10;
 const RECENT_MOCKS_EXPANDED = 3;
 const FEEDBACK_STORAGE_KEY = "intervu.roadmap.skillFeedback";
 
-// X8: localStorage-backed feedback helpers (scoped per skill)
+// LocalStorage-backed feedback helpers (scoped per skill)
 const readFeedbackStore = () => {
     try {
         const raw = localStorage.getItem(FEEDBACK_STORAGE_KEY);
@@ -382,8 +382,16 @@ function NodeDetail({ phase, node, readOnly = false }) {
     const [activeTab, setActiveTab] = useState(PHASE_TABS.RECOMMENDATIONS);
     const [showAllMocks, setShowAllMocks] = useState(false);
 
-    const handleOpenCoach = (coachId) => {
-        navigate(coachId ? `/home?coachId=${encodeURIComponent(coachId)}` : "/home");
+    // Funnel into the public coach profile (same entry point CoachCard uses for booking)
+    const handleOpenCoach = (coach) => {
+        const slug = coach?.profileUrl ?? coach?.slugProfileUrl ?? coach?.id;
+        if (!slug) {
+            navigate("/home?smartMatch=1");
+            return;
+        }
+        const params = new URLSearchParams({ from: "roadmap" });
+        if (phase?.phase_name) params.set("phase", phase.phase_name);
+        navigate(`/profile/${encodeURIComponent(slug)}?${params.toString()}`);
     };
 
     const handlePracticeSkill = (skillName) => {
@@ -392,8 +400,10 @@ function NodeDetail({ phase, node, readOnly = false }) {
     };
 
     const handleScheduleMock = (skillName) => {
-        const query = skillName ? `?skill=${encodeURIComponent(skillName)}` : "";
-        navigate(`/home${query}`);
+        // B2: open SmartMatch so the user lands directly in coach discovery
+        const params = new URLSearchParams({ smartMatch: "1" });
+        if (skillName) params.set("skill", skillName);
+        navigate(`/home?${params.toString()}`);
     };
 
     // X6: jump straight to a specific interview question
@@ -599,7 +609,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
                                 <button
                                     type="button"
                                     key={coach.id}
-                                    onClick={() => handleOpenCoach(coach.id)}
+                                    onClick={() => handleOpenCoach(coach)}
                                     title={`View ${coach.name}'s profile`}
                                     style={{
                                         border: "1px solid #E2E8F0",

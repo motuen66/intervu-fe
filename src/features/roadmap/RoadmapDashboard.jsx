@@ -67,6 +67,7 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                 role: coach.role ?? coach.Role ?? "",
                 rating: coach.rating ?? coach.Rating ?? 0,
                 avatar: coach.avatar ?? coach.Avatar ?? "",
+                profileUrl: coach.profileUrl ?? coach.ProfileUrl ?? coach.slugProfileUrl ?? coach.SlugProfileUrl ?? null,
             })),
             mock_history: mockHistorySource.map((mock, mockIndex) => ({
                 mock_id: mock.mock_id ?? mock.mockId ?? mock.MockId ?? `mock_${phaseIndex}_${mockIndex}`,
