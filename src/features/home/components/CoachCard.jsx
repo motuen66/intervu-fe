@@ -1,6 +1,10 @@
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Avatar from "@mui/material/Avatar";
 import { Star } from "lucide-react";
+import { callApi } from "../../../common/utils/apiConnector";
+import { METHOD } from "../../../common/constants/api";
+import { interviewerProfileEndPoints } from "../../profiles/coach/service/coachProfileApi";
 import "./CoachCard.css";
 
 function CoachCard({ interviewer, isRecommended = false }) {
@@ -40,9 +44,42 @@ function CoachCard({ interviewer, isRecommended = false }) {
     // Parse companies nếu có
     const companies = interviewer.companies || [];
 
-    // Rating data (use real data or default)
-    const rating = interviewer.rating || profile.rating || 5.0;
-    const sessionsCount = interviewer.sessionsCount || profile.sessionsCount || 0;
+    const coachId = useMemo(
+        () => interviewer?.id || profile?.id || user?.id || interviewer?.interviewerId || null,
+        [interviewer, profile, user?.id],
+    );
+    const [ratingData, setRatingData] = useState({
+        rating: Number(interviewer?.rating ?? profile?.rating ?? 5.0),
+        totalRatings: Number(interviewer?.sessionsCount ?? profile?.sessionsCount ?? 0),
+    });
+
+    useEffect(() => {
+        let mounted = true;
+        const fetchCoachRating = async () => {
+            if (!coachId) return;
+            try {
+                const res = await callApi({
+                    method: METHOD.GET,
+                    endpoint: interviewerProfileEndPoints.GET_COACH_RATING.replace("{id}", coachId),
+                    useGlobalLoading: false,
+                });
+                if (!mounted) return;
+                const payload = res?.data?.data || res?.data || {};
+                setRatingData((prev) => ({
+                    rating: Number(payload?.rating ?? prev.rating ?? 5.0),
+                    totalRatings: Number(payload?.totalRatings ?? prev.totalRatings ?? 0),
+                }));
+            } catch (_) {}
+        };
+
+        fetchCoachRating();
+        return () => {
+            mounted = false;
+        };
+    }, [coachId]);
+
+    const rating = Number.isFinite(Number(ratingData.rating)) ? Number(ratingData.rating) : 5.0;
+    const sessionsCount = Number.isFinite(Number(ratingData.totalRatings)) ? Number(ratingData.totalRatings) : 0;
     const handleBookNow = () => {
         if (!slugProfileUrl) return;
         navigate(`/profile/${slugProfileUrl}`);
@@ -98,7 +135,7 @@ function CoachCard({ interviewer, isRecommended = false }) {
             <div className="rating-row">
                 <Star size={18} fill="var(--mui-palette-secondary-main)" stroke="var(--mui-palette-secondary-main)" strokeWidth={2} />
                 <span className="rating-value">{rating.toFixed(1)} rating</span>
-                <span className="sessions-count">({sessionsCount} sessions)</span>
+                <span className="sessions-count">({sessionsCount} ratings)</span>
             </div>
 
             {/* Bio */}

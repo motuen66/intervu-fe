@@ -270,18 +270,9 @@ function CandidateProfilePage() {
                         const ep = candidateProfileEndPoints.GET_CANDIDATE_RATING.replace("{id}", idToUse);
                         const r = await callApiLocal({ method: METHOD.GET, endpoint: ep });
                         if (r?.success && r.data) {
-                            const payload = r.data?.data || r.data;
-                            const val = Number(
-                                payload?.averageRating ?? payload?.avgRating ?? payload?.rating ?? 0,
-                            );
-                            setCandidateRating(Number.isFinite(val) ? val : null);
-                            setCandidateRatingCount(
-                                payload?.totalRatings ??
-                                    payload?.totalFeedbacks ??
-                                    payload?.ratingCount ??
-                                    payload?.count ??
-                                    0,
-                            );
+                            const payload = r.data?.data || r.data || {};
+                            setCandidateRating(Number(payload?.rating ?? 0));
+                            setCandidateRatingCount(Number(payload?.totalRatings ?? 0));
                         }
                     }
                 } catch (err) {
