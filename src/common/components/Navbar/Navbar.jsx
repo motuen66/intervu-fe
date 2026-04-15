@@ -230,7 +230,7 @@ const Navbar = () => {
                 label: "My Journey", 
                 type: "dropdown", 
                 items: [
-                    { label: "My Roadmap", path: "/assessment", icon: Milestone },
+                    { label: "My Roadmap", path: "/roadmap", icon: Milestone },
                     { label: "My Interviews", path: "/interview", icon: Video },
                     { label: "Smart Matching", path: "/home?smartMatch=1", icon: Sparkles },
                     { label: "Booking Requests", path: "/booking-requests", icon: CalendarClock },

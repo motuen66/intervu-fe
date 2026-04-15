@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import toast from "react-hot-toast";
 import SplitText from "./SplitText";
-import { TextField, Typography, Box } from "@mui/material";
+import { TextField, Typography, Box, InputAdornment, IconButton } from "@mui/material";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import { ROLES } from "../../../../common/constants/common";
 import {
@@ -17,6 +17,8 @@ import {
     getAssessmentState,
 } from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
 import { trackLogin } from "../../../../utils/analytics";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 
@@ -28,6 +30,11 @@ function LoginPage() {
     const [googleReady, setGoogleReady] = useState(false);
     const [googleSubmitting, setGoogleSubmitting] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const handleClickShowPassword = () => setShowPassword((s) => !s);
+    const handleMouseDownPassword = (e) => e.preventDefault();
+    const handleMouseUpPassword = (e) => e.preventDefault();
+    const [passwordFocused, setPasswordFocused] = useState(false);
 
     const handleAuthSuccess = useCallback(
         async (responseData) => {
@@ -99,7 +106,7 @@ function LoginPage() {
                 if (success) {
                     try {
                         trackLogin(responseData?.user?.id ?? null, "google");
-                    } catch (e) {}
+                    } catch (e) { }
                     await handleAuthSuccess(responseData);
                 }
             } finally {
@@ -177,7 +184,7 @@ function LoginPage() {
             if (success && responseData) {
                 try {
                     trackLogin(responseData?.user?.id ?? null, "email");
-                } catch (e) {}
+                } catch (e) { }
                 await handleAuthSuccess(responseData);
             }
 
@@ -304,6 +311,7 @@ function LoginPage() {
                                             "&:hover fieldset": { borderColor: theme.palette.text.secondary },
                                             "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
                                         },
+                                        "& .MuiInputAdornment-root": { opacity: 1, visibility: "visible" },
                                         "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
                                         "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
                                     }}
@@ -316,7 +324,7 @@ function LoginPage() {
                             <div style={{ marginBottom: "8px" }}>
                                 <TextField
                                     label="Password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     variant="outlined"
                                     fullWidth
                                     sx={{
@@ -332,6 +340,22 @@ function LoginPage() {
                                     {...register("password", { required: "Password is required" })}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
+                                    onFocus={() => setPasswordFocused(true)}
+                                    onBlur={() => setPasswordFocused(false)}
+                                    InputProps={{
+                                        endAdornment: passwordFocused ? (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={handleClickShowPassword}
+                                                    onMouseDown={handleMouseDownPassword}
+                                                    onMouseUp={handleMouseUpPassword}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ) : null,
+                                    }}
                                 />
                             </div>
 
@@ -579,3 +603,4 @@ function LoginPage() {
 }
 
 export default LoginPage;
+

@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
+import { useEffect, useRef, useState, useCallback, lazy, Suspense, memo } from "react";
 import {
     Box,
     CircularProgress,
@@ -113,6 +113,36 @@ function resolveRoomEndTime(room) {
 }
 
 // ---------------------------------------------------------------------------
+// TranscriptItem — Memoized to prevent expensive list re-renders
+// ---------------------------------------------------------------------------
+const TranscriptItem = memo(({ item }) => {
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Stack direction="row" spacing={1} alignItems="center">
+                <Typography sx={{ 
+                    fontSize: '0.65rem', 
+                    fontWeight: 900, 
+                    color: item.role === 'Coach' ? '#A3E635' : '#60A5FA',
+                    bgcolor: item.role === 'Coach' ? 'rgba(163, 230, 53, 0.1)' : 'rgba(96, 165, 250, 0.1)',
+                    px: 1,
+                    py: 0.2,
+                    borderRadius: '4px',
+                    textTransform: 'uppercase'
+                }}>
+                    {item.role}
+                </Typography>
+                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                    #{item.index}
+                </Typography>
+            </Stack>
+            <Typography variant="body2" sx={{ color: "#E2E8F0", lineHeight: 1.6, fontSize: '0.95rem' }}>
+                {item.text}
+            </Typography>
+        </Box>
+    );
+});
+
+// ---------------------------------------------------------------------------
 // InterviewRoomPage — Clean Orchestrator
 // ---------------------------------------------------------------------------
 function InterviewRoomPage() {
@@ -123,7 +153,8 @@ function InterviewRoomPage() {
     const isViewOnly = searchParams.get("viewOnly") === "true";
 
     // ── Gate ──────────────────────────────────────────────────────────────────
-    const [loading, setLoading] = useState(true);
+    // [LOADING_EFFECT] Initial state for room loading. Set to false to prevent initial blink/overlay.
+    const [loading, setLoading] = useState(false); 
     const [error, setError] = useState(null);
     const [roomInfo, setRoomInfo] = useState(null);
     const [bookingDocLinks, setBookingDocLinks] = useState({
@@ -134,7 +165,8 @@ function InterviewRoomPage() {
     const checkRoomStatus = useCallback(async () => {
         if (!user) return;
         try {
-            setLoading(true);
+            // [LOADING_EFFECT] We could set loading(true) here, but commenting out to keep UI snappy.
+            // setLoading(true); 
             const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom/${roomId}` });
             const roomPayload = res?.data;
             const room = roomPayload?.data ?? roomPayload ?? null;
@@ -280,7 +312,8 @@ function InterviewRoomPage() {
         // Per-speaker path: each client transcribes only their own mic stream.
         // Remote speaker transcript arrives via SignalR (onReceiveTranscript).
         audioStream: localStream,
-        isTranscriptionEnabled,
+        // Only enable transcription service if user is INTERVIEWER AND toggle is on
+        isTranscriptionEnabled: isTranscriptionEnabled && Number(user?.role) === ROLES.INTERVIEWER,
         onTranscriptUpdate: handleTranscriptUpdate,
         user
     });
@@ -462,11 +495,17 @@ function InterviewRoomPage() {
         onReceiveMicState: (_fromId, isOn) => setRemoteMicOn(isOn),
         onReceiveWhiteboardState: applyExternalWhiteboardState,
         onReceiveTranscript: (_fromId, final, interim, role) => {
-            if (final) {
-                addRemoteTranscript(final, role);
-                setRemoteInterim("");
+            // Only process and display transcripts from the INTERVIEWER role
+            if (Number(role) === ROLES.INTERVIEWER) {
+                if (final) {
+                    addRemoteTranscript(final, role);
+                    setRemoteInterim("");
+                } else {
+                    setRemoteInterim(interim);
+                }
             } else {
-                setRemoteInterim(interim);
+                // Clear remote interim if a non-interviewer is speaking
+                setRemoteInterim("");
             }
         }
     };
@@ -760,6 +799,7 @@ function InterviewRoomPage() {
     };
 
     // ── Gate render ──────────────────────────────────────────────────────────
+    // [LOADING_EFFECT] Commented out initial loading overlay to avoid flicker/lag.
     if (loading || error) {
         return (
             <Box
@@ -771,7 +811,8 @@ function InterviewRoomPage() {
                     height: "100vh",
                 }}
             >
-                {loading && !error}
+                {/* [LOADING_EFFECT] Spinner commented out here. */}
+                {/* {loading && !error && <CircularProgress />} */}
                 <Typography variant="h6" sx={{ mt: 2 }}>
                     {error ?? "Verifying interview status..."}
                 </Typography>
@@ -1283,14 +1324,19 @@ function InterviewRoomPage() {
                         ariaLabel={isCameraOn ? "Turn off camera" : "Turn on camera"}
                     />
 
-                    <FooterMediaButton
-                        id="footer-btn-transcript"
-                        on={isTranscriptionEnabled}
-                        onClick={() => setIsTranscriptionEnabled((v) => !v)}
-                        iconOn={<ClosedCaptionIcon />}
-                        iconOff={<ClosedCaptionIcon />}
-                        ariaLabel={isTranscriptionEnabled ? "Disable Transcript" : "Enable Transcript"}
-                    />
+                    {/*<Tooltip title={Number(user?.role) !== ROLES.INTERVIEWER ? "Only Interviewers can enable transcription" : ""}>*/}
+                        <span> 
+                            <FooterMediaButton
+                                id="footer-btn-transcript"
+                                on={isTranscriptionEnabled}
+                                onClick={() => setIsTranscriptionEnabled((v) => !v)}
+                                // disabled={Number(user?.role) !== ROLES.INTERVIEWER}
+                                iconOn={<ClosedCaptionIcon />}
+                                iconOff={<ClosedCaptionIcon />}
+                                ariaLabel={isTranscriptionEnabled ? "Disable Transcript" : "Enable Transcript"}
+                            />
+                        </span>
+                    {/*</Tooltip>*/}
 
                     <FooterNeutralButton
                         id="footer-btn-notes"
@@ -1486,28 +1532,7 @@ function InterviewRoomPage() {
                         )}
                         
                         {transcriptHistory.map((item) => (
-                            <Box key={item.index} sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Typography sx={{ 
-                                        fontSize: '0.65rem', 
-                                        fontWeight: 900, 
-                                        color: item.role === 'Coach' ? '#A3E635' : '#60A5FA',
-                                        bgcolor: item.role === 'Coach' ? 'rgba(163, 230, 53, 0.1)' : 'rgba(96, 165, 250, 0.1)',
-                                        px: 1,
-                                        py: 0.2,
-                                        borderRadius: '4px',
-                                        textTransform: 'uppercase'
-                                    }}>
-                                        {item.role}
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
-                                        #{item.index}
-                                    </Typography>
-                                </Stack>
-                                <Typography variant="body2" sx={{ color: "#E2E8F0", lineHeight: 1.6, fontSize: '0.95rem' }}>
-                                    {item.text}
-                                </Typography>
-                            </Box>
+                            <TranscriptItem key={item.index} item={item} />
                         ))}
 
                         {/* Local Interim */}
@@ -1593,12 +1618,13 @@ function HeaderToggle({ id, icon, label, active, onClick }) {
     );
 }
 
-function FooterMediaButton({ id, on, onClick, iconOn, iconOff, ariaLabel }) {
+function FooterMediaButton({ id, on, onClick, iconOn, iconOff, ariaLabel, disabled }) {
     return (
         <IconButton
             id={id}
             onClick={onClick}
             aria-label={ariaLabel}
+            disabled={disabled}
             sx={{
                 width: 48,
                 height: 48,
@@ -1608,6 +1634,11 @@ function FooterMediaButton({ id, on, onClick, iconOn, iconOff, ariaLabel }) {
                 transition: "all 0.15s ease",
                 "&:hover": { bgcolor: "#1F2937", color: on ? "#E1FB8C" : "#FB7185" },
                 "&:active": { transform: "scale(0.94)" },
+                "&.Mui-disabled": {
+                    bgcolor: "#111827",
+                    opacity: 0.5,
+                    color: "#6B7280"
+                }
             }}
         >
             {on ? iconOn : iconOff}

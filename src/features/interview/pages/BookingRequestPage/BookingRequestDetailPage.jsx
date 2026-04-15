@@ -131,6 +131,33 @@ export default function BookingRequestDetailPage() {
         if (id) fetchDetail();
     }, [id]);
 
+    // Poll for status update after returning from payment gateway
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const hasPaymentReturn = params.has("orderCode") || params.has("status");
+        if (!hasPaymentReturn || !detail || detail.status !== BOOKING_REQUEST_STATUS.PENDING) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const data = await getBookingRequestDetail(id);
+                if (data.status !== BOOKING_REQUEST_STATUS.PENDING) {
+                    setDetail(data);
+                    clearInterval(interval);
+                    // Clean up URL params
+                    window.history.replaceState({}, "", window.location.pathname);
+                }
+            } catch { /* ignore polling errors */ }
+        }, 3000);
+
+        // Stop polling after 60 seconds
+        const timeout = setTimeout(() => clearInterval(interval), 60000);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
+    }, [id, detail?.status]);
+
     const fetchDetail = async () => {
         setLoading(true);
         try {
@@ -286,12 +313,12 @@ export default function BookingRequestDetailPage() {
         );
     }
 
-    const isPaid = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
     const isPending = detail.status === BOOKING_REQUEST_STATUS.PENDING;
     const isAccepted = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
     const hasCompletedInterview = (detail.rounds || []).some(
         (round) => String(round?.interviewRoomStatus || "").toUpperCase() === "COMPLETED",
     );
+    const isPendingApproval = detail.status === BOOKING_REQUEST_STATUS.PendingForApprovalAfterPayment;
 
     return (
         <Box sx={{ minHeight: "100vh", pt: 3, pb: 6, px: { xs: 3, md: 4 } }}>
@@ -364,7 +391,7 @@ export default function BookingRequestDetailPage() {
                                         Pay {detail.totalAmount?.toLocaleString()} ₫
                                     </SecondaryButton>
                                 )}
-                                {(isPending || isPaid) && (
+                                {(isPending || isAccepted) && (
                                     <DangerButton
                                         onClick={handleCancel}
                                         loading={cancelling}
@@ -376,7 +403,7 @@ export default function BookingRequestDetailPage() {
                             </>
                         )}
 
-                        {/* {isPaid && (
+                        {/* {isAccepted && (
                             <SecondaryButton
                                 onClick={() => navigate("/home")}
                                 sx={{
@@ -406,7 +433,7 @@ export default function BookingRequestDetailPage() {
                             fontFamily: '"Outfit", "Plus Jakarta Sans", sans-serif',
                         }}
                     >
-                        {isPaid ? "Interview Results" : "Booking Details"}
+                        {isAccepted ? "Interview Results" : "Booking Details"}
                     </Typography>
                     <Typography
                         variant="h6"
@@ -753,7 +780,7 @@ export default function BookingRequestDetailPage() {
                     )}
 
                     {/* Results Section (only if Paid) */}
-                    {isPaid && (
+                    {isAccepted && (
                         <Box sx={{ mt: 1 }}>
                             {/* SessionResultSection handles its own internal grid of results */}
                             <SessionResultSection bookingRequest={detail} />

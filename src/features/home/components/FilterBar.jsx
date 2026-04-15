@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Search, Sparkles, X, Filter, ChevronUp } from 'lucide-react';
+import { Search, Sparkles, X, Filter, ChevronUp, Zap } from 'lucide-react';
 import {
   Box,
   FormControl,
@@ -400,18 +400,29 @@ function FilterBar({ onOpenSmartMatch }) {
           onMouseMove={handleMouseMove}
           className="ai-glow-button"
           sx={(theme) => ({
-            height: 70, 
+            height: 96,
             width: 256,
             minWidth: 256,
             borderRadius: '12px',
-            gap: 1.5,
-            fontSize: '1rem',
+            px: 1.6,
+            py: 1.2,
+            alignItems: 'stretch',
+            justifyContent: 'space-between',
             '--mouse-x': `${mousePos.x}px`,
             '--mouse-y': `${mousePos.y}px`,
           })}
         >
-          <Sparkles size={22} className="ai-sparkle-icon" />
-          <span>Smart Match</span>
+          <Box className="ai-cta-content">
+            <Box className="ai-cta-topline">
+              <Box component="span" className="ai-cta-badge">AI POWERED</Box>
+              <Box component="span" className="ai-cta-new">New</Box>
+            </Box>
+            <Box component="span" className="ai-cta-title">Launch Smart AI Match</Box>
+            <Box component="span" className="ai-cta-subtitle">Get paired based on your profile.</Box>
+          </Box>
+          <Box className="ai-cta-icon-wrap">
+            <Zap size={18} className="ai-sparkle-icon" />
+          </Box>
         </PrimaryButton>
       </Box>
     </Stack>

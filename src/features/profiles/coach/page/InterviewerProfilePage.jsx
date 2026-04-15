@@ -338,12 +338,9 @@ function InterviewerProfilePage() {
                     endpoint: interviewerProfileEndPoints.GET_COACH_RATING.replace("{id}", profile.id),
                     method: METHOD.GET,
                 });
-                const data = res?.data || {};
-                const payload = data?.data || data;
-                setCoachRating(payload?.averageRating ?? payload?.avgRating ?? payload?.rating ?? 0);
-                setCoachRatingCount(
-                    payload?.totalRatings ?? payload?.totalFeedbacks ?? payload?.ratingCount ?? payload?.count ?? 0,
-                );
+                const payload = res?.data?.data || res?.data || {};
+                setCoachRating(Number(payload?.rating ?? 0));
+                setCoachRatingCount(Number(payload?.totalRatings ?? 0));
             } catch (err) {}
         };
         fetchRating();
@@ -1653,7 +1650,7 @@ function InterviewerProfilePage() {
                     <ConfirmModal
                         show={showConfirmSave}
                         title="Confirm save"
-                        message="Save changes to your profile? (Skills, bio, portfolio, industries)"
+                        message="Save changes to your profile?"
                         onConfirm={async () => {
                             setShowConfirmSave(false);
                             await handleSave();

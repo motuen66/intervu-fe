@@ -17,6 +17,8 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
+import MapIcon from '@mui/icons-material/Map';
+import { useNavigate } from 'react-router-dom';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { callApi } from '../../../common/utils/apiConnector';
@@ -29,7 +31,7 @@ import ConfirmModal from '../../../common/components/ConfirmModal';
 import { PrimaryButton } from '../../../common/components/buttons';
 import './AdminDashboard.css';
 
-function RowActionsMenu({ user, onEdit, onDeactivate, onActivate }) {
+function RowActionsMenu({ user, onEdit, onDeactivate, onActivate, onViewRoadmap, isCandidate }) {
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
 
@@ -57,6 +59,13 @@ function RowActionsMenu({ user, onEdit, onDeactivate, onActivate }) {
                     <ListItemIcon><EditIcon fontSize="small" sx={{ color: 'primary.main' }} /></ListItemIcon>
                     <ListItemText primaryTypographyProps={{ fontSize: '13px', fontWeight: 500 }}>Edit</ListItemText>
                 </MenuItem>
+                {/* Admins can inspect a candidate's roadmap for support / content strategy */}
+                {isCandidate ? (
+                    <MenuItem onClick={() => { handleClose(); onViewRoadmap?.(user); }}>
+                        <ListItemIcon><MapIcon fontSize="small" sx={{ color: 'primary.main' }} /></ListItemIcon>
+                        <ListItemText primaryTypographyProps={{ fontSize: '13px', fontWeight: 500 }}>View roadmap</ListItemText>
+                    </MenuItem>
+                ) : null}
                 {isDeactivated ? (
                     <MenuItem onClick={() => { handleClose(); onActivate(user); }}>
                         <ListItemIcon><CheckCircleOutlineIcon fontSize="small" color="success" /></ListItemIcon>
@@ -74,6 +83,7 @@ function RowActionsMenu({ user, onEdit, onDeactivate, onActivate }) {
 }
 
 export default function UserManagementPage() {
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
@@ -322,11 +332,13 @@ export default function UserManagementPage() {
             field: 'actions',
             headerName: 'Actions',
             render: (_, row) => (
-                <RowActionsMenu 
-                    user={row} 
-                    onEdit={handleEditUser} 
-                    onDeactivate={handleDeleteClick} 
-                    onActivate={handleActivateClick} 
+                <RowActionsMenu
+                    user={row}
+                    isCandidate={getRoleLabel(row.role).toUpperCase() === 'CANDIDATE'}
+                    onEdit={handleEditUser}
+                    onDeactivate={handleDeleteClick}
+                    onActivate={handleActivateClick}
+                    onViewRoadmap={(u) => navigate(`/admin/candidates/${u.id}/roadmap`)}
                 />
             )
         }

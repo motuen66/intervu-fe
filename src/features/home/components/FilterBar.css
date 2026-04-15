@@ -144,6 +144,18 @@
     }
 }
 
+@keyframes ai-surface-sweep {
+    0% {
+        transform: translateX(-140%) skewX(-18deg);
+    }
+    50% {
+        transform: translateX(140%) skewX(-18deg);
+    }
+    100% {
+        transform: translateX(-140%) skewX(-18deg);
+    }
+}
+
 /* Container provides the smooth shimmering border */
 .ai-glow-container {
     position: relative;
@@ -176,6 +188,7 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     animation: ai-glow-breathe 5s infinite ease-in-out !important;
     letter-spacing: 0.02em !important;
+    text-align: left;
 }
 
 .ai-glow-button:hover {
@@ -186,6 +199,54 @@
 .ai-sparkle-icon {
     animation: sparkle-twinkle-soft 3s infinite ease-in-out;
     color: #bef264;
+}
+
+.ai-cta-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 2px;
+    flex: 1;
+    position: relative;
+    z-index: 2;
+}
+
+.ai-cta-topline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ai-cta-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #bef264;
+    color: #1e293b;
+    font-size: 0.56rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+}
+
+.ai-cta-new {
+    color: #bef264;
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.ai-cta-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    min-width: 26px;
+    align-self: center;
+    position: relative;
+    z-index: 2;
 }
 
 /* Spotlight Flare (Hover Only) */
@@ -207,12 +268,57 @@
     opacity: 1;
 }
 
-.ai-glow-button span {
+.ai-glow-button::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    width: 38%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.18;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(190, 242, 100, 0.08) 30%,
+        rgba(255, 255, 255, 0.45) 50%,
+        rgba(190, 242, 100, 0.08) 70%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    filter: blur(0.5px);
+    mix-blend-mode: screen;
+    animation: ai-surface-sweep 3.4s ease-in-out infinite;
+    will-change: transform;
+}
+
+.ai-glow-button:hover::after {
+    opacity: 0.28;
+    animation-duration: 2.6s;
+}
+
+.ai-cta-title {
     position: relative;
     z-index: 2;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    font-weight: 800;
     background: linear-gradient(90deg, #fff, #bef264, #fff);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: ai-shimmer-smooth 8s linear infinite;
+}
+
+.ai-cta-subtitle {
+    display: block;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.64rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

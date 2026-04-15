@@ -26,6 +26,7 @@ import QuestionDetailPage from "../../features/interviewQuestions/page/QuestionD
 import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx";
 import SavedQuestionsPage from "../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx";
 import PublicProfilePage from "../../features/profiles/page/PublicProfilePage.jsx";
+import PublicRoadmapPage from "../../features/roadmap/PublicRoadmapPage.jsx";
 
 export const routes = [
     { path: "/", element: <RootPage /> },
@@ -106,7 +107,24 @@ export const routes = [
     // Public routes
     {
         element: <MainLayout />,
-        children: [{ path: "/profile/:slugProfileUrl", element: <PublicProfilePage /> }],
+        children: [
+            { path: "/profile/:slugProfileUrl", element: <PublicProfilePage /> },
+            // B4: shareable read-only roadmap (public link)
+            { path: "/roadmap/public/:userId", element: <PublicRoadmapPage /> },
+        ],
+    },
+
+    // B5: coach and admin visibility into candidate roadmaps
+    {
+        element: (
+            <ProtectedRoute allowedRoles={[ROLES.INTERVIEWER, ROLES.ADMIN]}>
+                <MainLayout />
+            </ProtectedRoute>
+        ),
+        children: [
+            { path: "/coach/candidates/:userId/roadmap", element: <PublicRoadmapPage /> },
+            { path: "/admin/candidates/:userId/roadmap", element: <PublicRoadmapPage /> },
+        ],
     },
 
     // Candidate specific routes

@@ -21,14 +21,30 @@ function getRoleTranscriptStorageKey(roomId, role) {
     return `transcript_role_${roomId}_${getDisplayRole(role)}`;
 }
 
-// Inline AudioWorklet script to handle PCM audio processing
+// Optimized AudioWorklet script with buffering to reduce main-thread traffic
 const workletCode = `
 class PCMProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.bufferSize = 4096;
+    this.buffer = new Float32Array(this.bufferSize);
+    this.bufferIndex = 0;
+  }
+
   process(inputs, outputs, parameters) {
     const input = inputs[0];
     if (input && input.length > 0) {
       const channelData = input[0];
-      this.port.postMessage(channelData);
+      
+      for (let i = 0; i < channelData.length; i++) {
+        this.buffer[this.bufferIndex++] = channelData[i];
+        
+        if (this.bufferIndex >= this.bufferSize) {
+          // Send a copy of the buffer to the main thread
+          this.port.postMessage(this.buffer);
+          this.bufferIndex = 0;
+        }
+      }
     }
     return true;
   }
@@ -65,6 +81,7 @@ export function useSpeechmaticsTranscript({
 }) {
     const mediaRecorderRef = useRef(null);
     const audioContextRef = useRef(null);
+    const audioSourceRef = useRef(null);
     const workletNodeRef = useRef(null);
     const speechmaticsClientRef = useRef(null);
     const speechmaticsSessionIdRef = useRef(0);
@@ -92,29 +109,57 @@ export function useSpeechmaticsTranscript({
         }
     }, [roomId]);
 
+    // Debounced localStorage persistence to avoid UI lag
+    useEffect(() => {
+        if (!roomId || transcriptHistory.length === 0) return;
+
+        const timer = setTimeout(() => {
+            try {
+                localStorage.setItem(getCombinedTranscriptStorageKey(roomId), JSON.stringify(transcriptHistory));
+                
+                // Also update role-specific storage
+                const rolesInHistory = [...new Set(transcriptHistory.map(item => item.rawRole))].filter(r => r !== undefined);
+                rolesInHistory.forEach(role => {
+                    const displayRole = getDisplayRole(role);
+                    const roleTranscript = transcriptHistory.filter(i => i.role === displayRole);
+                    localStorage.setItem(getRoleTranscriptStorageKey(roomId, role), JSON.stringify(roleTranscript));
+                });
+            } catch (e) {
+                console.error("Failed to save transcript to localStorage", e);
+            }
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [transcriptHistory, roomId]);
+
     const addTranscriptItem = useCallback((text, role) => {
         if (!text || !text.trim()) return;
+        
+        // ONLY take transcript from user with role coach/interviewer
+        if (Number(role) !== ROLES.INTERVIEWER) return;
+
         const displayRole = getDisplayRole(role);
-        console.log(`[Transcript] Adding item: role=${displayRole}, text=${text}`);
 
         setTranscriptHistory((prev) => {
             const lastItem = prev[prev.length - 1];
-            let newHistory;
             if (lastItem && lastItem.role === displayRole) {
-                newHistory = [...prev];
-                newHistory[newHistory.length - 1] = { ...lastItem, text: `${lastItem.text} ${text}`.trim() };
+                const newHistory = [...prev];
+                newHistory[newHistory.length - 1] = { 
+                    ...lastItem, 
+                    text: `${lastItem.text} ${text}`.trim() 
+                };
+                return newHistory;
             } else {
                 const newIndex = lastItem ? lastItem.index + 1 : 1;
-                newHistory = [...prev, { index: newIndex, role: displayRole, text: text.trim() }];
+                return [...prev, { 
+                    index: newIndex, 
+                    role: displayRole, 
+                    text: text.trim(),
+                    rawRole: role 
+                }];
             }
-            
-            if (roomId) {
-                localStorage.setItem(getCombinedTranscriptStorageKey(roomId), JSON.stringify(newHistory));
-                localStorage.setItem(getRoleTranscriptStorageKey(roomId, role), JSON.stringify(newHistory.filter(i => i.role === displayRole)));
-            }
-            return newHistory;
         });
-    }, [roomId]);
+    }, []);
 
     // --- API Upload ---
     const uploadChunk = useCallback(async (blob, sequence) => {
@@ -123,6 +168,8 @@ export function useSpeechmaticsTranscript({
             const arrayBuffer = await blob.arrayBuffer();
             const byteArray = Array.from(new Uint8Array(arrayBuffer));
             console.log(`[AudioRecorder] Uploading chunk ${sequence} (${blob.size} bytes) for room ${roomId}`);
+            
+            // Pass useGlobalLoading: false to prevent background uploads from triggering the global spinner
             await callApi({
                 method: METHOD.POST,
                 endpoint: interviewEndPoints.STORE_AUDIO_CHUNK,
@@ -130,7 +177,8 @@ export function useSpeechmaticsTranscript({
                     audioData: byteArray,
                     recordingSessionId: roomId,
                     sequenceNumber: sequence
-                }
+                },
+                useGlobalLoading: false
             });
         } catch (error) {
             console.error("[AudioRecorder] Upload error:", error);
@@ -231,7 +279,10 @@ export function useSpeechmaticsTranscript({
                         partialText += (result.type === "word" ? " " : "") + result.alternatives?.[0].content;
                     }
                     if (partialText.trim()) {
-                        setInterimTranscript(partialText);
+                        // For interim, we also filter by role if we want to only show coach interim
+                        if (Number(user?.role) === ROLES.INTERVIEWER) {
+                            setInterimTranscript(partialText);
+                        }
                         if (onTranscriptUpdate) onTranscriptUpdate(partialText, false, user?.role);
                     }
                 } else if (data.message === "Error") {
@@ -319,6 +370,11 @@ export function useSpeechmaticsTranscript({
         }
         mediaRecorderRef.current = null;
 
+        if (audioSourceRef.current) {
+            audioSourceRef.current.disconnect();
+            audioSourceRef.current = null;
+        }
+
         if (workletNodeRef.current) {
             workletNodeRef.current.disconnect();
             workletNodeRef.current = null;
@@ -359,6 +415,7 @@ export function useSpeechmaticsTranscript({
             URL.revokeObjectURL(workletUrl);
 
             const source = audioContext.createMediaStreamSource(audioStream);
+            audioSourceRef.current = source;
             const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
             workletNodeRef.current = workletNode;
 
@@ -401,6 +458,10 @@ export function useSpeechmaticsTranscript({
         } catch (error) {
             console.error("[Recorder] Start failed:", error);
             mediaRecorderRef.current = null;
+            if (audioSourceRef.current) {
+                audioSourceRef.current.disconnect();
+                audioSourceRef.current = null;
+            }
             if (workletNodeRef.current) {
                 workletNodeRef.current.disconnect();
                 workletNodeRef.current = null;

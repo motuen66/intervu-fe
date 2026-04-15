@@ -24,6 +24,8 @@ import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import MapIcon from "@mui/icons-material/Map";
+import Tooltip from "@mui/material/Tooltip";
 import Toolbar from "@mui/material/Toolbar";
 import toast from "react-hot-toast";
 import "./BookingRequestPage.css";
@@ -32,9 +34,9 @@ import StatusChip from "../../../../common/components/StatusChip";
 
 const STATUS_COLOR_MAP = {
     [BOOKING_REQUEST_STATUS.PENDING]: "warning",
+    [BOOKING_REQUEST_STATUS.PendingForApprovalAfterPayment]: "info",
     [BOOKING_REQUEST_STATUS.ACCEPTED]: "success",
     [BOOKING_REQUEST_STATUS.REJECTED]: "error",
-    [BOOKING_REQUEST_STATUS.PAID]: "info",
     [BOOKING_REQUEST_STATUS.EXPIRED]: "default",
     [BOOKING_REQUEST_STATUS.CANCELLED]: "default",
 };
@@ -224,15 +226,33 @@ export default function BookingRequestListPage() {
                                             </Typography>
                                         </TableCell>
                                         <TableCell align="center">
-                                            <IconButton
-                                                size="small"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`/booking-requests/${req.id}`);
-                                                }}
-                                            >
-                                                <VisibilityIcon fontSize="small" />
-                                            </IconButton>
+                                            <Stack direction="row" spacing={0.5} justifyContent="center">
+                                                <Tooltip title="View request">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/booking-requests/${req.id}`);
+                                                        }}
+                                                    >
+                                                        <VisibilityIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                {/* B5: coach can prep for the session by reviewing the candidate's roadmap */}
+                                                {isCoach && req.candidateId ? (
+                                                    <Tooltip title="View candidate roadmap">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(`/coach/candidates/${req.candidateId}/roadmap`);
+                                                            }}
+                                                        >
+                                                            <MapIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                ) : null}
+                                            </Stack>
                                         </TableCell>
                                     </TableRow>
                                 ))}

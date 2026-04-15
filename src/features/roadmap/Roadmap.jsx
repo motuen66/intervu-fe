@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { Background, Controls, MarkerType, ReactFlow } from "@xyflow/react";
+import { Background, Controls, MarkerType, MiniMap, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import RoadmapNode from "./RoadmapNode";
 
@@ -8,8 +8,8 @@ const NODE_HEIGHT = 165;
 const NODE_GAP_X = 36;
 const PHASE_PADDING_X = 24;
 const PHASE_HEADER_HEIGHT = 85;
+const PHASE_HEADER_HEIGHT_WITH_DESC = 124;
 const PHASE_BOTTOM_PADDING = 0;
-const PHASE_HEIGHT = PHASE_HEADER_HEIGHT + NODE_HEIGHT + PHASE_BOTTOM_PADDING;
 const PHASE_GAP_Y = 84;
 const MIN_PHASE_WIDTH = 520;
 
@@ -47,6 +47,23 @@ function PhaseNode({ data }) {
                 Phase {data.phaseNumber}
             </div>
             <div style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a" }}>{data.label}</div>
+            {data.description ? (
+                <div
+                    style={{
+                        fontSize: "12px",
+                        color: "#475569",
+                        marginTop: "4px",
+                        lineHeight: 1.45,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                    }}
+                    title={data.description}
+                >
+                    {data.description}
+                </div>
+            ) : null}
         </div>
     );
 }
@@ -115,17 +132,21 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
         sourceRoadmap.phases.forEach((phase, pIndex) => {
             const totalNodeWidth = phase.nodes.length * NODE_WIDTH + Math.max(0, phase.nodes.length - 1) * NODE_GAP_X;
             const nodeStartX = (roadmapWidth - totalNodeWidth) / 2;
+            const phaseDescription = phase.phase_description ?? phase.description ?? "";
+            const headerHeight = phaseDescription ? PHASE_HEADER_HEIGHT_WITH_DESC : PHASE_HEADER_HEIGHT;
+            const phaseHeight = headerHeight + NODE_HEIGHT + PHASE_BOTTOM_PADDING;
 
             nodes.push({
                 id: phase.phase_id,
                 type: "phaseNode",
                 position: { x: phaseX, y: currentY },
-                style: { width: roadmapWidth, height: PHASE_HEIGHT },
+                style: { width: roadmapWidth, height: phaseHeight },
                 draggable: false,
                 data: {
                     label: phase.phase_name,
                     phaseNumber: pIndex + 1,
                     totalSkills: phase.nodes.length,
+                    description: phaseDescription,
                 },
             });
 
@@ -144,7 +165,7 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
                         status: skill.assessment.status,
                         childSkills: childSkillNames,
                     },
-                    position: { x: nodeStartX + sIndex * (NODE_WIDTH + NODE_GAP_X), y: PHASE_HEADER_HEIGHT },
+                    position: { x: nodeStartX + sIndex * (NODE_WIDTH + NODE_GAP_X), y: headerHeight },
                 });
 
                 nodeDetailsById[skillId] = {
@@ -155,7 +176,7 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
                 };
             });
 
-            currentY += PHASE_HEIGHT + PHASE_GAP_Y;
+            currentY += phaseHeight + PHASE_GAP_Y;
         });
 
         for (let phaseIndex = 1; phaseIndex < sourceRoadmap.phases.length; phaseIndex += 1) {
@@ -246,9 +267,25 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
                         fitViewOptions={{ padding: 0.18 }}
                         onNodeClick={handleNodeClick}
                         proOptions={{ hideAttribution: true }}
+                        aria-label="Skills roadmap graph"
                     >
-                        <Background color="#e2e2e2" gap={20} />
-                        <Controls />
+                        <Background color="#E2E8F0" gap={20} />
+                        <Controls aria-label="Roadmap zoom and fit controls" />
+                        <MiniMap
+                            pannable
+                            zoomable
+                            ariaLabel="Roadmap minimap"
+                            nodeStrokeWidth={3}
+                            nodeColor={(node) => {
+                                if (node.type === "phaseNode") return "#CBD5E1";
+                                const status = node.data?.status;
+                                if (status === "Complete") return "#22C55E";
+                                if (status === "Weak") return "#EAB308";
+                                return "#94A3B8";
+                            }}
+                            maskColor="rgba(15, 23, 42, 0.08)"
+                            style={{ borderRadius: "8px", border: "1px solid #E2E8F0" }}
+                        />
                     </ReactFlow>
                 )}
             </div>

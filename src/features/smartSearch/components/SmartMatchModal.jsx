@@ -708,6 +708,12 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
         onUpdate(copy);
     };
 
+    const handleFieldChange = (idx, key, value) => {
+        const copy = [...items];
+        copy[idx] = { ...copy[idx], [key]: value };
+        onUpdate(copy);
+    };
+
     const handleSaveNew = () => {
         if (Object.keys(newObj).length > 0) {
             onUpdate([...items, newObj]);
@@ -729,40 +735,46 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
                             p: 2,
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 0.5,
+                            gap: 1.5,
                             borderRadius: '12px',
-                            position: 'relative',
-                            "&:hover .delete-btn": { opacity: 1, transform: 'scale(1)' },
                         }}
                     >
-                        <IconButton
-                            className="delete-btn"
-                            size="small"
-                            onClick={() => handleRemove(idx)}
-                            sx={{
-                                position: 'absolute',
-                                top: 8,
-                                right: 8,
-                                opacity: 0,
-                                transform: 'scale(0.8)',
-                                transition: 'all 0.2s ease',
-                                bgcolor: 'rgba(239, 68, 68, 0.1)',
-                                color: 'error.main',
-                                "&:hover": { bgcolor: 'error.main', color: '#fff' }
-                            }}
-                        >
-                            <X size={14} />
-                        </IconButton>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -0.5 }}>
+                            <IconButton
+                                className="delete-btn"
+                                size="small"
+                                onClick={() => handleRemove(idx)}
+                                sx={{
+                                    bgcolor: 'rgba(239, 68, 68, 0.1)',
+                                    color: 'error.main',
+                                    "&:hover": { bgcolor: 'error.main', color: '#fff' }
+                                }}
+                            >
+                                <X size={14} />
+                            </IconButton>
+                        </Box>
                         {Object.entries(item).map(([k, v]) => {
                             if (v === null || v === undefined || v === "null" || v === "undefined") return null;
-                            const isTitleOrRole = k.toLowerCase().includes("title") || k.toLowerCase().includes("name") || k.toLowerCase().includes("role");
+                            const isDesc = k.toLowerCase().includes("description") || k.toLowerCase().includes("summary") || k.toLowerCase().includes("responsibilities");
                             return (
-                                <Typography key={k} variant={isTitleOrRole ? "subtitle2" : "body2"} sx={{ lineHeight: 1.5, pr: 3, fontWeight: isTitleOrRole ? 700 : 400, color: isTitleOrRole ? 'text.primary' : 'text.secondary' }}>
-                                    {!isTitleOrRole && <Typography component="span" sx={{ fontWeight: 600, color: 'text.primary', textTransform: 'capitalize' }}>
-                                        {k.replace(/_/g, " ")}:
-                                    </Typography>}
-                                    {' '} {String(v)}
-                                </Typography>
+                                <TextField
+                                    key={k}
+                                    fullWidth
+                                    size="small"
+                                    label={k.replace(/_/g, " ").toUpperCase()}
+                                    value={String(v)}
+                                    onChange={(e) => handleFieldChange(idx, k, e.target.value)}
+                                    multiline={isDesc}
+                                    minRows={isDesc ? 2 : 1}
+                                    maxRows={isDesc ? 6 : 1}
+                                    inputProps={{ maxLength: isDesc ? 2000 : 150 }}
+                                    sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: "10px",
+                                            bgcolor: "background.paper",
+                                        }
+                                    }}
+                                />
                             );
                         })}
                     </BaseCard>

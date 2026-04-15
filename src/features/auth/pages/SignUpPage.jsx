@@ -5,14 +5,21 @@ import { authEndPoints } from "../services/authApi";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import SplitText from "./LoginPage/SplitText";
-import { TextField, Typography } from "@mui/material";
+import { TextField, Typography, InputAdornment, IconButton } from "@mui/material";
 import { PrimaryButton } from "../../../common/components/buttons";
 import toast from "react-hot-toast";
 import { trackRegister } from "../../../utils/analytics";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 
 function SignUpPage() {
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const handleClickShowPassword = () => setShowPassword((s) => !s);
+    const handleMouseDownPassword = (e) => e.preventDefault();
+    const handleMouseUpPassword = (e) => e.preventDefault();
+    const [passwordFocused, setPasswordFocused] = useState(false);
     const {
         register,
         handleSubmit,
@@ -297,6 +304,7 @@ function SignUpPage() {
                                             "&:hover fieldset": { borderColor: "#4F46E5" },
                                             "&.Mui-focused fieldset": { borderColor: "#4F46E5" },
                                         },
+                                        "& .MuiInputAdornment-root": { opacity: 1, visibility: "visible" },
                                         "& .MuiInputLabel-root": { color: "rgba(0,0,0,0.6)" },
                                         "& .MuiInputLabel-root.Mui-focused": { color: "#4F46E5" },
                                     }}
@@ -340,7 +348,7 @@ function SignUpPage() {
                             <div style={{ marginBottom: "20px" }}>
                                 <TextField
                                     label="Password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     variant="outlined"
                                     fullWidth
                                     sx={{
@@ -359,6 +367,22 @@ function SignUpPage() {
                                     })}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
+                                    onFocus={() => setPasswordFocused(true)}
+                                    onBlur={() => setPasswordFocused(false)}
+                                    InputProps={{
+                                        endAdornment: passwordFocused ? (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={handleClickShowPassword}
+                                                    onMouseDown={handleMouseDownPassword}
+                                                    onMouseUp={handleMouseUpPassword}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ) : null,
+                                    }}
                                 />
                             </div>
 
@@ -403,3 +427,4 @@ function SignUpPage() {
 }
 
 export default SignUpPage;
+
