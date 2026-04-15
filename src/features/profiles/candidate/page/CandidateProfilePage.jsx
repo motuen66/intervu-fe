@@ -200,6 +200,7 @@ function CandidateProfilePage() {
     const [hasLoaded, setHasLoaded] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+    const [expandedBio, setExpandedBio] = useState(false);
     const [expandedWorkExp, setExpandedWorkExp] = useState({});
     // editMode chỉ dành cho: fullName, bio, portfolioUrl, skills, industryIds, cvUrl
     const [editMode, setEditMode] = useState(false);
@@ -237,6 +238,7 @@ function CandidateProfilePage() {
     const [showConfirmCertificateDelete, setShowConfirmCertificateDelete] = useState(false);
 
     const [openAiEval, setOpenAiEval] = useState(false);
+    const bioLimit = 400;
 
     const dispatch = useDispatch();
     const callApiLocal = (options) => callApi({ ...options, useGlobalLoading: false });
@@ -881,7 +883,19 @@ function CandidateProfilePage() {
                                     />
                                 ) : (
                                     <Typography className="ep-about-text" sx={{ whiteSpace: "pre-wrap" }}>
-                                        {profile.bio || "No bio provided yet."}
+                                        {profile.bio
+                                            ? expandedBio
+                                                ? profile.bio
+                                                : `${profile.bio.slice(0, bioLimit)}${profile.bio.length > bioLimit ? "..." : ""}`
+                                            : "No bio provided yet."}
+                                        {profile.bio && profile.bio.length > bioLimit && (
+                                            <button
+                                                onClick={() => setExpandedBio(!expandedBio)}
+                                                className="ep-view-more-btn"
+                                            >
+                                                {expandedBio ? "View Less" : "View More"}
+                                            </button>
+                                        )}
                                     </Typography>
                                 )}
                             </Box>
