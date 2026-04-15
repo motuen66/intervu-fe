@@ -1,68 +1,58 @@
 import React from "react";
 import { Handle, Position } from "@xyflow/react";
-import { CheckCircle2, PlayCircle, Lock } from "lucide-react";
+import SkillStatusBadge from "./components/SkillStatusBadge";
+import SkillProgressBar from "./components/SkillProgressBar";
+import { getStatusConfig } from "./components/statusConfig";
 
 const RoadmapNode = ({ data }) => {
     const status = data.status ?? "Missing";
-    const isComplete = status === "Complete";
+    const config = getStatusConfig(status);
     const isLocked = status === "Missing";
     const childSkillPreview = (data.childSkills ?? []).slice(0, 2);
     const hiddenSkillCount = Math.max((data.childSkills ?? []).length - childSkillPreview.length, 0);
-
-    const themeColor = isComplete ? "#52c41a" : isLocked ? "#d9d9d9" : "#1677ff";
+    const progress = Number(data.progress) || 0;
 
     return (
         <div
+            role="group"
+            aria-label={`${data.label}, status ${config.label}, ${progress}% complete`}
             style={{
                 padding: "16px",
                 borderRadius: "12px",
                 background: "#fff",
-                border: `1px solid ${isLocked ? "#f0f0f0" : "#e6e6e6"}`,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                border: `1px solid ${isLocked ? "#F1F5F9" : "#E2E8F0"}`,
+                boxShadow: "0 4px 12px rgba(15,23,42,0.05)",
                 width: "280px",
                 fontFamily: "sans-serif",
             }}
         >
-            <Handle type="target" position={Position.Top} style={{ background: "#555" }} />
+            <Handle type="target" position={Position.Top} style={{ background: "#64748B" }} />
 
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                {/* Icon logic */}
-                <div
-                    style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: `${themeColor}15`,
-                        color: themeColor,
-                    }}
-                >
-                    {isComplete ? <CheckCircle2 size={18} /> : isLocked ? <Lock size={18} /> : <PlayCircle size={18} />}
-                </div>
+                <SkillStatusBadge status={status} iconOnly />
 
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: "600", fontSize: "14px", color: isLocked ? "#8c8c8c" : "#1f1f1f" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                        style={{
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            color: isLocked ? "#64748B" : "#0F172A",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                        }}
+                        title={data.label}
+                    >
                         {data.label}
                     </div>
-                    <div style={{ fontSize: "11px", color: "#8c8c8c", marginTop: "2px" }}>
-                        {data.progress}% Complete
+                    <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>
+                        <span style={{ fontWeight: 600, color: config.color }}>{config.label}</span>
+                        <span aria-hidden="true"> • {progress}% complete</span>
                     </div>
                 </div>
             </div>
 
-            {/* Progress Bar */}
-            <div style={{ height: "6px", background: "#f0f0f0", borderRadius: "3px", overflow: "hidden" }}>
-                <div
-                    style={{
-                        height: "100%",
-                        width: `${data.progress}%`,
-                        background: themeColor,
-                        transition: "width 1s ease-in-out",
-                    }}
-                />
-            </div>
+            <SkillProgressBar progress={progress} status={status} />
 
             {childSkillPreview.length > 0 ? (
                 <div style={{ marginTop: "10px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
@@ -73,9 +63,9 @@ const RoadmapNode = ({ data }) => {
                                 fontSize: "10px",
                                 borderRadius: "999px",
                                 padding: "2px 8px",
-                                background: "#f8fafc",
+                                background: "#F8FAFC",
                                 color: "#475569",
-                                border: "1px solid #e2e8f0",
+                                border: "1px solid #E2E8F0",
                             }}
                         >
                             {skill}
@@ -87,9 +77,9 @@ const RoadmapNode = ({ data }) => {
                                 fontSize: "10px",
                                 borderRadius: "999px",
                                 padding: "2px 8px",
-                                background: "#f8fafc",
+                                background: "#F8FAFC",
                                 color: "#475569",
-                                border: "1px solid #e2e8f0",
+                                border: "1px solid #E2E8F0",
                             }}
                         >
                             +{hiddenSkillCount} more
@@ -98,7 +88,7 @@ const RoadmapNode = ({ data }) => {
                 </div>
             ) : null}
 
-            <Handle type="source" position={Position.Bottom} style={{ background: "#555" }} />
+            <Handle type="source" position={Position.Bottom} style={{ background: "#64748B" }} />
         </div>
     );
 };
