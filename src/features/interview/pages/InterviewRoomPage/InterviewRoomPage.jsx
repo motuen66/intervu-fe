@@ -10,11 +10,6 @@ import {
     Chip,
     Tooltip,
     Stack,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
 } from "@mui/material";
 import toast from "react-hot-toast";
 
@@ -28,13 +23,13 @@ import MicIcon from "@mui/icons-material/Mic";
 import MicOffIcon from "@mui/icons-material/MicOff";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FlagIcon from "@mui/icons-material/Flag";
 import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -52,7 +47,7 @@ import { useWebRTC } from "../../hooks/useWebRTC.js";
 import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
 import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useWhiteboardSync } from "../../hooks/useWhiteboardSync.js";
-import { useAudioRecorder } from "../../hooks/useAudioRecorder.js";
+import { useTranscript } from "../../hooks/useTranscript.js"; // Changed from useDeepgramTranscript
 import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
 
 // Analytics
@@ -128,7 +123,8 @@ function InterviewRoomPage() {
     const isViewOnly = searchParams.get("viewOnly") === "true";
 
     // ── Gate ──────────────────────────────────────────────────────────────────
-    const [loading, setLoading] = useState(true);
+    // [LOADING_EFFECT] Initial state for room loading. Set to false to prevent initial blink/overlay.
+    const [loading, setLoading] = useState(false); 
     const [error, setError] = useState(null);
     const [roomInfo, setRoomInfo] = useState(null);
     const [bookingDocLinks, setBookingDocLinks] = useState({
@@ -139,7 +135,8 @@ function InterviewRoomPage() {
     const checkRoomStatus = useCallback(async () => {
         if (!user) return;
         try {
-            setLoading(true);
+            // [LOADING_EFFECT] We could set loading(true) here, but commenting out to keep UI snappy.
+            // setLoading(true); 
             const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom/${roomId}` });
             const roomPayload = res?.data;
             const room = roomPayload?.data ?? roomPayload ?? null;
@@ -260,68 +257,37 @@ function InterviewRoomPage() {
         handleIceCandidate,
     } = useWebRTC({ signalingSender: sendSignal, selfId: connectionId });
 
-    // ── Audio Mixing Logic (Interviewer only) ──────────────────────────────────
-    const [mixedStream, setMixedStream] = useState(null);
-    const audioContextRef = useRef(null);
-
-    useEffect(() => {
-        if (user?.role !== ROLES.INTERVIEWER || !localStream) {
-            setMixedStream(null);
-            return;
-        }
-
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            const ctx = new AudioContext();
-            audioContextRef.current = ctx;
-
-            const dest = ctx.createMediaStreamDestination();
-
-            const localSource = ctx.createMediaStreamSource(localStream);
-            localSource.connect(dest);
-
-            let remoteSource = null;
-            if (remoteStream && remoteStream.getAudioTracks().length > 0) {
-                remoteSource = ctx.createMediaStreamSource(remoteStream);
-                remoteSource.connect(dest);
-            }
-
-            setMixedStream(dest.stream);
-
-            return () => {
-                if (ctx.state !== "closed") {
-                    ctx.close();
-                }
-            };
-        } catch (err) {
-            console.error("Failed to initialize audio mixing:", err);
-        }
-    }, [user?.role, localStream, remoteStream]);
-
     // ── Audio Recording & Transcription ────────────────────────────────────────
     const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(false);
     
     // Broadcast transcript to others in room
-    const handleTranscriptUpdate = useCallback((final, interim) => {
-        sendSignal("SendTranscript", roomId, final, interim).catch(e => console.warn("SendTranscript failed", e));
+    const handleTranscriptUpdate = useCallback((text, isFinal, role) => {
+        if (isFinal) {
+            sendSignal("SendTranscript", roomId, text, "", role).catch(e => console.warn("SendTranscript failed", e));
+        } else {
+            sendSignal("SendTranscript", roomId, "", text, role).catch(e => console.warn("SendTranscript failed", e));
+        }
     }, [sendSignal, roomId]);
 
-    const { transcript, interimTranscript, setTranscript, isTranscribing } = useAudioRecorder({
+    const { 
+        transcriptHistory, 
+        interimTranscript, 
+        addRemoteTranscript, 
+        isTranscribing,
+        clearTranscriptHistory
+    } = useTranscript({ // Changed from useDeepgramTranscript
         roomId,
-        isEnabled: !loading && !error && !isViewOnly && user?.role === ROLES.INTERVIEWER,
+        isEnabled: !loading && !error && !isViewOnly,
         isMicOn,
-        chunkIntervalMs: 15000,
-        audioStream: mixedStream,
-        isTranscriptionEnabled: true, // Always transcribing internally to stay in sync
+        // Per-speaker path: each client transcribes only their own mic stream.
+        // Remote speaker transcript arrives via SignalR (onReceiveTranscript).
+        audioStream: localStream,
+        isTranscriptionEnabled,
         onTranscriptUpdate: handleTranscriptUpdate,
-        user: user
+        user
     });
 
     // Sync full camera view video srcObject via useEffect (not ref callbacks).
-    // useCallback ref callbacks cause flicker: when the stream dependency changes,
-    // React calls the OLD callback with null (detaches srcObject) then the NEW
-    // callback with the element (reattaches). Using useEffect + plain refs avoids
-    // this unmount/remount cycle entirely.
     useEffect(() => {
         if (fullRemoteVideoRef.current) {
             fullRemoteVideoRef.current.srcObject = remoteStream ?? null;
@@ -341,7 +307,7 @@ function InterviewRoomPage() {
     // ── Remote peer media state ──────────────────────────────────────────────
     const [remoteCameraOn, setRemoteCameraOn] = useState(false);
     const [remoteMicOn, setRemoteMicOn] = useState(false);
-    const [remoteTranscript, setRemoteTranscript] = useState({ final: "", interim: "" });
+    const [remoteInterim, setRemoteInterim] = useState("");
 
     // ── Problem / test-case state (Interviewer editing) ──────────────────────
     const [problemDescription, setProblemDescription] = useState("");
@@ -454,7 +420,7 @@ function InterviewRoomPage() {
             closePeerConnection();
             setRemoteCameraOn(false);
             setRemoteMicOn(false);
-            setRemoteTranscript({ final: "", interim: "" });
+            setRemoteInterim("");
         },
         onReceiveCode: applyExternalCode,
         onReceiveLanguage: applyExternalLanguage,
@@ -497,8 +463,13 @@ function InterviewRoomPage() {
         onReceiveCameraState: (_fromId, isOn) => setRemoteCameraOn(isOn),
         onReceiveMicState: (_fromId, isOn) => setRemoteMicOn(isOn),
         onReceiveWhiteboardState: applyExternalWhiteboardState,
-        onReceiveTranscript: (_fromId, final, interim) => {
-            setRemoteTranscript({ final, interim });
+        onReceiveTranscript: (_fromId, final, interim, role) => {
+            if (final) {
+                addRemoteTranscript(final, role);
+                setRemoteInterim("");
+            } else {
+                setRemoteInterim(interim);
+            }
         }
     };
 
@@ -512,8 +483,6 @@ function InterviewRoomPage() {
             remoteVideoRef.current.srcObject = remoteStream ?? null;
             if (remoteStream) {
                 remoteVideoRef.current.play().catch((e) => {
-                    // NotAllowedError is expected before user gesture — autoPlay
-                    // attribute will resume once the user interacts with the page.
                     if (e.name !== "NotAllowedError") {
                         console.warn("[Video] Remote play error:", e);
                     }
@@ -561,15 +530,11 @@ function InterviewRoomPage() {
 
     const isFullCameraView = !showPanelA && !showPanelC && !showPanelD;
 
-    // Full camera view video srcObject sync handled by useEffects above
-
     // ── Horizontal split (Panel A / Panel B) ────────────────────────────────
     const [splitPct, setSplitPct] = useState(65);
     const containerRef = useRef(null);
     const panelARef = useRef(null);
     const panelBRef = useRef(null);
-
-    // Store last width before hiding for animation restore
     const lastSplitRef = useRef(65);
 
     // ── Vertical split inside Panel B (Panel C / Panel D) ───────────────────
@@ -581,7 +546,14 @@ function InterviewRoomPage() {
     const [notesPos, setNotesPos] = useState({ x: 80, y: 80 });
 
     // ── Transcript window ────────────────────────────────────────────────────
-    const [transcriptPos, setTranscriptPos] = useState({ x: window.innerWidth / 2 - 300, y: window.innerHeight - 250 });
+    const [transcriptPos, setTranscriptPos] = useState({ x: window.innerWidth / 2 - 300, y: window.innerHeight - 350 });
+    const transcriptEndRef = useRef(null);
+
+    useEffect(() => {
+        if (transcriptEndRef.current) {
+            transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [transcriptHistory, interimTranscript, remoteInterim]);
 
     // ── Report room modal ──────────────────────────────────────────────────────
     const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -643,7 +615,6 @@ function InterviewRoomPage() {
     const localPeerName =
         user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
     const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imagePath || user?.avatar;
-    // Remote avatar fetching is done inside VideoPanel logic - we'll pass null and let CameraWidget handle it
     const remoteAvatar = roomInfo
         ? isCandidate
             ? roomInfo.coachAvatar ||
@@ -791,6 +762,7 @@ function InterviewRoomPage() {
     };
 
     // ── Gate render ──────────────────────────────────────────────────────────
+    // [LOADING_EFFECT] Commented out initial loading overlay to avoid flicker/lag.
     if (loading || error) {
         return (
             <Box
@@ -802,7 +774,8 @@ function InterviewRoomPage() {
                     height: "100vh",
                 }}
             >
-                {loading && !error}
+                {/* [LOADING_EFFECT] Spinner commented out here. */}
+                {/* {loading && !error && <CircularProgress />} */}
                 <Typography variant="h6" sx={{ mt: 2 }}>
                     {error ?? "Verifying interview status..."}
                 </Typography>
@@ -1434,18 +1407,18 @@ function InterviewRoomPage() {
                         position: "fixed",
                         top: transcriptPos.y,
                         left: transcriptPos.x,
-                        width: 500,
-                        minHeight: 100,
+                        width: 550,
+                        maxHeight: 450,
                         zIndex: 1100,
-                        bgcolor: "rgba(15, 23, 42, 0.9)",
+                        bgcolor: "rgba(15, 23, 42, 0.95)",
                         color: "white",
-                        borderRadius: "16px",
-                        boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+                        borderRadius: "20px",
+                        boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
                         display: "flex",
                         flexDirection: "column",
                         overflow: "hidden",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        backdropFilter: "blur(12px)",
+                        border: "1px solid rgba(255,255,255,0.15)",
+                        backdropFilter: "blur(20px)",
                     }}
                 >
                     {/* Drag Handle Header */}
@@ -1455,84 +1428,126 @@ function InterviewRoomPage() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
-                            px: 2,
-                            py: 1,
+                            px: 2.5,
+                            py: 2,
                             cursor: "grab",
                             userSelect: "none",
-                            bgcolor: "rgba(0,0,0,0.3)",
+                            bgcolor: "rgba(255,255,255,0.03)",
                             borderBottom: "1px solid rgba(255,255,255,0.1)",
                             "&:active": { cursor: "grabbing" },
                         }}
                     >
-                        <Stack direction="row" spacing={1} alignItems="center">
+                        <Stack direction="row" spacing={1.5} alignItems="center">
                             <Box sx={{ 
-                                width: 8, 
-                                height: 8, 
+                                width: 10, 
+                                height: 10, 
                                 borderRadius: "50%", 
                                 bgcolor: isTranscribing ? "#A3E635" : "#EF4444",
-                                boxShadow: isTranscribing ? "0 0 10px #A3E635" : "none",
+                                boxShadow: isTranscribing ? "0 0 12px #A3E635" : "none",
                                 animation: isTranscribing ? "pulse 2s infinite" : "none",
-                                "@keyframes pulse": {
-                                    "0%": { opacity: 1 },
-                                    "50%": { opacity: 0.5 },
-                                    "100%": { opacity: 1 }
-                                }
                             }} />
-                            <Typography variant="caption" sx={{ fontWeight: 800, color: "#D9F99D", textTransform: "uppercase", letterSpacing: 1 }}>
-                                {isTranscribing ? "Live Transcript" : "Disconnected"}
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                                {isTranscribing ? "Live Interview Transcript" : "Transcription Offline"}
                             </Typography>
                         </Stack>
-                        <Stack direction="row" spacing={0.5}>
+                        <Stack direction="row" spacing={1}>
                             <IconButton
                                 size="small"
-                                onClick={() => setTranscript("")}
-                                title="Clear transcript"
-                                sx={{ color: "rgba(255,255,255,0.4)", p: 0.5, "&:hover": { color: "#D9F99D" } }}
+                                onClick={() => {
+                                    clearTranscriptHistory();
+                                }}
+                                title="Clear History"
+                                sx={{ color: "rgba(255,255,255,0.5)", "&:hover": { color: "#EF4444", bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
                             >
-                                <EditNoteIcon sx={{ fontSize: 18 }} />
+                                <DeleteSweepIcon sx={{ fontSize: 20 }} />
                             </IconButton>
                             <IconButton
                                 size="small"
                                 onClick={() => setIsTranscriptionEnabled(false)}
-                                sx={{ color: "rgba(255,255,255,0.4)", p: 0.5, "&:hover": { color: "#EF4444" } }}
+                                sx={{ color: "rgba(255,255,255,0.5)", "&:hover": { color: "#F8FAFC", bgcolor: 'rgba(255,255,255,0.1)' } }}
                             >
-                                <CloseIcon sx={{ fontSize: 18 }} />
+                                <CloseIcon sx={{ fontSize: 20 }} />
                             </IconButton>
                         </Stack>
                     </Box>
+
                     {/* Transcript Content */}
-                    <Box sx={{ p: 2, maxHeight: 200, overflowY: "auto", scrollBehavior: "smooth" }}>
-                        <Typography 
-                            variant="body2" 
-                            sx={{ 
-                                lineHeight: 1.6,
-                                fontStyle: (transcript || interimTranscript || remoteTranscript.final || remoteTranscript.interim) ? "normal" : "italic",
-                                color: (transcript || interimTranscript || remoteTranscript.final || remoteTranscript.interim) ? "white" : "rgba(255,255,255,0.4)",
-                                fontSize: "0.9rem",
-                                whiteSpace: "pre-wrap"
-                            }}
-                        >
-                            {/* Local side */}
-                            {transcript}{" "}
-                            <span style={{ color: "rgba(255,255,255,0.6)" }}>
-                                {interimTranscript}
-                            </span>
+                    <Box sx={{ 
+                        p: 2.5, 
+                        flex: 1, 
+                        overflowY: "auto", 
+                        scrollBehavior: "smooth",
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        '&::-webkit-scrollbar': { width: '6px' },
+                        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '10px' }
+                    }}>
+                        {transcriptHistory.length === 0 && !interimTranscript && !remoteInterim && (
+                            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.4)", textAlign: 'center', my: 4, fontStyle: 'italic' }}>
+                                Waiting for conversation to start...
+                            </Typography>
+                        )}
+                        
+                        {transcriptHistory.map((item) => (
+                            <Box key={item.index} sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <Typography sx={{ 
+                                        fontSize: '0.65rem', 
+                                        fontWeight: 900, 
+                                        color: item.role === 'Coach' ? '#A3E635' : '#60A5FA',
+                                        bgcolor: item.role === 'Coach' ? 'rgba(163, 230, 53, 0.1)' : 'rgba(96, 165, 250, 0.1)',
+                                        px: 1,
+                                        py: 0.2,
+                                        borderRadius: '4px',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        {item.role}
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                                        #{item.index}
+                                    </Typography>
+                                </Stack>
+                                <Typography variant="body2" sx={{ color: "#E2E8F0", lineHeight: 1.6, fontSize: '0.95rem' }}>
+                                    {item.text}
+                                </Typography>
+                            </Box>
+                        ))}
 
-                            {/* Remote side synchronization fallback (if for some reason local mix is missing something) */}
-                            {/* This is a visual merge of both people's transcripts if they are being sent via SignalR */}
-                            {remoteTranscript.final && !transcript.includes(remoteTranscript.final) && (
-                                <Box component="span" sx={{ display: 'block', mt: 1, color: '#D9F99D' }}>
-                                    {remoteTranscript.final}
-                                </Box>
-                            )}
-                            {remoteTranscript.interim && (
-                                <Box component="span" sx={{ display: 'block', color: 'rgba(217, 249, 157, 0.6)' }}>
-                                    {remoteTranscript.interim}
-                                </Box>
-                            )}
+                        {/* Local Interim */}
+                        {interimTranscript && (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                <Typography sx={{ 
+                                    fontSize: '0.65rem', 
+                                    fontWeight: 900, 
+                                    color: user?.role === ROLES.INTERVIEWER ? '#A3E635' : '#60A5FA',
+                                    opacity: 0.7
+                                }}>
+                                    {user?.role === ROLES.INTERVIEWER ? 'COACH' : 'CANDIDATE'} (typing...)
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: 'italic' }}>
+                                    {interimTranscript}
+                                </Typography>
+                            </Box>
+                        )}
 
-                            {!transcript && !interimTranscript && !remoteTranscript.final && !remoteTranscript.interim && (isTranscribing ? "Waiting for speech..." : "Connecting to Deepgram...")}
-                        </Typography>
+                        {/* Remote Interim */}
+                        {remoteInterim && (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                <Typography sx={{ 
+                                    fontSize: '0.65rem', 
+                                    fontWeight: 900, 
+                                    color: user?.role === ROLES.CANDIDATE ? '#A3E635' : '#60A5FA',
+                                    opacity: 0.7
+                                }}>
+                                    {user?.role === ROLES.CANDIDATE ? 'COACH' : 'CANDIDATE'} (typing...)
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: 'italic' }}>
+                                    {remoteInterim}
+                                </Typography>
+                            </Box>
+                        )}
+                        <div ref={transcriptEndRef} />
                     </Box>
                 </Box>
             )}
