@@ -24,7 +24,6 @@ import {
     Tab,
     Tabs,
     Paper,
-    Rating,
 } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
@@ -212,8 +211,6 @@ function CandidateProfilePage() {
     const [pendingAvatarLocalUrl, setPendingAvatarLocalUrl] = useState(null);
     const [showConfirmAvatar, setShowConfirmAvatar] = useState(false);
     const [showConfirmSave, setShowConfirmSave] = useState(false);
-    const [candidateRating, setCandidateRating] = useState(null);
-    const [candidateRatingCount, setCandidateRatingCount] = useState(0);
     const [tabValue, setTabValue] = useState(0);
     const [savedQuestions, setSavedQuestions] = useState([]);
     const [loadingSaved, setLoadingSaved] = useState(false);
@@ -264,20 +261,6 @@ function CandidateProfilePage() {
             }
             if (res.success) {
                 setProfile(normalizeCandidateProfile(res.data));
-                try {
-                    const idToUse = res.data.id || routeId || user?.id;
-                    if (idToUse) {
-                        const ep = candidateProfileEndPoints.GET_CANDIDATE_RATING.replace("{id}", idToUse);
-                        const r = await callApiLocal({ method: METHOD.GET, endpoint: ep });
-                        if (r?.success && r.data) {
-                            const payload = r.data?.data || r.data || {};
-                            setCandidateRating(Number(payload?.rating ?? 0));
-                            setCandidateRatingCount(Number(payload?.totalRatings ?? 0));
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error fetching candidate rating", err);
-                }
             } else {
                 setError(res.message || "Failed to load profile");
             }
@@ -632,10 +615,6 @@ function CandidateProfilePage() {
     const fullName =
         profile?.user?.fullName ?? profile?.fullName ?? (viewingBySlug ? "Unnamed" : user?.fullName || "Unnamed");
     const email = profile?.user?.email ?? profile?.email ?? (viewingBySlug ? "-" : user?.email || "-");
-    const normalizedCandidateRating = Number.isFinite(Number(candidateRating)) ? Number(candidateRating) : 0;
-    const normalizedCandidateRatingCount = Number.isFinite(Number(candidateRatingCount))
-        ? Number(candidateRatingCount)
-        : 0;
 
     return (
         <Box className="elite-profile-container" sx={{ minHeight: "90vh" }}>
@@ -653,7 +632,6 @@ function CandidateProfilePage() {
                             position: "relative",
                         }}
                     >
-                        {/* Nút edit/close CHỈ cho profile fields (bio, name, skills, portfolio...) */}
                         {canEdit && (
                             <IconButton
                                 onClick={() => setEditMode((v) => !v)}
@@ -791,38 +769,6 @@ function CandidateProfilePage() {
                                 <Box
                                     sx={{ display: "flex", gap: { xs: 2, md: 3 }, mb: 3, flexWrap: "wrap", rowGap: 2 }}
                                 >
-                                    <Box sx={{ display: "flex", flexDirection: "column" }}>
-                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                            <Typography
-                                                sx={{
-                                                    fontSize: { xs: "1.25rem", md: "1.75rem" },
-                                                    fontWeight: 800,
-                                                    color: "text.primary",
-                                                }}
-                                            >
-                                                {normalizedCandidateRating.toFixed(1)}
-                                            </Typography>
-                                            <Rating
-                                                value={normalizedCandidateRating}
-                                                precision={0.1}
-                                                readOnly
-                                                size="small"
-                                                sx={{ color: "#afe34a" }}
-                                            />
-                                        </Stack>
-                                        <Typography
-                                            sx={{
-                                                fontSize: "0.65rem",
-                                                fontWeight: 700,
-                                                textTransform: "uppercase",
-                                                letterSpacing: "0.1em",
-                                                color: "text.secondary",
-                                                mt: 0.5,
-                                            }}
-                                        >
-                                            {normalizedCandidateRatingCount} Ratings
-                                        </Typography>
-                                    </Box>
 
                                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                                         <Typography

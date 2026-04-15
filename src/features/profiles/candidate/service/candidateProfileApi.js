@@ -16,7 +16,6 @@ export const candidateProfileEndPoints = {
     UPDATE_CANDIDATE_CERTIFICATE: BE_BASE_URL + "/candidate-profile/{profileId}/certificates/{certificateId}",
     DELETE_CANDIDATE_CERTIFICATE: BE_BASE_URL + "/candidate-profile/{profileId}/certificates/{certificateId}",
 
-    GET_CANDIDATE_RATING: BE_BASE_URL + "/candidate-profile/{id}/rating",
     UPDATE_CANDIDATE_STATUS: BE_BASE_URL + "/candidate-profile/{id}/status",
     DELETE_CANDIDATE_PROFILE: BE_BASE_URL + "/candidate-profile/{id}",
     GET_ALL_SKILLS: BE_BASE_URL + "/Skills?page={page}&pageSize={pageSize}",
