@@ -47,7 +47,7 @@ import { useWebRTC } from "../../hooks/useWebRTC.js";
 import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
 import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useWhiteboardSync } from "../../hooks/useWhiteboardSync.js";
-import { useDeepgramTranscript } from "../../hooks/useDeepgramTranscript.js";
+import { useTranscript } from "../../hooks/useTranscript.js"; // Changed from useDeepgramTranscript
 import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
 
 // Analytics
@@ -273,7 +273,7 @@ function InterviewRoomPage() {
         addRemoteTranscript, 
         isTranscribing,
         clearTranscriptHistory
-    } = useDeepgramTranscript({
+    } = useTranscript({ // Changed from useDeepgramTranscript
         roomId,
         isEnabled: !loading && !error && !isViewOnly,
         isMicOn,
