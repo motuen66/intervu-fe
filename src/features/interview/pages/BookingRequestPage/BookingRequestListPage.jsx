@@ -32,9 +32,9 @@ import StatusChip from "../../../../common/components/StatusChip";
 
 const STATUS_COLOR_MAP = {
     [BOOKING_REQUEST_STATUS.PENDING]: "warning",
+    [BOOKING_REQUEST_STATUS.PendingForApprovalAfterPayment]: "info",
     [BOOKING_REQUEST_STATUS.ACCEPTED]: "success",
     [BOOKING_REQUEST_STATUS.REJECTED]: "error",
-    [BOOKING_REQUEST_STATUS.PAID]: "info",
     [BOOKING_REQUEST_STATUS.EXPIRED]: "default",
     [BOOKING_REQUEST_STATUS.CANCELLED]: "default",
 };
