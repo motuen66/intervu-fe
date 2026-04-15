@@ -22,8 +22,8 @@ export default function WithdrawalRequestDialog({ open, onClose, onSuccess, bala
 
     const handleSubmit = async () => {
         setError("");
-        if (form.amount <= 0) {
-            setError("Amount must be greater than 0.");
+        if (form.amount <= 2000) {
+            setError("Amount must be greater than 2000.");
             return;
         }
         if (form.amount > balance) {
@@ -72,7 +72,10 @@ export default function WithdrawalRequestDialog({ open, onClose, onSuccess, bala
                 <IconButton
                     onClick={handleClose}
                     size="small"
-                    sx={{ color: theme.palette.text.secondary, "&:hover": { backgroundColor: theme.palette.action.hover } }}
+                    sx={{
+                        color: theme.palette.text.secondary,
+                        "&:hover": { backgroundColor: theme.palette.action.hover },
+                    }}
                 >
                     <CloseIcon />
                 </IconButton>
@@ -108,9 +111,7 @@ export default function WithdrawalRequestDialog({ open, onClose, onSuccess, bala
                         onChange={(e) => setForm({ ...form, notes: e.target.value })}
                         sx={{ mt: 2 }}
                     />
-                    {error && (
-                        <Typography sx={{ color: "error.main", mt: 2, fontSize: "0.85rem" }}>{error}</Typography>
-                    )}
+                    {error && <Typography sx={{ color: "error.main", mt: 2, fontSize: "0.85rem" }}>{error}</Typography>}
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
                     <SecondaryButton onClick={handleClose} disabled={saving}>

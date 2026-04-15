@@ -1766,7 +1766,7 @@ function CandidateProfilePage() {
                                         <ConfirmModal
                                             show={showConfirmSave}
                                             title="Confirm save"
-                                            message="Save changes to your profile? (Skills, bio, portfolio, industries)"
+                                            message="Save changes to your profile?"
                                             onConfirm={async () => {
                                                 setShowConfirmSave(false);
                                                 await handleSave();
