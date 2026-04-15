@@ -3,6 +3,7 @@ import CoachInterviewServicePage from "../../features/coach/pages/CoachInterview
 import InterviewerProfilePage from "../../features/profiles/coach/page/InterviewerProfilePage.jsx";
 import CandidateProfilePage from "../../features/profiles/candidate/page/CandidateProfilePage.jsx";
 import CoachDashboardPage from "../../features/coach/pages/CoachDashboardPage/CoachDashboardPage.jsx";
+import CoachWalletPage from "../../features/coach/pages/CoachWalletPage/CoachWalletPage.jsx";
 
 export const interviewerRoutes = [
     { path: "/dashboard", element: <CoachDashboardPage /> },
@@ -11,4 +12,5 @@ export const interviewerRoutes = [
     { path: "/candidate/:slugProfileUrl", element: <CandidateProfilePage /> },
     { path: "/schedule", element: <ScheduleManagement /> },
     { path: "/my-services", element: <CoachInterviewServicePage /> },
+    { path: "/dashboard/wallet", element: <CoachWalletPage /> },
 ];
