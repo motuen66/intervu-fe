@@ -18,7 +18,7 @@ import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomL
 import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
 import BookingRequestListPage from "../../features/interview/pages/BookingRequestPage/BookingRequestListPage";
 import BookingRequestDetailPage from "../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage";
-import AdminDashboard from "../../features/admin/pages/AdminDashboard";
+
 import App from "../../App";
 import PaymentHistoryPage from "../../features/payments/pages/PaymentHistoryPage.jsx";
 import InterviewQuestionsPage from "../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx";
@@ -79,7 +79,7 @@ export const routes = [
         ),
         children: [
             { path: "/", element: <App /> },
-            { path: "/admin", element: <AdminDashboard /> },
+
             { path: "/interview", element: <InterviewRoomListPage /> },
             {
                 path: "/interview",
