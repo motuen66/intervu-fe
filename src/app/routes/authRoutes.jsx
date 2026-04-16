@@ -1,16 +1,24 @@
+import { lazy, Suspense } from "react";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
-import LoginPage from "../../features/auth/pages/LoginPage/LoginPage";
-import SignUpPage from "../../features/auth/pages/SignUpPage";
-import Test from "../../features/test/pages/Test";
-import ResetPassword from "../../features/auth/pages/ForgotPassword/ResetPassword";
-import ForgotPassword from "../../features/auth/pages/ForgotPassword/ForgotPassword";
+
+const LoginPage = lazy(() => import("../../features/auth/pages/LoginPage/LoginPage"));
+const SignUpPage = lazy(() => import("../../features/auth/pages/SignUpPage"));
+const Test = lazy(() => import("../../features/test/pages/Test"));
+const ResetPassword = lazy(() => import("../../features/auth/pages/ForgotPassword/ResetPassword"));
+const ForgotPassword = lazy(() => import("../../features/auth/pages/ForgotPassword/ForgotPassword"));
+
+const renderLazy = (LazyComponent) => (
+    <Suspense fallback={null}>
+        <LazyComponent />
+    </Suspense>
+);
 
 export const authRoutes = [
-    { path: "/login", element: <LoginPage /> },
-    { path: "/signup", element: <SignUpPage /> },
-    { path: "/forgot-password", element: <ForgotPassword /> },
-    { path: "/reset-password", element: <ResetPassword /> },
-    { path: "/test/:id", element: <Test /> },
+    { path: "/login", element: renderLazy(LoginPage) },
+    { path: "/signup", element: renderLazy(SignUpPage) },
+    { path: "/forgot-password", element: renderLazy(ForgotPassword) },
+    { path: "/reset-password", element: renderLazy(ResetPassword) },
+    { path: "/test/:id", element: renderLazy(Test) },
     {
         element: <ProtectedRoute />,
         children: [{ path: "/path", element: null }],

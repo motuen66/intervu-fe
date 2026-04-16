@@ -1,16 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback, lazy, Suspense, memo } from "react";
-import {
-    Box,
-    CircularProgress,
-    Typography,
-    IconButton,
-    Button,
-    Avatar,
-    Chip,
-    Tooltip,
-    Stack,
-} from "@mui/material";
+import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack } from "@mui/material";
 import toast from "react-hot-toast";
 
 // Icons
@@ -28,8 +18,8 @@ import CallEndIcon from "@mui/icons-material/CallEnd";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FlagIcon from "@mui/icons-material/Flag";
-import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import ClosedCaptionIcon from "@mui/icons-material/ClosedCaption";
+import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -37,8 +27,8 @@ import { METHOD } from "../../../../common/constants/api.js";
 import { ROLES } from "../../../../common/constants/common.js";
 
 import QuestionPanel from "./QuestionPanel";
-import CodeEditorPanel from "./CodeEditorPanel";
 import RoomReportModal from "./RoomReportModal";
+const CodeEditorPanel = lazy(() => import("./CodeEditorPanel"));
 const WhiteboardPanel = lazy(() => import("./WhiteboardPanel").then((m) => ({ default: m.WhiteboardPanel })));
 import { CameraWidget } from "./CameraWidget";
 import { JdCvPanel } from "./JdCvPanel";
@@ -117,25 +107,27 @@ function resolveRoomEndTime(room) {
 // ---------------------------------------------------------------------------
 const TranscriptItem = memo(({ item }) => {
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
             <Stack direction="row" spacing={1} alignItems="center">
-                <Typography sx={{ 
-                    fontSize: '0.65rem', 
-                    fontWeight: 900, 
-                    color: item.role === 'Coach' ? '#A3E635' : '#60A5FA',
-                    bgcolor: item.role === 'Coach' ? 'rgba(163, 230, 53, 0.1)' : 'rgba(96, 165, 250, 0.1)',
-                    px: 1,
-                    py: 0.2,
-                    borderRadius: '4px',
-                    textTransform: 'uppercase'
-                }}>
+                <Typography
+                    sx={{
+                        fontSize: "0.65rem",
+                        fontWeight: 900,
+                        color: item.role === "Coach" ? "#A3E635" : "#60A5FA",
+                        bgcolor: item.role === "Coach" ? "rgba(163, 230, 53, 0.1)" : "rgba(96, 165, 250, 0.1)",
+                        px: 1,
+                        py: 0.2,
+                        borderRadius: "4px",
+                        textTransform: "uppercase",
+                    }}
+                >
                     {item.role}
                 </Typography>
-                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                <Typography sx={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>
                     #{item.index}
                 </Typography>
             </Stack>
-            <Typography variant="body2" sx={{ color: "#E2E8F0", lineHeight: 1.6, fontSize: '0.95rem' }}>
+            <Typography variant="body2" sx={{ color: "#E2E8F0", lineHeight: 1.6, fontSize: "0.95rem" }}>
                 {item.text}
             </Typography>
         </Box>
@@ -154,7 +146,7 @@ function InterviewRoomPage() {
 
     // ── Gate ──────────────────────────────────────────────────────────────────
     // [LOADING_EFFECT] Initial state for room loading. Set to false to prevent initial blink/overlay.
-    const [loading, setLoading] = useState(false); 
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [roomInfo, setRoomInfo] = useState(null);
     const [bookingDocLinks, setBookingDocLinks] = useState({
@@ -166,7 +158,7 @@ function InterviewRoomPage() {
         if (!user) return;
         try {
             // [LOADING_EFFECT] We could set loading(true) here, but commenting out to keep UI snappy.
-            // setLoading(true); 
+            // setLoading(true);
             const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom/${roomId}` });
             const roomPayload = res?.data;
             const room = roomPayload?.data ?? roomPayload ?? null;
@@ -289,34 +281,37 @@ function InterviewRoomPage() {
 
     // ── Audio Recording & Transcription ────────────────────────────────────────
     const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(false);
-    
-    // Broadcast transcript to others in room
-    const handleTranscriptUpdate = useCallback((text, isFinal, role) => {
-        if (isFinal) {
-            sendSignal("SendTranscript", roomId, text, "", role).catch(e => console.warn("SendTranscript failed", e));
-        } else {
-            sendSignal("SendTranscript", roomId, "", text, role).catch(e => console.warn("SendTranscript failed", e));
-        }
-    }, [sendSignal, roomId]);
 
-    const { 
-        transcriptHistory, 
-        interimTranscript, 
-        addRemoteTranscript, 
-        isTranscribing,
-        clearTranscriptHistory
-    } = useTranscript({ // Changed from useDeepgramTranscript
-        roomId,
-        isEnabled: !loading && !error && !isViewOnly,
-        isMicOn,
-        // Per-speaker path: each client transcribes only their own mic stream.
-        // Remote speaker transcript arrives via SignalR (onReceiveTranscript).
-        audioStream: localStream,
-        // Only enable transcription service if user is INTERVIEWER AND toggle is on
-        isTranscriptionEnabled: isTranscriptionEnabled && Number(user?.role) === ROLES.INTERVIEWER,
-        onTranscriptUpdate: handleTranscriptUpdate,
-        user
-    });
+    // Broadcast transcript to others in room
+    const handleTranscriptUpdate = useCallback(
+        (text, isFinal, role) => {
+            if (isFinal) {
+                sendSignal("SendTranscript", roomId, text, "", role).catch((e) =>
+                    console.warn("SendTranscript failed", e),
+                );
+            } else {
+                sendSignal("SendTranscript", roomId, "", text, role).catch((e) =>
+                    console.warn("SendTranscript failed", e),
+                );
+            }
+        },
+        [sendSignal, roomId],
+    );
+
+    const { transcriptHistory, interimTranscript, addRemoteTranscript, isTranscribing, clearTranscriptHistory } =
+        useTranscript({
+            // Changed from useDeepgramTranscript
+            roomId,
+            isEnabled: !loading && !error && !isViewOnly,
+            isMicOn,
+            // Per-speaker path: each client transcribes only their own mic stream.
+            // Remote speaker transcript arrives via SignalR (onReceiveTranscript).
+            audioStream: localStream,
+            // Only enable transcription service if user is INTERVIEWER AND toggle is on
+            isTranscriptionEnabled: isTranscriptionEnabled && Number(user?.role) === ROLES.INTERVIEWER,
+            onTranscriptUpdate: handleTranscriptUpdate,
+            user,
+        });
 
     // Sync full camera view video srcObject via useEffect (not ref callbacks).
     useEffect(() => {
@@ -507,7 +502,7 @@ function InterviewRoomPage() {
                 // Clear remote interim if a non-interviewer is speaking
                 setRemoteInterim("");
             }
-        }
+        },
     };
 
     // ── Wire video streams ──────────────────────────────────────────────────
@@ -760,7 +755,12 @@ function InterviewRoomPage() {
     const startTranscriptDrag = useCallback(
         (e) => {
             e.preventDefault();
-            transcriptDragRef.current = { startX: e.clientX, startY: e.clientY, posX: transcriptPos.x, posY: transcriptPos.y };
+            transcriptDragRef.current = {
+                startX: e.clientX,
+                startY: e.clientY,
+                posX: transcriptPos.x,
+                posY: transcriptPos.y,
+            };
 
             const onMove = (me) => {
                 if (!transcriptDragRef.current) return;
@@ -1122,23 +1122,41 @@ function InterviewRoomPage() {
 
                             {/* Tab content */}
                             {panelATab === "editor" && (
-                                <CodeEditorPanel
-                                    language={language}
-                                    handleLanguageChange={handleLanguageChange}
-                                    code={roomLanguageCodeMap[language] || LANGUAGE_EXAMPLES[language]?.example || ""}
-                                    handleCodeChange={handleCodeChange}
-                                    formatCode={formatCode}
-                                    runCode={runCode}
-                                    isRunning={isRunning}
-                                    consoleOutput={consoleOutput}
-                                    setConsoleOutput={setConsoleOutput}
-                                    testResults={testResults}
-                                    setTestResults={setTestResults}
-                                    user={user}
-                                    languages={LANGUAGE_EXAMPLES}
-                                    handleEditorMount={handleEditorMount}
-                                    readOnly={isViewOnly}
-                                />
+                                <Suspense
+                                    fallback={
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "center",
+                                                alignItems: "center",
+                                                flex: 1,
+                                                minHeight: 240,
+                                            }}
+                                        >
+                                            <CircularProgress />
+                                        </Box>
+                                    }
+                                >
+                                    <CodeEditorPanel
+                                        language={language}
+                                        handleLanguageChange={handleLanguageChange}
+                                        code={
+                                            roomLanguageCodeMap[language] || LANGUAGE_EXAMPLES[language]?.example || ""
+                                        }
+                                        handleCodeChange={handleCodeChange}
+                                        formatCode={formatCode}
+                                        runCode={runCode}
+                                        isRunning={isRunning}
+                                        consoleOutput={consoleOutput}
+                                        setConsoleOutput={setConsoleOutput}
+                                        testResults={testResults}
+                                        setTestResults={setTestResults}
+                                        user={user}
+                                        languages={LANGUAGE_EXAMPLES}
+                                        handleEditorMount={handleEditorMount}
+                                        readOnly={isViewOnly}
+                                    />
+                                </Suspense>
                             )}
                             {panelATab === "whiteboard" && (
                                 <Suspense
@@ -1325,17 +1343,17 @@ function InterviewRoomPage() {
                     />
 
                     {/*<Tooltip title={Number(user?.role) !== ROLES.INTERVIEWER ? "Only Interviewers can enable transcription" : ""}>*/}
-                        <span> 
-                            <FooterMediaButton
-                                id="footer-btn-transcript"
-                                on={isTranscriptionEnabled}
-                                onClick={() => setIsTranscriptionEnabled((v) => !v)}
-                                // disabled={Number(user?.role) !== ROLES.INTERVIEWER}
-                                iconOn={<ClosedCaptionIcon />}
-                                iconOff={<ClosedCaptionIcon />}
-                                ariaLabel={isTranscriptionEnabled ? "Disable Transcript" : "Enable Transcript"}
-                            />
-                        </span>
+                    <span>
+                        <FooterMediaButton
+                            id="footer-btn-transcript"
+                            on={isTranscriptionEnabled}
+                            onClick={() => setIsTranscriptionEnabled((v) => !v)}
+                            // disabled={Number(user?.role) !== ROLES.INTERVIEWER}
+                            iconOn={<ClosedCaptionIcon />}
+                            iconOff={<ClosedCaptionIcon />}
+                            ariaLabel={isTranscriptionEnabled ? "Disable Transcript" : "Enable Transcript"}
+                        />
+                    </span>
                     {/*</Tooltip>*/}
 
                     <FooterNeutralButton
@@ -1480,15 +1498,26 @@ function InterviewRoomPage() {
                         }}
                     >
                         <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Box sx={{ 
-                                width: 10, 
-                                height: 10, 
-                                borderRadius: "50%", 
-                                bgcolor: isTranscribing ? "#A3E635" : "#EF4444",
-                                boxShadow: isTranscribing ? "0 0 12px #A3E635" : "none",
-                                animation: isTranscribing ? "pulse 2s infinite" : "none",
-                            }} />
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#F8FAFC", letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                            <Box
+                                sx={{
+                                    width: 10,
+                                    height: 10,
+                                    borderRadius: "50%",
+                                    bgcolor: isTranscribing ? "#A3E635" : "#EF4444",
+                                    boxShadow: isTranscribing ? "0 0 12px #A3E635" : "none",
+                                    animation: isTranscribing ? "pulse 2s infinite" : "none",
+                                }}
+                            />
+                            <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    fontWeight: 800,
+                                    color: "#F8FAFC",
+                                    letterSpacing: 0.5,
+                                    textTransform: "uppercase",
+                                    fontSize: "0.75rem",
+                                }}
+                            >
                                 {isTranscribing ? "Live Interview Transcript" : "Transcription Offline"}
                             </Typography>
                         </Stack>
@@ -1499,14 +1528,20 @@ function InterviewRoomPage() {
                                     clearTranscriptHistory();
                                 }}
                                 title="Clear History"
-                                sx={{ color: "rgba(255,255,255,0.5)", "&:hover": { color: "#EF4444", bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
+                                sx={{
+                                    color: "rgba(255,255,255,0.5)",
+                                    "&:hover": { color: "#EF4444", bgcolor: "rgba(239, 68, 68, 0.1)" },
+                                }}
                             >
                                 <DeleteSweepIcon sx={{ fontSize: 20 }} />
                             </IconButton>
                             <IconButton
                                 size="small"
                                 onClick={() => setIsTranscriptionEnabled(false)}
-                                sx={{ color: "rgba(255,255,255,0.5)", "&:hover": { color: "#F8FAFC", bgcolor: 'rgba(255,255,255,0.1)' } }}
+                                sx={{
+                                    color: "rgba(255,255,255,0.5)",
+                                    "&:hover": { color: "#F8FAFC", bgcolor: "rgba(255,255,255,0.1)" },
+                                }}
                             >
                                 <CloseIcon sx={{ fontSize: 20 }} />
                             </IconButton>
@@ -1514,39 +1549,49 @@ function InterviewRoomPage() {
                     </Box>
 
                     {/* Transcript Content */}
-                    <Box sx={{ 
-                        p: 2.5, 
-                        flex: 1, 
-                        overflowY: "auto", 
-                        scrollBehavior: "smooth",
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 2,
-                        '&::-webkit-scrollbar': { width: '6px' },
-                        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '10px' }
-                    }}>
+                    <Box
+                        sx={{
+                            p: 2.5,
+                            flex: 1,
+                            overflowY: "auto",
+                            scrollBehavior: "smooth",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            "&::-webkit-scrollbar": { width: "6px" },
+                            "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(255,255,255,0.1)", borderRadius: "10px" },
+                        }}
+                    >
                         {transcriptHistory.length === 0 && !interimTranscript && !remoteInterim && (
-                            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.4)", textAlign: 'center', my: 4, fontStyle: 'italic' }}>
+                            <Typography
+                                variant="body2"
+                                sx={{ color: "rgba(255,255,255,0.4)", textAlign: "center", my: 4, fontStyle: "italic" }}
+                            >
                                 Waiting for conversation to start...
                             </Typography>
                         )}
-                        
+
                         {transcriptHistory.map((item) => (
                             <TranscriptItem key={item.index} item={item} />
                         ))}
 
                         {/* Local Interim */}
                         {interimTranscript && (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                <Typography sx={{ 
-                                    fontSize: '0.65rem', 
-                                    fontWeight: 900, 
-                                    color: user?.role === ROLES.INTERVIEWER ? '#A3E635' : '#60A5FA',
-                                    opacity: 0.7
-                                }}>
-                                    {user?.role === ROLES.INTERVIEWER ? 'COACH' : 'CANDIDATE'} (typing...)
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.65rem",
+                                        fontWeight: 900,
+                                        color: user?.role === ROLES.INTERVIEWER ? "#A3E635" : "#60A5FA",
+                                        opacity: 0.7,
+                                    }}
+                                >
+                                    {user?.role === ROLES.INTERVIEWER ? "COACH" : "CANDIDATE"} (typing...)
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: 'italic' }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: "italic" }}
+                                >
                                     {interimTranscript}
                                 </Typography>
                             </Box>
@@ -1554,16 +1599,21 @@ function InterviewRoomPage() {
 
                         {/* Remote Interim */}
                         {remoteInterim && (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                <Typography sx={{ 
-                                    fontSize: '0.65rem', 
-                                    fontWeight: 900, 
-                                    color: user?.role === ROLES.CANDIDATE ? '#A3E635' : '#60A5FA',
-                                    opacity: 0.7
-                                }}>
-                                    {user?.role === ROLES.CANDIDATE ? 'COACH' : 'CANDIDATE'} (typing...)
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.65rem",
+                                        fontWeight: 900,
+                                        color: user?.role === ROLES.CANDIDATE ? "#A3E635" : "#60A5FA",
+                                        opacity: 0.7,
+                                    }}
+                                >
+                                    {user?.role === ROLES.CANDIDATE ? "COACH" : "CANDIDATE"} (typing...)
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: 'italic' }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: "italic" }}
+                                >
                                     {remoteInterim}
                                 </Typography>
                             </Box>
@@ -1637,8 +1687,8 @@ function FooterMediaButton({ id, on, onClick, iconOn, iconOff, ariaLabel, disabl
                 "&.Mui-disabled": {
                     bgcolor: "#111827",
                     opacity: 0.5,
-                    color: "#6B7280"
-                }
+                    color: "#6B7280",
+                },
             }}
         >
             {on ? iconOn : iconOff}

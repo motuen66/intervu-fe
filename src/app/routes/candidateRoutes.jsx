@@ -1,11 +1,19 @@
-import Test from "../../features/test/pages/Test";
-import HomePage from "../../features/home/pages/HomePage";
-import RoadmapDashboard from "../../features/roadmap/RoadmapDashboard";
-import CandidateAssessmentPage from "../../features/profiles/candidate/pages/CandidateAssessmentPage";
+import { lazy, Suspense } from "react";
+
+const Test = lazy(() => import("../../features/test/pages/Test"));
+const HomePage = lazy(() => import("../../features/home/pages/HomePage"));
+const RoadmapDashboard = lazy(() => import("../../features/roadmap/RoadmapDashboard"));
+const CandidateAssessmentPage = lazy(() => import("../../features/profiles/candidate/pages/CandidateAssessmentPage"));
+
+const renderLazy = (LazyComponent) => (
+    <Suspense fallback={null}>
+        <LazyComponent />
+    </Suspense>
+);
 
 export const candidateRoutes = [
-    { path: "/test/:id", element: <Test /> },
-    { path: "/home", element: <HomePage /> },
-    { path: "/assessment", element: <CandidateAssessmentPage /> },
-    { path: "/roadmap", element: <RoadmapDashboard /> },
+    { path: "/test/:id", element: renderLazy(Test) },
+    { path: "/home", element: renderLazy(HomePage) },
+    { path: "/assessment", element: renderLazy(CandidateAssessmentPage) },
+    { path: "/roadmap", element: renderLazy(RoadmapDashboard) },
 ];
