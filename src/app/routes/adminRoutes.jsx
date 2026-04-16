@@ -11,6 +11,8 @@ import AdminReportsPage from "../../features/admin/pages/AdminReportsPage";
 import { AdminRoomReportsPage } from "../../features/admin/pages/AdminRoomReportsPage";
 import AdminQuestionBankPage from "../../features/admin/pages/AdminQuestionBankPage";
 import ProblemResolutionDetail from "../../features/admin/pages/ProblemResolutionDetail";
+import AdminPineconeManagementPage from "../../features/admin/pages/AdminPineconeManagementPage/AdminPineconeManagementPage";
+import AdminAiServicesPage from "../../features/admin/pages/AdminAiServicesPage/AdminAiServicesPage";
 
 export const adminRoutes = [
     { path: "/admin", element: <Navigate to="/admin/dashboard" replace /> },
@@ -73,5 +75,9 @@ export const adminRoutes = [
     { path: "/admin/reports/room", element: <AdminRoomReportsPage /> },
     { path: "/admin/reports/room/:roomId", element: <ProblemResolutionDetail /> },
     { path: "/admin/reports/question", element: <AdminReportsPage /> },
+    // System Management
+    { path: "/admin/system", element: <Navigate to="/admin/system/pinecone" replace /> },
+    { path: "/admin/system/pinecone", element: <AdminPineconeManagementPage /> },
+    { path: "/admin/system/ai-services", element: <AdminAiServicesPage /> },
 ];
 

@@ -10,6 +10,7 @@ import {
     HelpCircle,
     CircleDollarSign,
     BarChart2,
+    Monitor,
     LogOut,
     Settings,
     ChevronDown,
@@ -58,6 +59,15 @@ const adminNavItems = [
                 children: [
                     { label: "Room Report", path: "/admin/reports/room" },
                     { label: "Question Report", path: "/admin/reports/question" },
+                ],
+            },
+            {
+                label: "System",
+                icon: Monitor,
+                key: "system",
+                children: [
+                    { label: "Pinecone", path: "/admin/system/pinecone" },
+                    { label: "AI Services", path: "/admin/system/ai-services" },
                 ],
             },
         ],
@@ -277,7 +287,7 @@ const SidebarGroupItem = ({ item, openGroups, onToggleGroup, location, onNavigat
 export default function AdminSidebar({ userData, remoteAvatar, onLogout, mobileOpen, onMobileClose }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const [openGroups, setOpenGroups] = useState({ income: false, reports: true, users: true });
+    const [openGroups, setOpenGroups] = useState({ income: false, reports: true, users: true, system: false });
     const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
         return localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY) === "true";
