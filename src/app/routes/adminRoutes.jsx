@@ -5,6 +5,7 @@ import AdminCandidatesPage from "../../features/admin/pages/AdminCandidatesPage"
 import AdminCoachesPage from "../../features/admin/pages/AdminCoachesPage";
 import CompanyManagementPage from "../../features/admin/pages/CompanyManagementPage";
 import AdminEmptyPage from "../../features/admin/pages/AdminEmptyPage";
+import AdminTransactionsPage from "../../features/admin/pages/AdminTransactionsPage";
 import AdminInterviewsPage from "../../features/admin/pages/AdminInterviewsPage";
 import AdminReportsPage from "../../features/admin/pages/AdminReportsPage";
 import { AdminRoomReportsPage } from "../../features/admin/pages/AdminRoomReportsPage";
@@ -24,9 +25,50 @@ export const adminRoutes = [
     // Other pages
     { path: "/admin/companies", element: <CompanyManagementPage /> },
     { path: "/admin/question-bank", element: <AdminQuestionBankPage /> },
-    { path: "/admin/income/earnings", element: <AdminEmptyPage /> },
-    { path: "/admin/income/refunds", element: <AdminEmptyPage /> },
-    { path: "/admin/income/payouts", element: <AdminEmptyPage /> },
+    { path: "/admin/income", element: <Navigate to="/admin/income/earnings" replace /> },
+    {
+        path: "/admin/income/earnings",
+        element: (
+            <AdminTransactionsPage
+                filterType="Payment"
+                filterStatus="Paid"
+                title="Earnings"
+                subtitle="Completed payments received from candidates."
+            />
+        ),
+    },
+    {
+        path: "/admin/income/refunds",
+        element: (
+            <AdminTransactionsPage
+                filterType="Refund"
+                title="Refunds"
+                subtitle="Refund transactions issued to candidates."
+            />
+        ),
+    },
+    {
+        path: "/admin/income/payouts",
+        element: (
+            <AdminTransactionsPage
+                filterType="Payout"
+                filterStatus="Paid"
+                title="Payouts"
+                subtitle="Completed payouts disbursed to coaches."
+            />
+        ),
+    },
+    {
+        path: "/admin/income/withdrawals",
+        element: (
+            <AdminTransactionsPage
+                filterType="Payout"
+                filterStatus="PendingPayout"
+                title="Withdrawal Requests"
+                subtitle="Coaches awaiting payout for completed sessions."
+            />
+        ),
+    },
     { path: "/admin/reports", element: <Navigate to="/admin/reports/question" replace /> },
     { path: "/admin/reports/room", element: <AdminRoomReportsPage /> },
     { path: "/admin/reports/room/:roomId", element: <ProblemResolutionDetail /> },

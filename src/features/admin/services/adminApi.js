@@ -9,6 +9,7 @@ export const adminEndPoints = {
     FILTER_USERS: `${ADMIN_BASE_URL}/users/filter`,
     GET_COMPANIES: `${ADMIN_BASE_URL}/companies`,
     GET_PAYMENTS: `${ADMIN_BASE_URL}/payments`,
+    GET_TRANSACTIONS: `${ADMIN_BASE_URL}/transactions`,
     GET_FEEDBACKS: `${ADMIN_BASE_URL}/feedbacks`,
     GET_INTERVIEWERS: `${ADMIN_BASE_URL}/interviewers`,
     // Dashboard Endpoints

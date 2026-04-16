@@ -41,6 +41,17 @@ const adminNavItems = [
             { label: "Company", icon: Building2, path: "/admin/companies" },
             { label: "Question Bank", icon: HelpCircle, path: "/admin/question-bank" },
             {
+                label: "Income",
+                icon: CircleDollarSign,
+                key: "income",
+                children: [
+                    { label: "Earnings", path: "/admin/income/earnings" },
+                    { label: "Refunds", path: "/admin/income/refunds" },
+                    { label: "Payouts", path: "/admin/income/payouts" },
+                    { label: "Withdrawal Requests", path: "/admin/income/withdrawals" },
+                ],
+            },
+            {
                 label: "Reports",
                 icon: BarChart2,
                 key: "reports",
