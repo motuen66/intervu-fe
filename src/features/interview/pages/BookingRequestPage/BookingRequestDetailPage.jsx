@@ -313,6 +313,7 @@ export default function BookingRequestDetailPage() {
         );
     }
 
+    const isPaid = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
     const isPending = detail.status === BOOKING_REQUEST_STATUS.PENDING;
     const isAccepted = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
     const hasCompletedInterview = (detail.rounds || []).some(
