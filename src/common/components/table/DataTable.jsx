@@ -137,7 +137,7 @@ export default function DataTable({
                                         px: 1.5,
                                     }}
                                 >
-                                    STT
+                                    #
                                 </TableCell>
                             )}
                             {columns.map((column) => (

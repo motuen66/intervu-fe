@@ -1,6 +1,8 @@
 import { Navigate } from "react-router-dom";
 import AdminDashboard from "../../features/admin/pages/AdminDashboardPage/AdminDashboardPage";
 import UserManagementPage from "../../features/admin/pages/UserManagementPage";
+import AdminCandidatesPage from "../../features/admin/pages/AdminCandidatesPage";
+import AdminCoachesPage from "../../features/admin/pages/AdminCoachesPage";
 import CompanyManagementPage from "../../features/admin/pages/CompanyManagementPage";
 import AdminEmptyPage from "../../features/admin/pages/AdminEmptyPage";
 import AdminInterviewsPage from "../../features/admin/pages/AdminInterviewsPage";
@@ -14,7 +16,12 @@ export const adminRoutes = [
     { path: "/admin/dashboard", element: <AdminDashboard /> },
     { path: "/admin/schedules", element: <AdminEmptyPage /> },
     { path: "/admin/interviews", element: <AdminInterviewsPage /> },
-    { path: "/admin/users", element: <UserManagementPage /> },
+    // Users sub-section
+    { path: "/admin/users", element: <Navigate to="/admin/users/candidates" replace /> },
+    { path: "/admin/users/all", element: <UserManagementPage /> },
+    { path: "/admin/users/candidates", element: <AdminCandidatesPage /> },
+    { path: "/admin/users/coaches", element: <AdminCoachesPage /> },
+    // Other pages
     { path: "/admin/companies", element: <CompanyManagementPage /> },
     { path: "/admin/question-bank", element: <AdminQuestionBankPage /> },
     { path: "/admin/income/earnings", element: <AdminEmptyPage /> },
@@ -25,3 +32,4 @@ export const adminRoutes = [
     { path: "/admin/reports/room/:roomId", element: <ProblemResolutionDetail /> },
     { path: "/admin/reports/question", element: <AdminReportsPage /> },
 ];
+
