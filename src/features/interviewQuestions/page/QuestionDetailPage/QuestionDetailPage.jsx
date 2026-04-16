@@ -388,9 +388,12 @@ export default function QuestionDetailPage() {
                     level: data.level,
                     round: data.round,
                     category: data.category ?? data.questionType,
-                    companyIds: (data.companyNames ?? [])
-                        .map((name) => companies.find((c) => c.name === name)?.id)
-                        .filter(Boolean),
+                    companyIds:
+                        (data.companyIds && data.companyIds.length > 0
+                            ? data.companyIds
+                            : (data.companyNames ?? [])
+                                  .map((name) => editCompanies.find((c) => c.name === name)?.id)
+                                  .filter(Boolean)),
                     roles: data.roles ?? [],
                     tagIds: data.tagIds ?? [],
                 },
