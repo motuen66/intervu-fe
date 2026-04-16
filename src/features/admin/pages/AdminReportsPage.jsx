@@ -310,7 +310,7 @@ export default function AdminReportsPage() {
                 title="Question Reports" 
                 subtitle="Monitor and resolve reports submitted for interview questions."
                 actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports} sx={{ borderRadius: "12px", px: 3, py: 1 }}>
+                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports}>
                         Refresh
                     </PrimaryButton>
                 }

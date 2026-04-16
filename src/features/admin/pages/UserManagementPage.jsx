@@ -289,14 +289,6 @@ export default function UserManagementPage() {
                     <PrimaryButton
                         startIcon={<AddIcon />}
                         onClick={handleCreateUser}
-                        sx={{
-                            textTransform: 'none',
-                            px: 3,
-                            py: 1,
-                            borderRadius: '999px',
-                            fontSize: '14px',
-                            fontWeight: 600,
-                        }}
                     >
                         Create User
                     </PrimaryButton>

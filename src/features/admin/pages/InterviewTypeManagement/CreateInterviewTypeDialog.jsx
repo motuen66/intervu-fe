@@ -3,23 +3,23 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
+import MenuItem from "@mui/material/MenuItem";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import MenuItem from "@mui/material/MenuItem";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { interviewTypeEndPoints } from "../../services/interviewTypeApi";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
-import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import CloseIcon from "@mui/icons-material/Close";
-import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import FormSelect from "../../../../common/components/form/FormSelect";
+import { FormControl, InputLabel } from "@mui/material";
 
 const DURATION_OPTIONS = Array.from({ length: 10 }, (_, i) => (i + 1) * 30);
 
@@ -178,34 +178,35 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
                             />
                         </Grid>
                         <Grid item xs={12} sx={{ width: "100%" }}>
-                            <FormTextField
-                                fullWidth
-                                select
-                                label="Status"
-                                value={form.status}
-                                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                                required
-                            >
-                                <MenuItem value={1}>Active</MenuItem>
-                                <MenuItem value={0}>Inactive</MenuItem>
-                            </FormTextField>
+                            <FormControl fullWidth required>
+                                <InputLabel id="status-label">Status</InputLabel>
+                                <FormSelect
+                                    labelId="status-label"
+                                    label="Status"
+                                    value={form.status}
+                                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                                >
+                                    <MenuItem value={1}>Active</MenuItem>
+                                    <MenuItem value={0}>Inactive</MenuItem>
+                                </FormSelect>
+                            </FormControl>
                         </Grid>
                         <Grid item xs={12} sx={{ width: "100%" }}>
-                            <FormTextField
-                                fullWidth
-                                select
-                                label="Suggested Duration (minutes)"
-                                value={form.suggestedDurationMinutes}
-                                onChange={(e) => setForm({ ...form, suggestedDurationMinutes: Number(e.target.value) })}
-                                required
-                                helperText="30-minute blocks only (30 to 300 minutes)"
-                            >
-                                {DURATION_OPTIONS.map((duration) => (
-                                    <MenuItem key={duration} value={duration}>
-                                        {duration} minutes
-                                    </MenuItem>
-                                ))}
-                            </FormTextField>
+                            <FormControl fullWidth required>
+                                <InputLabel id="duration-label">Suggested Duration (minutes)</InputLabel>
+                                <FormSelect
+                                    labelId="duration-label"
+                                    label="Suggested Duration (minutes)"
+                                    value={form.suggestedDurationMinutes}
+                                    onChange={(e) => setForm({ ...form, suggestedDurationMinutes: Number(e.target.value) })}
+                                >
+                                    {DURATION_OPTIONS.map((duration) => (
+                                        <MenuItem key={duration} value={duration}>
+                                            {duration} minutes
+                                        </MenuItem>
+                                    ))}
+                                </FormSelect>
+                            </FormControl>
                         </Grid>
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
@@ -288,14 +289,13 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
                                         />
                                     </Box>
                                 ))}
-                                <Button
+                                <SecondaryButton
                                     variant="outlined"
                                     startIcon={<AddCircleOutlineIcon />}
                                     onClick={handleAddEvaluation}
-                                    sx={{ fontWeight: 600 }}
                                 >
                                     Add
-                                </Button>
+                                </SecondaryButton>
                             </Box>
                         </Grid>
                     </Grid>

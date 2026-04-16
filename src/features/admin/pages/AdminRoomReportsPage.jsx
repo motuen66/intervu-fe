@@ -3,7 +3,6 @@ import {
     Box,
     Container,
     Typography,
-    Button,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -19,7 +18,6 @@ import {
     Radio,
     RadioGroup,
     FormControlLabel,
-    TextField,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import HistoryIcon from "@mui/icons-material/History";
@@ -34,7 +32,8 @@ import FilterDropdown from "../../../common/components/admin/FilterDropdown";
 import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
 import DataTable from "../../../common/components/table/DataTable";
 import StatusChip from "../../../common/components/StatusChip";
-import { PrimaryButton } from "../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, DangerButton } from "../../../common/components/buttons";
+import FormTextField from "../../../common/components/form/FormTextField";
 import useTableState from "../../../hooks/useTableState";
 
 import { callApi } from "../../../common/utils/apiConnector";
@@ -291,7 +290,7 @@ export const AdminRoomReportsPage = () => {
                 title="Room Reports"  // AdminPageHeader styling
                 subtitle="Monitor and investigate environmental audit logs for reported interview rooms."
                 actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports} sx={{ borderRadius: "12px", px: 3, py: 1 }}>
+                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports}>
                         Refresh
                     </PrimaryButton>
                 }
@@ -392,10 +391,10 @@ export const AdminRoomReportsPage = () => {
                     )}
                 </DialogContent>
                 <DialogActions sx={{ p: 3, borderTop: "1px solid", borderColor: "divider", bgcolor: "action.hover", justifyContent: "space-between" }}>
-                    <Button onClick={() => setAuditLogDialogOpen(false)} sx={{ color: "text.secondary", fontWeight: 700 }}>Close</Button>
+                    <SecondaryButton onClick={() => setAuditLogDialogOpen(false)}>Close</SecondaryButton>
                     <Box sx={{ display: "flex", gap: 1.5 }}>
-                        <Button variant="outlined" color="error" onClick={() => handleResolveReport(selectedReportId, 2)} sx={{ borderRadius: "10px", fontWeight: 700 }}>Mark Irrelevant</Button>
-                        <PrimaryButton onClick={() => setResolveDialogOpen(true)} sx={{ borderRadius: "10px", fontWeight: 700 }}>Resolve Problem</PrimaryButton>
+                        <DangerButton onClick={() => handleResolveReport(selectedReportId, 2)}>Mark Irrelevant</DangerButton>
+                        <PrimaryButton onClick={() => setResolveDialogOpen(true)}>Resolve Problem</PrimaryButton>
                     </Box>
                 </DialogActions>
             </Dialog>
@@ -410,10 +409,10 @@ export const AdminRoomReportsPage = () => {
                         <FormControlLabel value={50} control={<Radio />} label="Partial Refund (50%)" />
                         <FormControlLabel value={100} control={<Radio />} label="Full Refund (100%)" />
                     </RadioGroup>
-                    <TextField fullWidth multiline rows={3} placeholder="Add admin note..." value={adminNote} onChange={(e) => setAdminNote(e.target.value)} sx={{ mt: 3 }} />
+                    <FormTextField fullWidth multiline rows={3} placeholder="Add admin note..." value={adminNote} onChange={(e) => setAdminNote(e.target.value)} sx={{ mt: 3 }} />
                 </DialogContent>
                 <DialogActions sx={{ p: 3 }}>
-                    <Button onClick={() => setResolveDialogOpen(false)} sx={{ fontWeight: 700, color: "text.secondary" }}>Cancel</Button>
+                    <SecondaryButton onClick={() => setResolveDialogOpen(false)}>Cancel</SecondaryButton>
                     <PrimaryButton loading={isResolving} onClick={() => handleResolveReport(selectedReportId, 1, refundOption, adminNote)}>Confirm & Resolve</PrimaryButton>
                 </DialogActions>
             </Dialog>

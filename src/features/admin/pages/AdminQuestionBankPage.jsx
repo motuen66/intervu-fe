@@ -217,7 +217,7 @@ export default function AdminQuestionBankPage() {
                 title="Question Bank" 
                 subtitle="Manage all questions in the platform."
                 actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchQuestions} sx={{ borderRadius: "12px", px: 3, py: 1 }}>
+                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchQuestions}>
                         Refresh
                     </PrimaryButton>
                 }

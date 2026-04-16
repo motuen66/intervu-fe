@@ -1,8 +1,9 @@
-import { Select, MenuItem } from '@mui/material';
+import { MenuItem } from '@mui/material';
+import FormSelect from '../form/FormSelect';
 
 export default function FilterDropdown({ options = [], value, onChange, placeholder = "All" }) {
     return (
-        <Select
+        <FormSelect
             value={value}
             onChange={(e) => onChange(e.target.value)}
             displayEmpty
@@ -11,9 +12,6 @@ export default function FilterDropdown({ options = [], value, onChange, placehol
                 width: 140, height: 32, backgroundColor: '#F8FAFC',
                 borderRadius: '6px', fontSize: '13px',
                 '.MuiSelect-select': { padding: '4px 12px', display: 'flex', alignItems: 'center' },
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#E2E8F0' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#CBD5E1' },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#6366F1', borderWidth: '1px' },
                 '.MuiSelect-icon': { fontSize: '16px', color: '#94A3B8', right: '4px' }
             }}
         >
@@ -23,6 +21,6 @@ export default function FilterDropdown({ options = [], value, onChange, placehol
                     {opt.label}
                 </MenuItem>
             ))}
-        </Select>
+        </FormSelect>
     );
 }

@@ -16,7 +16,8 @@ import { alpha } from "@mui/material/styles";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import StatusChip from '../../components/StatusChip'; // Updated path to StatusChip
+import StatusChip from '../../components/StatusChip';
+import { commonMenuProps } from '../form/FormSelect';
 
 export default function DataTable({
     title,
@@ -189,7 +190,7 @@ export default function DataTable({
                                     <CircularProgress sx={{ color: "primary.main" }} />
                                 </TableCell>
                             </TableRow>
-                        ) : (
+                        ) : normalizedData.length > 0 ? (
                             normalizedData.map((row, index) => (
                                 <TableRow
                                     key={row.id || index}
@@ -279,9 +280,37 @@ export default function DataTable({
                                     )}
                                 </TableRow>
                             ))
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length + (actions ? 1 : 0) + (showIndex ? 1 : 0)}
+                                    sx={{
+                                        textAlign: 'center',
+                                        py: 10,
+                                        borderBottom: 'none'
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'text.secondary' }}>
+                                        <Box sx={{ 
+                                            bgcolor: 'action.hover', 
+                                            borderRadius: '50%', 
+                                            p: 2, 
+                                            mb: 2,
+                                            display: 'inline-flex'
+                                        }}>
+                                            <VisibilityIcon sx={{ fontSize: 40, opacity: 0.2 }} />
+                                        </Box>
+                                        <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                                            No data available
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ maxWidth: 300 }}>
+                                            It looks like there's nothing to show here right now. Try adjusting your filters or search.
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                            </TableRow>
                         )}
-
-                        {!loading && emptyRowsCount > 0 &&
+                        {!loading && normalizedData.length > 0 && emptyRowsCount > 0 &&
                             Array.from({ length: emptyRowsCount }).map((_, idx) => (
                                 <TableRow key={`empty-row-${idx}`}>
                                     {showIndex && (
@@ -342,12 +371,19 @@ export default function DataTable({
                 rowsPerPage={pageSize}
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[10, 25, 50]}
+                SelectProps={{
+                    MenuProps: {
+                        ...commonMenuProps,
+                        anchorOrigin: { vertical: 'top', horizontal: 'left' },
+                        transformOrigin: { vertical: 'bottom', horizontal: 'left' },
+                    }
+                }}
                 sx={{
                     color: "text.secondary",
                     borderTop: "1px solid",
                     borderTopColor: "divider",
                     '.MuiTablePagination-toolbar': {
-                        minHeight: 40, // More compact
+                        minHeight: 40,
                         paddingRight: 2
                     },
                     '.MuiTablePagination-select': {

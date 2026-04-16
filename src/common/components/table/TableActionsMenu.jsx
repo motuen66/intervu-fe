@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { commonMenuProps } from '../form/FormSelect';
 
 export default function TableActionsMenu({ actions = [] }) {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -19,10 +20,20 @@ export default function TableActionsMenu({ actions = [] }) {
             </IconButton>
             <Menu
                 anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)}
+                {...commonMenuProps}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={{
-                    sx: { minWidth: 120, borderRadius: '6px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', border: '1px solid #E2E8F0', padding: 0 }
+                slotProps={{
+                    ...commonMenuProps.slotProps,
+                    paper: {
+                        sx: { 
+                            minWidth: 120, 
+                            borderRadius: '6px', 
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', 
+                            border: '1px solid #E2E8F0', 
+                            padding: 0 
+                        }
+                    }
                 }}
             >
                 {visibleActions.map((act, idx) => (
