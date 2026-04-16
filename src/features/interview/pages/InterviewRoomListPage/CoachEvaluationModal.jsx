@@ -1,5 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Modal, Slider, Stack, TextField, Typography } from "@mui/material";
+import {
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    FormControl,
+    FormControlLabel,
+    FormHelperText,
+    Modal,
+    Radio,
+    RadioGroup,
+    Slider,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
@@ -11,6 +26,34 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     const [items, setItems] = useState([]);
     const [error, setError] = useState("");
     const [isCompleted, setIsCompleted] = useState(false);
+    const [others, setOthers] = useState("");
+    const [hireDecision, setHireDecision] = useState("");
+
+    const normalizeHireDecision = (value) => {
+        if (value === true) return "yes";
+        if (value === false) return "no";
+        if (typeof value === "string") {
+            const normalized = value.trim().toLowerCase();
+            if (normalized === "yes" || normalized === "no") return normalized;
+            if (normalized === "true") return "yes";
+            if (normalized === "false") return "no";
+        }
+        return "";
+    };
+
+    const parseEvaluationStructure = (data) => {
+        const raw = data?.evaluationStructureJson ?? data?.EvaluationStructureJson ?? data?.evaluationStructure ?? data?.EvaluationStructure;
+        if (!raw) return null;
+        if (typeof raw === "string") {
+            try {
+                return JSON.parse(raw);
+            } catch (err) {
+                return null;
+            }
+        }
+        if (typeof raw === "object") return raw;
+        return null;
+    };
 
     const interviewLabel = useMemo(() => {
         if (!room?.scheduledTime) return "";
@@ -40,9 +83,15 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                     alertErrorMessage: true,
                 });
                 const data = res?.data;
+                const evaluationStructure = parseEvaluationStructure(data);
                 
                 // Normalize keys to ensure consistency (handles both lowercase and PascalCase from API)
-                const normalizedResults = (data?.evaluationResults || []).map(item => ({
+                const normalizedResults = (
+                    data?.evaluationResults ||
+                    evaluationStructure?.evaluationResults ||
+                    evaluationStructure?.results ||
+                    []
+                ).map(item => ({
                     type: item.type || item.Type || "",
                     question: item.question || item.Question || "",
                     score: item.score ?? item.Score ?? 0,
@@ -51,6 +100,15 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
 
                 setItems(normalizedResults);
                 setIsCompleted(Boolean(data?.isEvaluationCompleted));
+                setOthers(data?.others ?? data?.Others ?? evaluationStructure?.others ?? "");
+                setHireDecision(
+                    normalizeHireDecision(
+                        data?.hireDecision ??
+                            data?.isHire ??
+                            evaluationStructure?.hireDecision ??
+                            "",
+                    ),
+                );
             } catch (err) {
                 setError(err?.response?.data?.message || "Failed to load evaluation form.");
             } finally {
@@ -77,16 +135,47 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     const handleSubmit = async () => {
         if (!room?.id) return;
         setError("");
+        const othersWordCount = others.trim() ? others.trim().split(/\s+/).length : 0;
         if (items.some((item) => item.score < 0 || item.score > 10)) {
             setError("Scores must be between 0 and 10.");
             return;
         }
+        if (othersWordCount > 300) {
+            setError("Others must be 300 words or fewer.");
+            return;
+        }
+        if (!hireDecision) {
+            setError("Please choose a hire decision.");
+            return;
+        }
         setSubmitting(true);
         try {
+            const cleanedOthers = others.trim();
+            const pascalCaseResults = items.map((item) => ({
+                Type: item.type,
+                Score: item.score,
+                Answer: item.answer ?? "",
+                Question: item.question,
+            }));
+            const evaluationStructurePayload = {
+                results: items,
+                evaluationResults: pascalCaseResults,
+                others: cleanedOthers,
+                hireDecision,
+                hideDecision: hireDecision,
+            };
+            const evaluationStructureJson = JSON.stringify(evaluationStructurePayload);
+
             await callApi({
                 method: METHOD.POST,
                 endpoint: interviewEndPoints.SUBMIT_COACH_EVALUATION(room.id),
-                arg: { results: items },
+                arg: {
+                    results: items,
+                    others: cleanedOthers,
+                    hireDecision,
+                    evaluationStructure: evaluationStructureJson,
+                    evaluationStructureJson,
+                },
                 displaySuccessMessage: true,
                 alertErrorMessage: true,
             });
@@ -110,6 +199,8 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
             return;
         }
         setItems([]);
+        setOthers("");
+        setHireDecision("");
         setError("");
         setIsCompleted(false);
         if (onClose) {
@@ -131,6 +222,19 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
         if (score <= 6) return "info.main";
         if (score <= 8) return "primary.main";
         return "success.main";
+    };
+
+    const othersWordCount = others.trim() ? others.trim().split(/\s+/).length : 0;
+    const handleOthersChange = (event) => {
+        const nextValue = event.target.value;
+        const words = nextValue.trim() ? nextValue.trim().split(/\s+/) : [];
+
+        if (words.length <= 300) {
+            setOthers(nextValue);
+            return;
+        }
+
+        setOthers(words.slice(0, 300).join(" "));
     };
 
     return (
@@ -229,6 +333,53 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                 </Box>
                             ))
                         )}
+                        <Box
+                            sx={{
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                p: 2,
+                            }}
+                        >
+                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                Others
+                            </Typography>
+                            <TextField
+                                label="Additional notes"
+                                value={others}
+                                onChange={handleOthersChange}
+                                multiline
+                                minRows={3}
+                                fullWidth
+                                sx={(theme) => fieldStyles.outlinedFocus(theme)}
+                                error={othersWordCount > 300}
+                                helperText={`${othersWordCount}/300 words`}
+                            />
+                        </Box>
+
+                        <Box
+                            sx={{
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                p: 2,
+                            }}
+                        >
+                            <FormControl required error={!hireDecision && !!error}>
+                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                    Hire Decision
+                                </Typography>
+                                <RadioGroup
+                                    row
+                                    value={hireDecision}
+                                    onChange={(e) => setHireDecision(e.target.value)}
+                                >
+                                    <FormControlLabel value="yes" control={<Radio />} label="Yes" />
+                                    <FormControlLabel value="no" control={<Radio />} label="No" />
+                                </RadioGroup>
+                                {!hireDecision && !!error && <FormHelperText>Please select Yes or No.</FormHelperText>}
+                            </FormControl>
+                        </Box>
                         <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ pt: 1 }}>
                             <Button
                                 variant="contained"

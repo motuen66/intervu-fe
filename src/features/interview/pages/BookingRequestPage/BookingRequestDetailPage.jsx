@@ -315,6 +315,9 @@ export default function BookingRequestDetailPage() {
 
     const isPending = detail.status === BOOKING_REQUEST_STATUS.PENDING;
     const isAccepted = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
+    const hasCompletedInterview = (detail.rounds || []).some(
+        (round) => String(round?.interviewRoomStatus || "").toUpperCase() === "COMPLETED",
+    );
     const isPendingApproval = detail.status === BOOKING_REQUEST_STATUS.PendingForApprovalAfterPayment;
 
     return (
@@ -348,7 +351,7 @@ export default function BookingRequestDetailPage() {
 
                     {/* Primary Action Context Dependent */}
                     <Stack direction="row" spacing={2}>
-                        {isCoach && isPendingApproval && (
+                        {isCoach && isPaid && !hasCompletedInterview && (
                             <>
                                 <SecondaryButton
                                     onClick={handleAccept}
@@ -370,7 +373,7 @@ export default function BookingRequestDetailPage() {
                             </>
                         )}
 
-                        {!isCoach && (
+                        {!isCoach && !hasCompletedInterview && (
                             <>
                                 {isPending && (
                                     <SecondaryButton
