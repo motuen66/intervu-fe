@@ -103,6 +103,7 @@ export const cancelBookingRequest = async (id) => {
     const result = await callApi({
         method: METHOD.POST,
         endpoint: bookingRequestEndPoints.CANCEL(id),
+        alertErrorMessage: true,
     });
     return result.data;
 };

@@ -63,7 +63,7 @@ function BankSelection({ selectedBin, valueBin, accountNumber, onChange, onBankB
                 filterOptions={filter}
                 value={selectedBank}
                 onChange={handleBankChange}
-                getOptionLabel={(bank) => bank?.name || ""}
+                getOptionLabel={(bank) => bank?.short_name || ""}
                 renderInput={(params) => (
                     <TextField {...params} label="Select Bank" placeholder="Search name or code..." fullWidth />
                 )}
