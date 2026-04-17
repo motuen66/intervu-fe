@@ -352,7 +352,8 @@ export default function BookingRequestDetailPage() {
 
                     {/* Primary Action Context Dependent */}
                     <Stack direction="row" spacing={2}>
-                        {isCoach && isPaid && !hasCompletedInterview && (
+                        {/* Legacy: coach accept/reject booking request */}
+                        {/* {isCoach && isPaid && !hasCompletedInterview && (
                             <>
                                 <SecondaryButton
                                     onClick={handleAccept}
@@ -372,7 +373,7 @@ export default function BookingRequestDetailPage() {
                                     Reject
                                 </DangerButton>
                             </>
-                        )}
+                        )} */}
 
                         {!isCoach && !hasCompletedInterview && (
                             <>
