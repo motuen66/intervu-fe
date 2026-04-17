@@ -322,7 +322,7 @@ function FilterBar({ onOpenSmartMatch }) {
                   />
                 </Box>
 
-                <Box sx={{ flex: 1 }}>
+                {/* <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', mb: 1.5, display: 'block' }}>
                     PRICE / HOUR (VND)
                   </Typography>
@@ -336,7 +336,7 @@ function FilterBar({ onOpenSmartMatch }) {
                     onMaxChange={(next) => handleLocalFilterChange('maxPrice', Math.max(next, displayPriceMin))}
                     formatValue={(v) => `${formatVnd(v)} đ`}
                   />
-                </Box>
+                </Box> */}
 
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', mb: 1.5, display: 'block' }}>

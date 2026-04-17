@@ -246,7 +246,7 @@ const Navbar = () => {
                     },
                 ],
             },
-            { label: "Pricing", path: "#", type: "link", icon: CreditCard, sectionLabel: "MEMBERSHIP" },
+            // { label: "Pricing", path: "#", type: "link", icon: CreditCard, sectionLabel: "MEMBERSHIP" },
         ],
         CANDIDATE: [
             { label: "Find Coaches", path: "/home", type: "link", icon: Search, sectionLabel: "DISCOVER" },
@@ -283,7 +283,7 @@ const Navbar = () => {
                     },
                 ],
             },
-            { label: "Pricing", path: "#", type: "link", icon: CreditCard, sectionLabel: "MEMBERSHIP" },
+            // { label: "Pricing", path: "#", type: "link", icon: CreditCard, sectionLabel: "MEMBERSHIP" },
         ],
         COACH: [
             { label: "Dashboard", path: "/dashboard", type: "link", icon: LayoutDashboard, sectionLabel: "WORKSPACE" },
