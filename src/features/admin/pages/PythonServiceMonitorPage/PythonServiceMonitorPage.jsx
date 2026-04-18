@@ -20,6 +20,9 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip as RechartsTooltip,
+    PieChart,
+    Pie,
+    Cell,
 } from "recharts";
 import { RefreshCw, Zap, Clock, Hash, TrendingUp, Layers, Check, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -137,6 +140,102 @@ function useEndpointColors(endpoints) {
     }, [endpoints, theme]);
 }
 
+function EndpointLegend({ endpoints }) {
+    const theme = useTheme();
+    const colorMap = useEndpointColors(endpoints);
+    return (
+        <BaseCard sx={{ p: 2, mb: 2.5 }}>
+            <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", rowGap: 1, justifyContent: "flex-start" }}>
+                <LegendSwatch color={theme.palette.text.disabled} label="COUNT" textColor={theme.palette.text.secondary} />
+                {endpoints.map((ep) => (
+                    <LegendSwatch key={ep} color={colorMap[ep]} label={ep.toUpperCase()} textColor={theme.palette.text.primary} />
+                ))}
+            </Stack>
+        </BaseCard>
+    );
+}
+
+function UsagePieChart({ series, endpoints }) {
+    const theme = useTheme();
+    const colorMap = useEndpointColors(endpoints);
+
+    const data = useMemo(() => {
+        const totals = {};
+        endpoints.forEach((ep) => {
+            totals[ep] = 0;
+        });
+        (series ?? []).forEach((p) => {
+            const counts = p.countByEndpoint ?? {};
+            endpoints.forEach((ep) => {
+                totals[ep] += Number(counts[ep] ?? 0);
+            });
+        });
+        return endpoints
+            .map((ep) => ({ name: ep, value: totals[ep] }))
+            .filter((d) => d.value > 0);
+    }, [series, endpoints]);
+
+    const grandTotal = data.reduce((s, d) => s + d.value, 0);
+
+    return (
+        <BaseCard sx={{ p: 3, height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
+                Distribution
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
+                Requests share per endpoint
+            </Typography>
+
+            {grandTotal > 0 ? (
+                <Box sx={{ width: "100%", height: 320 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={data}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={110}
+                                paddingAngle={2}
+                                stroke={theme.palette.background.paper}
+                                strokeWidth={2}
+                                isAnimationActive={false}
+                            >
+                                {data.map((entry) => (
+                                    <Cell key={entry.name} fill={colorMap[entry.name]} />
+                                ))}
+                            </Pie>
+                            <RechartsTooltip
+                                contentStyle={{
+                                    backgroundColor: theme.palette.background.paper,
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    borderRadius: 8,
+                                    fontSize: 12,
+                                    color: theme.palette.text.primary,
+                                }}
+                                labelStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
+                                itemStyle={{ color: theme.palette.text.primary }}
+                                formatter={(value, name) => {
+                                    const pct = grandTotal > 0 ? ((value / grandTotal) * 100).toFixed(1) : 0;
+                                    return [`${value} (${pct}%)`, name];
+                                }}
+                            />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </Box>
+            ) : (
+                <Box sx={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Typography variant="body2" color="text.secondary">
+                        No traffic in the selected window.
+                    </Typography>
+                </Box>
+            )}
+        </BaseCard>
+    );
+}
+
 function UsageLineChart({ series, endpoints, bucketUnit }) {
     const theme = useTheme();
     const colorMap = useEndpointColors(endpoints);
@@ -167,29 +266,13 @@ function UsageLineChart({ series, endpoints, bucketUnit }) {
         data.some((row) => endpoints.some((ep) => (row[keyMap[ep]] ?? 0) > 0));
 
     return (
-        <BaseCard sx={{ p: 3, mb: 4 }}>
+        <BaseCard sx={{ p: 3, height: "100%" }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
                 Rows
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
                 Requests per endpoint ({bucketUnit === "day" ? "per day" : "per hour"})
             </Typography>
-
-            <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: "wrap", rowGap: 1 }}>
-                <LegendSwatch
-                    color={theme.palette.text.disabled}
-                    label="COUNT"
-                    textColor={theme.palette.text.secondary}
-                />
-                {endpoints.map((ep) => (
-                    <LegendSwatch
-                        key={ep}
-                        color={colorMap[ep]}
-                        label={ep.toUpperCase()}
-                        textColor={theme.palette.text.primary}
-                    />
-                ))}
-            </Stack>
 
             {hasData ? (
                 <Box sx={{ width: "100%", height: 320 }}>
@@ -607,11 +690,23 @@ export default function PythonServiceMonitorPage() {
                         </Grid>
                     </Grid>
 
-                    <UsageLineChart
-                        series={metrics?.endpointSeries ?? []}
-                        endpoints={metrics?.seriesEndpoints ?? []}
-                        bucketUnit={metrics?.seriesBucket ?? "hour"}
-                    />
+                    <EndpointLegend endpoints={metrics?.seriesEndpoints ?? []} />
+
+                    <Grid container spacing={2.5} sx={{ mb: 4 }}>
+                        <Grid size={{ xs: 12, lg: 8 }}>
+                            <UsageLineChart
+                                series={metrics?.endpointSeries ?? []}
+                                endpoints={metrics?.seriesEndpoints ?? []}
+                                bucketUnit={metrics?.seriesBucket ?? "hour"}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, lg: 4 }}>
+                            <UsagePieChart
+                                series={metrics?.endpointSeries ?? []}
+                                endpoints={metrics?.seriesEndpoints ?? []}
+                            />
+                        </Grid>
+                    </Grid>
 
                     <CoverageCard />
 
