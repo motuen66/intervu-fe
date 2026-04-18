@@ -1,50 +1,72 @@
+import { lazy, Suspense } from "react";
+import { Navigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { adminRoutes } from "./adminRoutes";
 import { authRoutes } from "./authRoutes";
 import { interviewerRoutes } from "./coachRoutes.jsx";
 import { candidateRoutes } from "./candidateRoutes.jsx";
-import { Navigate } from "react-router-dom";
 import EmptyLayout from "../layouts/EmptyLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
-import HomePage from "../../features/home/pages/HomePage";
-import LandingPage from "../../features/landing/pages/LandingPage";
-import RootPage from "./RootPage";
-import InterviewerProfilePage from "../../features/profiles/coach/page/InterviewerProfilePage.jsx";
-import CandidateProfilePage from "../../features/profiles/candidate/page/CandidateProfilePage.jsx";
-import PublicCandidateProfilePage from "../../features/profiles/candidate/page/PublicCandidateProfilePage.jsx";
-import UserProfilePage from "../../features/profile/pages/UserProfilePage";
-import InterviewRoomListPage from "../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage";
-import InterviewRoomPage from "../../features/interview/pages/InterviewRoomPage/InterviewRoomPage";
-import BookingRequestListPage from "../../features/interview/pages/BookingRequestPage/BookingRequestListPage";
-import BookingRequestDetailPage from "../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage";
 
-import App from "../../App";
-import PaymentHistoryPage from "../../features/payments/pages/PaymentHistoryPage.jsx";
-import InterviewQuestionsPage from "../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx";
-import QuestionDetailPage from "../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx";
-import ShareExperiencePage from "../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx";
-import SavedQuestionsPage from "../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx";
-import PublicProfilePage from "../../features/profiles/page/PublicProfilePage.jsx";
+const HomePage = lazy(() => import("../../features/home/pages/HomePage"));
+const LandingPage = lazy(() => import("../../features/landing/pages/LandingPage"));
+const RootPage = lazy(() => import("./RootPage"));
+const CandidateProfilePage = lazy(() => import("../../features/profiles/candidate/page/CandidateProfilePage.jsx"));
+const PublicCandidateProfilePage = lazy(
+    () => import("../../features/profiles/candidate/page/PublicCandidateProfilePage.jsx"),
+);
+const UserProfilePage = lazy(() => import("../../features/profile/pages/UserProfilePage"));
+const InterviewRoomListPage = lazy(
+    () => import("../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage"),
+);
+const InterviewRoomPage = lazy(() => import("../../features/interview/pages/InterviewRoomPage/InterviewRoomPage"));
+const BookingRequestListPage = lazy(
+    () => import("../../features/interview/pages/BookingRequestPage/BookingRequestListPage"),
+);
+const BookingRequestDetailPage = lazy(
+    () => import("../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage"),
+);
+const App = lazy(() => import("../../App"));
+const PaymentHistoryPage = lazy(() => import("../../features/payments/pages/PaymentHistoryPage.jsx"));
+const InterviewQuestionsPage = lazy(
+    () => import("../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx"),
+);
+const QuestionDetailPage = lazy(
+    () => import("../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx"),
+);
+const ShareExperiencePage = lazy(
+    () => import("../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx"),
+);
+const SavedQuestionsPage = lazy(
+    () => import("../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx"),
+);
+const PublicProfilePage = lazy(() => import("../../features/profiles/page/PublicProfilePage.jsx"));
+
+const renderLazy = (LazyComponent, props = {}) => (
+    <Suspense fallback={null}>
+        <LazyComponent {...props} />
+    </Suspense>
+);
 
 export const routes = [
-    { path: "/", element: <RootPage /> },
-    { path: "/landing", element: <LandingPage /> },
+    { path: "/", element: renderLazy(RootPage) },
+    { path: "/landing", element: renderLazy(LandingPage) },
 
     // Auth routes
     { element: <EmptyLayout />, children: authRoutes },
 
     // Home page (public)
-    { element: <MainLayout />, children: [{ path: "/home", element: <HomePage /> }] },
+    { element: <MainLayout />, children: [{ path: "/home", element: renderLazy(HomePage) }] },
 
     // Questions pages (public)
     {
         element: <MainLayout />,
         children: [
-            { path: "/questions", element: <InterviewQuestionsPage /> },
-            { path: "/questions/share", element: <ShareExperiencePage /> },
-            { path: "/questions/saved", element: <SavedQuestionsPage /> },
-            { path: "/questions/:id", element: <QuestionDetailPage /> },
+            { path: "/questions", element: renderLazy(InterviewQuestionsPage) },
+            { path: "/questions/share", element: renderLazy(ShareExperiencePage) },
+            { path: "/questions/saved", element: renderLazy(SavedQuestionsPage) },
+            { path: "/questions/:id", element: renderLazy(QuestionDetailPage) },
         ],
     },
 
@@ -56,8 +78,8 @@ export const routes = [
             </ProtectedRoute>
         ),
         children: [
-            { path: "/user/profile", element: <UserProfilePage /> },
-            { path: "/settings", element: <UserProfilePage /> },
+            { path: "/user/profile", element: renderLazy(UserProfilePage) },
+            { path: "/settings", element: renderLazy(UserProfilePage) },
         ],
     },
 
@@ -68,7 +90,7 @@ export const routes = [
                 <MainLayout />
             </ProtectedRoute>
         ),
-        children: [{ path: "/payment-history", element: <PaymentHistoryPage /> }],
+        children: [{ path: "/payment-history", element: renderLazy(PaymentHistoryPage) }],
     },
 
     {
@@ -78,15 +100,15 @@ export const routes = [
             </ProtectedRoute>
         ),
         children: [
-            { path: "/", element: <App /> },
+            { path: "/", element: renderLazy(App) },
 
-            { path: "/interview", element: <InterviewRoomListPage /> },
+            { path: "/interview", element: renderLazy(InterviewRoomListPage) },
             {
                 path: "/interview",
                 element: <MainLayout />,
-                children: [{ index: true, element: <InterviewRoomListPage /> }],
+                children: [{ index: true, element: renderLazy(InterviewRoomListPage) }],
             },
-            { path: "/interview/room/:roomId", element: <InterviewRoomPage /> },
+            { path: "/interview/room/:roomId", element: renderLazy(InterviewRoomPage) },
         ],
     },
 
@@ -98,15 +120,15 @@ export const routes = [
             </ProtectedRoute>
         ),
         children: [
-            { path: "/booking-requests", element: <BookingRequestListPage /> },
-            { path: "/booking-requests/:id", element: <BookingRequestDetailPage /> },
+            { path: "/booking-requests", element: renderLazy(BookingRequestListPage) },
+            { path: "/booking-requests/:id", element: renderLazy(BookingRequestDetailPage) },
         ],
     },
 
     // Public routes
     {
         element: <MainLayout />,
-        children: [{ path: "/profile/:slugProfileUrl", element: <PublicProfilePage /> }],
+        children: [{ path: "/profile/:slugProfileUrl", element: renderLazy(PublicProfilePage) }],
     },
 
     // Candidate specific routes
@@ -116,7 +138,7 @@ export const routes = [
                 <MainLayout />
             </ProtectedRoute>
         ),
-        children: [...candidateRoutes, { path: "/candidate/profile", element: <CandidateProfilePage /> }],
+        children: [...candidateRoutes, { path: "/candidate/profile", element: renderLazy(CandidateProfilePage) }],
     },
     {
         element: (
@@ -124,7 +146,7 @@ export const routes = [
                 <MainLayout />
             </ProtectedRoute>
         ),
-        children: [{ path: "/candidate/profile/:profileUrl", element: <PublicCandidateProfilePage /> }],
+        children: [{ path: "/candidate/profile/:profileUrl", element: renderLazy(PublicCandidateProfilePage) }],
     },
     {
         element: (

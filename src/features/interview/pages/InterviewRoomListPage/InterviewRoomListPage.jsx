@@ -1,32 +1,31 @@
 import { Box, Typography, Stack, Tabs, Tab, Container, CircularProgress } from "@mui/material";
-// import CommonLoader from "../../../../common/components/loaders/CommonLoader";
-import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
-import { Plus as AddIcon } from "lucide-react";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import toast from "react-hot-toast";
 import { useEffect, useRef, useState } from "react";
+import axios from "axios";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 import { ROLES } from "../../../../common/constants/common.js";
 import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
 import FeedbackListModal from "./FeedbackListModal.jsx";
 import RescheduleRequestModal from "./RescheduleRequestModal.jsx";
 import JDMultiRoundRescheduleModal from "./JDMultiRoundRescheduleModal.jsx";
-import ConfirmModal from "../../../../common/components/ConfirmModal.jsx";
 // import AICVSelectionModal from "./components/AICVSelectionModal.jsx";
 import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
 import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
 import CoachEvaluationModal from "./CoachEvaluationModal.jsx";
 import PrecheckModal from "./PrecheckModal.jsx";
+import { userEndPoints } from "../../../../common/services/userApi.js";
 
 // Import sub-components
 import InterviewStats from "./components/InterviewStats.jsx";
 import UpcomingTab from "./components/UpcomingTab.jsx";
 import PastHistoryTab from "./components/PastHistoryTab.jsx";
 import RescheduleRequestsTab from "./components/RescheduleRequestsTab.jsx";
+import CancelInterviewConfirmDialog from "./components/CancelInterviewConfirmDialog.jsx";
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
@@ -66,6 +65,16 @@ function InterviewRoomListPage() {
         open: false,
         room: null,
         previewRefundPercent: null,
+        previewRefundAmount: null,
+    });
+    const [cancelBankInfoState, setCancelBankInfoState] = useState({
+        loading: false,
+        bankBinNumber: "",
+        maskedAccountNumber: "",
+        bankCode: "",
+        bankShortName: "",
+        bankLogo: "",
+        error: "",
     });
     const [activeTab, setActiveTab] = useState(0);
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
@@ -136,7 +145,7 @@ function InterviewRoomListPage() {
         const grouped = {};
         const standalone = [];
 
-        roomsList.forEach(room => {
+        roomsList.forEach((room) => {
             if (room.bookingRequestId) {
                 if (!grouped[room.bookingRequestId]) {
                     grouped[room.bookingRequestId] = [];
@@ -147,16 +156,16 @@ function InterviewRoomListPage() {
             }
         });
 
-        const combinedRooms = Object.values(grouped).map(group => {
+        const combinedRooms = Object.values(grouped).map((group) => {
             if (group.length === 1) return group[0];
 
             // Sort by roundNumber (or scheduledTime)
             group.sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
 
             // Find current/next round
-            let activeRoundIndex = group.findIndex(r => r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
+            let activeRoundIndex = group.findIndex((r) => r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
             if (activeRoundIndex === -1) {
-                activeRoundIndex = group.findIndex(r => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED);
+                activeRoundIndex = group.findIndex((r) => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED);
             }
             if (activeRoundIndex === -1) {
                 // All done or cancelled, pick the last one or last completed
@@ -203,8 +212,12 @@ function InterviewRoomListPage() {
             console.log("Grouped Rooms:", groupedRooms);
 
             // Filter into Upcoming (0, 1) and Past (2, 3)
-            const upcomingRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED || r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
-            const pastRoomsList = groupedRooms.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED || r.status === INTERVIEW_ROOM_STATUS.CANCELLED);
+            const upcomingRoomsList = groupedRooms.filter(
+                (r) => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED || r.status === INTERVIEW_ROOM_STATUS.ON_GOING,
+            );
+            const pastRoomsList = groupedRooms.filter(
+                (r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED || r.status === INTERVIEW_ROOM_STATUS.CANCELLED,
+            );
 
             // Update state
             // State updates based on status filter
@@ -215,21 +228,20 @@ function InterviewRoomListPage() {
 
             // ALWAYS calculate stats based on grouped rooms shown in the list for UI consistency
             const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
-            
+
             // Calculate avgScore based on role
             // Candidate: Average of coach evaluation scores (room.score) - scale 10
             // Coach: Average of candidate feedback ratings (room.rating) - scale 5
-            const evaluatedRooms = completedRooms.filter(r => 
-                user.role === ROLES.CANDIDATE 
-                    ? typeof r.score === 'number' 
-                    : typeof r.rating === 'number'
+            const evaluatedRooms = completedRooms.filter((r) =>
+                user.role === ROLES.CANDIDATE ? typeof r.score === "number" : typeof r.rating === "number",
             );
 
             let avgScore = null;
             if (evaluatedRooms.length > 0) {
-                const totalScore = evaluatedRooms.reduce((acc, room) => 
-                    acc + (user.role === ROLES.CANDIDATE ? room.score : room.rating)
-                , 0);
+                const totalScore = evaluatedRooms.reduce(
+                    (acc, room) => acc + (user.role === ROLES.CANDIDATE ? room.score : room.rating),
+                    0,
+                );
                 avgScore = (totalScore / evaluatedRooms.length).toFixed(1);
             }
 
@@ -237,8 +249,8 @@ function InterviewRoomListPage() {
             const now = new Date();
             let nextSession = "—";
             const upcomingFutureRooms = upcomingRoomsList
-                .map(r => ({ ...r, dateObj: new Date(r.scheduledTime) }))
-                .filter(r => !isNaN(r.dateObj.getTime()) && r.dateObj >= now)
+                .map((r) => ({ ...r, dateObj: new Date(r.scheduledTime) }))
+                .filter((r) => !isNaN(r.dateObj.getTime()) && r.dateObj >= now)
                 .sort((a, b) => a.dateObj - b.dateObj);
 
             if (upcomingFutureRooms.length > 0) {
@@ -307,14 +319,19 @@ function InterviewRoomListPage() {
     const checkPendingCoachEvaluations = async (prefetchedRooms = null) => {
         try {
             const rooms = prefetchedRooms || [];
-            
+
             if (!Array.isArray(rooms)) return;
             // not just the ones currently marked as 'COMPLETED' in the top-level grouping.
             const pendingRoom = rooms.find(
                 (room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED && room.isEvaluationCompleted === false,
             );
-            
-            console.log("Checked pending coach evaluations. Total rooms:", rooms.length, "Pending evaluation room:", pendingRoom);
+
+            console.log(
+                "Checked pending coach evaluations. Total rooms:",
+                rooms.length,
+                "Pending evaluation room:",
+                pendingRoom,
+            );
             if (pendingRoom) {
                 setCoachEvaluationState({ open: true, room: pendingRoom });
             }
@@ -385,11 +402,120 @@ function InterviewRoomListPage() {
             else previewRefundPercent = 0;
         }
 
-        setCancelConfirmState({ open: true, room, previewRefundPercent });
+        const parseAmount = (value) => {
+            if (typeof value === "number") return value;
+            const raw = String(value ?? "")
+                .replace(/,/g, "")
+                .trim();
+            const parsed = Number(raw);
+            return Number.isNaN(parsed) ? null : parsed;
+        };
+
+        const baseAmount =
+            parseAmount(room?.totalAmount) ??
+            parseAmount(room?.amount) ??
+            parseAmount(room?.paidAmount) ??
+            parseAmount(room?.paymentAmount) ??
+            parseAmount(room?.price) ??
+            null;
+
+        const previewRefundAmount =
+            typeof baseAmount === "number" && typeof previewRefundPercent === "number"
+                ? Math.max(0, Math.round((baseAmount * previewRefundPercent) / 100))
+                : null;
+
+        setCancelConfirmState({
+            open: true,
+            room,
+            previewRefundPercent,
+            previewRefundAmount,
+        });
+
+        // Load refund destination details for this candidate-facing cancel flow.
+        loadCancelRefundBankInfo();
     };
 
     const handleCloseCancelConfirm = () => {
-        setCancelConfirmState({ open: false, room: null, previewRefundPercent: null });
+        setCancelConfirmState({ open: false, room: null, previewRefundPercent: null, previewRefundAmount: null });
+        setCancelBankInfoState({
+            loading: false,
+            bankBinNumber: "",
+            maskedAccountNumber: "",
+            bankCode: "",
+            bankShortName: "",
+            bankLogo: "",
+            error: "",
+        });
+    };
+
+    const loadCancelRefundBankInfo = async () => {
+        setCancelBankInfoState((prev) => ({
+            ...prev,
+            loading: true,
+            error: "",
+        }));
+
+        try {
+            const profileResponse = await callApiLocal({
+                method: METHOD.GET,
+                endpoint: userEndPoints.GET_ME,
+            });
+
+            const profile = profileResponse?.data || {};
+            const bankProfile = profile?.candidateProfile || profile?.coachProfile || null;
+            const bankBinNumber = String(bankProfile?.bankBinNumber || "").trim();
+            const maskedAccountNumber = String(bankProfile?.bankAccountNumber || "").trim();
+
+            if (!bankBinNumber || !maskedAccountNumber) {
+                setCancelBankInfoState({
+                    loading: false,
+                    bankBinNumber,
+                    maskedAccountNumber,
+                    bankCode: "",
+                    bankShortName: "",
+                    bankLogo: "",
+                    error: "You have not configured bank information yet.",
+                });
+                return;
+            }
+
+            const banksResponse = await axios.get("https://api.vietqr.io/v2/banks");
+            const banks = Array.isArray(banksResponse?.data?.data) ? banksResponse.data.data : [];
+            const matchedBank = banks.find((bank) => String(bank?.bin) === bankBinNumber);
+
+            if (!matchedBank) {
+                setCancelBankInfoState({
+                    loading: false,
+                    bankBinNumber,
+                    maskedAccountNumber,
+                    bankCode: "",
+                    bankShortName: "",
+                    bankLogo: "",
+                    error: "Cannot resolve bank metadata for your BIN.",
+                });
+                return;
+            }
+
+            setCancelBankInfoState({
+                loading: false,
+                bankBinNumber,
+                maskedAccountNumber,
+                bankCode: matchedBank?.code || "",
+                bankShortName: matchedBank?.shortName || matchedBank?.short_name || matchedBank?.name || "",
+                bankLogo: matchedBank?.logo || "",
+                error: "",
+            });
+        } catch {
+            setCancelBankInfoState({
+                loading: false,
+                bankBinNumber: "",
+                maskedAccountNumber: "",
+                bankCode: "",
+                bankShortName: "",
+                bankLogo: "",
+                error: "Failed to load your bank information.",
+            });
+        }
     };
 
     const handleConfirmCancelInterview = async () => {
@@ -402,9 +528,10 @@ function InterviewRoomListPage() {
         try {
             // Multi-round bookings (rounds.length > 1) use CANCEL_BOOKING_REQUEST
             // Single-round or standalone sessions use CANCEL_INTERVIEW
-            const endpoint = (room.rounds?.length > 1)
-                ? interviewEndPoints.CANCEL_BOOKING_REQUEST(room.bookingRequestId)
-                : interviewEndPoints.CANCEL_INTERVIEW(room.id);
+            const endpoint =
+                room.rounds?.length > 1
+                    ? interviewEndPoints.CANCEL_BOOKING_REQUEST(room.bookingRequestId)
+                    : interviewEndPoints.CANCEL_INTERVIEW(room.id);
 
             const response = await callApiLocal({
                 method: METHOD.POST,
@@ -628,17 +755,13 @@ function InterviewRoomListPage() {
                     />
                 )}
 
-                <ConfirmModal
-                    show={cancelConfirmState.open}
-                    title="Cancel Interview"
-                    message={`Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${cancelConfirmState.previewRefundPercent === null
-                            ? "Unable to calculate refund preview."
-                            : `${cancelConfirmState.previewRefundPercent}% of the paid amount`
-                        }`}
+                <CancelInterviewConfirmDialog
+                    open={cancelConfirmState.open}
+                    onClose={handleCloseCancelConfirm}
                     onConfirm={handleConfirmCancelInterview}
-                    onCancel={handleCloseCancelConfirm}
-                    confirmText="Cancel Interview"
-                    cancelText="Keep Interview"
+                    previewRefundPercent={cancelConfirmState.previewRefundPercent}
+                    previewRefundAmount={cancelConfirmState.previewRefundAmount}
+                    bankInfo={cancelBankInfoState}
                 />
             </Container>
             <GeneratedQuestionsModal

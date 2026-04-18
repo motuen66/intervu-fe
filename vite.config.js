@@ -13,12 +13,8 @@ export default defineConfig(({ mode, command }) => {
         .map((h) => h.trim())
         .filter(Boolean);
 
-    const allowedHosts = [
-        "supereminent-alita-honorless.ngrok-free.dev",
-        ".ngrok-free.dev",
-        ...allowedHostsFromEnv,
-    ];
-    
+    const allowedHosts = ["supereminent-alita-honorless.ngrok-free.dev", ".ngrok-free.dev", ...allowedHostsFromEnv];
+
     let https = false;
     if (isLocalHttps) {
         try {
@@ -36,6 +32,23 @@ export default defineConfig(({ mode, command }) => {
     return {
         plugins: [react()],
         assetsInclude: ["**/*.lottie"],
+        build: {
+            rollupOptions: {
+                output: {
+                    manualChunks(id) {
+                        if (id.includes("node_modules")) {
+                            if (id.includes("/three/")) return "vendor-three";
+                            if (id.includes("@fullcalendar")) return "vendor-fullcalendar";
+                            if (id.includes("@monaco-editor") || id.includes("monaco-editor")) return "vendor-monaco";
+                            if (id.includes("recharts")) return "vendor-recharts";
+                            if (id.includes("@xyflow")) return "vendor-xyflow";
+                            if (id.includes("gsap")) return "vendor-gsap";
+                        }
+                        return undefined;
+                    },
+                },
+            },
+        },
         server: {
             host: true,
             allowedHosts,

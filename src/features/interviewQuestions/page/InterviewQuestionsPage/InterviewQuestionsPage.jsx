@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Button, CircularProgress, MenuItem, Pagination, Stack, Typography } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -13,6 +13,7 @@ import FormSelect from "../../../../common/components/form/FormSelect";
 
 export default function InterviewQuestionsPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [questions, setQuestions] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(null);
@@ -48,6 +49,14 @@ export default function InterviewQuestionsPage() {
             })
             .catch(() => setCompanies([]));
     }, []);
+
+    // Seed the keyword from ?skill= so deep-links from the roadmap filter the list
+    useEffect(() => {
+        const skillParam = searchParams.get("skill");
+        if (skillParam) {
+            setSidebarSearch(skillParam);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         setPage(1);

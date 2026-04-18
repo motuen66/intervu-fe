@@ -79,6 +79,19 @@ const RoundResultItem = ({ round }) => {
     const [hasLoaded, setHasLoaded] = useState(false);
 
     const interviewRoomId = round?.interviewRoomId;
+    const parseEvaluationStructure = (data) => {
+        const raw = data?.evaluationStructureJson ?? data?.EvaluationStructureJson ?? data?.evaluationStructure ?? data?.EvaluationStructure;
+        if (!raw) return null;
+        if (typeof raw === 'string') {
+            try {
+                return JSON.parse(raw);
+            } catch {
+                return null;
+            }
+        }
+        if (typeof raw === 'object') return raw;
+        return null;
+    };
 
     React.useEffect(() => {
         const fetchData = async () => {
@@ -110,7 +123,16 @@ const RoundResultItem = ({ round }) => {
         fetchData();
     }, [interviewRoomId, hasLoaded, round]);
 
-    const rawResults = evaluation?.evaluationResults || [];
+    const evaluationStructure = parseEvaluationStructure(evaluation || {});
+    const rawResults = evaluation?.evaluationResults || evaluationStructure?.results || [];
+    const resolvedOthers = evaluation?.others ?? evaluationStructure?.others;
+    const resolvedHireDecision =
+        evaluation?.hireDecision ??
+        evaluation?.hideDecision ??
+        evaluation?.isHire ??
+        evaluation?.IsHire ??
+        evaluationStructure?.hireDecision ??
+        evaluationStructure?.hideDecision;
     const skills = rawResults.map((result, i) => ({
         name: result?.question || result?.criterion || result?.name || `Criteria ${i + 1}`,
         score: typeof result?.score === 'number' ? result.score : null,
@@ -246,6 +268,25 @@ const RoundResultItem = ({ round }) => {
                             </Grid>
                         ))}
                     </Grid>
+                    {(resolvedHireDecision !== undefined || resolvedOthers) && (
+                        <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #f1f5f9' }}>
+                            {resolvedOthers && (
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#0f172a', fontWeight: 700, }}>
+                                    <strong>Others:</strong> {resolvedOthers}
+                                </Typography>
+                            )}
+                            {resolvedHireDecision !== undefined && (
+                                <Typography variant="body2" sx={{ color: '#0f172a', fontWeight: 700, mb: resolvedOthers ? 1 : 0 }}>
+                                    Hire Decision:{' '}
+                                    {typeof resolvedHireDecision === 'boolean'
+                                        ? (resolvedHireDecision ? 'Yes' : 'No')
+                                        : String(resolvedHireDecision).toLowerCase() === 'yes' || String(resolvedHireDecision).toLowerCase() === 'true'
+                                          ? 'Yes'
+                                          : 'No'}
+                                </Typography>
+                            )}
+                        </Box>
+                    )}
 
                     {/* ACTION: View Room (View Only) */}
                     {(() => {

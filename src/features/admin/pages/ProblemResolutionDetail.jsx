@@ -25,7 +25,8 @@ import {
     Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ReplayIcon from "@mui/icons-material/Replay";
+// import ReplayIcon from "@mui/icons-material/Replay";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import toast from "react-hot-toast";
 import { axiosInstance, callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
@@ -120,6 +121,7 @@ function ProblemResolutionDetail() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [downloadingAudio, setDownloadingAudio] = useState(false);
+    const [audioUrl, setAudioUrl] = useState(null);
     const [errorMessage, setErrorMessage] = useState("");
 
     const [reportDetail, setReportDetail] = useState(null);
@@ -230,6 +232,15 @@ function ProblemResolutionDetail() {
         loadDetail();
     }, [loadDetail]);
 
+    // Clean up audio URL when component unmounts
+    useEffect(() => {
+        return () => {
+            if (audioUrl) {
+                window.URL.revokeObjectURL(audioUrl);
+            }
+        };
+    }, [audioUrl]);
+
     const resolvePayload = useMemo(() => {
         const parsedRefund = Number(refundAmount);
         const safeRefundAmount = Number.isNaN(parsedRefund) ? 0 : Math.max(0, parsedRefund);
@@ -284,11 +295,51 @@ function ProblemResolutionDetail() {
         }
     };
 
+    const handleLoadAudio = async () => {
+        const recordingSessionId = reportDetail?.roomId || routeRoomId;
+
+        if (!recordingSessionId) {
+            toast.error("Missing recording session id");
+            return;
+        }
+
+        if (audioUrl) return; // Already loaded
+
+        setDownloadingAudio(true);
+        try {
+            const response = await axiosInstance.get(adminEndPoints.DOWNLOAD_FULL_RECORDING(recordingSessionId), {
+                responseType: "blob",
+            });
+
+            const contentType = response?.headers?.["content-type"] || "audio/wav";
+            const blob = new Blob([response.data], { type: contentType });
+            const blobUrl = window.URL.createObjectURL(blob);
+            setAudioUrl(blobUrl);
+        } catch (error) {
+            const apiMessage = error?.response?.data?.message;
+            toast.error(apiMessage || "Failed to load recording");
+        } finally {
+            setDownloadingAudio(false);
+        }
+    };
+
+    /*
     const handleDownloadAudio = async () => {
         const recordingSessionId = reportDetail?.roomId || routeRoomId;
 
         if (!recordingSessionId) {
             toast.error("Missing recording session id");
+            return;
+        }
+
+        // If already loaded for playing, just use the existing URL
+        if (audioUrl) {
+            const link = document.createElement("a");
+            link.href = audioUrl;
+            link.download = `recording-${recordingSessionId}.wav`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
             return;
         }
 
@@ -316,6 +367,7 @@ function ProblemResolutionDetail() {
             setDownloadingAudio(false);
         }
     };
+    */
 
     const isResolvedOrRejected = reportDetail?.status === 1 || reportDetail?.status === 2;
     const isRefundDisabled = resolutionType !== "Refund";
@@ -444,16 +496,45 @@ function ProblemResolutionDetail() {
                     <Grid item xs={12} md={5}>
                         <Stack spacing={3}>
                             <SectionCard title="Booking Context">
-                                <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-                                    <SecondaryButton
+                                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 2 }}>
+                                    {!audioUrl && (
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<PlayArrowIcon />}
+                                            onClick={handleLoadAudio}
+                                            disabled={downloadingAudio || loading || !reportDetail}
+                                        >
+                                            {downloadingAudio ? "Loading..." : "Play Audio"}
+                                        </Button>
+                                    )}
+                                    {/* 
+                                    <Button
                                         variant="outlined"
                                         startIcon={<ReplayIcon />}
                                         onClick={handleDownloadAudio}
                                         disabled={downloadingAudio || loading || !reportDetail}
                                     >
-                                        {downloadingAudio ? "Downloading..." : "Download Audio"}
-                                    </SecondaryButton>
+                                        {downloadingAudio && !audioUrl ? "Downloading..." : "Download"}
+                                    </Button>
+                                    */}
                                 </Box>
+
+                                {audioUrl && (
+                                    <Box sx={{ mb: 3, p: 2, bgcolor: "action.hover", borderRadius: 2 }}>
+                                        <Typography variant="caption" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+                                            RECORDING PLAYER
+                                        </Typography>
+                                        <audio
+                                            controls
+                                            controlsList="nodownload"
+                                            src={audioUrl}
+                                            style={{ width: "100%" }}
+                                        >
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </Box>
+                                )}
+
                                 <DetailRow label="Coach" value={reportDetail?.booking?.coachName} />
                                 <DetailRow label="Candidate" value={reportDetail?.booking?.candidateName} />
                                 <DetailRow label="Service" value={reportDetail?.booking?.serviceName} />

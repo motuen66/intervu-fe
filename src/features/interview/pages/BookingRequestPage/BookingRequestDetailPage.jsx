@@ -36,11 +36,16 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import toast from "react-hot-toast";
+import axios from "axios";
 import SessionResultSection from "./components/SessionResultSection";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { SecondaryButton, DangerButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { CvDialog } from "../../../../features/profiles/components/CvDialog";
+import { callApi } from "../../../../common/utils/apiConnector";
+import { METHOD } from "../../../../common/constants/api";
+import { userEndPoints } from "../../../../common/services/userApi";
+import CancelInterviewConfirmDialog from "../InterviewRoomListPage/components/CancelInterviewConfirmDialog";
 import "./BookingRequestPage.css";
 import { trackInitiatePayment, trackCreateBooking, trackServiceUsed } from "../../../../utils/analytics";
 
@@ -113,13 +118,33 @@ export default function BookingRequestDetailPage() {
     const [paying, setPaying] = useState(false);
     const [cancelling, setCancelling] = useState(false);
     const [cancellingRoundId, setCancellingRoundId] = useState(null);
+    const [cancelRequestConfirmState, setCancelRequestConfirmState] = useState({
+        open: false,
+        previewRefundPercent: null,
+        previewRefundAmount: null,
+    });
+    const [cancelBankInfoState, setCancelBankInfoState] = useState({
+        loading: false,
+        bankBinNumber: "",
+        maskedAccountNumber: "",
+        bankCode: "",
+        bankShortName: "",
+        bankLogo: "",
+        error: "",
+    });
 
     // Reject dialog state
     const [rejectOpen, setRejectOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState("");
 
     // Cancel round dialog state
-    const [cancelRoundTarget, setCancelRoundTarget] = useState(null); // { id, roundNumber }
+    const [cancelRoundConfirmState, setCancelRoundConfirmState] = useState({
+        open: false,
+        roundId: null,
+        roundNumber: null,
+        previewRefundPercent: null,
+        previewRefundAmount: null,
+    });
     const [documentDialog, setDocumentDialog] = useState({ open: false, title: "", url: "" });
 
     const openDocumentDialog = (title, url) => {
@@ -146,7 +171,9 @@ export default function BookingRequestDetailPage() {
                     // Clean up URL params
                     window.history.replaceState({}, "", window.location.pathname);
                 }
-            } catch { /* ignore polling errors */ }
+            } catch {
+                /* ignore polling errors */
+            }
         }, 3000);
 
         // Stop polling after 60 seconds
@@ -264,6 +291,207 @@ export default function BookingRequestDetailPage() {
         }
     };
 
+    const loadCancelRefundBankInfo = async () => {
+        setCancelBankInfoState((prev) => ({
+            ...prev,
+            loading: true,
+            error: "",
+        }));
+
+        try {
+            const profileResponse = await callApi({
+                method: METHOD.GET,
+                endpoint: userEndPoints.GET_ME,
+                useGlobalLoading: false,
+            });
+
+            const profile = profileResponse?.data || {};
+            const bankProfile = profile?.candidateProfile || profile?.coachProfile || null;
+            const bankBinNumber = String(bankProfile?.bankBinNumber || "").trim();
+            const maskedAccountNumber = String(bankProfile?.bankAccountNumber || "").trim();
+
+            if (!bankBinNumber || !maskedAccountNumber) {
+                setCancelBankInfoState({
+                    loading: false,
+                    bankBinNumber,
+                    maskedAccountNumber,
+                    bankCode: "",
+                    bankShortName: "",
+                    bankLogo: "",
+                    error: "You have not configured bank information yet.",
+                });
+                return;
+            }
+
+            const banksResponse = await axios.get("https://api.vietqr.io/v2/banks");
+            const banks = Array.isArray(banksResponse?.data?.data) ? banksResponse.data.data : [];
+            const matchedBank = banks.find((bank) => String(bank?.bin) === bankBinNumber);
+
+            if (!matchedBank) {
+                setCancelBankInfoState({
+                    loading: false,
+                    bankBinNumber,
+                    maskedAccountNumber,
+                    bankCode: "",
+                    bankShortName: "",
+                    bankLogo: "",
+                    error: "Cannot resolve bank metadata for your BIN.",
+                });
+                return;
+            }
+
+            setCancelBankInfoState({
+                loading: false,
+                bankBinNumber,
+                maskedAccountNumber,
+                bankCode: matchedBank?.code || "",
+                bankShortName: matchedBank?.shortName || matchedBank?.short_name || matchedBank?.name || "",
+                bankLogo: matchedBank?.logo || "",
+                error: "",
+            });
+        } catch {
+            setCancelBankInfoState({
+                loading: false,
+                bankBinNumber: "",
+                maskedAccountNumber: "",
+                bankCode: "",
+                bankShortName: "",
+                bankLogo: "",
+                error: "Failed to load your bank information.",
+            });
+        }
+    };
+
+    const handleOpenCancelRequestConfirm = async () => {
+        let previewRefundPercent = null;
+        const now = new Date();
+        const startCandidates = (detail?.rounds || [])
+            .map((round) => (round?.startTime ? new Date(round.startTime) : null))
+            .filter((date) => date && !Number.isNaN(date.getTime()))
+            .sort((a, b) => a.getTime() - b.getTime());
+
+        const nearestStartTime =
+            startCandidates.find((date) => date.getTime() > now.getTime()) || startCandidates[0] || null;
+        if (nearestStartTime) {
+            const hoursBeforeInterview = (nearestStartTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+            if (hoursBeforeInterview >= 24) previewRefundPercent = 100;
+            else if (hoursBeforeInterview >= 12) previewRefundPercent = 50;
+            else previewRefundPercent = 0;
+        }
+
+        const parseAmount = (value) => {
+            if (typeof value === "number") return value;
+            const raw = String(value ?? "")
+                .replace(/,/g, "")
+                .trim();
+            const parsed = Number(raw);
+            return Number.isNaN(parsed) ? null : parsed;
+        };
+
+        const roundsAmount = Array.isArray(detail?.rounds)
+            ? detail.rounds.reduce((sum, round) => {
+                  const price = parseAmount(round?.price);
+                  return typeof price === "number" ? sum + price : sum;
+              }, 0)
+            : null;
+
+        const baseAmount =
+            parseAmount(detail?.totalAmount) ??
+            parseAmount(detail?.amount) ??
+            (typeof roundsAmount === "number" && roundsAmount > 0 ? roundsAmount : null);
+
+        const previewRefundAmount =
+            typeof baseAmount === "number" && typeof previewRefundPercent === "number"
+                ? Math.max(0, Math.round((baseAmount * previewRefundPercent) / 100))
+                : null;
+
+        setCancelRequestConfirmState({
+            open: true,
+            previewRefundPercent,
+            previewRefundAmount,
+        });
+
+        await loadCancelRefundBankInfo();
+    };
+
+    const handleCloseCancelRequestConfirm = () => {
+        setCancelRequestConfirmState({
+            open: false,
+            previewRefundPercent: null,
+            previewRefundAmount: null,
+        });
+
+        setCancelBankInfoState({
+            loading: false,
+            bankBinNumber: "",
+            maskedAccountNumber: "",
+            bankCode: "",
+            bankShortName: "",
+            bankLogo: "",
+            error: "",
+        });
+    };
+
+    const handleOpenCancelRoundConfirm = async (round) => {
+        if (!round?.id) return;
+
+        const parseAmount = (value) => {
+            if (typeof value === "number") return value;
+            const raw = String(value ?? "")
+                .replace(/,/g, "")
+                .trim();
+            const parsed = Number(raw);
+            return Number.isNaN(parsed) ? null : parsed;
+        };
+
+        let previewRefundPercent = null;
+        const startTime = round?.startTime ? new Date(round.startTime) : null;
+        const now = new Date();
+
+        if (startTime && !Number.isNaN(startTime.getTime())) {
+            const hoursBeforeInterview = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+            if (hoursBeforeInterview >= 24) previewRefundPercent = 100;
+            else if (hoursBeforeInterview >= 12) previewRefundPercent = 50;
+            else previewRefundPercent = 0;
+        }
+
+        const baseAmount = parseAmount(round?.price);
+        const previewRefundAmount =
+            typeof baseAmount === "number" && typeof previewRefundPercent === "number"
+                ? Math.max(0, Math.round((baseAmount * previewRefundPercent) / 100))
+                : null;
+
+        setCancelRoundConfirmState({
+            open: true,
+            roundId: round.id,
+            roundNumber: round.roundNumber,
+            previewRefundPercent,
+            previewRefundAmount,
+        });
+
+        await loadCancelRefundBankInfo();
+    };
+
+    const handleCloseCancelRoundConfirm = () => {
+        setCancelRoundConfirmState({
+            open: false,
+            roundId: null,
+            roundNumber: null,
+            previewRefundPercent: null,
+            previewRefundAmount: null,
+        });
+
+        setCancelBankInfoState({
+            loading: false,
+            bankBinNumber: "",
+            maskedAccountNumber: "",
+            bankCode: "",
+            bankShortName: "",
+            bankLogo: "",
+            error: "",
+        });
+    };
+
     const handleCancel = async () => {
         setCancelling(true);
         try {
@@ -274,16 +502,17 @@ export default function BookingRequestDetailPage() {
             toast.error(err.message || "Failed to cancel.");
         } finally {
             setCancelling(false);
+            handleCloseCancelRequestConfirm();
         }
     };
 
     const handleCancelRound = async () => {
-        if (!cancelRoundTarget) return;
-        setCancellingRoundId(cancelRoundTarget.id);
+        if (!cancelRoundConfirmState.roundId) return;
+        setCancellingRoundId(cancelRoundConfirmState.roundId);
         try {
-            await cancelInterviewRound(id, cancelRoundTarget.id);
-            toast.success(`Round ${cancelRoundTarget.roundNumber} cancelled.`);
-            setCancelRoundTarget(null);
+            await cancelInterviewRound(id, cancelRoundConfirmState.roundId);
+            toast.success(`Round ${cancelRoundConfirmState.roundNumber} cancelled.`);
+            handleCloseCancelRoundConfirm();
             fetchDetail();
         } catch (err) {
             toast.error(err.message || "Failed to cancel round.");
@@ -313,8 +542,12 @@ export default function BookingRequestDetailPage() {
         );
     }
 
+    const isPaid = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
     const isPending = detail.status === BOOKING_REQUEST_STATUS.PENDING;
     const isAccepted = detail.status === BOOKING_REQUEST_STATUS.ACCEPTED;
+    const hasCompletedInterview = (detail.rounds || []).some(
+        (round) => String(round?.interviewRoomStatus || "").toUpperCase() === "COMPLETED",
+    );
     const isPendingApproval = detail.status === BOOKING_REQUEST_STATUS.PendingForApprovalAfterPayment;
 
     return (
@@ -348,7 +581,8 @@ export default function BookingRequestDetailPage() {
 
                     {/* Primary Action Context Dependent */}
                     <Stack direction="row" spacing={2}>
-                        {isCoach && isPendingApproval && (
+                        {/* Legacy: coach accept/reject booking request */}
+                        {/* {isCoach && isPaid && !hasCompletedInterview && (
                             <>
                                 <SecondaryButton
                                     onClick={handleAccept}
@@ -368,9 +602,9 @@ export default function BookingRequestDetailPage() {
                                     Reject
                                 </DangerButton>
                             </>
-                        )}
+                        )} */}
 
-                        {!isCoach && (
+                        {!isCoach && !hasCompletedInterview && (
                             <>
                                 {isPending && (
                                     <SecondaryButton
@@ -390,7 +624,7 @@ export default function BookingRequestDetailPage() {
                                 )}
                                 {(isPending || isAccepted) && (
                                     <DangerButton
-                                        onClick={handleCancel}
+                                        onClick={handleOpenCancelRequestConfirm}
                                         loading={cancelling}
                                         sx={{ borderRadius: "14px", px: 3 }}
                                     >
@@ -756,12 +990,7 @@ export default function BookingRequestDetailPage() {
                                                         <DangerButton
                                                             fullWidth
                                                             loading={cancellingRoundId === r.id}
-                                                            onClick={() =>
-                                                                setCancelRoundTarget({
-                                                                    id: r.id,
-                                                                    roundNumber: r.roundNumber,
-                                                                })
-                                                            }
+                                                            onClick={() => handleOpenCancelRoundConfirm(r)}
                                                             sx={{ borderRadius: "12px", py: 1 }}
                                                         >
                                                             Cancel Round
@@ -799,28 +1028,41 @@ export default function BookingRequestDetailPage() {
                 </Stack>
             </Box>
 
-            {/* CANCEL ROUND DIALOG */}
-            <Dialog
-                open={!!cancelRoundTarget}
-                onClose={() => setCancelRoundTarget(null)}
-                PaperProps={{ sx: { ...dialogStyles.paper, borderRadius: "32px" } }}
-            >
-                <DialogTitle sx={{ fontWeight: 900, px: 4, pt: 4 }}>
-                    Cancel Round {cancelRoundTarget?.roundNumber}
-                </DialogTitle>
-                <DialogContent sx={{ px: 4 }}>
-                    <Typography variant="body2" color="#64748b">
-                        Are you sure you want to cancel Round {cancelRoundTarget?.roundNumber}? A partial refund will be
-                        calculated based on the time remaining before the session.
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{ px: 4, pb: 4 }}>
-                    <SecondaryButton onClick={() => setCancelRoundTarget(null)}>Keep Round</SecondaryButton>
-                    <DangerButton onClick={handleCancelRound} loading={!!cancellingRoundId}>
-                        Confirm Cancel
-                    </DangerButton>
-                </DialogActions>
-            </Dialog>
+            <CancelInterviewConfirmDialog
+                open={cancelRoundConfirmState.open}
+                onClose={handleCloseCancelRoundConfirm}
+                onConfirm={handleCancelRound}
+                confirmLoading={!!cancellingRoundId}
+                previewRefundPercent={cancelRoundConfirmState.previewRefundPercent}
+                previewRefundAmount={cancelRoundConfirmState.previewRefundAmount}
+                bankInfo={cancelBankInfoState}
+                title={`Cancel Round ${cancelRoundConfirmState.roundNumber ?? ""}`.trim()}
+                confirmText="Confirm Cancel"
+                cancelText="Keep Round"
+                message={`Are you sure you want to cancel Round ${cancelRoundConfirmState.roundNumber ?? ""}?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${
+                    cancelRoundConfirmState.previewRefundPercent === null
+                        ? "Unable to calculate refund preview."
+                        : `${cancelRoundConfirmState.previewRefundPercent}% of the paid amount`
+                }`}
+            />
+
+            <CancelInterviewConfirmDialog
+                open={cancelRequestConfirmState.open}
+                onClose={handleCloseCancelRequestConfirm}
+                onConfirm={handleCancel}
+                confirmLoading={cancelling}
+                previewRefundPercent={cancelRequestConfirmState.previewRefundPercent}
+                previewRefundAmount={cancelRequestConfirmState.previewRefundAmount}
+                bankInfo={cancelBankInfoState}
+                title="Cancel Booking Request"
+                confirmText="Cancel Request"
+                cancelText="Keep Request"
+                message={`Are you sure you want to cancel this booking request?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${
+                    cancelRequestConfirmState.previewRefundPercent === null
+                        ? "Unable to calculate refund preview."
+                        : `${cancelRequestConfirmState.previewRefundPercent}% of the paid amount`
+                }`}
+            />
 
             {/* REJECT DIALOG */}
             <Dialog
