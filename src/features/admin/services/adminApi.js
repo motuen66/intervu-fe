@@ -37,6 +37,7 @@ export const adminEndPoints = {
     GET_QUESTION_REPORTS: `${BE_BASE_URL}/questions/reports`,
     UPDATE_QUESTION_REPORT_STATUS: (reportId) => `${BE_BASE_URL}/questions/reports/${reportId}/status`,
     DELETE_QUESTION: (questionId) => `${BE_BASE_URL}/questions/${questionId}`,
+    MODERATE_QUESTION: (questionId) => `${BE_BASE_URL}/questions/${questionId}/moderate`,
 
     // System Management Endpoints
     GET_PINECONE_STATS: `${ADMIN_BASE_URL}/system/pinecone-stats`,
