@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
     Box,
     Grid,
@@ -24,7 +24,7 @@ import {
     Pie,
     Cell,
 } from "recharts";
-import { RefreshCw, Zap, Clock, Hash, TrendingUp, Layers, Check, X } from "lucide-react";
+import { RefreshCw, Zap, Clock, Hash, TrendingUp, Layers } from "lucide-react";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -43,85 +43,24 @@ const TIMEFRAME_OPTIONS = [
     { value: "30d", label: "Last 30 Days" },
 ];
 
-const COVERAGE_ROWS = [
-    { endpoint: "extract-document", provider: "HuggingFace", logged: true, note: "Python-side; tokens reported as 0 (no usage in response)" },
-    { endpoint: "api/transcript", provider: "HuggingFace", logged: true, note: "Python-side; tokens reported as 0 (no usage in response)" },
-    { endpoint: "api/generate-assessment", provider: "HuggingFace", logged: true, note: "Python-side; tokens reported as 0 (no usage in response)" },
-    { endpoint: "api/generate-roadmap", provider: "Gemini", logged: true, note: "Full token usage captured" },
-    { endpoint: "smart-search-rerank", provider: "HuggingFace", logged: true, note: ".NET side; full token usage captured" },
-    { endpoint: "api/evaluate-cv", provider: "HuggingFace", logged: true, note: "Python-side; tokens reported as 0 (no usage in response)" },
-    { endpoint: "api/extract-cv", provider: "HuggingFace", logged: true, note: "Python-side; tokens reported as 0 (no usage in response)" },
-    { endpoint: "api/last-cv-pdf-url", provider: "HuggingFace", logged: true, note: "Python-side; tokens reported as 0 (no usage in response)" },
-];
+const USE_CASE_LABELS = {
+    SmartSearchQuestion: "Smart Question Search",
+    SmartSearchCoach: "Smart Coach Search",
+    SmartSearchCvExtraction: "CV Extraction (Smart Search)",
+    CvEvaluation: "Candidate CV Evaluation",
+    CvExtraction: "CV Extraction",
+    AutoAssessment: "Automated Interview Assessment",
+    GenerateRoadmap: "Generate Learning Roadmap",
+    UpdateRoadmapProgress: "Update Roadmap Progress",
+    InterviewTranscript: "Interview Transcript",
+};
 
-function CoverageCard() {
-    return (
-        <BaseCard sx={{ p: 2.5, mb: 4 }}>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5 }}>
-                AI Endpoint Coverage
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-                Static reference. A checkmark means traffic for this endpoint is written to AiTrafficLog.
-            </Typography>
-            <Box
-                sx={{
-                    display: "grid",
-                    gridTemplateColumns: "1.6fr 1fr 0.5fr 2fr",
-                    gap: 1,
-                    px: 1.5,
-                    py: 1,
-                    bgcolor: "action.hover",
-                    borderRadius: 1,
-                }}
-            >
-                <Typography variant="caption" fontWeight={700} color="text.secondary">
-                    ENDPOINT
-                </Typography>
-                <Typography variant="caption" fontWeight={700} color="text.secondary">
-                    PROVIDER
-                </Typography>
-                <Typography variant="caption" fontWeight={700} color="text.secondary">
-                    LOGGED
-                </Typography>
-                <Typography variant="caption" fontWeight={700} color="text.secondary">
-                    NOTE
-                </Typography>
-            </Box>
-            {COVERAGE_ROWS.map((row) => (
-                <Box
-                    key={row.endpoint}
-                    sx={{
-                        display: "grid",
-                        gridTemplateColumns: "1.6fr 1fr 0.5fr 2fr",
-                        gap: 1,
-                        px: 1.5,
-                        py: 1,
-                        borderBottom: 1,
-                        borderColor: "divider",
-                        alignItems: "center",
-                    }}
-                >
-                    <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
-                        {row.endpoint}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {row.provider}
-                    </Typography>
-                    {row.logged ? (
-                        <Check size={16} style={{ color: "var(--mui-palette-success-main)" }} />
-                    ) : (
-                        <X size={16} style={{ color: "var(--mui-palette-error-main)" }} />
-                    )}
-                    <Typography variant="caption" color="text.secondary">
-                        {row.note}
-                    </Typography>
-                </Box>
-            ))}
-        </BaseCard>
-    );
-}
+const labelUseCase = (uc) => {
+    if (!uc) return "(Unlabeled)";
+    return USE_CASE_LABELS[uc] ?? uc;
+};
 
-function useEndpointColors(endpoints) {
+function useUseCaseColors(useCases) {
     const theme = useTheme();
     return useMemo(() => {
         const palette = [
@@ -131,59 +70,61 @@ function useEndpointColors(endpoints) {
             theme.palette.warning.main,
             theme.palette.secondary.main,
             theme.palette.error.main,
+            theme.palette.primary.light,
+            theme.palette.success.dark,
         ];
         const map = {};
-        endpoints.forEach((ep, i) => {
-            map[ep] = palette[i % palette.length];
+        useCases.forEach((uc, i) => {
+            map[uc] = palette[i % palette.length];
         });
         return map;
-    }, [endpoints, theme]);
+    }, [useCases, theme]);
 }
 
-function EndpointLegend({ endpoints }) {
+function UseCaseLegend({ useCases }) {
     const theme = useTheme();
-    const colorMap = useEndpointColors(endpoints);
+    const colorMap = useUseCaseColors(useCases);
     return (
         <BaseCard sx={{ p: 2, mb: 2.5 }}>
             <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", rowGap: 1, justifyContent: "flex-start" }}>
-                <LegendSwatch color={theme.palette.text.disabled} label="COUNT" textColor={theme.palette.text.secondary} />
-                {endpoints.map((ep) => (
-                    <LegendSwatch key={ep} color={colorMap[ep]} label={ep.toUpperCase()} textColor={theme.palette.text.primary} />
+                <LegendSwatch color={theme.palette.text.disabled} label="REQUESTS" textColor={theme.palette.text.secondary} />
+                {useCases.map((uc) => (
+                    <LegendSwatch key={uc} color={colorMap[uc]} label={labelUseCase(uc)} textColor={theme.palette.text.primary} />
                 ))}
             </Stack>
         </BaseCard>
     );
 }
 
-function UsagePieChart({ series, endpoints }) {
+function UsagePieChart({ series, useCases }) {
     const theme = useTheme();
-    const colorMap = useEndpointColors(endpoints);
+    const colorMap = useUseCaseColors(useCases);
 
     const data = useMemo(() => {
         const totals = {};
-        endpoints.forEach((ep) => {
-            totals[ep] = 0;
+        useCases.forEach((uc) => {
+            totals[uc] = 0;
         });
         (series ?? []).forEach((p) => {
-            const counts = p.countByEndpoint ?? {};
-            endpoints.forEach((ep) => {
-                totals[ep] += Number(counts[ep] ?? 0);
+            const counts = p.countByUseCase ?? {};
+            useCases.forEach((uc) => {
+                totals[uc] += Number(counts[uc] ?? 0);
             });
         });
-        return endpoints
-            .map((ep) => ({ name: ep, value: totals[ep] }))
+        return useCases
+            .map((uc) => ({ name: uc, label: labelUseCase(uc), value: totals[uc] }))
             .filter((d) => d.value > 0);
-    }, [series, endpoints]);
+    }, [series, useCases]);
 
     const grandTotal = data.reduce((s, d) => s + d.value, 0);
 
     return (
         <BaseCard sx={{ p: 3, height: "100%" }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
-                Distribution
+                Distribution by Feature
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
-                Requests share per endpoint
+                AI call ratio by use case
             </Typography>
 
             {grandTotal > 0 ? (
@@ -193,7 +134,7 @@ function UsagePieChart({ series, endpoints }) {
                             <Pie
                                 data={data}
                                 dataKey="value"
-                                nameKey="name"
+                                nameKey="label"
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={60}
@@ -228,7 +169,7 @@ function UsagePieChart({ series, endpoints }) {
             ) : (
                 <Box sx={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Typography variant="body2" color="text.secondary">
-                        No traffic in the selected window.
+                        No traffic in this time range.
                     </Typography>
                 </Box>
             )}
@@ -236,14 +177,14 @@ function UsagePieChart({ series, endpoints }) {
     );
 }
 
-function UsageLineChart({ series, endpoints, bucketUnit }) {
+function UsageLineChart({ series, useCases, bucketUnit }) {
     const theme = useTheme();
-    const colorMap = useEndpointColors(endpoints);
+    const colorMap = useUseCaseColors(useCases);
 
     const { data, keyMap } = useMemo(() => {
         const map = {};
-        endpoints.forEach((ep, i) => {
-            map[ep] = `ep_${i}`;
+        useCases.forEach((uc, i) => {
+            map[uc] = `uc_${i}`;
         });
         const rows = (series ?? []).map((p) => {
             const bucketDate = new Date(p.bucket);
@@ -252,26 +193,26 @@ function UsageLineChart({ series, endpoints, bucketUnit }) {
                     ? bucketDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })
                     : bucketDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
             const row = { label };
-            const counts = p.countByEndpoint ?? {};
-            endpoints.forEach((ep) => {
-                row[map[ep]] = Number(counts[ep] ?? 0);
+            const counts = p.countByUseCase ?? {};
+            useCases.forEach((uc) => {
+                row[map[uc]] = Number(counts[uc] ?? 0);
             });
             return row;
         });
         return { data: rows, keyMap: map };
-    }, [series, endpoints, bucketUnit]);
+    }, [series, useCases, bucketUnit]);
 
     const hasData =
-        endpoints.length > 0 &&
-        data.some((row) => endpoints.some((ep) => (row[keyMap[ep]] ?? 0) > 0));
+        useCases.length > 0 &&
+        data.some((row) => useCases.some((uc) => (row[keyMap[uc]] ?? 0) > 0));
 
     return (
         <BaseCard sx={{ p: 3, height: "100%" }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
-                Rows
+                Traffic Over Time
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
-                Requests per endpoint ({bucketUnit === "day" ? "per day" : "per hour"})
+                AI calls by use case ({bucketUnit === "day" ? "daily" : "hourly"})
             </Typography>
 
             {hasData ? (
@@ -309,17 +250,17 @@ function UsageLineChart({ series, endpoints, bucketUnit }) {
                                 itemStyle={{ color: theme.palette.text.primary }}
                                 cursor={{ stroke: alpha(theme.palette.text.primary, 0.2), strokeWidth: 1 }}
                                 formatter={(value, name) => {
-                                    const label = Object.entries(keyMap).find(([, v]) => v === name)?.[0] ?? name;
-                                    return [value, label];
+                                    const uc = Object.entries(keyMap).find(([, v]) => v === name)?.[0] ?? name;
+                                    return [value, labelUseCase(uc)];
                                 }}
                             />
-                            {endpoints.map((ep) => (
+                            {useCases.map((uc) => (
                                 <Line
-                                    key={ep}
+                                    key={uc}
                                     type="monotone"
-                                    dataKey={keyMap[ep]}
-                                    name={keyMap[ep]}
-                                    stroke={colorMap[ep]}
+                                    dataKey={keyMap[uc]}
+                                    name={keyMap[uc]}
+                                    stroke={colorMap[uc]}
                                     strokeWidth={2}
                                     dot={false}
                                     activeDot={{ r: 4 }}
@@ -333,7 +274,7 @@ function UsageLineChart({ series, endpoints, bucketUnit }) {
             ) : (
                 <Box sx={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Typography variant="body2" color="text.secondary">
-                        No traffic in the selected window.
+                        No traffic in this time range.
                     </Typography>
                 </Box>
             )}
@@ -355,15 +296,13 @@ function LegendSwatch({ color, label, textColor }) {
 export default function PythonServiceMonitorPage() {
     const [timeframe, setTimeframe] = useState("24h");
     const [provider, setProvider] = useState("");
-    const [endpointFilter, setEndpointFilter] = useState("");
-    const [endpointInput, setEndpointInput] = useState("");
+    const [useCaseFilter, setUseCaseFilter] = useState("");
     const [fromDate, setFromDate] = useState("");
     const [toDate, setToDate] = useState("");
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [metrics, setMetrics] = useState(null);
     const [loading, setLoading] = useState(true);
-    const debounceRef = useRef(null);
 
     const customRangeActive = Boolean(fromDate || toDate);
 
@@ -372,7 +311,7 @@ export default function PythonServiceMonitorPage() {
             page: page + 1,
             pageSize,
             provider: provider || undefined,
-            endpoint: endpointFilter || undefined,
+            useCase: useCaseFilter || undefined,
         };
         if (customRangeActive) {
             base.from = fromDate ? new Date(fromDate).toISOString() : undefined;
@@ -381,7 +320,7 @@ export default function PythonServiceMonitorPage() {
             base.timeframe = timeframe;
         }
         return base;
-    }, [timeframe, provider, endpointFilter, fromDate, toDate, page, pageSize, customRangeActive]);
+    }, [timeframe, provider, useCaseFilter, fromDate, toDate, page, pageSize, customRangeActive]);
 
     const fetchMetrics = useCallback(async (f) => {
         setLoading(true);
@@ -406,17 +345,6 @@ export default function PythonServiceMonitorPage() {
         fetchMetrics(filters);
     }, [fetchMetrics, filters]);
 
-    useEffect(() => {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            setEndpointFilter(endpointInput.trim());
-            setPage(0);
-        }, 300);
-        return () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-        };
-    }, [endpointInput]);
-
     const handleTimeframeChange = (e) => {
         setTimeframe(e.target.value);
         setPage(0);
@@ -424,6 +352,11 @@ export default function PythonServiceMonitorPage() {
 
     const handleProviderChange = (e) => {
         setProvider(e.target.value);
+        setPage(0);
+    };
+
+    const handleUseCaseChange = (e) => {
+        setUseCaseFilter(e.target.value);
         setPage(0);
     };
 
@@ -460,12 +393,20 @@ export default function PythonServiceMonitorPage() {
                 ),
             },
             {
-                field: "endpointName",
-                headerName: "Endpoint",
-                render: (value) => (
-                    <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
-                        {value}
-                    </Typography>
+                field: "useCase",
+                headerName: "Feature",
+                render: (value, row) => (
+                    <Box>
+                        <Typography variant="body2" fontWeight={600}>
+                            {labelUseCase(value)}
+                        </Typography>
+                        <Typography
+                            variant="caption"
+                            sx={{ fontFamily: "monospace", fontSize: "0.68rem", color: "text.secondary" }}
+                        >
+                            {row.endpointName}
+                        </Typography>
+                    </Box>
                 ),
             },
             {
@@ -487,7 +428,7 @@ export default function PythonServiceMonitorPage() {
             },
             {
                 field: "promptTokens",
-                headerName: "Prompt Tokens",
+                headerName: "Prompt tokens",
                 render: (value) => (
                     <Typography variant="body2" fontWeight={600}>
                         {Number(value ?? 0).toLocaleString()}
@@ -496,7 +437,7 @@ export default function PythonServiceMonitorPage() {
             },
             {
                 field: "completionTokens",
-                headerName: "Completion Tokens",
+                headerName: "Completion tokens",
                 render: (value) => (
                     <Typography variant="body2" fontWeight={600}>
                         {Number(value ?? 0).toLocaleString()}
@@ -505,7 +446,7 @@ export default function PythonServiceMonitorPage() {
             },
             {
                 field: "totalTokens",
-                headerName: "Total Tokens",
+                headerName: "Total tokens",
                 render: (value) => (
                     <Typography variant="body2" fontWeight={700}>
                         {Number(value ?? 0).toLocaleString()}
@@ -528,8 +469,8 @@ export default function PythonServiceMonitorPage() {
     return (
         <Box sx={{ p: { xs: 2, md: 4 } }}>
             <AdminPageHeader
-                title="Python AI Monitor"
-                subtitle="Token usage and latency metrics for all AI provider calls."
+                title="Python AI Service Monitoring"
+                subtitle="Traffic, tokens, and latency by business use case."
             />
 
             <BaseCard sx={{ p: 2.5, mb: 3 }}>
@@ -554,7 +495,7 @@ export default function PythonServiceMonitorPage() {
 
                 <Grid container spacing={2} alignItems="flex-end">
                     <Grid size={{ xs: 12, sm: 6, md: 3, lg: 2 }}>
-                        <Tooltip title={customRangeActive ? "Disabled while a custom date range is active" : ""}>
+                        <Tooltip title={customRangeActive ? "Disabled while using a custom range" : ""}>
                             <FormControl size="small" fullWidth disabled={customRangeActive}>
                                 <InputLabel>Timeframe</InputLabel>
                                 <FormSelect
@@ -576,7 +517,7 @@ export default function PythonServiceMonitorPage() {
                         <FormControl size="small" fullWidth>
                             <InputLabel>Provider</InputLabel>
                             <FormSelect value={provider} label="Provider" onChange={handleProviderChange}>
-                                <MenuItem value="">All providers</MenuItem>
+                                <MenuItem value="">All</MenuItem>
                                 {(metrics?.availableProviders ?? []).map((p) => (
                                     <MenuItem key={p} value={p}>
                                         {p}
@@ -587,14 +528,21 @@ export default function PythonServiceMonitorPage() {
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3 }}>
-                        <FormTextField
-                            size="small"
-                            fullWidth
-                            label="Endpoint contains"
-                            value={endpointInput}
-                            onChange={(e) => setEndpointInput(e.target.value)}
-                            placeholder="e.g. evaluate-cv"
-                        />
+                        <FormControl size="small" fullWidth>
+                            <InputLabel>Feature (Use Case)</InputLabel>
+                            <FormSelect
+                                value={useCaseFilter}
+                                label="Feature (Use Case)"
+                                onChange={handleUseCaseChange}
+                            >
+                                <MenuItem value="">All features</MenuItem>
+                                {(metrics?.availableUseCases ?? []).map((uc) => (
+                                    <MenuItem key={uc} value={uc}>
+                                        {labelUseCase(uc)}
+                                    </MenuItem>
+                                ))}
+                            </FormSelect>
+                        </FormControl>
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6, md: 3, lg: 2 }}>
@@ -652,7 +600,7 @@ export default function PythonServiceMonitorPage() {
                             <KpiCard
                                 icon={<Hash size={22} />}
                                 iconColor="primary"
-                                label="Total Requests"
+                                label="Total requests"
                                 value={(metrics?.totalRequests ?? 0).toLocaleString()}
                             />
                         </Grid>
@@ -660,7 +608,7 @@ export default function PythonServiceMonitorPage() {
                             <KpiCard
                                 icon={<Zap size={22} />}
                                 iconColor="warning"
-                                label="Total Tokens"
+                                label="Total tokens"
                                 value={(metrics?.totalTokens ?? 0).toLocaleString()}
                             />
                         </Grid>
@@ -668,7 +616,7 @@ export default function PythonServiceMonitorPage() {
                             <KpiCard
                                 icon={<TrendingUp size={22} />}
                                 iconColor="info"
-                                label="Prompt Tokens"
+                                label="Prompt tokens"
                                 value={(metrics?.totalPromptTokens ?? 0).toLocaleString()}
                             />
                         </Grid>
@@ -676,7 +624,7 @@ export default function PythonServiceMonitorPage() {
                             <KpiCard
                                 icon={<Clock size={22} />}
                                 iconColor="success"
-                                label="Avg Latency"
+                                label="Avg latency"
                                 value={`${avgLatency}ms`}
                             />
                         </Grid>
@@ -684,34 +632,32 @@ export default function PythonServiceMonitorPage() {
                             <KpiCard
                                 icon={<Layers size={22} />}
                                 iconColor="secondary"
-                                label="# Services"
+                                label="Provider count"
                                 value={(metrics?.serviceCount ?? 0).toLocaleString()}
                             />
                         </Grid>
                     </Grid>
 
-                    <EndpointLegend endpoints={metrics?.seriesEndpoints ?? []} />
+                    <UseCaseLegend useCases={metrics?.seriesUseCases ?? []} />
 
                     <Grid container spacing={2.5} sx={{ mb: 4 }}>
                         <Grid size={{ xs: 12, lg: 8 }}>
                             <UsageLineChart
-                                series={metrics?.endpointSeries ?? []}
-                                endpoints={metrics?.seriesEndpoints ?? []}
+                                series={metrics?.useCaseSeries ?? []}
+                                useCases={metrics?.seriesUseCases ?? []}
                                 bucketUnit={metrics?.seriesBucket ?? "hour"}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, lg: 4 }}>
                             <UsagePieChart
-                                series={metrics?.endpointSeries ?? []}
-                                endpoints={metrics?.seriesEndpoints ?? []}
+                                series={metrics?.useCaseSeries ?? []}
+                                useCases={metrics?.seriesUseCases ?? []}
                             />
                         </Grid>
                     </Grid>
 
-                    <CoverageCard />
-
                     <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-                        Request Log
+                        Request logs
                     </Typography>
                     <BaseCard sx={{ overflow: "hidden" }}>
                         <DataTable
