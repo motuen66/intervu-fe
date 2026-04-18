@@ -469,7 +469,7 @@ export default function PythonServiceMonitorPage() {
     return (
         <Box sx={{ p: { xs: 2, md: 4 } }}>
             <AdminPageHeader
-                title="Python AI Service Monitoring"
+                title="AI Service Monitor"
                 subtitle="Traffic, tokens, and latency by business use case."
             />
 
