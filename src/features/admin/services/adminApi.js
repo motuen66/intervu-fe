@@ -43,4 +43,14 @@ export const adminEndPoints = {
     POST_PINECONE_SYNC: `${ADMIN_BASE_URL}/system/pinecone-sync`,
     GET_AI_HEALTH: `${ADMIN_BASE_URL}/system/ai-health`,
     GET_AI_CONFIG: `${ADMIN_BASE_URL}/system/ai-config`,
+    GET_PYTHON_AI_METRICS: (filters = {}) => {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+                params.append(key, value);
+            }
+        });
+        const query = params.toString();
+        return `${ADMIN_BASE_URL}/system/python-ai-metrics${query ? `?${query}` : ""}`;
+    },
 };

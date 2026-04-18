@@ -68,6 +68,7 @@ const adminNavItems = [
                 children: [
                     { label: "Pinecone", path: "/admin/system/pinecone" },
                     { label: "AI Services", path: "/admin/system/ai-services" },
+                    { label: "Python AI Monitor", path: "/admin/system/python-ai-monitor" },
                 ],
             },
         ],

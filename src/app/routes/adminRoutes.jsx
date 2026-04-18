@@ -13,6 +13,7 @@ import AdminQuestionBankPage from "../../features/admin/pages/AdminQuestionBankP
 import ProblemResolutionDetail from "../../features/admin/pages/ProblemResolutionDetail";
 import AdminPineconeManagementPage from "../../features/admin/pages/AdminPineconeManagementPage/AdminPineconeManagementPage";
 import AdminAiServicesPage from "../../features/admin/pages/AdminAiServicesPage/AdminAiServicesPage";
+import PythonServiceMonitorPage from "../../features/admin/pages/PythonServiceMonitorPage/PythonServiceMonitorPage";
 
 export const adminRoutes = [
     { path: "/admin", element: <Navigate to="/admin/dashboard" replace /> },
@@ -79,5 +80,6 @@ export const adminRoutes = [
     { path: "/admin/system", element: <Navigate to="/admin/system/pinecone" replace /> },
     { path: "/admin/system/pinecone", element: <AdminPineconeManagementPage /> },
     { path: "/admin/system/ai-services", element: <AdminAiServicesPage /> },
+    { path: "/admin/system/python-ai-monitor", element: <PythonServiceMonitorPage /> },
 ];
 
