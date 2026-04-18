@@ -10,6 +10,7 @@ import {
     HelpCircle,
     CircleDollarSign,
     BarChart2,
+    Monitor,
     LogOut,
     Settings,
     ChevronDown,
@@ -29,19 +30,28 @@ const adminNavItems = [
             { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
             { label: "Schedules", icon: Calendar, path: "/admin/schedules" },
             { label: "Interviews", icon: Video, path: "/admin/interviews" },
-            { label: "Users", icon: Users, path: "/admin/users" },
+            {
+                label: "Users",
+                icon: Users,
+                key: "users",
+                children: [
+                    { label: "Candidates", path: "/admin/users/candidates" },
+                    { label: "Coaches", path: "/admin/users/coaches" },
+                ],
+            },
             { label: "Company", icon: Building2, path: "/admin/companies" },
             { label: "Question Bank", icon: HelpCircle, path: "/admin/question-bank" },
-            // {
-            //     label: "Income",
-            //     icon: CircleDollarSign,
-            //     key: "income",
-            //     children: [
-            //         { label: "Earnings", path: "/admin/income/earnings" },
-            //         { label: "Refunds", path: "/admin/income/refunds" },
-            //         { label: "Payouts", path: "/admin/income/payouts" },
-            //     ],
-            // },
+            {
+                label: "Income",
+                icon: CircleDollarSign,
+                key: "income",
+                children: [
+                    { label: "Earnings", path: "/admin/income/earnings" },
+                    { label: "Refunds", path: "/admin/income/refunds" },
+                    { label: "Payouts", path: "/admin/income/payouts" },
+                    { label: "Withdrawal Requests", path: "/admin/income/withdrawals" },
+                ],
+            },
             {
                 label: "Reports",
                 icon: BarChart2,
@@ -49,6 +59,15 @@ const adminNavItems = [
                 children: [
                     { label: "Room Report", path: "/admin/reports/room" },
                     { label: "Question Report", path: "/admin/reports/question" },
+                ],
+            },
+            {
+                label: "System",
+                icon: Monitor,
+                key: "system",
+                children: [
+                    { label: "Pinecone", path: "/admin/system/pinecone" },
+                    { label: "AI Service Monitor", path: "/admin/system/python-ai-monitor" },
                 ],
             },
         ],
@@ -268,7 +287,7 @@ const SidebarGroupItem = ({ item, openGroups, onToggleGroup, location, onNavigat
 export default function AdminSidebar({ userData, remoteAvatar, onLogout, mobileOpen, onMobileClose }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const [openGroups, setOpenGroups] = useState({ income: false, reports: true });
+    const [openGroups, setOpenGroups] = useState({ income: false, reports: true, users: true, system: false });
     const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
         return localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY) === "true";

@@ -2,7 +2,7 @@ import React from 'react';
 import Select from '@mui/material/Select';
 import { fieldStyles } from '../../constants/uiStyles';
 
-const commonMenuProps = {
+export const commonMenuProps = {
   disableScrollLock: false,
   anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
   transformOrigin: { vertical: 'top', horizontal: 'left' },

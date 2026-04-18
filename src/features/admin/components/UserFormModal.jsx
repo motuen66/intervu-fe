@@ -4,7 +4,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField,
     Grid,
     MenuItem,
     Box,
@@ -17,6 +16,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import FormTextField from "../../../common/components/form/FormTextField";
+import FormSelect from "../../../common/components/form/FormSelect";
+import { FormControl, FormHelperText, InputLabel } from "@mui/material";
 
 const USER_ROLES = [
     { value: 0, label: "Candidate" },
@@ -210,7 +212,7 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                             </Grid>
                         )}
                         <Grid item xs={12} sx={{ width: "100%" }}>
-                            <TextField
+                            <FormTextField
                                 fullWidth
                                 label="Full name"
                                 name="fullName"
@@ -220,24 +222,11 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                                 helperText={errors.fullName}
                                 required
                                 inputProps={{ maxLength: 60 }}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        "&:hover fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                        "&.Mui-focused fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                    },
-                                    "& .MuiInputLabel-root.Mui-focused": {
-                                        color: "#4F46E5",
-                                    },
-                                }}
                             />
                         </Grid>
 
                         <Grid item xs={12} sx={{ width: "100%" }}>
-                            <TextField
+                            <FormTextField
                                 fullWidth
                                 label="Email"
                                 name="email"
@@ -249,24 +238,11 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                                 required
                                 inputProps={{ maxLength: 100 }}
                                 disabled={mode === "edit"}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        "&:hover fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                        "&.Mui-focused fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                    },
-                                    "& .MuiInputLabel-root.Mui-focused": {
-                                        color: "#4F46E5",
-                                    },
-                                }}
                             />
                         </Grid>
 
                         <Grid item xs={12} sx={{ width: "100%" }}>
-                            <TextField
+                            <FormTextField
                                 fullWidth
                                 label="Phone number"
                                 name="phoneNumber"
@@ -276,24 +252,11 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                                 helperText={errors.phoneNumber}
                                 required
                                 inputProps={{ maxLength: 20 }}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        "&:hover fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                        "&.Mui-focused fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                    },
-                                    "& .MuiInputLabel-root.Mui-focused": {
-                                        color: "#4F46E5",
-                                    },
-                                }}
                             />
                         </Grid>
 
                         <Grid item xs={12} sx={{ width: "100%" }}>
-                            <TextField
+                            <FormTextField
                                 fullWidth
                                 label={mode === 'edit' ? "Password (leave blank to keep current)" : "Password"}
                                 name="password"
@@ -317,60 +280,34 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                                         </InputAdornment>
                                     ),
                                 }}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        "&:hover fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                        "&.Mui-focused fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                    },
-                                    "& .MuiInputLabel-root.Mui-focused": {
-                                        color: "#4F46E5",
-                                    },
-                                }}
                             />
                         </Grid>
 
                         <Grid item xs={12} sx={{ width: "100%" }}>
-                            <TextField
-                                fullWidth
-                                select
-                                label="Role"
-                                name="role"
-                                value={formData.role}
-                                onChange={handleChange}
-                                error={!!errors.role}
-                                helperText={errors.role}
-                                required
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        "&:hover fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                        "&.Mui-focused fieldset": {
-                                            borderColor: "#4F46E5",
-                                        },
-                                    },
-                                    "& .MuiInputLabel-root.Mui-focused": {
-                                        color: "#4F46E5",
-                                    },
-                                }}
-                            >
-                                {USER_ROLES.map((role) => (
-                                    <MenuItem key={role.value} value={role.value}>
-                                        {role.label}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
+                            <FormControl fullWidth error={!!errors.role} required>
+                                <InputLabel id="role-label">Role</InputLabel>
+                                <FormSelect
+                                    labelId="role-label"
+                                    label="Role"
+                                    name="role"
+                                    value={formData.role}
+                                    onChange={handleChange}
+                                >
+                                    {USER_ROLES.map((role) => (
+                                        <MenuItem key={role.value} value={role.value}>
+                                            {role.label}
+                                        </MenuItem>
+                                    ))}
+                                </FormSelect>
+                                {errors.role && <FormHelperText>{errors.role}</FormHelperText>}
+                            </FormControl>
                         </Grid>
                     </Grid>
                 </DialogContent>
 
                 <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
                     <SecondaryButton onClick={handleClose}>Cancel</SecondaryButton>
-                    <PrimaryButton type="submit" sx={{ px: 4 }}>
+                    <PrimaryButton type="submit">
                         {mode === "create" ? "Create user" : "Save changes"}
                     </PrimaryButton>
                 </DialogActions>

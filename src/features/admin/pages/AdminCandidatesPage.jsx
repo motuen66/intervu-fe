@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Container } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import { useState, useEffect, useMemo } from 'react';
+import { Container, Box, Avatar, Typography } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import MapIcon from '@mui/icons-material/Map';
-import { useNavigate } from 'react-router-dom';
+import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { callApi } from '../../../common/utils/apiConnector';
@@ -14,28 +12,26 @@ import UserFormModal from '../components/UserFormModal';
 import DataTable from '../../../common/components/table/DataTable';
 import ConfirmModal from '../../../common/components/ConfirmModal';
 import { PrimaryButton } from '../../../common/components/buttons';
-
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
 import SearchInput from '../../../common/components/admin/SearchInput';
-import FilterDropdown from '../../../common/components/admin/FilterDropdown';
 import TableActionsMenu from '../../../common/components/table/TableActionsMenu';
 import useTableState from '../../../hooks/useTableState';
 import './AdminDashboard.css';
 
-export default function UserManagementPage() {
-    const { 
-        data: users, setData: setUsers, 
-        loading, setLoading, 
-        page, setPage, 
-        pageSize, setPageSize, 
-        totalItems, setTotalItems, 
-        handlePageChange, handlePageSizeChange 
+const getInitials = (name = '') =>
+    name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?';
+
+export default function AdminCandidatesPage() {
+    const {
+        data: users, setData: setUsers,
+        loading, setLoading,
+        page, setPage,
+        pageSize,
+        totalItems, setTotalItems,
+        handlePageChange, handlePageSizeChange
     } = useTableState(10);
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState('all');
-
-    // Modal states
     const [openFormModal, setOpenFormModal] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openActivateDialog, setOpenActivateDialog] = useState(false);
@@ -45,18 +41,13 @@ export default function UserManagementPage() {
     useEffect(() => {
         fetchUsers();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, pageSize, roleFilter, searchTerm]);
+    }, [page, pageSize, searchTerm]);
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const params = [`page=${page + 1}`, `pageSize=${pageSize}`];
-            if (roleFilter && roleFilter !== 'all') {
-                params.push(`role=${encodeURIComponent(roleFilter)}`);
-            }
-            if (searchTerm) {
-                params.push(`search=${encodeURIComponent(searchTerm)}`);
-            }
+            const params = [`page=${page + 1}`, `pageSize=${pageSize}`, `role=Candidate`];
+            if (searchTerm) params.push(`search=${encodeURIComponent(searchTerm)}`);
 
             const response = await callApi({
                 method: METHOD.GET,
@@ -68,8 +59,8 @@ export default function UserManagementPage() {
                 setUsers(response.data?.items || []);
                 setTotalItems(response.data?.totalItems || 0);
             }
-        } catch (error) {
-            toast.error('Error loading user list');
+        } catch {
+            toast.error('Error loading candidates list');
         } finally {
             setLoading(false);
         }
@@ -86,32 +77,21 @@ export default function UserManagementPage() {
         setPage(0);
     };
 
-    const handleRoleChange = (value) => {
-        setRoleFilter(value);
-        setPage(0);
-    };
-
     const handleEditUser = async (user) => {
         setFormMode('edit');
         setSelectedUser(user);
         setOpenFormModal(true);
-        if (user?.phoneNumber) {
-            return;
-        }
-
+        if (user?.phoneNumber) return;
         try {
             const response = await callApi({
                 method: METHOD.GET,
                 endpoint: adminEndPoints.GET_USER_BY_ID(user.id),
             });
-
             if (response?.success) {
                 const detail = response.data?.item || response.data?.user || response.data;
-                if (detail) {
-                    setSelectedUser(detail);
-                }
+                if (detail) setSelectedUser(detail);
             }
-        } catch (error) {
+        } catch {
             toast.error('Error loading user detail');
         }
     };
@@ -127,20 +107,18 @@ export default function UserManagementPage() {
 
     const handleDeleteConfirm = async () => {
         if (!selectedUser) return;
-
         try {
             const response = await callApi({
                 method: METHOD.DELETE,
                 endpoint: adminEndPoints.DELETE_USER(selectedUser.id),
             });
-
             if (response?.success) {
                 toast.success('User deactivated successfully!');
                 fetchUsers();
             } else {
                 toast.error('Cannot deactivate user');
             }
-        } catch (error) {
+        } catch {
             toast.error('Error deactivating user');
         } finally {
             setOpenDeleteDialog(false);
@@ -159,20 +137,18 @@ export default function UserManagementPage() {
 
     const handleActivateConfirm = async () => {
         if (!selectedUser) return;
-
         try {
             const response = await callApi({
                 method: METHOD.PUT,
                 endpoint: adminEndPoints.ACTIVATE_USER(selectedUser.id),
             });
-
             if (response?.success) {
                 toast.success('User activated successfully!');
                 fetchUsers();
             } else {
                 toast.error('Cannot activate user');
             }
-        } catch (error) {
+        } catch {
             toast.error('Error activating user');
         } finally {
             setOpenActivateDialog(false);
@@ -187,7 +163,7 @@ export default function UserManagementPage() {
                 response = await callApi({
                     method: METHOD.POST,
                     endpoint: adminEndPoints.CREATE_USER,
-                    arg: formData,
+                    arg: { ...formData, role: 0 }, // Force Candidate role
                 });
             } else {
                 response = await callApi({
@@ -196,68 +172,70 @@ export default function UserManagementPage() {
                     arg: formData,
                 });
             }
-
             if (response?.success) {
-                toast.success(formMode === 'create' ? 'Tạo user thành công!' : 'Cập nhật user thành công!');
+                toast.success(formMode === 'create' ? 'Candidate created!' : 'Candidate updated!');
                 setOpenFormModal(false);
                 fetchUsers();
             } else {
-                const message = response?.message || 'Có lỗi xảy ra';
+                const message = response?.message || 'An error occurred';
                 onError?.(message);
                 toast.error(message);
             }
         } catch (error) {
-            const message = error?.response?.data?.message || error?.message || 'Lỗi khi lưu user';
+            const message = error?.response?.data?.message || error?.message || 'Save failed';
             onError?.(message);
             toast.error(message);
         }
     };
 
-    const getRoleLabel = (role) => {
-        if (typeof role === 'number') {
-            if (role === 2) return 'ADMIN';
-            if (role === 1) return 'INTERVIEWER';
-            return 'CANDIDATE';
-        }
-        return (role || '').toString();
-    };
+    const getStatusLabel = (status) => (status === 1 || status === 'Inactive') ? 'Suspended' : 'Active';
+    const getStatusColor = (status) => (status === 1 || status === 'Inactive') ? 'error' : 'success';
 
-    const getRoleColor = (role) => {
-        switch (getRoleLabel(role).toUpperCase()) {
-            case 'ADMIN': return 'rgba(248,113,113,0.3)';
-            case 'INTERVIEWER': return 'rgba(59,130,246,0.3)';
-            case 'CANDIDATE': return 'rgba(34,197,94,0.3)';
-            default: return 'rgba(123,97,255,0.3)';
-        }
-    };
-
-    const getStatusLabel = (status) => {
-        if (status === 1 || status === 'Inactive') return 'Suspended';
-        return 'Active';
-    };
-
-    const getStatusColor = (status) => {
-        if (status === 1 || status === 'Inactive') return 'error';
-        return 'success';
-    };
-
-    const usersColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
-        { field: 'fullName', headerName: 'Full Name', width: 200 },
-        { field: 'email', headerName: 'Email', width: 250 },
+    const columns = useMemo(() => [
         {
-            field: 'role',
-            headerName: 'Role',
-            type: 'chip',
-            render: (val) => getRoleLabel(val),
-            chipColor: (val) => getRoleColor(val)
+            field: 'fullName',
+            headerName: 'Candidate',
+            width: 240,
+            render: (val, row) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar
+                        sx={{
+                            width: 32, height: 32,
+                            fontSize: 13, fontWeight: 700,
+                            bgcolor: 'secondary.main', // Lime
+                            color: 'primary.main',     // Navy
+                        }}
+                    >
+                        {getInitials(val)}
+                    </Avatar>
+                    <Box>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 600, color: 'text.primary', lineHeight: 1.3 }}>
+                            {val || '-'}
+                        </Typography>
+                        <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
+                            {row.email || ''}
+                        </Typography>
+                    </Box>
+                </Box>
+            )
         },
+        { field: 'phoneNumber', headerName: 'Phone', width: 150 },
         {
             field: 'status',
             headerName: 'Status',
             type: 'chip',
             render: (val) => getStatusLabel(val),
-            chipColor: (val) => getStatusColor(val)
+            chipColor: (val) => getStatusColor(val),
+        },
+        {
+            field: 'createdAt',
+            headerName: 'Joined',
+            width: 120,
+            render: (val) => {
+                if (!val) return '-';
+                const d = new Date(val);
+                return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('vi-VN');
+            }
         },
         {
             field: 'actions',
@@ -266,56 +244,37 @@ export default function UserManagementPage() {
                 const isDeactivated = row.status === 1 || row.status === 'Inactive';
                 const actions = [
                     { label: 'Edit', icon: <EditIcon fontSize="small" sx={{ color: 'primary.main' }} />, onClick: () => handleEditUser(row) },
-                    isDeactivated 
+                    isDeactivated
                         ? { label: 'Activate', icon: <CheckCircleOutlineIcon fontSize="small" color="success" />, onClick: () => handleActivateClick(row) }
                         : { label: 'Deactivate', icon: <DeleteIcon fontSize="small" color="error" />, onClick: () => handleDeleteClick(row) }
                 ];
                 return <TableActionsMenu actions={actions} />;
             }
         }
-    ];
-
-    const roleOptions = [
-        { label: 'Candidate', value: 'Candidate' },
-        { label: 'Interviewer', value: 'Interviewer' },
-        { label: 'Admin', value: 'Admin' },
-        { label: 'Coach', value: 'Coach' }
-    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], []);
 
     return (
         <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
-            <AdminPageHeader 
-                title="Users Management" 
-                subtitle="Manage user accounts and details."
+            <AdminPageHeader
+                title="Candidates"
+                subtitle="Manage candidate accounts on the platform."
                 actionButton={
-                    <PrimaryButton
-                        startIcon={<AddIcon />}
-                        onClick={handleCreateUser}
-                    >
-                        Create User
+                    <PrimaryButton startIcon={<AddIcon />} onClick={handleCreateUser}>
+                        Add Candidate
                     </PrimaryButton>
                 }
             />
 
-            <div className="admin-card">
-                <div style={{ display: 'flex', gap: '16px', padding: '16px 20px', borderBottom: '1px solid #E2E8F0', backgroundColor: '#fff' }}>
-                    <SearchInput 
-                        placeholder="Search by name, email, or phone" 
-                        onSearch={handleSearchChange} 
-                    />
-                    <FilterDropdown 
-                        options={roleOptions} 
-                        value={roleFilter} 
-                        onChange={handleRoleChange} 
-                        placeholder="All roles" 
-                    />
-                </div>
-                
+            <Box className="admin-card">
+                <Box sx={{ display: 'flex', gap: '16px', padding: '16px 20px', borderBottom: '1px solid #E2E8F0', bgcolor: '#fff' }}>
+                    <SearchInput placeholder="Search by name or email" onSearch={handleSearchChange} />
+                </Box>
+
                 <DataTable
-                    title="Users Table"
                     showHeader={false}
                     showIndex
-                    columns={usersColumns}
+                    columns={columns}
                     data={users}
                     totalItems={totalItems}
                     page={page}
@@ -325,9 +284,8 @@ export default function UserManagementPage() {
                     loading={loading}
                     actions={false}
                 />
-            </div>
+            </Box>
 
-            {/* Form Modal */}
             <UserFormModal
                 open={openFormModal}
                 onClose={() => setOpenFormModal(false)}
@@ -336,34 +294,36 @@ export default function UserManagementPage() {
                 mode={formMode}
             />
 
-            {/* Delete Confirmation Dialog */}
             <ConfirmModal
                 show={openDeleteDialog}
-                title="Deactivate user"
+                title="Deactivate candidate"
                 confirmText="Deactivate"
                 cancelText="Cancel"
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setOpenDeleteDialog(false)}
                 message={
                     <>
-                        Are you sure you want to deactivate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{"\n\n"}
-                        <span style={{ color: '#d32f2f', fontSize: '0.875rem' }}>This action will set the user's status to Inactive.</span>
+                        Are you sure you want to deactivate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
+                        <span style={{ display: 'block', color: '#d32f2f', fontSize: '0.875rem', marginTop: 8 }}>
+                            This will set the user&apos;s status to Inactive.
+                        </span>
                     </>
                 }
             />
 
-            {/* Activate Confirmation Dialog */}
             <ConfirmModal
                 show={openActivateDialog}
-                title="Activate user"
+                title="Activate candidate"
                 confirmText="Activate"
                 cancelText="Cancel"
                 onConfirm={handleActivateConfirm}
                 onCancel={() => setOpenActivateDialog(false)}
                 message={
                     <>
-                        Are you sure you want to activate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{"\n\n"}
-                        <span style={{ color: '#2e7d32', fontSize: '0.875rem' }}>This action will grant the user access to the system again.</span>
+                        Activate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
+                        <span style={{ display: 'block', color: '#2e7d32', fontSize: '0.875rem', marginTop: 8 }}>
+                            This will restore the user&apos;s access to the platform.
+                        </span>
                     </>
                 }
             />

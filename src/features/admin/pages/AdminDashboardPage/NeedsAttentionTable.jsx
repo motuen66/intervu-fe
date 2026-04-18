@@ -8,9 +8,9 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Chip from "@mui/material/Chip";
-import Button from "@mui/material/Button";
+import { SecondaryButton } from "../../../../common/components/buttons";
 import Skeleton from "@mui/material/Skeleton";
-import { Warning, Report, Payment, ArrowForward } from "@mui/icons-material";
+import { Warning, Report, Payment, ArrowForward, CheckCircleOutline as CheckCircleOutlineIcon } from "@mui/icons-material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { Link } from "react-router-dom";
 
@@ -59,10 +59,25 @@ export default function NeedsAttentionTable({ data, loading }) {
                     <TableBody>
                         {!data || data.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        All clear! No items need attention right now.
-                                    </Typography>
+                                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'text.secondary' }}>
+                                        <Box sx={{ 
+                                            bgcolor: 'success.light', 
+                                            borderRadius: '50%', 
+                                            p: 1.5, 
+                                            mb: 2,
+                                            display: 'inline-flex',
+                                            opacity: 0.2
+                                        }}>
+                                            <CheckCircleOutlineIcon sx={{ fontSize: 32, color: 'success.main' }} />
+                                        </Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                            All clear!
+                                        </Typography>
+                                        <Typography variant="caption">
+                                            No items currently need your attention.
+                                        </Typography>
+                                    </Box>
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -95,15 +110,14 @@ export default function NeedsAttentionTable({ data, loading }) {
                                         </Typography>
                                     </TableCell>
                                     <TableCell align="right">
-                                        <Button
+                                        <SecondaryButton
                                             component={Link}
                                             to={item.actionLink}
                                             size="small"
                                             endIcon={<ArrowForward fontSize="inherit" />}
-                                            sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
                                         >
                                             Handle
-                                        </Button>
+                                        </SecondaryButton>
                                     </TableCell>
                                 </TableRow>
                             ))

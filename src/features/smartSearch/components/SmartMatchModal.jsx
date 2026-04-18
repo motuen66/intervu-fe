@@ -825,17 +825,20 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
     );
 }
 
+// Token/usage keys that must never reach the end-user UI even if backend forwards them.
+const HIDDEN_KEYS = new Set(["usage", "prompt_tokens", "completion_tokens", "total_tokens"]);
+
 // ── Dynamic Visual Form ──
 function DynamicSection({ data, onUpdate }) {
     if (!data || typeof data !== "object" || Array.isArray(data)) return null;
 
-    const keys = Object.keys(data);
+    const keys = Object.keys(data).filter((k) => !HIDDEN_KEYS.has(k));
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {keys.map((key) => {
                 const val = data[key];
-                
+
                 // Skip ONLY if value is NULL or UNDEFINED (don't skip empty strings as they are editable)
                 if (val === null || val === undefined || val === "null" || val === "undefined") return null;
 

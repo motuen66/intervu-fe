@@ -2,22 +2,30 @@ import { useEffect, useState } from 'react';
 import { Container, Avatar, Box, Tooltip, IconButton } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import toast from 'react-hot-toast';
-import DataTable from '../components/DataTable';
+import DataTable from '../../../common/components/table/DataTable';
+import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
+import useTableState from '../../../hooks/useTableState';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
 import './AdminDashboard.css';
 
 export default function CompanyManagementPage() {
-    const [loading, setLoading] = useState(false);
-    const [companiesData, setCompaniesData] = useState({ data: [], total: 0, page: 0, pageSize: 10 });
+    const { 
+        data: companies, setData: setCompanies, 
+        loading, setLoading, 
+        page, setPage, 
+        pageSize, setPageSize, 
+        totalItems, setTotalItems, 
+        handlePageChange, handlePageSizeChange 
+    } = useTableState(10);
 
     const handleCopyId = (id) => {
         navigator.clipboard.writeText(id);
         toast.success('ID copied!');
     };
 
-    const fetchCompanies = async (page = 0, pageSize = 10) => {
+    const fetchCompanies = async () => {
         setLoading(true);
         const response = await callApi({
             method: METHOD.GET,
@@ -25,20 +33,16 @@ export default function CompanyManagementPage() {
             useGlobalLoading: false,
         });
         if (response?.success) {
-            setCompaniesData({
-                data: response.data?.items || [],
-                total: response.data?.totalItems || 0,
-                page,
-                pageSize,
-            });
+            setCompanies(response.data?.items || []);
+            setTotalItems(response.data?.totalItems || 0);
         }
         setLoading(false);
     };
 
     useEffect(() => {
-        fetchCompanies(companiesData.page, companiesData.pageSize);
+        fetchCompanies();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [companiesData.page, companiesData.pageSize]);
+    }, [page, pageSize]);
 
     const companiesColumns = [
         {
@@ -48,7 +52,7 @@ export default function CompanyManagementPage() {
             render: (value) => (
                 <Tooltip title={value} arrow placement="top">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                        <span sx={{ fontSize: '12px', fontFamily: 'monospace', color: '#6b7280' }}>
+                        <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#6b7280' }}>
                             {value?.substring(0, 8)}...
                         </span>
                         <IconButton
@@ -76,10 +80,10 @@ export default function CompanyManagementPage() {
                 <Avatar
                     src={value}
                     sx={{
-                        width: 36,
-                        height: 36,
+                        width: 32,
+                        height: 32,
                         backgroundColor: '#e5e7eb',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 600
                     }}
                 >
@@ -87,18 +91,16 @@ export default function CompanyManagementPage() {
                 </Avatar>
             )
         },
-        { field: 'name', headerName: 'Company Name', width: 200 },
+        { field: 'name', headerName: 'Company Name', width: 220 },
         { field: 'website', headerName: 'Website', width: 220 },
     ];
 
     return (
-        <Container maxWidth="xl" className="admin-page">
-            <div className="admin-page-header">
-                <div>
-                    <h2 className="admin-page-title">Company</h2>
-                    <p className="admin-page-subtitle">Manage company accounts and details.</p>
-                </div>
-            </div>
+        <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
+            <AdminPageHeader 
+                title="Company Management" 
+                subtitle="Manage company accounts and details."
+            />
 
             <div className="admin-card">
                 <DataTable
@@ -106,12 +108,12 @@ export default function CompanyManagementPage() {
                     showHeader={false}
                     showIndex
                     columns={companiesColumns}
-                    data={companiesData.data}
-                    totalItems={companiesData.total}
-                    page={companiesData.page}
-                    pageSize={companiesData.pageSize}
-                    onPageChange={(newPage) => fetchCompanies(newPage, companiesData.pageSize)}
-                    onPageSizeChange={(newSize) => fetchCompanies(0, newSize)}
+                    data={companies}
+                    totalItems={totalItems}
+                    page={page}
+                    pageSize={pageSize}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
                     loading={loading}
                     actions={false}
                 />

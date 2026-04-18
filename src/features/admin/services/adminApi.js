@@ -9,6 +9,7 @@ export const adminEndPoints = {
     FILTER_USERS: `${ADMIN_BASE_URL}/users/filter`,
     GET_COMPANIES: `${ADMIN_BASE_URL}/companies`,
     GET_PAYMENTS: `${ADMIN_BASE_URL}/payments`,
+    GET_TRANSACTIONS: `${ADMIN_BASE_URL}/transactions`,
     GET_FEEDBACKS: `${ADMIN_BASE_URL}/feedbacks`,
     GET_INTERVIEWERS: `${ADMIN_BASE_URL}/interviewers`,
     // Dashboard Endpoints
@@ -36,4 +37,20 @@ export const adminEndPoints = {
     GET_QUESTION_REPORTS: `${BE_BASE_URL}/questions/reports`,
     UPDATE_QUESTION_REPORT_STATUS: (reportId) => `${BE_BASE_URL}/questions/reports/${reportId}/status`,
     DELETE_QUESTION: (questionId) => `${BE_BASE_URL}/questions/${questionId}`,
+
+    // System Management Endpoints
+    GET_PINECONE_STATS: `${ADMIN_BASE_URL}/system/pinecone-stats`,
+    POST_PINECONE_SYNC: `${ADMIN_BASE_URL}/system/pinecone-sync`,
+    GET_AI_HEALTH: `${ADMIN_BASE_URL}/system/ai-health`,
+    GET_AI_CONFIG: `${ADMIN_BASE_URL}/system/ai-config`,
+    GET_PYTHON_AI_METRICS: (filters = {}) => {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+                params.append(key, value);
+            }
+        });
+        const query = params.toString();
+        return `${ADMIN_BASE_URL}/system/python-ai-metrics${query ? `?${query}` : ""}`;
+    },
 };

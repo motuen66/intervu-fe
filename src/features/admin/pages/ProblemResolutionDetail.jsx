@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
     Alert,
     Box,
-    Button,
     Card,
     CardContent,
     CircularProgress,
@@ -16,7 +15,6 @@ import {
     Grid,
     InputLabel,
     MenuItem,
-    Select,
     Stack,
     Table,
     TableBody,
@@ -24,7 +22,6 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    TextField,
     Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -33,7 +30,9 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import toast from "react-hot-toast";
 import { axiosInstance, callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
-import { PrimaryButton } from "../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import FormTextField from "../../../common/components/form/FormTextField";
+import FormSelect from "../../../common/components/form/FormSelect";
 import StatusChip from "../../../common/components/StatusChip";
 import { adminEndPoints } from "../services/adminApi";
 
@@ -377,13 +376,13 @@ function ProblemResolutionDetail() {
         <Container maxWidth="xl" sx={{ py: 4 }}>
             <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
                 <Box>
-                    <Button
+                    <SecondaryButton
                         startIcon={<ArrowBackIcon />}
                         onClick={() => navigate(-1)}
-                        sx={{ mb: 1, textTransform: "none", color: "text.secondary" }}
+                        variant="text"
                     >
                         Back
-                    </Button>
+                    </SecondaryButton>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: "text.primary" }}>
                         Problem Resolution Detail
                     </Typography>
@@ -565,7 +564,7 @@ function ProblemResolutionDetail() {
                                 <Grid item xs={12} md={4}>
                                     <FormControl fullWidth>
                                         <InputLabel id="resolution-type-label">Resolution Type</InputLabel>
-                                        <Select
+                                        <FormSelect
                                             labelId="resolution-type-label"
                                             label="Resolution Type"
                                             value={resolutionType}
@@ -577,12 +576,12 @@ function ProblemResolutionDetail() {
                                                     {option}
                                                 </MenuItem>
                                             ))}
-                                        </Select>
+                                        </FormSelect>
                                     </FormControl>
                                 </Grid>
 
                                 <Grid item xs={12} md={4}>
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         type="number"
                                         label="Refund Amount"
@@ -599,7 +598,7 @@ function ProblemResolutionDetail() {
                                 </Grid>
 
                                 <Grid item xs={12}>
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         multiline
                                         rows={3}
@@ -611,7 +610,7 @@ function ProblemResolutionDetail() {
                                 </Grid>
 
                                 <Grid item xs={12}>
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         multiline
                                         rows={3}
@@ -659,9 +658,9 @@ function ProblemResolutionDetail() {
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ p: 2.5 }}>
-                    <Button onClick={() => setConfirmOpen(false)} disabled={submitting}>
+                    <SecondaryButton onClick={() => setConfirmOpen(false)} disabled={submitting}>
                         Cancel
-                    </Button>
+                    </SecondaryButton>
                     <PrimaryButton onClick={handleExecuteResolution} loading={submitting}>
                         Confirm & Execute
                     </PrimaryButton>

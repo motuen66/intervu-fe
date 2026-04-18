@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { Navigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { adminRoutes } from "./adminRoutes";
 import { authRoutes } from "./authRoutes";
@@ -26,7 +27,6 @@ const BookingRequestListPage = lazy(
 const BookingRequestDetailPage = lazy(
     () => import("../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage"),
 );
-const AdminDashboard = lazy(() => import("../../features/admin/pages/AdminDashboard"));
 const App = lazy(() => import("../../App"));
 const PaymentHistoryPage = lazy(() => import("../../features/payments/pages/PaymentHistoryPage.jsx"));
 const InterviewQuestionsPage = lazy(
@@ -42,11 +42,10 @@ const SavedQuestionsPage = lazy(
     () => import("../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx"),
 );
 const PublicProfilePage = lazy(() => import("../../features/profiles/page/PublicProfilePage.jsx"));
-const PublicRoadmapPage = lazy(() => import("../../features/roadmap/PublicRoadmapPage.jsx"));
 
-const renderLazy = (LazyComponent) => (
+const renderLazy = (LazyComponent, props = {}) => (
     <Suspense fallback={null}>
-        <LazyComponent />
+        <LazyComponent {...props} />
     </Suspense>
 );
 
@@ -102,7 +101,7 @@ export const routes = [
         ),
         children: [
             { path: "/", element: renderLazy(App) },
-            { path: "/admin", element: renderLazy(AdminDashboard) },
+
             { path: "/interview", element: renderLazy(InterviewRoomListPage) },
             {
                 path: "/interview",
@@ -129,24 +128,7 @@ export const routes = [
     // Public routes
     {
         element: <MainLayout />,
-        children: [
-            { path: "/profile/:slugProfileUrl", element: renderLazy(PublicProfilePage) },
-            // B4: shareable read-only roadmap (public link)
-            { path: "/roadmap/public/:userId", element: renderLazy(PublicRoadmapPage) },
-        ],
-    },
-
-    // B5: coach and admin visibility into candidate roadmaps
-    {
-        element: (
-            <ProtectedRoute allowedRoles={[ROLES.INTERVIEWER, ROLES.ADMIN]}>
-                <MainLayout />
-            </ProtectedRoute>
-        ),
-        children: [
-            { path: "/coach/candidates/:userId/roadmap", element: renderLazy(PublicRoadmapPage) },
-            { path: "/admin/candidates/:userId/roadmap", element: renderLazy(PublicRoadmapPage) },
-        ],
+        children: [{ path: "/profile/:slugProfileUrl", element: renderLazy(PublicProfilePage) }],
     },
 
     // Candidate specific routes
