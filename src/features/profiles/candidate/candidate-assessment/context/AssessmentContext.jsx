@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
-import { assessmentEndPoints } from "../services/assessmentApi";
+import { callApi } from "../../../../../common/utils/apiConnector";
+import { assessmentEndPoints } from "../services/assessmentApi.js";
 
 const AssessmentContext = createContext(null);
 
@@ -40,7 +40,8 @@ export function AssessmentProvider({ children }) {
 
                 const apiResult = await callApi({
                     method: METHOD.POST,
-                    endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
+                    // MIGRATION: evaluate-assessment now requires payload shape { answer: { profile, responses } }
+                    endpoint: assessmentEndPoints.EVALUATE_ASSESSMENT(),
                     arg: payload,
                     alertErrorMessage: true,
                     useGlobalLoading: false,

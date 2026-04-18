@@ -16,9 +16,7 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { alpha } from "@mui/material/styles";
 import { useAssessment } from "../context/AssessmentContext";
 import { PrimaryButton } from "../../../../../common/components/buttons";
-import { assessmentApi, setAssessmentForceRequired } from "../services/assessmentApi";
-import { roadmapData as fallbackRoadmap } from "../../../../roadmap/data";
-import skillReferences from "../../../../../utils/skill-references.json";
+import { setAssessmentForceRequired } from "../helpers/assessmentHelper";
 
 const statusVisualMap = {
     good: {
@@ -129,31 +127,12 @@ const BACKEND_STACK_FALLBACK_KEYWORDS = [
     "deployment",
 ];
 
-const LEVEL_TO_SFIA_FALLBACK = {
-    0: 0,
-    1: 2,
-    2: 3,
-    3: 5,
-};
-
-const mapLevel = (lvl) => {
-    const normalized = String(lvl || "").toLowerCase();
-    switch (normalized) {
-        case "none":
-        case "beginner":
-            return 0;
-        case "basic":
-        case "comfortable":
-            return 1;
-        case "intermediate":
-        case "confident":
-            return 2;
-        case "advanced":
-        case "expert":
-            return 3;
-        default:
-            return 0;
-    }
+const levelLabel = {
+    0: "Missing",
+    1: "Basic",
+    2: "Intermediate",
+    3: "Advanced",
+    4: "Expert",
 };
 
 const mapProfileLevelToTargetSfia = (level) => {
@@ -169,11 +148,6 @@ const mapProfileLevelToTargetSfia = (level) => {
     }
     return 3;
 };
-
-const normalizeSkillKey = (value) =>
-    String(value || "")
-        .trim()
-        .toLowerCase();
 
 const normalizeText = (value) =>
     String(value || "")
@@ -205,62 +179,33 @@ const isLikelyBackendStack = (stack) => {
     return BACKEND_STACK_FALLBACK_KEYWORDS.some((keyword) => keyword && normalizedStack.includes(keyword));
 };
 
-const toDisplayLevel = (avgMapLevel) => {
-    if (avgMapLevel <= 0.5) return "None";
-    if (avgMapLevel <= 1.5) return "Basic";
-    if (avgMapLevel <= 2.5) return "Intermediate";
-    return "Advanced";
-};
-
-const toStatus = (avgMapLevel) => {
-    if (avgMapLevel <= 0.5) return "missing";
-    if (avgMapLevel <= 1.5) return "weak";
-    if (avgMapLevel <= 2.5) return "medium";
-    return "good";
-};
-
-const buildSkillReferenceIndex = () => {
-    const index = new Map();
-    (skillReferences || []).forEach((item) => {
-        const skillName = String(item?.name || "").trim();
-        if (!skillName) return;
-
-        const levelToSfia = new Map();
-        (item?.levels || []).forEach((levelItem) => {
-            const levelLabel = String(levelItem?.level || "")
-                .trim()
-                .toLowerCase();
-            if (!levelLabel) return;
-            levelToSfia.set(levelLabel, Number(levelItem?.sfia) || 0);
-        });
-
-        index.set(skillName.toLowerCase(), {
-            category: item?.category || "General",
-            levelToSfia,
-        });
-    });
-
-    return index;
-};
-
-const skillReferenceIndex = buildSkillReferenceIndex();
-
-const resolveSfiaLevel = (skillName, levelLabel, mappedLevel) => {
-    const reference = skillReferenceIndex.get(normalizeSkillKey(skillName));
-    if (!reference) {
-        return LEVEL_TO_SFIA_FALLBACK[mappedLevel] ?? 0;
+const inferSkillCategory = (skillName) => {
+    const normalized = normalizeText(skillName);
+    if (!normalized) {
+        return "General";
     }
 
-    const explicitSfia = reference.levelToSfia.get(
-        String(levelLabel || "")
-            .toLowerCase()
-            .trim(),
-    );
-    if (Number.isFinite(explicitSfia)) {
-        return explicitSfia;
+    const hints = Object.values(TECHSTACK_GROUP_HINTS);
+    const matched = hints.find((hint) => (hint.keywords || []).some((keyword) => normalized.includes(keyword)));
+    if (matched?.categories?.length) {
+        return matched.categories[0];
     }
 
-    return LEVEL_TO_SFIA_FALLBACK[mappedLevel] ?? 0;
+    if (GENERIC_BACKEND_KEYWORDS.some((keyword) => keyword && normalized.includes(keyword))) {
+        return "Backend";
+    }
+
+    return "General";
+};
+
+const toNumericLevelCode = (value) => {
+    const normalized = normalizeText(value);
+    if (["0", "missing", "none"].includes(normalized)) return "0";
+    if (["1", "basic", "beginner", "junior", "entry"].includes(normalized)) return "1";
+    if (["2", "intermediate", "mid"].includes(normalized)) return "2";
+    if (["3", "advanced", "senior"].includes(normalized)) return "3";
+    if (["4", "expert", "lead", "principal", "staff"].includes(normalized)) return "4";
+    return "0";
 };
 
 const mapDerivedSkillToScore = (derivedSkill) => {
@@ -278,10 +223,42 @@ const mapDerivedSkillToScore = (derivedSkill) => {
     return 0;
 };
 
+const toPercentScore = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return 0;
+    return Math.max(0, Math.min(100, num));
+};
+
+const toOverallPercentScore = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return null;
+    const asPercent = num <= 4 ? num * 25 : num;
+    return Math.max(0, Math.min(100, Math.round(asPercent)));
+};
+
+const toStatusByScore = (score, isMissing) => {
+    if (isMissing || score <= 0) return "missing";
+    if (score < 50) return "weak";
+    if (score < 75) return "medium";
+    return "good";
+};
+
+const buildLevelBreakdown = (skills = []) => {
+    const initial = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+    skills.forEach((item) => {
+        const levelCode = Number(toNumericLevelCode(item?.levelCode ?? item?.selectedLevel));
+        if (Number.isInteger(levelCode) && levelCode >= 0 && levelCode <= 4) {
+            initial[levelCode] += 1;
+        }
+    });
+    return initial;
+};
+
 const ResultDashboard = () => {
     const navigate = useNavigate();
     const {
         answers,
+        surveyResult,
         skillScores,
         matchPercentage,
         lastMatchPercentage,
@@ -290,144 +267,106 @@ const ResultDashboard = () => {
     } = useAssessment();
     const [isSaving, setIsSaving] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState({});
+    const [expandedSkills, setExpandedSkills] = useState({});
     const profile = answers?.profile || {};
 
-    const { summaryText, calculatedSkillScores } = useMemo(() => {
-        const responses = answers?.responses || answers?.answerJson?.responses || [];
-        const targetLevel = mapProfileLevelToTargetSfia(profile.level);
+    const { summaryText, calculatedSkillScores, overallScorePercent, overallLevelText } = useMemo(() => {
+        const evaluateResult =
+            surveyResult?.answer || surveyResult?.responses || surveyResult?.current?.skills
+                ? surveyResult
+                : answers?.evaluateResponse
+                  ? answers.evaluateResponse
+                  : null;
 
-        if (!Array.isArray(responses) || responses.length === 0) {
-            const fallbackGroups = (skillScores || []).reduce((acc, skill) => {
-                const key = "General";
-                if (!acc[key]) {
-                    acc[key] = {
-                        category: key,
-                        scoreTotal: 0,
-                        count: 0,
-                        missingCount: 0,
-                        weakCount: 0,
+        if (evaluateResult) {
+            const answerBlock = evaluateResult?.answer?.responses ? evaluateResult.answer : evaluateResult;
+            const currentSkillsList = Array.isArray(evaluateResult?.current?.skills) ? evaluateResult.current.skills : [];
+            const responseSkillsList = Array.isArray(answerBlock?.responses) ? answerBlock.responses : [];
+            const gapMissing = Array.isArray(evaluateResult?.gapJson?.missing)
+                ? evaluateResult.gapJson.missing
+                : evaluateResult?.missing || [];
+            const gapWeak = Array.isArray(evaluateResult?.gapJson?.weak) ? evaluateResult.gapJson.weak : [];
+            const missingSet = new Set(gapMissing.map((item) => String(item || "").toLowerCase()));
+            const weakSet = new Set(gapWeak.map((item) => String(item || "").toLowerCase()));
+            const targetLevel = mapProfileLevelToTargetSfia(
+                answerBlock?.overallLevel || answerBlock?.profile?.level || profile.level,
+            );
+            const calculatedFromCurrent = currentSkillsList
+                .map((item) => {
+                    const levelCode = toNumericLevelCode(item?.level);
+                    const score = toPercentScore(item?.score);
+                    const skillKey = String(item?.skill || "Unknown Skill");
+                    const normalizedSkill = normalizeText(skillKey);
+                    const isMissing = missingSet.has(normalizedSkill) || levelCode === "0" || score <= 0;
+                    const isWeak = weakSet.has(normalizedSkill);
+                    return {
+                        skillKey,
+                        status: isMissing ? "missing" : isWeak ? "weak" : toStatusByScore(score, false),
+                        score,
+                        levelCode,
+                        sfiaLevel: Number.isFinite(Number(item?.sfiaLevel)) ? Math.max(0, Math.round(Number(item.sfiaLevel))) : 0,
+                        targetLevel,
+                        selectedLevel: levelLabel[levelCode] || levelLabel["0"],
+                        category: inferSkillCategory(skillKey),
                     };
-                }
-                acc[key].scoreTotal += Number(skill?.score) || 0;
-                acc[key].count += 1;
-                if (skill?.status === "missing") acc[key].missingCount += 1;
-                if (skill?.status === "weak") acc[key].weakCount += 1;
-                return acc;
-            }, {});
+                })
+                .sort((a, b) => b.score - a.score);
+            const calculatedFromResponses = Array.from(
+                responseSkillsList.reduce((acc, item) => {
+                    const skillKey = String(item?.skill || "").trim();
+                    if (!skillKey) return acc;
+                    const levelCode = toNumericLevelCode(item?.selectedLevel);
+                    const numericLevel = Number(levelCode);
+                    const bucket = acc.get(skillKey) || { scoreTotal: 0, count: 0, levelTotal: 0 };
+                    bucket.scoreTotal += Math.max(0, Math.min(100, Math.round((numericLevel / 4) * 100)));
+                    bucket.levelTotal += numericLevel;
+                    bucket.count += 1;
+                    acc.set(skillKey, bucket);
+                    return acc;
+                }, new Map()),
+            )
+                .map(([skillKey, aggregated]) => {
+                    const avgScore = aggregated.count ? Math.round(aggregated.scoreTotal / aggregated.count) : 0;
+                    const avgLevel = aggregated.count ? Math.round(aggregated.levelTotal / aggregated.count) : 0;
+                    const levelCode = String(avgLevel);
+                    const normalizedSkill = normalizeText(skillKey);
+                    const isMissing = missingSet.has(normalizedSkill) || levelCode === "0" || avgScore <= 0;
+                    const isWeak = weakSet.has(normalizedSkill);
+                    return {
+                        skillKey,
+                        status: isMissing ? "missing" : isWeak ? "weak" : toStatusByScore(avgScore, false),
+                        score: avgScore,
+                        levelCode,
+                        sfiaLevel: 0,
+                        targetLevel,
+                        selectedLevel: levelLabel[levelCode] || levelLabel["0"],
+                        category: inferSkillCategory(skillKey),
+                    };
+                })
+                .sort((a, b) => b.score - a.score);
+
+            const overallPercent = toOverallPercentScore(answerBlock?.overallScore ?? evaluateResult?.overallScore);
 
             return {
-                summaryText: "",
-                calculatedSkillScores: skillScores || [],
-                groupedAbilities: Object.values(fallbackGroups).map((item) => ({
-                    category: item.category,
-                    score: item.count ? Math.round(item.scoreTotal / item.count) : 0,
-                    count: item.count,
-                    missingCount: item.missingCount,
-                    weakCount: item.weakCount,
-                })),
+                summaryText: String(evaluateResult?.summaryText || ""),
+                calculatedSkillScores:
+                    calculatedFromCurrent.length > 0
+                        ? calculatedFromCurrent
+                        : calculatedFromResponses.length > 0
+                          ? calculatedFromResponses
+                          : skillScores || [],
+                overallScorePercent: overallPercent,
+                overallLevelText: String(answerBlock?.overallLevel || evaluateResult?.overallLevel || "None"),
             };
         }
 
-        const byPhase = responses.reduce((acc, item) => {
-            const phase = item?.phase || "general";
-            if (!acc[phase]) {
-                acc[phase] = [];
-            }
-            acc[phase].push(item);
-            return acc;
-        }, {});
-
-        const lines = Object.entries(byPhase).map(([phase, items]) => {
-            const scores = items.map((item) => mapLevel(item?.selectedLevel));
-            const avg = scores.length
-                ? Math.round((scores.reduce((sum, val) => sum + val, 0) / scores.length) * 100) / 100
-                : 0;
-            const needs = items
-                .filter((item) => mapLevel(item?.selectedLevel) <= 1)
-                .map((item) => item?.skill)
-                .filter(Boolean);
-            return `${phase}: average level ${toDisplayLevel(avg)}. Consider improving: ${needs.join(", ")}`;
-        });
-
-        const skillMap = new Map();
-        responses.forEach((item) => {
-            const skillKey = String(item?.skill || "").trim();
-            if (!skillKey) return;
-
-            const key = normalizeSkillKey(skillKey);
-            const mapped = mapLevel(item?.selectedLevel);
-            const sfia = resolveSfiaLevel(skillKey, item?.selectedLevel, mapped);
-            const category = skillReferenceIndex.get(key)?.category || "General";
-
-            if (!skillMap.has(key)) {
-                skillMap.set(key, {
-                    skillKey,
-                    category,
-                    mapLevels: [],
-                    sfiaLevels: [],
-                });
-            }
-
-            const current = skillMap.get(key);
-            current.mapLevels.push(mapped);
-            current.sfiaLevels.push(sfia);
-        });
-
-        const calculated = Array.from(skillMap.values())
-            .map((item) => {
-                const mapAvg = item.mapLevels.length
-                    ? item.mapLevels.reduce((sum, value) => sum + value, 0) / item.mapLevels.length
-                    : 0;
-                const sfiaAvg = item.sfiaLevels.length
-                    ? item.sfiaLevels.reduce((sum, value) => sum + value, 0) / item.sfiaLevels.length
-                    : 0;
-                const score = Math.max(0, Math.min(100, Math.round((sfiaAvg / 5) * 100)));
-
-                return {
-                    skillKey: item.skillKey,
-                    status: toStatus(mapAvg),
-                    score,
-                    sfiaLevel: Math.round(sfiaAvg),
-                    targetLevel,
-                    selectedLevel: toDisplayLevel(mapAvg),
-                    category: item.category,
-                };
-            })
-            .sort((a, b) => b.score - a.score);
-
-        const abilityGroupsMap = calculated.reduce((acc, item) => {
-            const key = item.category || "General";
-            if (!acc[key]) {
-                acc[key] = {
-                    category: key,
-                    scoreTotal: 0,
-                    count: 0,
-                    missingCount: 0,
-                    weakCount: 0,
-                };
-            }
-
-            acc[key].scoreTotal += item.score;
-            acc[key].count += 1;
-            if (item.status === "missing") acc[key].missingCount += 1;
-            if (item.status === "weak") acc[key].weakCount += 1;
-            return acc;
-        }, {});
-
         return {
-            summaryText: lines.join("\n"),
-            calculatedSkillScores: calculated,
-            groupedAbilities: Object.values(abilityGroupsMap)
-                .map((item) => ({
-                    category: item.category,
-                    score: item.count ? Math.round(item.scoreTotal / item.count) : 0,
-                    count: item.count,
-                    missingCount: item.missingCount,
-                    weakCount: item.weakCount,
-                }))
-                .sort((a, b) => b.score - a.score),
+            summaryText: "",
+            calculatedSkillScores: skillScores || [],
+            overallScorePercent: null,
+            overallLevelText: "None",
         };
-    }, [answers, profile.level, skillScores]);
+    }, [answers?.evaluateResponse, profile.level, skillScores, surveyResult]);
 
     const displaySkillScores = calculatedSkillScores.length > 0 ? calculatedSkillScores : skillScores;
     const groupedSkillCards = useMemo(() => {
@@ -435,6 +374,7 @@ const ResultDashboard = () => {
         const derivedSkills = Array.isArray(answers?.derivedSkills) ? answers.derivedSkills : [];
 
         if (!selectedStacks.length) {
+            const fallbackLevelBreakdown = buildLevelBreakdown(displaySkillScores);
             return [
                 {
                     id: "other-skills",
@@ -448,6 +388,7 @@ const ResultDashboard = () => {
                     count: displaySkillScores.length,
                     missingCount: displaySkillScores.filter((item) => item?.status === "missing").length,
                     weakCount: displaySkillScores.filter((item) => item?.status === "weak").length,
+                    levelBreakdown: fallbackLevelBreakdown,
                     skills: displaySkillScores,
                 },
             ];
@@ -521,6 +462,7 @@ const ResultDashboard = () => {
                       skillsInGroup.reduce((sum, item) => sum + (Number(item?.score) || 0), 0) / skillsInGroup.length,
                   )
                 : fallbackScore;
+            const levelBreakdown = buildLevelBreakdown(skillsInGroup);
 
             return {
                 id: `stack-${normalizeText(stack)}`,
@@ -531,11 +473,13 @@ const ResultDashboard = () => {
                 count: skillsInGroup.length,
                 missingCount: skillsInGroup.filter((item) => item?.status === "missing").length,
                 weakCount: skillsInGroup.filter((item) => item?.status === "weak").length,
+                levelBreakdown,
                 skills: skillsInGroup,
             };
         });
 
         if (unmatched.length > 0) {
+            const unmatchedLevelBreakdown = buildLevelBreakdown(unmatched);
             techGroups.push({
                 id: "other-skills",
                 title: "Other Skills",
@@ -545,6 +489,7 @@ const ResultDashboard = () => {
                 count: unmatched.length,
                 missingCount: unmatched.filter((item) => item?.status === "missing").length,
                 weakCount: unmatched.filter((item) => item?.status === "weak").length,
+                levelBreakdown: unmatchedLevelBreakdown,
                 skills: unmatched,
             });
         }
@@ -553,11 +498,14 @@ const ResultDashboard = () => {
     }, [answers?.derivedSkills, displaySkillScores, profile?.techstack]);
 
     const effectiveMatchPercentage = useMemo(() => {
+        if (overallScorePercent != null && Number.isFinite(Number(overallScorePercent))) {
+            return Number(overallScorePercent);
+        }
         if (!displaySkillScores.length) return matchPercentage;
         return Math.round(
             displaySkillScores.reduce((sum, item) => sum + (item.score || 0), 0) / displaySkillScores.length,
         );
-    }, [displaySkillScores, matchPercentage]);
+    }, [displaySkillScores, matchPercentage, overallScorePercent]);
 
     const strongestSkills = useMemo(
         () =>
@@ -592,52 +540,92 @@ const ResultDashboard = () => {
         : mediumSkills.length
           ? `${mediumSkills.map((skill) => skill.skillKey).join(", ")} is already on track for ${profile.level || "your target level"}, but you still have a few core gaps to close first.`
           : `Your score reflects both your chosen level and the stack-specific answers you gave in the assessment.`;
+    const overallCaption = `Overall level: ${overallLevelText || "None"}`;
     const hasRoadmap = Boolean(
         (Array.isArray(roadmap?.today) && roadmap.today.length > 0) ||
             (Array.isArray(roadmap?.weeks) && roadmap.weeks.length > 0) ||
             (Array.isArray(roadmap?.phases) && roadmap.phases.length > 0),
     );
 
-    const renderSkillRow = (skill) => (
-        <Box key={skill.skillKey}>
-            <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1} sx={{ mb: 1 }}>
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                    <Typography fontWeight={700}>{skill.skillKey}</Typography>
-                    <Chip
-                        label={(statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).label}
-                        size="small"
-                        variant="outlined"
+    const renderSkillRow = (skill, groupId) => {
+        const skillId = `${groupId}-${normalizeText(skill.skillKey)}`;
+        const isExpanded = expandedSkills[skillId] ?? false;
+        const levelCode = toNumericLevelCode(skill.levelCode ?? skill.selectedLevel);
+        const resolvedLevelLabel = levelLabel[levelCode] || skill.selectedLevel || "Missing";
+
+        return (
+            <Accordion
+                key={skill.skillKey}
+                expanded={isExpanded}
+                onChange={() =>
+                    setExpandedSkills((prev) => ({
+                        ...prev,
+                        [skillId]: !isExpanded,
+                    }))
+                }
+                disableGutters
+                elevation={0}
+                sx={{
+                    border: "1px solid",
+                    borderColor: alpha("#cbd5e1", 0.8),
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    "&:before": { display: "none" },
+                }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreRoundedIcon />}
+                    sx={{
+                        px: 2,
+                        py: 1,
+                        bgcolor: alpha("#f8fafc", 0.78),
+                    }}
+                >
+                    <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1} width="100%">
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                            <Typography fontWeight={700}>{skill.skillKey}</Typography>
+                            <Chip
+                                label={(statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).label}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                    bgcolor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).soft,
+                                    borderColor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium)
+                                        .border,
+                                    color: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).text,
+                                    fontWeight: 700,
+                                }}
+                            />
+                        </Stack>
+                        <Typography variant="body2" color="text.secondary" fontWeight={700}>
+                            {skill.score}% - Level {levelCode}
+                        </Typography>
+                    </Stack>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 2, py: 1.75 }}>
+                    <LinearProgress
+                        variant="determinate"
+                        value={skill.score}
                         sx={{
+                            height: 10,
+                            borderRadius: 999,
                             bgcolor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).soft,
-                            borderColor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium)
-                                .border,
-                            color: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).text,
-                            fontWeight: 700,
+                            "& .MuiLinearProgress-bar": {
+                                borderRadius: 999,
+                                bgcolor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).main,
+                            },
                         }}
                     />
-                </Stack>
-                <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                    Current L{skill.sfiaLevel} / Target L{skill.targetLevel || 4}
-                </Typography>
-            </Stack>
-            <LinearProgress
-                variant="determinate"
-                value={skill.score}
-                sx={{
-                    height: 10,
-                    borderRadius: 999,
-                    bgcolor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).soft,
-                    "& .MuiLinearProgress-bar": {
-                        borderRadius: 999,
-                        bgcolor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).main,
-                    },
-                }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
-                {skill.score}% ready for {profile.level || "your chosen"} benchmark
-            </Typography>
-        </Box>
-    );
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
+                        Level detail: {resolvedLevelLabel} (Level {levelCode})
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block" }}>
+                        {skill.score}% ready for {profile.level || "your chosen"} benchmark
+                    </Typography>
+                </AccordionDetails>
+            </Accordion>
+        );
+    };
 
     const handleViewRoadmap = async () => {
         if (isSaving) return;
@@ -749,15 +737,14 @@ const ResultDashboard = () => {
                             Calibrated for a {profile.level || "target"} {profile.role || "role"} using your real tech
                             stack answers, not just a generic average.
                         </Typography>
-                        {/* {summaryText ? (
-                            <Typography
-                                color="text.secondary"
-                                textAlign="center"
-                                sx={{ mt: 1.5, whiteSpace: "pre-line" }}
-                            >
+                        <Typography color="text.secondary" textAlign="center" sx={{ mt: 0.75 }}>
+                            {overallCaption}
+                        </Typography>
+                        {summaryText ? (
+                            <Typography color="text.secondary" textAlign="center" sx={{ mt: 1.5, whiteSpace: "pre-line" }}>
                                 {summaryText}
                             </Typography>
-                        ) : null} */}
+                        ) : null}
                     </Paper>
 
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
@@ -829,12 +816,33 @@ const ResultDashboard = () => {
                                                         {group.missingCount} missing - {group.weakCount} weak
                                                     </Typography>
                                                 ) : null}
+                                                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                                                    {[0, 1, 2, 3, 4].map((code) => {
+                                                        const count = Number(group?.levelBreakdown?.[code]) || 0;
+                                                        if (count <= 0) return null;
+                                                        return (
+                                                            <Chip
+                                                                key={`${group.id}-level-${code}`}
+                                                                size="small"
+                                                                variant="outlined"
+                                                                label={`L${code} ${levelLabel[code]}: ${count}`}
+                                                                sx={{
+                                                                    bgcolor: alpha("#ffffff", 0.72),
+                                                                    borderColor: alpha("#94a3b8", 0.5),
+                                                                }}
+                                                            />
+                                                        );
+                                                    })}
+                                                </Stack>
                                             </Stack>
                                         </AccordionSummary>
                                         <AccordionDetails sx={{ px: 2, py: 2 }}>
                                             {group.skills.length > 0 ? (
                                                 <Stack spacing={2.5}>
-                                                    {group.skills.map((skill) => renderSkillRow(skill))}
+                                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                                                        Child skills in {group.title}:
+                                                    </Typography>
+                                                    {group.skills.map((skill) => renderSkillRow(skill, group.id))}
                                                 </Stack>
                                             ) : (
                                                 <Typography variant="body2" color="text.secondary">

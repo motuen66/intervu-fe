@@ -37,7 +37,7 @@ const targetLevelMap = [
 ];
 
 const ProcessingState = () => {
-    const { answers, surveyResult, setSkillScores, updateMatchPercentage, nextStep } = useAssessment();
+    const { answers, setSkillScores, updateMatchPercentage, nextStep } = useAssessment();
     const [progress, setProgress] = useState(0);
     const [statusIndex, setStatusIndex] = useState(0);
 
@@ -47,8 +47,8 @@ const ProcessingState = () => {
             return answers.answerJson.skillScores;
         }
 
-        return buildSkillScores(surveyResult, answers);
-    }, [answers, surveyResult]);
+        return buildSkillScores(answers);
+    }, [answers]);
     const matchPercentage = useMemo(() => {
         if (Number.isFinite(Number(answers?.answerJson?.matchPercentage))) {
             return Number(answers.answerJson.matchPercentage);
@@ -185,7 +185,7 @@ const ProcessingState = () => {
     );
 };
 
-function buildSkillScores(surveyResult, answers) {
+function buildSkillScores(answers) {
     const targetLevel = getTargetLevel(answers?.profile?.level);
 
     if (Array.isArray(answers?.derivedSkills) && answers.derivedSkills.length > 0) {
@@ -213,13 +213,7 @@ function buildSkillScores(surveyResult, answers) {
         responseMap.set((item.skill || "").toLowerCase(), item);
     });
 
-    const surveyQuestions = Object.values(surveyResult?.summaryObject || {}).flatMap((group) => group?.Questions || []);
-    const skillSource = surveyQuestions.length
-        ? surveyQuestions.map((question) => ({
-              skill: question?.Skill,
-              selectedLevel: question?.SelectedLevel,
-          }))
-        : answers?.responses || [];
+    const skillSource = answers?.responses || [];
 
     const normalizedSkills = skillSource
         .map((item) => {

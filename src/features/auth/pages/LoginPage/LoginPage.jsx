@@ -15,7 +15,7 @@ import { ROLES } from "../../../../common/constants/common";
 import {
     ASSESSMENT_DATA_STATE,
     getAssessmentState,
-} from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
+} from "../../../profiles/candidate/candidate-assessment/helpers/assessmentHelper";
 import { trackLogin } from "../../../../utils/analytics";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";

@@ -9,7 +9,7 @@ import {
     isAssessmentForceRequired,
     saveSkippedAssessment,
     setAssessmentForceRequired,
-} from "../candidate-assessment/services/assessmentApi";
+} from "../candidate-assessment/helpers/assessmentHelper";
 import { getAssessmentDataFromCache, isAssessmentCacheValid } from "../../../../common/utils/assessmentCache";
 import { AssessmentProvider } from "../candidate-assessment/context/AssessmentContext";
 import AssessmentRequiredDialog from "../candidate-assessment/components/AssessmentRequiredDialog";
