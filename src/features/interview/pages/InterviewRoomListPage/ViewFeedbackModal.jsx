@@ -128,7 +128,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
         >
             <DialogTitle sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }} component="div">
                 <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: "-0.01em" }} component="span">
-                    Performance Feedback
+                    Evaluation Details
                 </Typography>
                 <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
                     <CloseIcon />
@@ -159,9 +159,9 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                         {evaluationResults.length > 0 ? (
                             /* Evaluation Results View (Questions + Scores) */
                             <Box>
-                                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                {/* <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                                     Evaluation Details
-                                </Typography>
+                                </Typography> */}
                                 <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "grey.200", borderRadius: "12px" }}>
                                     <Table size="medium">
                                         <TableHead sx={{ bgcolor: "grey.50" }}>
@@ -237,7 +237,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                     </Table>
                                 </TableContainer>
 
-                                <Box sx={{ mt: 3, p: 2, bgcolor: "primary.50", borderRadius: "8px", border: "1px solid", borderColor: "primary.100" }}>
+                                {/* <Box sx={{ mt: 3, p: 2, bgcolor: "primary.50", borderRadius: "8px", border: "1px solid", borderColor: "primary.100" }}>
                                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                                         <Typography variant="subtitle2" color="primary.dark">
                                             Evaluation Status
@@ -247,7 +247,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                             color={feedback.isEvaluationCompleted ? "success" : "warning"}
                                         />
                                     </Stack>
-                                </Box>
+                                </Box> */}
 
                             </Box>
                         ) : (
