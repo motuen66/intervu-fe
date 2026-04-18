@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Grid, Typography, CircularProgress } from "@mui/material";
+import { Box, Grid, Typography, CircularProgress, Container } from "@mui/material";
 import { RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -121,7 +121,7 @@ export default function AdminAiServicesPage() {
     const handleRefreshHealth = () => fetchHealth();
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 } }}>
+        <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
             <AdminPageHeader
                 title="AI Services"
                 subtitle="Live health status and read-only configuration for all AI integrations."
@@ -251,6 +251,6 @@ export default function AdminAiServicesPage() {
                     </BaseCard>
                 )}
             </Box>
-        </Box>
+        </Container>
     );
 }

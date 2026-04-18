@@ -10,10 +10,10 @@ import {
     FormControl,
     IconButton,
     MenuItem,
-    Select,
-    TextField,
     Typography,
 } from "@mui/material";
+import FormSelect from "../../../common/components/form/FormSelect";
+import FormTextField from "../../../common/components/form/FormTextField";
 import GavelIcon from "@mui/icons-material/Gavel";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CloseIcon from "@mui/icons-material/Close";
@@ -379,22 +379,21 @@ export default function AdminReportsPage() {
                     </Typography>
 
                     <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>Resolution action</Typography>
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                        <Select
-                            size="small"
-                            value={resolveOptionKey}
-                            onChange={(e) => setResolveOptionKey(e.target.value)}
-                        >
-                            {RESOLVE_OPTIONS.map((opt) => (
-                                <MenuItem key={opt.key} value={opt.key}>{opt.label}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    <FormSelect
+                        fullWidth
+                        size="small"
+                        value={resolveOptionKey}
+                        onChange={(e) => setResolveOptionKey(e.target.value)}
+                    >
+                        {RESOLVE_OPTIONS.map((opt) => (
+                            <MenuItem key={opt.key} value={opt.key}>{opt.label}</MenuItem>
+                        ))}
+                    </FormSelect>
 
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1, mt: 2 }}>
                         Resolution note <span style={{ color: "#d32f2f" }}>*</span>
                     </Typography>
-                    <TextField
+                    <FormTextField
                         fullWidth
                         multiline
                         minRows={3}

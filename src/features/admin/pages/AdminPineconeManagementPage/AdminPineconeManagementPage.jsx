@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Grid, Typography, Divider, CircularProgress } from "@mui/material";
+import { Box, Grid, Typography, Divider, CircularProgress, Container } from "@mui/material";
 import { Database, Layers, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -61,7 +61,7 @@ export default function AdminPineconeManagementPage() {
     const namespaceCount = namespaceRows.length;
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 } }}>
+        <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
             <AdminPageHeader
                 title="Pinecone Management"
                 subtitle="Monitor vector index health and trigger manual re-sync operations."
@@ -241,6 +241,6 @@ export default function AdminPineconeManagementPage() {
                     </BaseCard>
                 </Grid>
             </Grid>
-        </Box>
+        </Container>
     );
 }

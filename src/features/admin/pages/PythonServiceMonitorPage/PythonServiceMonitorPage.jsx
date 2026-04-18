@@ -10,6 +10,7 @@ import {
     Stack,
     Tooltip,
     Chip,
+    Container,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -467,7 +468,7 @@ export default function PythonServiceMonitorPage() {
     );
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 } }}>
+        <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
             <AdminPageHeader
                 title="AI Service Monitor"
                 subtitle="Traffic, tokens, and latency by business use case."
@@ -675,6 +676,6 @@ export default function PythonServiceMonitorPage() {
                     </BaseCard>
                 </>
             )}
-        </Box>
+        </Container>
     );
 }
