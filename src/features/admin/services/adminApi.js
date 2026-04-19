@@ -1,6 +1,7 @@
 import { BE_BASE_URL } from "../../../common/constants/env";
 
 const ADMIN_BASE_URL = `${BE_BASE_URL}/admin`;
+const NOTIFICATION_BASE_URL = `${BE_BASE_URL}/Notifications`;
 
 export const adminEndPoints = {
     GET_ANALYTICS: `${ADMIN_BASE_URL}/stats`,
@@ -37,6 +38,7 @@ export const adminEndPoints = {
     GET_QUESTION_REPORTS: `${BE_BASE_URL}/questions/reports`,
     UPDATE_QUESTION_REPORT_STATUS: (reportId) => `${BE_BASE_URL}/questions/reports/${reportId}/status`,
     DELETE_QUESTION: (questionId) => `${BE_BASE_URL}/questions/${questionId}`,
+    MODERATE_QUESTION: (questionId) => `${BE_BASE_URL}/questions/${questionId}/moderate`,
 
     // Platform Settings Endpoints
     GET_COMMISSION_RATE: `${ADMIN_BASE_URL}/platform-settings/commission`,
@@ -57,4 +59,12 @@ export const adminEndPoints = {
         const query = params.toString();
         return `${ADMIN_BASE_URL}/system/python-ai-metrics${query ? `?${query}` : ""}`;
     },
+
+    // Notification Endpoints
+    GET_NOTIFICATIONS: (page = 1, pageSize = 20) => `${NOTIFICATION_BASE_URL}?page=${page}&pageSize=${pageSize}`,
+    SEND_NOTIFICATION: `${NOTIFICATION_BASE_URL}/admin`,
+    BROADCAST_NOTIFICATION: `${NOTIFICATION_BASE_URL}/admin/broadcast`,
+    BROADCAST_ALL: `${NOTIFICATION_BASE_URL}/admin/broadcast-all`,
+    BROADCAST_ROLE: `${NOTIFICATION_BASE_URL}/admin/broadcast-role`,
+    BROADCAST_LOGS: (page = 1, pageSize = 20) => `${NOTIFICATION_BASE_URL}/admin/broadcast-logs?page=${page}&pageSize=${pageSize}`,
 };

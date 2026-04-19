@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Container, Typography } from "@mui/material";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import BlockIcon from "@mui/icons-material/Block";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import {
+    Box,
+    Container,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    IconButton,
+    MenuItem,
+    Typography,
+} from "@mui/material";
+import FormSelect from "../../../common/components/form/FormSelect";
+import FormTextField from "../../../common/components/form/FormTextField";
+import GavelIcon from "@mui/icons-material/Gavel";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import CloseIcon from "@mui/icons-material/Close";
 import toast from "react-hot-toast";
 
 import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
@@ -13,65 +25,71 @@ import FilterDropdown from "../../../common/components/admin/FilterDropdown";
 import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
 import DataTable from "../../../common/components/table/DataTable";
 import StatusChip from "../../../common/components/StatusChip";
-import ConfirmModal from "../../../common/components/ConfirmModal";
-import { PrimaryButton } from "../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import useTableState from "../../../hooks/useTableState";
 
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
+import { dialogStyles } from "../../../common/constants/uiStyles";
 import "./AdminDashboard.css";
 
-const REPORT_STATUSES = {
+// Backend QuestionReportStatus: Pending=1, Resolved=2, Dismissed=3
+const REPORT_STATUS = {
+    PENDING: 1,
+    RESOLVED: 2,
+    DISMISSED: 3,
+};
+
+const REPORT_STATUS_KEY = {
     ALL: "all",
     PENDING: "pending",
-    REVIEWED: "reviewed",
+    RESOLVED: "resolved",
     DISMISSED: "dismissed",
 };
 
-const statusToChipColor = {
-    pending: "warning",
-    reviewed: "success",
-    dismissed: "error",
+// Backend ResolutionAction: NoAction=0, DeactivateQuestion=1, EditQuestion=2
+const RESOLUTION_ACTION = {
+    NoAction: 0,
+    DeactivateQuestion: 1,
+    EditQuestion: 2,
+};
+
+const statusKeyToChipColor = {
+    [REPORT_STATUS_KEY.PENDING]: "warning",
+    [REPORT_STATUS_KEY.RESOLVED]: "success",
+    [REPORT_STATUS_KEY.DISMISSED]: "error",
 };
 
 const normalizeStatusKey = (status) => {
     if (status === null || status === undefined) return "";
     if (typeof status === "number") {
-        if (status === 1) return REPORT_STATUSES.PENDING;
-        if (status === 2) return REPORT_STATUSES.REVIEWED;
-        if (status === 3) return REPORT_STATUSES.DISMISSED;
+        if (status === REPORT_STATUS.PENDING) return REPORT_STATUS_KEY.PENDING;
+        if (status === REPORT_STATUS.RESOLVED) return REPORT_STATUS_KEY.RESOLVED;
+        if (status === REPORT_STATUS.DISMISSED) return REPORT_STATUS_KEY.DISMISSED;
     }
     const normalized = status.toString().trim().toLowerCase();
-    if (normalized === "1") return REPORT_STATUSES.PENDING;
-    if (normalized === "2") return REPORT_STATUSES.REVIEWED;
-    if (normalized === "3") return REPORT_STATUSES.DISMISSED;
+    if (normalized === "1" || normalized === "pending") return REPORT_STATUS_KEY.PENDING;
+    if (normalized === "2" || normalized === "resolved" || normalized === "reviewed") return REPORT_STATUS_KEY.RESOLVED;
+    if (normalized === "3" || normalized === "dismissed") return REPORT_STATUS_KEY.DISMISSED;
     return normalized;
-};
-
-const getRawStatus = (raw) => raw?.status ?? raw?.reportStatus ?? raw?.state ?? raw?.reportState;
-
-const toStatusValueForRequest = (targetStatus, currentStatus) => {
-    const normalizedTarget = normalizeStatusKey(targetStatus);
-    const numberMap = {
-        [REPORT_STATUSES.PENDING]: 1,
-        [REPORT_STATUSES.REVIEWED]: 2,
-        [REPORT_STATUSES.DISMISSED]: 3,
-    };
-    const currentIsNumeric = typeof currentStatus === "number" || ["0", "1", "2"].includes((currentStatus ?? "").toString().trim());
-    if (currentIsNumeric) {
-        return numberMap[normalizedTarget] ?? targetStatus;
-    }
-    return getStatusLabel(normalizedTarget);
 };
 
 const getStatusLabel = (status) => {
     const normalized = normalizeStatusKey(status);
-    if (normalized === REPORT_STATUSES.PENDING) return "Pending";
-    if (normalized === REPORT_STATUSES.REVIEWED) return "Reviewed";
-    if (normalized === REPORT_STATUSES.DISMISSED) return "Dismissed";
+    if (normalized === REPORT_STATUS_KEY.PENDING) return "Pending";
+    if (normalized === REPORT_STATUS_KEY.RESOLVED) return "Resolved";
+    if (normalized === REPORT_STATUS_KEY.DISMISSED) return "Dismissed";
     return "Unknown";
 };
+
+const statusKeyToNumber = {
+    [REPORT_STATUS_KEY.PENDING]: REPORT_STATUS.PENDING,
+    [REPORT_STATUS_KEY.RESOLVED]: REPORT_STATUS.RESOLVED,
+    [REPORT_STATUS_KEY.DISMISSED]: REPORT_STATUS.DISMISSED,
+};
+
+const getRawStatus = (raw) => raw?.status ?? raw?.reportStatus ?? raw?.state ?? raw?.reportState;
 
 const normalizeReport = (raw) => ({
     id: raw?.id || raw?.reportId || raw?.questionReportId || raw?.questionReport?.id || raw?.questionReport?.reportId,
@@ -84,6 +102,24 @@ const normalizeReport = (raw) => ({
     questionTitle: raw?.questionTitle || raw?.question?.title || "-",
     reporterName: raw?.reporterName || raw?.reporter?.fullName || raw?.reporter?.name || raw?.reporterUser?.fullName || "-",
 });
+
+const HOUR_MS = 1000 * 60 * 60;
+
+const getSlaRowSx = (createdAt, statusKey) => {
+    if (statusKey !== REPORT_STATUS_KEY.PENDING || !createdAt) return undefined;
+    const created = new Date(createdAt).getTime();
+    if (Number.isNaN(created)) return undefined;
+    const hours = (Date.now() - created) / HOUR_MS;
+    if (hours > 72) return { bgcolor: "error.light" };
+    if (hours > 48) return { bgcolor: "warning.main", "& *": { color: "warning.contrastText" } };
+    if (hours > 24) return { bgcolor: "warning.light" };
+    return undefined;
+};
+
+const RESOLVE_OPTIONS = [
+    { key: "deactivate", label: "Deactivate question", status: REPORT_STATUS.RESOLVED, action: RESOLUTION_ACTION.DeactivateQuestion },
+    { key: "dismiss", label: "Dismiss report", status: REPORT_STATUS.DISMISSED, action: RESOLUTION_ACTION.NoAction },
+];
 
 export default function AdminReportsPage() {
     const navigate = useNavigate();
@@ -98,12 +134,12 @@ export default function AdminReportsPage() {
     } = useTableState(10);
 
     const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState(REPORT_STATUSES.ALL);
-    
-    // Deletion targets
-    const [updatingIds, setUpdatingIds] = useState({});
-    const [deletingQuestionIds, setDeletingQuestionIds] = useState({});
-    const [deleteQuestionTarget, setDeleteQuestionTarget] = useState(null);
+    const [statusFilter, setStatusFilter] = useState(REPORT_STATUS_KEY.ALL);
+
+    const [resolveTarget, setResolveTarget] = useState(null);
+    const [resolveOptionKey, setResolveOptionKey] = useState(RESOLVE_OPTIONS[0].key);
+    const [resolveNote, setResolveNote] = useState("");
+    const [resolveSubmitting, setResolveSubmitting] = useState(false);
 
     useEffect(() => {
         fetchReports();
@@ -114,7 +150,7 @@ export default function AdminReportsPage() {
         setLoading(true);
         try {
             const params = [`page=${page + 1}`, `pageSize=${pageSize}`];
-            if (statusFilter !== REPORT_STATUSES.ALL) {
+            if (statusFilter !== REPORT_STATUS_KEY.ALL) {
                 params.push(`status=${encodeURIComponent(getStatusLabel(statusFilter))}`);
             }
             if (searchTerm) {
@@ -137,62 +173,59 @@ export default function AdminReportsPage() {
         }
     };
 
-    const handleUpdateStatus = async (reportId, status, currentStatus) => {
-        if (!reportId) {
-            toast.error("Cannot update report: missing report id");
+    const openResolveModal = (row) => {
+        if (!row?.id) {
+            toast.error("Cannot resolve: missing report id");
+            return;
+        }
+        setResolveTarget(row);
+        setResolveOptionKey(RESOLVE_OPTIONS[0].key);
+        setResolveNote("");
+    };
+
+    const closeResolveModal = () => {
+        if (resolveSubmitting) return;
+        setResolveTarget(null);
+        setResolveNote("");
+    };
+
+    const submitResolve = async () => {
+        if (!resolveTarget?.id) return;
+        const option = RESOLVE_OPTIONS.find((o) => o.key === resolveOptionKey) || RESOLVE_OPTIONS[0];
+        const note = resolveNote.trim();
+        if (!note) {
+            toast.error("Resolution note is required.");
             return;
         }
 
-        setUpdatingIds((prev) => ({ ...prev, [reportId]: true }));
+        setResolveSubmitting(true);
         try {
             const response = await callApi({
                 method: METHOD.PUT,
-                endpoint: adminEndPoints.UPDATE_QUESTION_REPORT_STATUS(reportId),
-                arg: { status: toStatusValueForRequest(status, currentStatus) },
+                endpoint: adminEndPoints.UPDATE_QUESTION_REPORT_STATUS(resolveTarget.id),
+                arg: {
+                    status: option.status,
+                    actionTaken: option.action,
+                    resolutionNote: note,
+                },
                 displaySuccessMessage: true,
             });
 
             if (response?.success) {
                 setReports((prev) =>
                     prev.map((item) =>
-                        item.id === reportId ? { ...item, status, updatedAt: new Date().toISOString() } : item
+                        item.id === resolveTarget.id
+                            ? { ...item, status: option.status, updatedAt: new Date().toISOString() }
+                            : item
                     )
                 );
+                setResolveTarget(null);
+                setResolveNote("");
             }
         } catch (error) {
-            toast.error(error?.response?.data?.message || "Failed to update report status");
+            toast.error(error?.response?.data?.message || "Failed to resolve report");
         } finally {
-            setUpdatingIds((prev) => ({ ...prev, [reportId]: false }));
-        }
-    };
-
-    const openDeleteQuestionModal = (questionId, questionTitle) => {
-        if (!questionId) {
-            toast.error("Cannot delete question: missing question id");
-            return;
-        }
-        setDeleteQuestionTarget({ questionId, questionTitle });
-    };
-
-    const handleDeleteQuestion = async () => {
-        const questionId = deleteQuestionTarget?.questionId;
-        if (!questionId) return;
-
-        setDeletingQuestionIds((prev) => ({ ...prev, [questionId]: true }));
-        try {
-            const response = await callApi({
-                method: METHOD.DELETE,
-                endpoint: adminEndPoints.DELETE_QUESTION(questionId),
-                displaySuccessMessage: true,
-            });
-            if (response?.success) {
-                fetchReports();
-            }
-        } catch (error) {
-            toast.error(error?.response?.data?.message || "Failed to delete question");
-        } finally {
-            setDeletingQuestionIds((prev) => ({ ...prev, [questionId]: false }));
-            setDeleteQuestionTarget(null);
+            setResolveSubmitting(false);
         }
     };
 
@@ -207,9 +240,9 @@ export default function AdminReportsPage() {
     };
 
     const statusOptions = [
-        { label: 'Pending', value: REPORT_STATUSES.PENDING },
-        { label: 'Reviewed', value: REPORT_STATUSES.REVIEWED },
-        { label: 'Dismissed', value: REPORT_STATUSES.DISMISSED }
+        { label: 'Pending', value: REPORT_STATUS_KEY.PENDING },
+        { label: 'Resolved', value: REPORT_STATUS_KEY.RESOLVED },
+        { label: 'Dismissed', value: REPORT_STATUS_KEY.DISMISSED }
     ];
 
     const columns = useMemo(() => [
@@ -256,16 +289,15 @@ export default function AdminReportsPage() {
             headerName: "Status",
             render: (value) => {
                 const normalized = normalizeStatusKey(value);
-                return <StatusChip label={getStatusLabel(normalized)} color={statusToChipColor[normalized] || "default"} />;
+                return <StatusChip label={getStatusLabel(normalized)} color={statusKeyToChipColor[normalized] || "default"} />;
             },
         },
         {
-            field: "updatedAt",
-            headerName: "Updated At",
-            render: (_, row) => {
-                const source = row?.updatedAt || row?.createdAt;
-                if (!source) return "-";
-                const date = new Date(source);
+            field: "createdAt",
+            headerName: "Reported At",
+            render: (value) => {
+                if (!value) return "-";
+                const date = new Date(value);
                 return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("vi-VN");
             },
         },
@@ -274,40 +306,30 @@ export default function AdminReportsPage() {
             headerName: "Actions",
             render: (_, row) => {
                 const status = normalizeStatusKey(row?.status);
-                const canReview = status !== REPORT_STATUSES.REVIEWED && status !== REPORT_STATUSES.DISMISSED;
-                const canDismiss = status !== REPORT_STATUSES.DISMISSED;
+                const canResolve = status === REPORT_STATUS_KEY.PENDING;
 
                 const actions = [
-                    { 
-                        label: 'Mark Reviewed', 
-                        icon: <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />, 
-                        onClick: () => handleUpdateStatus(row.id, "Reviewed", row.status), 
-                        show: canReview 
+                    {
+                        label: 'Resolve report',
+                        icon: <GavelIcon fontSize="small" sx={{ color: "primary.main" }} />,
+                        onClick: () => openResolveModal(row),
+                        show: canResolve,
                     },
-                    { 
-                        label: 'Mark Dismissed', 
-                        icon: <BlockIcon fontSize="small" sx={{ color: "warning.main" }} />, 
-                        onClick: () => handleUpdateStatus(row.id, "Dismissed", row.status), 
-                        show: canDismiss 
-                    },
-                    { 
-                        label: 'Delete Question', 
-                        icon: <DeleteOutlineIcon fontSize="small" sx={{ color: "error.main" }} />, 
-                        onClick: () => openDeleteQuestionModal(row.questionId, row.questionTitle), 
-                        show: !!row?.questionId, 
-                        color: "error.main" 
-                    }
                 ];
 
                 return <Box sx={{ display: "flex", justifyContent: "center" }}><TableActionsMenu actions={actions} /></Box>;
             },
         },
-    ], [updatingIds, deletingQuestionIds, navigate]);
+    ], [navigate]);
+
+    const getRowSx = (row) => getSlaRowSx(row?.createdAt, normalizeStatusKey(row?.status));
+
+    const selectedOption = RESOLVE_OPTIONS.find((o) => o.key === resolveOptionKey) || RESOLVE_OPTIONS[0];
 
     return (
         <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
-            <AdminPageHeader 
-                title="Question Reports" 
+            <AdminPageHeader
+                title="Question Reports"
                 subtitle="Monitor and resolve reports submitted for interview questions."
                 actionButton={
                     <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports}>
@@ -317,7 +339,7 @@ export default function AdminReportsPage() {
             />
 
             <div className="admin-card">
-                <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', display: 'flex', gap: 2, alignItems: 'center', bgcolor: '#fff' }}>
+                <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', gap: 2, alignItems: 'center', bgcolor: 'background.paper' }}>
                     <SearchInput placeholder="Search by question or reporter..." onSearch={handleSearchChange} />
                     <FilterDropdown placeholder="All status" options={statusOptions} value={statusFilter} onChange={handleStatusFilterChange} />
                 </Box>
@@ -334,23 +356,66 @@ export default function AdminReportsPage() {
                     onPageChange={handlePageChange}
                     onPageSizeChange={handlePageSizeChange}
                     loading={loading}
+                    getRowSx={getRowSx}
                 />
             </div>
 
-            <ConfirmModal
-                show={!!deleteQuestionTarget}
-                title="Delete question"
-                confirmText="Delete"
-                cancelText="Cancel"
-                onConfirm={handleDeleteQuestion}
-                onCancel={() => setDeleteQuestionTarget(null)}
-                message={
-                    <>
-                        Are you sure you want to delete <strong>{deleteQuestionTarget?.questionTitle || "this question"}</strong>?{"\n\n"}
-                        <span style={{ color: "#d32f2f", fontSize: "0.875rem" }}>This action cannot be undone.</span>
-                    </>
-                }
-            />
+            <Dialog
+                open={!!resolveTarget}
+                onClose={closeResolveModal}
+                PaperProps={{ sx: dialogStyles.paper }}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span>Resolve report</span>
+                    <IconButton onClick={closeResolveModal} edge="end" sx={{ color: (theme) => theme.palette.grey[500] }}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Typography sx={{ mb: 2, fontSize: 13, color: "text.secondary" }}>
+                        Question: <strong>{resolveTarget?.questionTitle || "-"}</strong>
+                    </Typography>
+
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>Resolution action</Typography>
+                    <FormSelect
+                        fullWidth
+                        size="small"
+                        value={resolveOptionKey}
+                        onChange={(e) => setResolveOptionKey(e.target.value)}
+                    >
+                        {RESOLVE_OPTIONS.map((opt) => (
+                            <MenuItem key={opt.key} value={opt.key}>{opt.label}</MenuItem>
+                        ))}
+                    </FormSelect>
+
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1, mt: 2 }}>
+                        Resolution note <span style={{ color: "#d32f2f" }}>*</span>
+                    </Typography>
+                    <FormTextField
+                        fullWidth
+                        multiline
+                        minRows={3}
+                        maxRows={8}
+                        placeholder="Describe the reasoning and outcome of this decision..."
+                        value={resolveNote}
+                        onChange={(e) => setResolveNote(e.target.value)}
+                        inputProps={{ maxLength: 2000 }}
+                    />
+                    <Typography sx={{ mt: 1, fontSize: 12, color: "text.secondary" }}>
+                        {selectedOption.status === REPORT_STATUS.RESOLVED
+                            ? "The linked question will be hidden from the public bank."
+                            : "No changes will be made to the linked question."}
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+                    <SecondaryButton onClick={closeResolveModal} disabled={resolveSubmitting}>Cancel</SecondaryButton>
+                    <PrimaryButton onClick={submitResolve} disabled={resolveSubmitting || !resolveNote.trim()}>
+                        {resolveSubmitting ? "Submitting..." : "Submit"}
+                    </PrimaryButton>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 }

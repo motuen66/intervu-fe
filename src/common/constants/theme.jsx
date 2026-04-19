@@ -306,8 +306,8 @@ export const theme = createTheme({
         MuiBackdrop: {
             styleOverrides: {
                 root: {
-                    backdropFilter: "blur(8px)",
                     backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    // Removed global backdropFilter: "blur(8px)" to prevent blurring on dropdowns
                 },
             },
         },
@@ -318,11 +318,17 @@ export const theme = createTheme({
                 keepMounted: true,
                 slotProps: {
                     backdrop: {
-                        transitionDuration: { enter: 340, exit: 240 }
+                        transitionDuration: { enter: 340, exit: 240 },
                     },
                 },
             },
             styleOverrides: {
+                root: {
+                    // Apply blur specifically to Dialog backdrops
+                    "& .MuiBackdrop-root": {
+                        backdropFilter: "blur(8px)",
+                    },
+                },
                 paper: {
                     willChange: "opacity, transform",
                     transformOrigin: "50% 46%",

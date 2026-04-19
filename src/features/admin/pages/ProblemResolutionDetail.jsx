@@ -35,6 +35,7 @@ import FormTextField from "../../../common/components/form/FormTextField";
 import FormSelect from "../../../common/components/form/FormSelect";
 import StatusChip from "../../../common/components/StatusChip";
 import { adminEndPoints } from "../services/adminApi";
+import { dialogStyles } from "../../../common/constants/uiStyles";
 
 // TODO:
 // load real BOOKING INFO (amount)
@@ -642,6 +643,7 @@ function ProblemResolutionDetail() {
                 onClose={() => (submitting ? null : setConfirmOpen(false))}
                 fullWidth
                 maxWidth="sm"
+                PaperProps={{ sx: dialogStyles.paper }}
             >
                 <DialogTitle>Confirm Resolution Execution</DialogTitle>
                 <DialogContent>

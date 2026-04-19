@@ -390,15 +390,21 @@ export default function BookingRequestDetailPage() {
 
         const roundsAmount = Array.isArray(detail?.rounds)
             ? detail.rounds.reduce((sum, round) => {
+                  const isCancelledRound =
+                      String(round?.status || "").toUpperCase() ===
+                      String(INTERVIEW_ROUND_STATUS.CANCELLED || "CANCELLED").toUpperCase();
+
+                  if (isCancelledRound) return sum;
+
                   const price = parseAmount(round?.price);
                   return typeof price === "number" ? sum + price : sum;
               }, 0)
             : null;
 
         const baseAmount =
+            (typeof roundsAmount === "number" && roundsAmount > 0 ? roundsAmount : null) ??
             parseAmount(detail?.totalAmount) ??
-            parseAmount(detail?.amount) ??
-            (typeof roundsAmount === "number" && roundsAmount > 0 ? roundsAmount : null);
+            parseAmount(detail?.amount);
 
         const previewRefundAmount =
             typeof baseAmount === "number" && typeof previewRefundPercent === "number"

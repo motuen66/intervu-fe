@@ -34,7 +34,8 @@ export default function DataTable({
     onDelete,
     onView,
     showIndex = false,
-    showHeader = true
+    showHeader = true,
+    getRowSx
 }) {
     const normalizedData = Array.isArray(data) ? data : [];
     const emptyRowsCount = !loading ? Math.max(pageSize - normalizedData.length, 0) : 0;
@@ -197,7 +198,8 @@ export default function DataTable({
                                     sx={{
                                         '&:hover': {
                                             bgcolor: "action.hover",
-                                        }
+                                        },
+                                        ...(getRowSx ? (getRowSx(row, index) || {}) : {}),
                                     }}
                                 >
                                     {showIndex && (

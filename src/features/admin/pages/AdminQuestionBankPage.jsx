@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Container, Tooltip, Typography } from "@mui/material";
+import { Box, Container, Tab, Tabs, Tooltip, Typography } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import BlockIcon from "@mui/icons-material/Block";
 import toast from "react-hot-toast";
 
 import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
 import SearchInput from "../../../common/components/admin/SearchInput";
 import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
 import DataTable from "../../../common/components/table/DataTable";
+import StatusChip from "../../../common/components/StatusChip";
 import ConfirmModal from "../../../common/components/ConfirmModal";
 import { PrimaryButton } from "../../../common/components/buttons";
 import useTableState from "../../../hooks/useTableState";
@@ -17,6 +19,19 @@ import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
 import "./AdminDashboard.css";
+
+// Backend QuestionStatus: Pending=1, Approved=2, Rejected=3, Removed=4
+const QUESTION_STATUS = {
+    PENDING: 1,
+    APPROVED: 2,
+    REJECTED: 3,
+    REMOVED: 4,
+};
+
+const TAB_KEYS = {
+    PUBLISHED: "published",
+    PENDING: "pending",
+};
 
 const formatEnumLabel = (value) => {
     if (value === null || value === undefined || value === "") return "-";
@@ -37,13 +52,17 @@ export default function AdminQuestionBankPage() {
         handlePageChange, handlePageSizeChange
     } = useTableState(10);
 
+    const [tab, setTab] = useState(TAB_KEYS.PUBLISHED);
     const [searchTerm, setSearchTerm] = useState("");
-    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [moderationTarget, setModerationTarget] = useState(null);
+    const [moderating, setModerating] = useState(false);
+
+    const activeStatus = tab === TAB_KEYS.PENDING ? QUESTION_STATUS.PENDING : QUESTION_STATUS.APPROVED;
 
     useEffect(() => {
         fetchQuestions();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, pageSize, searchTerm]);
+    }, [page, pageSize, searchTerm, tab]);
 
     const fetchQuestions = async () => {
         setLoading(true);
@@ -54,6 +73,7 @@ export default function AdminQuestionBankPage() {
                 arg: {
                     page: page + 1,
                     pageSize,
+                    status: activeStatus,
                     ...(searchTerm && { searchTerm }),
                 },
                 useGlobalLoading: false,
@@ -71,24 +91,10 @@ export default function AdminQuestionBankPage() {
         }
     };
 
-    const handleDeleteQuestion = async () => {
-        const id = deleteTarget?.id;
-        if (!id) return;
-
-        try {
-            const response = await callApi({
-                method: METHOD.DELETE,
-                endpoint: adminEndPoints.DELETE_QUESTION(id),
-            });
-
-            if (response?.success) {
-                toast.success("Question deleted successfully");
-                setDeleteTarget(null);
-                fetchQuestions();
-            }
-        } catch (error) {
-            toast.error(error?.response?.data?.message || "Failed to delete question");
-        }
+    const handleTabChange = (_, nextTab) => {
+        if (!nextTab || nextTab === tab) return;
+        setTab(nextTab);
+        setPage(0);
     };
 
     const handleSearchChange = (val) => {
@@ -96,84 +102,130 @@ export default function AdminQuestionBankPage() {
         setPage(0);
     };
 
+    const openModerationModal = (row, action) => {
+        if (!row?.id) return;
+        setModerationTarget({
+            id: row.id,
+            title: row.title,
+            action,
+        });
+    };
+
+    const confirmModeration = async () => {
+        if (!moderationTarget) return;
+        const { id, action } = moderationTarget;
+        const nextStatus = action === "approve" ? QUESTION_STATUS.APPROVED : QUESTION_STATUS.REJECTED;
+        setModerating(true);
+        try {
+            const response = await callApi({
+                method: METHOD.POST,
+                endpoint: adminEndPoints.MODERATE_QUESTION(id),
+                arg: { status: nextStatus },
+                displaySuccessMessage: true,
+            });
+
+            if (response?.success) {
+                setModerationTarget(null);
+                fetchQuestions();
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to moderate question");
+        } finally {
+            setModerating(false);
+        }
+    };
+
     const columns = useMemo(
-        () => [
-            {
-                field: "title",
-                headerName: "Question",
-                width: 260,
-                render: (value, row) => (
-                    <Tooltip title={value || "-"}>
-                        <Typography
-                            sx={{
-                                fontSize: "12px",
-                                fontWeight: 600,
-                                color: row?.id ? "primary.main" : "text.primary",
-                                maxWidth: 240,
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 3,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                lineHeight: 1.35,
-                                cursor: row?.id ? "pointer" : "default",
-                                textDecoration: row?.id ? "underline" : "none",
-                            }}
-                            onClick={() => {
-                                if (row?.id) {
-                                    navigate(`/questions/${row.id}`);
-                                }
-                            }}
-                        >
-                            {value || "-"}
-                        </Typography>
-                    </Tooltip>
-                ),
-            },
-            {
-                field: "companyNames",
-                headerName: "Companies",
-                width: 180,
-                render: (value) => (Array.isArray(value) && value.length ? value.join(", ") : "-"),
-            },
-            {
-                field: "roles",
-                headerName: "Roles",
-                width: 160,
-                render: (value) => (Array.isArray(value) && value.length ? value.join(", ") : "-"),
-            },
-            {
-                field: "category",
-                headerName: "Category",
-                width: 130,
-                render: (value) => formatEnumLabel(value),
-            },
-            {
-                field: "level",
-                headerName: "Level",
-                width: 100,
-                render: (value) => formatEnumLabel(value),
-            },
-            {
-                field: "round",
-                headerName: "Round",
-                width: 100,
-                render: (value) => formatEnumLabel(value),
-            },
-            {
-                field: "vote",
-                headerName: "Votes",
-                width: 80,
-                render: (value) => value ?? 0,
-            },
-            {
-                field: "commentCount",
-                headerName: "Comments",
-                width: 100,
-                render: (value) => value ?? 0,
-            },
-            {
+        () => {
+            const base = [
+                {
+                    field: "title",
+                    headerName: "Question",
+                    width: 260,
+                    render: (value, row) => (
+                        <Tooltip title={value || "-"}>
+                            <Typography
+                                sx={{
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    color: row?.id ? "primary.main" : "text.primary",
+                                    maxWidth: 240,
+                                    whiteSpace: "normal",
+                                    wordBreak: "break-word",
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 3,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                    lineHeight: 1.35,
+                                    cursor: row?.id ? "pointer" : "default",
+                                    textDecoration: row?.id ? "underline" : "none",
+                                }}
+                                onClick={() => {
+                                    if (row?.id) navigate(`/questions/${row.id}`);
+                                }}
+                            >
+                                {value || "-"}
+                            </Typography>
+                        </Tooltip>
+                    ),
+                },
+                {
+                    field: "companyNames",
+                    headerName: "Companies",
+                    width: 180,
+                    render: (value) => (Array.isArray(value) && value.length ? value.join(", ") : "-"),
+                },
+                {
+                    field: "roles",
+                    headerName: "Roles",
+                    width: 160,
+                    render: (value) => (Array.isArray(value) && value.length ? value.join(", ") : "-"),
+                },
+                {
+                    field: "category",
+                    headerName: "Category",
+                    width: 130,
+                    render: (value) => formatEnumLabel(value),
+                },
+                {
+                    field: "level",
+                    headerName: "Level",
+                    width: 100,
+                    render: (value) => formatEnumLabel(value),
+                },
+                {
+                    field: "round",
+                    headerName: "Round",
+                    width: 100,
+                    render: (value) => formatEnumLabel(value),
+                },
+            ];
+
+            if (tab === TAB_KEYS.PUBLISHED) {
+                base.push(
+                    {
+                        field: "vote",
+                        headerName: "Votes",
+                        width: 80,
+                        render: (value) => value ?? 0,
+                    },
+                    {
+                        field: "commentCount",
+                        headerName: "Comments",
+                        width: 100,
+                        render: (value) => value ?? 0,
+                    },
+                );
+            } else {
+                base.push({
+                    field: "status",
+                    headerName: "Status",
+                    width: 110,
+                    render: () => <StatusChip label="Pending" color="warning" />,
+                });
+            }
+
+            base.push({
                 field: "createdAt",
                 headerName: "Created",
                 width: 130,
@@ -183,8 +235,9 @@ export default function AdminQuestionBankPage() {
                     if (Number.isNaN(date.getTime())) return "-";
                     return date.toLocaleDateString("vi-VN");
                 },
-            },
-            {
+            });
+
+            base.push({
                 field: "actions",
                 headerName: "Actions",
                 width: 80,
@@ -197,25 +250,36 @@ export default function AdminQuestionBankPage() {
                                 if (row?.id) navigate(`/questions/${row.id}`);
                             },
                         },
-                        {
-                            label: 'Delete question',
-                            icon: <DeleteOutlineIcon fontSize="small" sx={{ color: "error.main" }} />,
-                            onClick: () => setDeleteTarget({ id: row.id, title: row.title }),
-                            color: "error.main"
-                        }
                     ];
+                    if (tab === TAB_KEYS.PENDING) {
+                        actions.push(
+                            {
+                                label: 'Approve',
+                                icon: <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />,
+                                onClick: () => openModerationModal(row, "approve"),
+                            },
+                            {
+                                label: 'Reject',
+                                icon: <BlockIcon fontSize="small" sx={{ color: "error.main" }} />,
+                                onClick: () => openModerationModal(row, "reject"),
+                                color: "error.main",
+                            },
+                        );
+                    }
                     return <Box sx={{ display: "flex", justifyContent: "center" }}><TableActionsMenu actions={actions} /></Box>;
                 },
-            },
-        ],
-        [navigate],
+            });
+
+            return base;
+        },
+        [navigate, tab],
     );
 
     return (
         <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
-            <AdminPageHeader 
-                title="Question Bank" 
-                subtitle="Manage all questions in the platform."
+            <AdminPageHeader
+                title="Question Bank"
+                subtitle="Moderate incoming contributions and manage published questions."
                 actionButton={
                     <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchQuestions}>
                         Refresh
@@ -224,7 +288,14 @@ export default function AdminQuestionBankPage() {
             />
 
             <Box className="admin-card">
-                <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', display: 'flex', gap: 1.5, alignItems: 'center', bgcolor: '#fff' }}>
+                <Box sx={{ borderBottom: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
+                    <Tabs value={tab} onChange={handleTabChange} sx={{ px: 2 }}>
+                        <Tab value={TAB_KEYS.PUBLISHED} label="Published Library" />
+                        <Tab value={TAB_KEYS.PENDING} label="Pending Moderation" />
+                    </Tabs>
+                </Box>
+
+                <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', gap: 1.5, alignItems: 'center', bgcolor: 'background.paper' }}>
                     <SearchInput placeholder="Search by question title..." onSearch={handleSearchChange} />
                 </Box>
 
@@ -245,12 +316,17 @@ export default function AdminQuestionBankPage() {
             </Box>
 
             <ConfirmModal
-                show={!!deleteTarget}
-                title="Delete question"
-                message={`Are you sure you want to delete ${deleteTarget?.title || "this question"}?`}
-                confirmText="Delete"
-                onConfirm={handleDeleteQuestion}
-                onCancel={() => setDeleteTarget(null)}
+                show={!!moderationTarget}
+                title={moderationTarget?.action === "approve" ? "Approve question" : "Reject question"}
+                message={
+                    moderationTarget?.action === "approve"
+                        ? `Publish "${moderationTarget?.title || "this question"}" to the public library?`
+                        : `Reject "${moderationTarget?.title || "this question"}"? It will not appear in the public library.`
+                }
+                confirmText={moderating ? "Submitting..." : (moderationTarget?.action === "approve" ? "Approve" : "Reject")}
+                cancelText="Cancel"
+                onConfirm={confirmModeration}
+                onCancel={() => !moderating && setModerationTarget(null)}
             />
         </Container>
     );
