@@ -42,7 +42,7 @@ export default function SystemOverviewRow({ stats, loading }) {
                     icon={<TrendingUp />}
                     iconColor="success"
                     label="Total Revenue"
-                    value={`$${stats?.totalRevenue?.toLocaleString() || "0"}`}
+                    value={`${stats?.totalRevenue?.toLocaleString() || "0"} ₫`}
                     growthPercent={stats?.revenueGrowth}
                 />
             </Grid>

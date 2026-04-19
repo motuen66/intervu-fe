@@ -23,6 +23,7 @@ const AdminPineconeManagementPage = lazy(() =>
 const PythonServiceMonitorPage = lazy(() =>
     import("../../features/admin/pages/PythonServiceMonitorPage/PythonServiceMonitorPage"),
 );
+const AdminPlatformSettingsPage = lazy(() => import("../../features/admin/pages/AdminPlatformSettingsPage"));
 
 const renderLazy = (LazyComponent, props = {}) => (
     <Suspense fallback={null}>
@@ -88,5 +89,6 @@ export const adminRoutes = [
     { path: "/admin/system/pinecone", element: renderLazy(AdminPineconeManagementPage) },
     { path: "/admin/system/ai-services", element: <Navigate to="/admin/system/python-ai-monitor" replace /> },
     { path: "/admin/system/python-ai-monitor", element: renderLazy(PythonServiceMonitorPage) },
+    { path: "/admin/system/platform-settings", element: renderLazy(AdminPlatformSettingsPage) },
 ];
 

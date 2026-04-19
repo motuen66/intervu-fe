@@ -38,6 +38,10 @@ export const adminEndPoints = {
     UPDATE_QUESTION_REPORT_STATUS: (reportId) => `${BE_BASE_URL}/questions/reports/${reportId}/status`,
     DELETE_QUESTION: (questionId) => `${BE_BASE_URL}/questions/${questionId}`,
 
+    // Platform Settings Endpoints
+    GET_COMMISSION_RATE: `${ADMIN_BASE_URL}/platform-settings/commission`,
+    UPDATE_COMMISSION_RATE: `${ADMIN_BASE_URL}/platform-settings/commission`,
+
     // System Management Endpoints
     GET_PINECONE_STATS: `${ADMIN_BASE_URL}/system/pinecone-stats`,
     POST_PINECONE_SYNC: `${ADMIN_BASE_URL}/system/pinecone-sync`,
