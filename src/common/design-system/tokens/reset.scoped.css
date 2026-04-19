@@ -1,0 +1,71 @@
+@layer claude-reset {
+  .claude-theme,
+  .claude-theme * {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .claude-theme {
+    font-family: var(--claude-font-sans);
+    color: var(--claude-color-text-near-black);
+    background-color: var(--claude-color-surface-parchment);
+    line-height: var(--claude-font-lh-relaxed);
+  }
+
+  .claude-theme h1,
+  .claude-theme h2,
+  .claude-theme h3,
+  .claude-theme h4,
+  .claude-theme h5,
+  .claude-theme h6 {
+    font-family: var(--claude-font-serif);
+    font-weight: var(--claude-font-weight-heading);
+    margin: 0;
+    padding: 0;
+  }
+
+  .claude-theme p,
+  .claude-theme ul,
+  .claude-theme ol,
+  .claude-theme li,
+  .claude-theme figure,
+  .claude-theme blockquote {
+    margin: 0;
+    padding: 0;
+  }
+
+  .claude-theme ul,
+  .claude-theme ol {
+    list-style: none;
+  }
+
+  .claude-theme a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .claude-theme img,
+  .claude-theme video,
+  .claude-theme svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  .claude-theme button,
+  .claude-theme input,
+  .claude-theme select,
+  .claude-theme textarea {
+    font: inherit;
+    margin: 0;
+  }
+
+  .claude-theme button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+}

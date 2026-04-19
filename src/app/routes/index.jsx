@@ -42,6 +42,9 @@ const SavedQuestionsPage = lazy(
     () => import("../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx"),
 );
 const PublicProfilePage = lazy(() => import("../../features/profiles/page/PublicProfilePage.jsx"));
+const DesignSystemSandbox = import.meta.env.VITE_SHOW_DESIGN_SYSTEM === 'true'
+  ? lazy(() => import("../../features/design-system/pages/DesignSystemSandbox"))
+  : null;
 
 const renderLazy = (LazyComponent, props = {}) => (
     <Suspense fallback={null}>
@@ -52,6 +55,7 @@ const renderLazy = (LazyComponent, props = {}) => (
 export const routes = [
     { path: "/", element: renderLazy(RootPage) },
     { path: "/landing", element: renderLazy(LandingPage) },
+    ...(DesignSystemSandbox ? [{ path: "/design-system", element: renderLazy(DesignSystemSandbox) }] : []),
 
     // Auth routes
     { element: <EmptyLayout />, children: authRoutes },

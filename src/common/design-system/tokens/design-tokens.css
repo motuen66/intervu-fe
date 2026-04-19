@@ -1,0 +1,144 @@
+/* DO NOT import from main.jsx — opt-in per page via ClaudeThemeProvider only */
+@layer claude-reset, claude-tokens, claude-components;
+
+@layer claude-tokens {
+    .claude-theme {
+        /* ── Colors: Surface ── */
+        --claude-color-surface-parchment: #f5f4ed;
+        --claude-color-surface-ivory: #faf9f5;
+        --claude-color-surface-pure-white: #ffffff;
+        --claude-color-surface-warm-sand: #e8e6dc;
+        --claude-color-surface-dark: #30302e;
+        --claude-color-surface-deep-dark: #141413;
+
+        /* ── Colors: Brand ── */
+        --claude-color-brand-terracotta: #c96442;
+        --claude-color-brand-coral: #d97757;
+
+        /* ── Colors: Text ── */
+        --claude-color-text-near-black: #141413;
+        --claude-color-text-charcoal-warm: #4d4c48;
+        --claude-color-text-olive-gray: #5e5d59;
+        --claude-color-text-stone-gray: #87867f;
+        --claude-color-text-dark-warm: #3d3d3a;
+        --claude-color-text-warm-silver: #b0aea5;
+        --claude-color-text-ivory: #faf9f5;
+
+        /* ── Colors: Border ── */
+        --claude-color-border-cream: #f0eee6;
+        --claude-color-border-warm: #e8e6dc;
+        --claude-color-border-dark: #30302e;
+
+        /* ── Colors: Ring ── */
+        --claude-color-ring-warm: #d1cfc5;
+        --claude-color-ring-subtle: #e4e2d8;
+        --claude-color-ring-deep: #c2c0b6;
+
+        /* ── Colors: Semantic ── */
+        --claude-color-semantic-error: #b53333;
+        --claude-color-semantic-focus-blue: #3898ec;
+        --claude-color-semantic-success: #2d6a4f;
+
+        /* ── Typography: Family ── */
+        --claude-font-serif: "Anthropic Serif", Georgia, serif;
+        --claude-font-sans: "Anthropic Sans", Inter, system-ui, sans-serif;
+        --claude-font-mono: "Anthropic Mono", ui-monospace, monospace;
+
+        /* ── Typography: Size ── */
+        --claude-font-size-display: 4rem;
+        --claude-font-size-section: 3.25rem;
+        --claude-font-size-sub-lg: 2.3rem;
+        --claude-font-size-sub: 2rem;
+        --claude-font-size-sub-sm: 1.6rem;
+        --claude-font-size-feature: 1.3rem;
+        --claude-font-size-body-serif: 1.06rem;
+        --claude-font-size-body-lg: 1.25rem;
+        --claude-font-size-body: 1.06rem;
+        --claude-font-size-body-std: 1rem;
+        --claude-font-size-body-sm: 0.94rem;
+        --claude-font-size-caption: 0.88rem;
+        --claude-font-size-label: 0.75rem;
+        --claude-font-size-overline: 0.63rem;
+        --claude-font-size-micro: 0.6rem;
+        --claude-font-size-code: 0.94rem;
+
+        /* ── Typography: Weight ── */
+        --claude-font-weight-heading: 500;
+        --claude-font-weight-regular: 400;
+        --claude-font-weight-medium: 500;
+
+        /* ── Typography: Line Height ── */
+        --claude-font-lh-tight: 1.1;
+        --claude-font-lh-snug: 1.2;
+        --claude-font-lh-subhead: 1.3;
+        --claude-font-lh-compact: 1.25;
+        --claude-font-lh-default: 1.43;
+        --claude-font-lh-relaxed: 1.6;
+
+        /* ── Typography: Letter Spacing ── */
+        --claude-font-ls-normal: normal;
+        --claude-font-ls-label: 0.12px;
+        --claude-font-ls-overline: 0.5px;
+        --claude-font-ls-micro: 0.096px;
+        --claude-font-ls-code: -0.32px;
+
+        /* ── Border Radius ── */
+        --claude-radius-sharp: 4px;
+        --claude-radius-soft: 6px;
+        --claude-radius-comfort: 8px;
+        --claude-radius-generous: 12px;
+        --claude-radius-featured: 16px;
+        --claude-radius-tag: 24px;
+        --claude-radius-hero: 32px;
+
+        /* ── Spacing (base 8px) ── */
+        --claude-space-1: 3px;
+        --claude-space-2: 4px;
+        --claude-space-3: 6px;
+        --claude-space-4: 8px;
+        --claude-space-5: 10px;
+        --claude-space-6: 12px;
+        --claude-space-7: 16px;
+        --claude-space-8: 20px;
+        --claude-space-9: 100px;
+        --claude-space-10: 30px;
+        --claude-space-11: 40px;
+        --claude-space-12: 64px;
+        --claude-space-13: 80px;
+        --claude-space-14: 120px;
+
+        /* ── Shadows ── */
+        --claude-shadow-ring-warm: 0 0 0 1px var(--claude-color-ring-warm);
+        --claude-shadow-ring-deep: 0 0 0 1px var(--claude-color-ring-deep);
+        --claude-shadow-ring-terracotta: 0 0 0 1px var(--claude-color-brand-terracotta);
+        --claude-shadow-ring-dark: 0 0 0 1px var(--claude-color-surface-dark);
+        --claude-shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.05);
+        --claude-shadow-inset: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+
+        /* ── Focus ── */
+        --claude-focus-ring: 0 0 0 3px rgba(56, 152, 236, 0.25);
+        --claude-focus-color: var(--claude-color-semantic-focus-blue);
+
+        /* ── Motion ── */
+        --claude-motion-fast: 120ms;
+        --claude-motion-base: 200ms;
+        --claude-motion-slow: 320ms;
+        --claude-motion-easing: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── Dark Mode ── */
+    .claude-theme.claude-theme--dark {
+        --claude-color-surface-parchment: #141413;
+        --claude-color-surface-ivory: #1c1c1a;
+        --claude-color-surface-warm-sand: #30302e;
+        --claude-color-border-cream: #30302e;
+        --claude-color-border-warm: #3d3d3a;
+        --claude-color-text-near-black: #faf9f5;
+        --claude-color-text-charcoal-warm: #e8e6dc;
+        --claude-color-text-olive-gray: #b0aea5;
+        --claude-color-text-stone-gray: #87867f;
+        --claude-color-ring-warm: #4d4c48;
+        --claude-color-ring-subtle: #3d3d3a;
+        --claude-color-ring-deep: #5e5d59;
+    }
+}

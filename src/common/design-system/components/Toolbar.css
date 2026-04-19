@@ -1,0 +1,33 @@
+@layer claude-components {
+  .claude-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--claude-space-4);
+    padding: var(--claude-space-4) var(--claude-space-6);
+    background-color: var(--claude-color-surface-ivory);
+    border-bottom: 1px solid var(--claude-color-border-cream);
+  }
+
+  .claude-toolbar--sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: var(--claude-shadow-ring-warm);
+  }
+
+  .claude-toolbar__group {
+    display: flex;
+    align-items: center;
+    gap: var(--claude-space-3);
+    flex-wrap: wrap;
+  }
+
+  .claude-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--claude-space-3);
+    flex-wrap: wrap;
+  }
+}

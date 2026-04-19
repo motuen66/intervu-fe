@@ -1,0 +1,26 @@
+@layer claude-components {
+  .claude-divider {
+    border: none;
+    background-color: var(--claude-color-border-cream);
+    flex-shrink: 0;
+  }
+
+  .claude-divider:not(.claude-divider--vertical) {
+    display: block;
+    height: 1px;
+    width: 100%;
+    margin: 0;
+  }
+
+  .claude-divider--vertical {
+    display: inline-block;
+    width: 1px;
+    height: 1em;
+    margin: 0 var(--claude-space-2);
+    vertical-align: middle;
+  }
+
+  .claude-divider--emphasis {
+    background-color: var(--claude-color-border-warm);
+  }
+}

@@ -1,0 +1,62 @@
+@layer claude-components {
+  .claude-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--claude-font-sans);
+    font-size: var(--claude-font-size-body-std);
+    color: var(--claude-color-text-near-black);
+  }
+
+  .claude-grid__head {
+    border-bottom: 1px solid var(--claude-color-border-warm);
+  }
+
+  .claude-grid__head .claude-grid__cell {
+    font-size: var(--claude-font-size-overline);
+    font-weight: var(--claude-font-weight-regular);
+    letter-spacing: var(--claude-font-ls-overline);
+    text-transform: uppercase;
+    color: var(--claude-color-text-stone-gray);
+    padding: var(--claude-space-4) var(--claude-space-6);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .claude-grid__row {
+    border-bottom: 1px solid var(--claude-color-border-cream);
+    transition: background-color var(--claude-motion-fast) var(--claude-motion-easing);
+  }
+
+  .claude-grid__row:last-child {
+    border-bottom: none;
+  }
+
+  .claude-grid__row:hover {
+    background-color: color-mix(in srgb, var(--claude-color-surface-warm-sand) 40%, transparent);
+  }
+
+  .claude-grid__cell {
+    padding: var(--claude-space-5) var(--claude-space-6);
+    vertical-align: middle;
+    color: var(--claude-color-text-charcoal-warm);
+  }
+
+  /* ── Striped ── */
+  .claude-grid--striped .claude-grid__row:nth-child(even) {
+    background-color: color-mix(in srgb, var(--claude-color-surface-warm-sand) 25%, transparent);
+  }
+
+  /* ── Dense ── */
+  .claude-grid--dense .claude-grid__cell {
+    padding: var(--claude-space-2) var(--claude-space-5);
+  }
+
+  /* ── Wrapper ── */
+  .claude-grid-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--claude-color-border-cream);
+    border-radius: var(--claude-radius-comfort);
+    background-color: var(--claude-color-surface-ivory);
+  }
+}

@@ -1,0 +1,98 @@
+@layer claude-components {
+    .claude-compare {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--claude-space-6);
+        width: 100%;
+    }
+
+    .claude-compare__card {
+        display: flex;
+        flex-direction: column;
+        background-color: var(--claude-color-surface-ivory);
+        border: 1px solid var(--claude-color-border-cream);
+        border-top: 3px solid var(--claude-color-border-warm);
+        border-radius: var(--claude-radius-featured);
+        padding: var(--claude-space-8);
+        gap: var(--claude-space-4);
+    }
+
+    .claude-compare__card--featured {
+        border-top-color: var(--claude-color-brand-terracotta);
+        box-shadow: var(--claude-shadow-whisper);
+    }
+
+    .claude-compare__title {
+        font-family: var(--claude-font-serif);
+        font-size: var(--claude-font-size-sub-sm);
+        font-weight: var(--claude-font-weight-heading);
+        line-height: var(--claude-font-lh-snug);
+        color: var(--claude-color-text-near-black);
+        margin: 0;
+    }
+
+    .claude-compare__price {
+        font-family: var(--claude-font-serif);
+        font-size: var(--claude-font-size-sub-lg);
+        font-weight: var(--claude-font-weight-heading);
+        color: var(--claude-color-brand-terracotta);
+        margin: 0;
+        line-height: var(--claude-font-lh-snug);
+    }
+
+    .claude-compare__meta {
+        font-family: var(--claude-font-sans);
+        font-size: var(--claude-font-size-body-sm);
+        line-height: var(--claude-font-lh-relaxed);
+        color: var(--claude-color-text-olive-gray);
+        flex: 1;
+    }
+
+    .claude-compare__features {
+        display: flex;
+        flex-direction: column;
+        gap: var(--claude-space-3);
+        flex: 1;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .claude-compare__feature {
+        font-family: var(--claude-font-sans);
+        font-size: var(--claude-font-size-body-sm);
+        color: var(--claude-color-text-charcoal-warm);
+        padding-left: var(--claude-space-5);
+        position: relative;
+    }
+
+    .claude-compare__feature::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--claude-color-brand-terracotta);
+        font-weight: var(--claude-font-weight-medium);
+    }
+
+    .claude-compare__cta {
+        margin-top: var(--claude-space-4);
+    }
+
+    .claude-compare__badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--claude-space-2);
+    }
+
+    @media (max-width: 991px) {
+        .claude-compare {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (min-width: 640px) and (max-width: 991px) {
+        .claude-compare {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+}

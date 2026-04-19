@@ -1,0 +1,37 @@
+@layer claude-components {
+  .claude-link {
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--claude-color-text-near-black);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: var(--claude-color-border-warm);
+    cursor: pointer;
+    transition: color var(--claude-motion-fast) var(--claude-motion-easing),
+      text-decoration-color var(--claude-motion-fast) var(--claude-motion-easing);
+  }
+
+  .claude-link:hover {
+    color: var(--claude-color-text-dark-warm);
+    text-decoration-color: var(--claude-color-text-near-black);
+  }
+
+  .claude-link:focus-visible {
+    outline: 2px solid var(--claude-focus-color);
+    outline-offset: 2px;
+    border-radius: var(--claude-radius-sharp);
+  }
+
+  /* On dark surfaces */
+  .claude-theme--dark .claude-link,
+  .claude-link--inverted {
+    color: var(--claude-color-brand-coral);
+    text-decoration-color: transparent;
+  }
+
+  .claude-theme--dark .claude-link:hover,
+  .claude-link--inverted:hover {
+    color: var(--claude-color-text-ivory);
+    text-decoration-color: var(--claude-color-brand-coral);
+  }
+}

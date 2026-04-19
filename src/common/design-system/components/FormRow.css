@@ -1,0 +1,33 @@
+@layer claude-components {
+  .claude-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--claude-space-7);
+    width: 100%;
+  }
+
+  .claude-form-row--inline {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .claude-form-row--inline > * {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .claude-form-row--stacked {
+    flex-direction: column;
+  }
+
+  @media (max-width: 640px) {
+    .claude-form-row--inline {
+      flex-direction: column;
+    }
+
+    .claude-form-row--inline > * {
+      min-width: unset;
+    }
+  }
+}

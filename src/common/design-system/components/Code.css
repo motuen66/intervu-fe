@@ -1,0 +1,23 @@
+@layer claude-components {
+  .claude-code {
+    font-family: var(--claude-font-mono);
+    font-size: var(--claude-font-size-code);
+    font-weight: var(--claude-font-weight-regular);
+    line-height: var(--claude-font-lh-relaxed);
+    letter-spacing: var(--claude-font-ls-code);
+    color: var(--claude-color-text-near-black);
+    background-color: var(--claude-color-surface-warm-sand);
+    border: 1px solid var(--claude-color-border-warm);
+    border-radius: var(--claude-radius-sharp);
+    padding: 0.1em 0.4em;
+  }
+
+  .claude-code--block {
+    display: block;
+    padding: var(--claude-space-6) var(--claude-space-7);
+    border-radius: var(--claude-radius-comfort);
+    white-space: pre;
+    overflow-x: auto;
+    line-height: var(--claude-font-lh-relaxed);
+  }
+}

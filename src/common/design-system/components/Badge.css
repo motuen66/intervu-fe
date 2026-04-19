@@ -1,0 +1,41 @@
+@layer claude-components {
+  .claude-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--claude-space-1);
+    font-family: var(--claude-font-sans);
+    font-size: var(--claude-font-size-label);
+    font-weight: var(--claude-font-weight-medium);
+    line-height: var(--claude-font-lh-compact);
+    letter-spacing: var(--claude-font-ls-label);
+    padding: 2px var(--claude-space-3);
+    border-radius: var(--claude-radius-tag);
+    white-space: nowrap;
+  }
+
+  .claude-badge--neutral {
+    background-color: var(--claude-color-surface-warm-sand);
+    color: var(--claude-color-text-charcoal-warm);
+    box-shadow: var(--claude-shadow-ring-warm);
+  }
+
+  .claude-badge--brand {
+    background-color: var(--claude-color-brand-terracotta);
+    color: var(--claude-color-text-ivory);
+  }
+
+  .claude-badge--success {
+    background-color: #d4edda;
+    color: var(--claude-color-semantic-success);
+  }
+
+  .claude-badge--warning {
+    background-color: #fef3cd;
+    color: #7a5a00;
+  }
+
+  .claude-badge--error {
+    background-color: #fde8e8;
+    color: var(--claude-color-semantic-error);
+  }
+}

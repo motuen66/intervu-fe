@@ -1,0 +1,29 @@
+/* TODO: Replace src with licensed Anthropic Serif/Sans/Mono font files when available.
+   Until then, the system falls back to Georgia / Inter / ui-monospace. */
+
+/* ── Anthropic Serif (stub) ── */
+@font-face {
+  font-family: 'Anthropic Serif';
+  src: local('Anthropic Serif');
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Anthropic Sans (stub) ── */
+@font-face {
+  font-family: 'Anthropic Sans';
+  src: local('Anthropic Sans');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Anthropic Mono (stub) ── */
+@font-face {
+  font-family: 'Anthropic Mono';
+  src: local('Anthropic Mono');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

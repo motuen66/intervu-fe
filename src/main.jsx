@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import toast, { ToastBar, Toaster } from "react-hot-toast";
-import "./index.css";
+// import "./index.css";
 import { routes } from "./app/routes/index.jsx";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";

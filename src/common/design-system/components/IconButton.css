@@ -1,0 +1,61 @@
+@layer claude-components {
+  .claude-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--claude-radius-comfort);
+    border: none;
+    cursor: pointer;
+    transition:
+      background-color var(--claude-motion-fast) var(--claude-motion-easing),
+      box-shadow var(--claude-motion-fast) var(--claude-motion-easing);
+    outline: none;
+    flex-shrink: 0;
+  }
+
+  .claude-icon-btn--ghost {
+    background-color: transparent;
+    color: var(--claude-color-text-olive-gray);
+  }
+
+  .claude-icon-btn--ghost:hover {
+    background-color: color-mix(in srgb, var(--claude-color-surface-warm-sand) 40%, transparent);
+    color: var(--claude-color-text-near-black);
+    box-shadow: var(--claude-shadow-ring-warm);
+  }
+
+  .claude-icon-btn--filled {
+    background-color: var(--claude-color-surface-warm-sand);
+    color: var(--claude-color-text-charcoal-warm);
+    box-shadow: var(--claude-shadow-ring-warm);
+  }
+
+  .claude-icon-btn--filled:hover {
+    background-color: #dbd9cf;
+    box-shadow: var(--claude-shadow-ring-deep);
+  }
+
+  .claude-icon-btn:focus-visible {
+    outline: 2px solid var(--claude-focus-color);
+    box-shadow: var(--claude-focus-ring);
+  }
+
+  .claude-icon-btn--sm {
+    width: 28px;
+    height: 28px;
+  }
+
+  .claude-icon-btn--lg {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--claude-radius-generous);
+  }
+
+  .claude-icon-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

@@ -1,0 +1,67 @@
+@layer claude-components {
+  .claude-tabs {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .claude-tabs__list {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--claude-color-border-cream);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .claude-tabs__list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .claude-tabs__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--claude-space-2);
+    padding: var(--claude-space-4) var(--claude-space-7);
+    font-family: var(--claude-font-sans);
+    font-size: var(--claude-font-size-body-std);
+    font-weight: var(--claude-font-weight-regular);
+    color: var(--claude-color-text-stone-gray);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      color var(--claude-motion-fast) var(--claude-motion-easing),
+      border-color var(--claude-motion-fast) var(--claude-motion-easing);
+    outline: none;
+  }
+
+  .claude-tabs__tab:hover {
+    color: var(--claude-color-text-charcoal-warm);
+  }
+
+  .claude-tabs__tab--active {
+    color: var(--claude-color-text-near-black);
+    border-bottom-color: var(--claude-color-brand-terracotta);
+    font-weight: var(--claude-font-weight-medium);
+  }
+
+  .claude-tabs__tab:focus-visible {
+    outline: 2px solid var(--claude-focus-color);
+    outline-offset: -2px;
+    border-radius: var(--claude-radius-soft) var(--claude-radius-soft) 0 0;
+  }
+
+  .claude-tabs__panel {
+    padding: var(--claude-space-7) 0;
+    outline: none;
+  }
+
+  .claude-tabs__panel[hidden] {
+    display: none;
+  }
+}

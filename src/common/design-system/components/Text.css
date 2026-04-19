@@ -1,0 +1,75 @@
+@layer claude-components {
+  .claude-text {
+    font-family: var(--claude-font-sans);
+    font-weight: var(--claude-font-weight-regular);
+    color: var(--claude-color-text-near-black);
+    margin: 0;
+  }
+
+  .claude-text--body-lg {
+    font-size: var(--claude-font-size-body-lg);
+    line-height: var(--claude-font-lh-relaxed);
+  }
+
+  .claude-text--body {
+    font-size: var(--claude-font-size-body-std);
+    line-height: var(--claude-font-lh-relaxed);
+  }
+
+  .claude-text--body-sm {
+    font-size: var(--claude-font-size-body-sm);
+    line-height: var(--claude-font-lh-relaxed);
+  }
+
+  .claude-text--body-serif {
+    font-family: var(--claude-font-serif);
+    font-size: var(--claude-font-size-body-serif);
+    line-height: var(--claude-font-lh-relaxed);
+    font-weight: var(--claude-font-weight-regular);
+  }
+
+  .claude-text--caption {
+    font-size: var(--claude-font-size-caption);
+    line-height: var(--claude-font-lh-default);
+    color: var(--claude-color-text-olive-gray);
+  }
+
+  .claude-text--label {
+    font-size: var(--claude-font-size-label);
+    font-weight: var(--claude-font-weight-medium);
+    line-height: var(--claude-font-lh-compact);
+    letter-spacing: var(--claude-font-ls-label);
+  }
+
+  .claude-text--overline {
+    font-size: var(--claude-font-size-overline);
+    font-weight: var(--claude-font-weight-regular);
+    line-height: var(--claude-font-lh-relaxed);
+    letter-spacing: var(--claude-font-ls-overline);
+    text-transform: uppercase;
+    color: var(--claude-color-text-stone-gray);
+  }
+
+  .claude-text--micro {
+    font-size: var(--claude-font-size-micro);
+    line-height: var(--claude-font-lh-relaxed);
+    letter-spacing: var(--claude-font-ls-micro);
+    color: var(--claude-color-text-stone-gray);
+  }
+
+  .claude-text--secondary {
+    color: var(--claude-color-text-olive-gray);
+  }
+
+  .claude-text--tertiary {
+    color: var(--claude-color-text-stone-gray);
+  }
+
+  .claude-text--inverted {
+    color: var(--claude-color-text-warm-silver);
+  }
+
+  .claude-text--medium {
+    font-weight: var(--claude-font-weight-medium);
+  }
+}

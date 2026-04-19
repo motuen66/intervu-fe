@@ -1,0 +1,56 @@
+@layer claude-components {
+  .claude-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--claude-space-2);
+    padding: var(--claude-space-2) var(--claude-space-4);
+    font-family: var(--claude-font-sans);
+    font-size: var(--claude-font-size-body-sm);
+    font-weight: var(--claude-font-weight-regular);
+    line-height: var(--claude-font-lh-compact);
+    color: var(--claude-color-text-charcoal-warm);
+    background-color: var(--claude-color-surface-warm-sand);
+    border-radius: var(--claude-radius-tag);
+    box-shadow: var(--claude-shadow-ring-warm);
+    cursor: default;
+    white-space: nowrap;
+    transition:
+      background-color var(--claude-motion-fast) var(--claude-motion-easing),
+      box-shadow var(--claude-motion-fast) var(--claude-motion-easing);
+  }
+
+  .claude-tag--interactive {
+    cursor: pointer;
+  }
+
+  .claude-tag--interactive:hover {
+    background-color: #dbd9cf;
+    box-shadow: var(--claude-shadow-ring-deep);
+  }
+
+  .claude-tag--active {
+    background-color: var(--claude-color-brand-terracotta);
+    color: var(--claude-color-text-ivory);
+    box-shadow: var(--claude-shadow-ring-terracotta);
+  }
+
+  .claude-tag__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+    padding: 0;
+    transition: opacity var(--claude-motion-fast) var(--claude-motion-easing);
+  }
+
+  .claude-tag__remove:hover {
+    opacity: 1;
+  }
+}

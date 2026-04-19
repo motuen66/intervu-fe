@@ -1,0 +1,40 @@
+/* ============================================================
+   Claude Design System — opt-in stylesheet
+   DO NOT import from main.jsx or any app layout.
+   Import only via ClaudeThemeProvider to avoid global leakage.
+   ============================================================ */
+@layer claude-reset, claude-tokens, claude-components;
+
+@import './tokens/fonts.css';
+@import './tokens/reset.scoped.css';
+@import './tokens/design-tokens.css';
+
+@import './components/Heading.css';
+@import './components/Text.css';
+@import './components/Code.css';
+@import './components/Button.css';
+@import './components/IconButton.css';
+@import './components/Badge.css';
+@import './components/Divider.css';
+@import './components/Spinner.css';
+@import './components/Link.css';
+@import './components/Avatar.css';
+@import './components/Field.css';
+@import './components/SelectField.css';
+@import './components/Toggle.css';
+@import './components/FormRow.css';
+@import './components/EmptyState.css';
+@import './components/Tabs.css';
+@import './components/Breadcrumb.css';
+@import './components/Tag.css';
+@import './components/BaseCard.css';
+@import './components/KpiCard.css';
+@import './components/Modal.css';
+@import './components/DataGrid.css';
+@import './components/Toolbar.css';
+@import './components/PaginationBar.css';
+@import './components/SectionShell.css';
+@import './components/ModelComparisonCard.css';
+@import './components/Navbar.css';
+@import './components/Toast.css';
+@import './components/Drawer.css';

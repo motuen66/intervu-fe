@@ -1,0 +1,76 @@
+@layer claude-components {
+  .claude-drawer__scrim {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(20, 20, 19, 0.4);
+    z-index: 200;
+    animation: claude-drawer-fade-in var(--claude-motion-base) var(--claude-motion-easing);
+  }
+
+  @keyframes claude-drawer-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .claude-drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: min(420px, 90vw);
+    background-color: var(--claude-color-surface-ivory);
+    border: 1px solid var(--claude-color-border-cream);
+    box-shadow: var(--claude-shadow-whisper);
+    display: flex;
+    flex-direction: column;
+    z-index: 201;
+    outline: none;
+    overflow: hidden;
+  }
+
+  .claude-drawer--right {
+    right: 0;
+    border-right: none;
+    border-radius: var(--claude-radius-featured) 0 0 var(--claude-radius-featured);
+    animation: claude-drawer-slide-right var(--claude-motion-base) var(--claude-motion-easing);
+  }
+
+  @keyframes claude-drawer-slide-right {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+
+  .claude-drawer--left {
+    left: 0;
+    border-left: none;
+    border-radius: 0 var(--claude-radius-featured) var(--claude-radius-featured) 0;
+    animation: claude-drawer-slide-left var(--claude-motion-base) var(--claude-motion-easing);
+  }
+
+  @keyframes claude-drawer-slide-left {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  .claude-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--claude-space-7) var(--claude-space-9);
+    border-bottom: 1px solid var(--claude-color-border-cream);
+    flex-shrink: 0;
+  }
+
+  .claude-drawer__title {
+    font-family: var(--claude-font-serif);
+    font-size: var(--claude-font-size-feature);
+    font-weight: var(--claude-font-weight-heading);
+    color: var(--claude-color-text-near-black);
+    margin: 0;
+  }
+
+  .claude-drawer__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--claude-space-7) var(--claude-space-9);
+  }
+}
