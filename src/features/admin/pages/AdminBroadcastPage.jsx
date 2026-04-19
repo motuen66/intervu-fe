@@ -100,7 +100,6 @@ export default function AdminBroadcastPage() {
 
     const handleQuickLink = (path) => {
         setForm((prev) => ({ ...prev, actionUrl: path }));
-        toast.success(`Action URL updated to: ${path}`, { duration: 1500 });
     };
 
     const resetForm = () => {
