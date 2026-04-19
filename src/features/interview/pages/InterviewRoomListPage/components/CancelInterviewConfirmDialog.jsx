@@ -200,16 +200,16 @@ function CancelInterviewConfirmDialog({
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
                                             {bankInfo?.bankLogo ? (
                                                 <Box
-                                                    sx={{
+                                                    sx={theme => ({
                                                         width: 60,
                                                         height: 60,
                                                         borderRadius: "12px",
-                                                        border: `1px solid ${alpha("palette.success.main", 0.5)}`,
+                                                        border: `1px solid ${alpha(theme.palette.success.main, 0.5)}`,
                                                         bgcolor: "success.50",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
-                                                    }}
+                                                    })}
                                                 >
                                                     <Box
                                                         component="img"
