@@ -16,6 +16,7 @@ import {
     ChevronDown,
     ChevronLeft,
     ChevronRight,
+    Bell,
     X,
 } from "lucide-react";
 
@@ -70,6 +71,7 @@ const adminNavItems = [
                     { label: "AI Service Monitor", path: "/admin/system/python-ai-monitor" },
                 ],
             },
+            { label: "Broadcast", icon: Bell, path: "/admin/broadcast" },
         ],
     },
 ];

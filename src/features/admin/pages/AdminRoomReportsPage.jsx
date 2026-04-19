@@ -39,6 +39,7 @@ import useTableState from "../../../hooks/useTableState";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
+import { dialogStyles } from "../../../common/constants/uiStyles";
 import "./AdminDashboard.css";
 
 const statusLabels = {
@@ -299,7 +300,7 @@ export const AdminRoomReportsPage = () => {
             <div className="admin-card">
                 <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', display: 'flex', gap: 2, alignItems: 'center', bgcolor: '#fff' }}>
                     <SearchInput placeholder="Search by reporter or content..." onSearch={handleSearchChange} />
-                    <FilterDropdown placeholder="All Statuses" options={statusOptions} value={statusFilter} onChange={handleStatusFilterChange} />
+                    <FilterDropdown placeholder="All status" options={statusOptions} value={statusFilter} onChange={handleStatusFilterChange} />
                 </Box>
 
                 <DataTable
@@ -399,7 +400,11 @@ export const AdminRoomReportsPage = () => {
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={resolveDialogOpen} onClose={() => setResolveDialogOpen(false)} PaperProps={{ sx: { borderRadius: "20px", p: 1 } }}>
+            <Dialog
+                open={resolveDialogOpen}
+                onClose={() => setResolveDialogOpen(false)}
+                PaperProps={{ sx: dialogStyles.paper }}
+            >
                 <DialogTitle sx={{ fontWeight: 800 }}>Confirm Resolution</DialogTitle>
                 <DialogContent>
                     <Typography sx={{ mb: 2, fontSize: "14px", color: "text.secondary" }}>Choose a refund option for the candidate based on your investigation.</Typography>

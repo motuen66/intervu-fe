@@ -44,26 +44,20 @@ function LoginPage() {
             dispatch(setUserData(user));
             dispatch(setToken(responseData.token));
 
-            if (user.role === ROLES.INTERVIEWER) {
-                navigate("/schedule");
-                return;
-            }
+            const role = Number(user.role);
 
-            if (user.role === ROLES.ADMIN) {
+            if (role === ROLES.ADMIN) {
                 navigate("/admin/dashboard");
                 return;
             }
 
-            try {
-                const assessmentState = await getAssessmentState(user.id);
-                if (assessmentState.status === ASSESSMENT_DATA_STATE.NO_RECORD) {
-                    navigate("/assessment");
-                } else {
-                    navigate("/home");
-                }
-            } catch (error) {
-                navigate("/assessment");
+            if (role === ROLES.INTERVIEWER) {
+                navigate("/dashboard");
+                return;
             }
+
+            // Candidates
+            navigate("/home");
         },
         [dispatch, navigate],
     );
