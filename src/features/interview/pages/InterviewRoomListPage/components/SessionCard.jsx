@@ -356,11 +356,15 @@ function SessionSummary({
                     >
                         {participantName}
                     </Typography>
-                    {!hasMultipleRounds && startingIn && (
+                    {!hasMultipleRounds && room?.status !== INTERVIEW_ROOM_STATUS.CANCELLED && startingIn && (
                         <Stack direction="row" spacing={0.75} alignItems="center">
                             <StatusChip
                                 icon={<Clock size={12} />}
-                                label={startingIn === "now" ? "Starting now" : `Starting in ${startingIn}`}
+                                label={
+                                    startingIn === "now" || room?.status === INTERVIEW_ROOM_STATUS.ON_GOING
+                                        ? "Starting now"
+                                        : `Starting in ${startingIn}`
+                                }
                                 color="warning"
                             />
                         </Stack>
@@ -467,10 +471,14 @@ function RoundRow({
                         {title}
                     </Typography>
                     {isHighlighted && <StatusChip label="Nearest" color="success" />}
-                    {startingIn && (
+                    {round?.status !== INTERVIEW_ROOM_STATUS.CANCELLED && startingIn && (
                         <StatusChip
                             icon={<Clock size={12} />}
-                            label={startingIn === "now" ? "Starting now" : `Starting in ${startingIn}`}
+                            label={
+                                startingIn === "now" || round?.status === INTERVIEW_ROOM_STATUS.ON_GOING
+                                    ? "Starting now"
+                                    : `Starting in ${startingIn}`
+                            }
                             color="warning"
                         />
                     )}
