@@ -8,6 +8,7 @@ import useTableState from '../../../hooks/useTableState';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
+import AdminDesignSystemPageShell from '../components/AdminDesignSystemPageShell';
 import './AdminDashboard.css';
 
 export default function CompanyManagementPage() {
@@ -52,7 +53,7 @@ export default function CompanyManagementPage() {
             render: (value) => (
                 <Tooltip title={value} arrow placement="top">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                        <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#6b7280' }}>
+                        <span style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--claude-color-text-stone-gray)' }}>
                             {value?.substring(0, 8)}...
                         </span>
                         <IconButton
@@ -63,7 +64,7 @@ export default function CompanyManagementPage() {
                                 transition: 'opacity 0.2s',
                                 '&:hover': { opacity: 1 },
                                 p: 0.5,
-                                color: '#4F46E5'
+                                color: 'var(--claude-focus-color)'
                             }}
                         >
                             <ContentCopyIcon sx={{ fontSize: '14px' }} />
@@ -82,7 +83,7 @@ export default function CompanyManagementPage() {
                     sx={{
                         width: 32,
                         height: 32,
-                        backgroundColor: '#e5e7eb',
+                        backgroundColor: 'var(--claude-color-surface-warm-sand)',
                         fontSize: '11px',
                         fontWeight: 600
                     }}
@@ -96,6 +97,7 @@ export default function CompanyManagementPage() {
     ];
 
     return (
+        <AdminDesignSystemPageShell>
         <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
             <AdminPageHeader 
                 title="Company Management" 
@@ -119,5 +121,6 @@ export default function CompanyManagementPage() {
                 />
             </div>
         </Container>
+        </AdminDesignSystemPageShell>
     );
 }

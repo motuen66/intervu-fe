@@ -33,7 +33,8 @@ import { adminEndPoints } from "../../services/adminApi";
 import AdminPageHeader from "../../../../common/components/admin/AdminPageHeader";
 import KpiCard from "../../../../common/components/cards/KpiCard";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
+import { Button } from "../../../../common/design-system";
+import AdminDesignSystemPageShell from "../../components/AdminDesignSystemPageShell";
 import FormSelect from "../../../../common/components/form/FormSelect";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import DataTable from "../../../../common/components/table/DataTable";
@@ -468,6 +469,7 @@ export default function PythonServiceMonitorPage() {
     );
 
     return (
+        <AdminDesignSystemPageShell>
         <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
             <AdminPageHeader
                 title="AI Service Monitor"
@@ -573,18 +575,19 @@ export default function PythonServiceMonitorPage() {
                     <Grid size={{ xs: 12, lg: 1 }}>
                         <Stack direction="row" spacing={1} sx={{ justifyContent: { xs: "flex-start", lg: "flex-end" } }}>
                             {customRangeActive && (
-                                <SecondaryButton onClick={handleClearRange} size="small">
+                                <Button variant="secondary" size="sm" onClick={handleClearRange}>
                                     Clear
-                                </SecondaryButton>
+                                </Button>
                             )}
-                            <SecondaryButton
+                            <Button
+                                variant="secondary"
+                                size="sm"
                                 onClick={handleRefresh}
                                 disabled={loading}
-                                startIcon={<RefreshCw size={14} />}
-                                size="small"
                             >
+                                <RefreshCw size={14} />
                                 Refresh
-                            </SecondaryButton>
+                            </Button>
                         </Stack>
                     </Grid>
                 </Grid>
@@ -677,5 +680,6 @@ export default function PythonServiceMonitorPage() {
                 </>
             )}
         </Container>
+        </AdminDesignSystemPageShell>
     );
 }

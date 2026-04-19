@@ -8,8 +8,8 @@ import { adminEndPoints } from "../../services/adminApi";
 import AdminPageHeader from "../../../../common/components/admin/AdminPageHeader";
 import KpiCard from "../../../../common/components/cards/KpiCard";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import PrimaryButton from "../../../../common/components/buttons/PrimaryButton";
-import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
+import { Button } from "../../../../common/design-system";
+import AdminDesignSystemPageShell from "../../components/AdminDesignSystemPageShell";
 
 export default function AdminPineconeManagementPage() {
     const [stats, setStats] = useState(null);
@@ -61,18 +61,21 @@ export default function AdminPineconeManagementPage() {
     const namespaceCount = namespaceRows.length;
 
     return (
+        <AdminDesignSystemPageShell>
         <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
             <AdminPageHeader
                 title="Pinecone Management"
                 subtitle="Monitor vector index health and trigger manual re-sync operations."
                 actionButton={
-                    <SecondaryButton
+                    <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={fetchStats}
                         disabled={loading}
-                        startIcon={<RefreshCw size={16} />}
                     >
+                        <RefreshCw size={16} />
                         Refresh
-                    </SecondaryButton>
+                    </Button>
                 }
             />
 
@@ -205,13 +208,14 @@ export default function AdminPineconeManagementPage() {
                                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
                                     Re-indexes all coach profiles for semantic search.
                                 </Typography>
-                                <PrimaryButton
+                                <Button
+                                    variant="primary"
                                     loading={syncingCoaches}
                                     onClick={() => handleSync("coaches", setSyncingCoaches)}
-                                    fullWidth
+                                    style={{ width: "100%" }}
                                 >
                                     Re-sync Coaches
-                                </PrimaryButton>
+                                </Button>
                             </Box>
 
                             <Box
@@ -229,18 +233,20 @@ export default function AdminPineconeManagementPage() {
                                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
                                     Re-indexes all question bank entries for semantic search.
                                 </Typography>
-                                <PrimaryButton
+                                <Button
+                                    variant="primary"
                                     loading={syncingQuestions}
                                     onClick={() => handleSync("questions", setSyncingQuestions)}
-                                    fullWidth
+                                    style={{ width: "100%" }}
                                 >
                                     Re-sync Questions
-                                </PrimaryButton>
+                                </Button>
                             </Box>
                         </Box>
                     </BaseCard>
                 </Grid>
             </Grid>
         </Container>
+        </AdminDesignSystemPageShell>
     );
 }
