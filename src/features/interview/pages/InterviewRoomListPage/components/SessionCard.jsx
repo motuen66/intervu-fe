@@ -69,7 +69,7 @@ const formatStartingIn = (dt, nowMs) => {
 
 const computeTotalDurationMinutes = (rounds) => {
     if (!Array.isArray(rounds) || rounds.length === 0) return 0;
-    return rounds.reduce((sum, r) => sum + (Number(r.durationInMinutes ?? r.duration ?? 0) || 0), 0);
+    return rounds.reduce((sum, r) => sum + (Number(r.durationMinutes ?? r.duration ?? 0) || 0), 0);
 };
 
 function ActionButtonGroup({
@@ -127,9 +127,7 @@ function ActionButtonGroup({
                 justifyContent="flex-end"
                 sx={{ width: { xs: "100%", sm: "auto" } }}
             >
-                <DangerButton disabled size={compact ? "small" : "medium"} sx={{ width: { xs: "100%", sm: "auto" } }}>
-                    Cancelled
-                </DangerButton>
+                <StatusChip label="Cancelled" color="error" />
             </Stack>
         );
     }
@@ -232,7 +230,7 @@ function SessionSummary({
         room.interviewTypeName ||
         (Array.isArray(room.rounds) && room.rounds.length > 1 ? "FULL PROCESS" : "INTERVIEW SESSION");
 
-    const durationLabel = totalDurationMinutes > 0 ? `${totalDurationMinutes} min` : null;
+    const durationLabel = totalDurationMinutes > 0 ? `(${totalDurationMinutes}m)` : null;
     const startingIn = formatStartingIn(room?.scheduledTime, nowTs);
 
     const statusConfig = getInterviewRoomStatusConfig(room.status, { isRescheduled, hasPendingReschedule });
@@ -378,16 +376,7 @@ function SessionSummary({
                         <Stack direction="row" spacing={0.75} alignItems="center">
                             <Calendar size={14} />
                             <Typography variant="caption" fontWeight={600}>
-                                {formatDate(room.scheduledTime)}, {formatTime(room.scheduledTime)}
-                            </Typography>
-                        </Stack>
-                    )}
-
-                    {durationLabel && (
-                        <Stack direction="row" spacing={0.75} alignItems="center">
-                            <Clock size={14} />
-                            <Typography variant="caption" fontWeight={600}>
-                                {durationLabel}
+                                {formatDate(room.scheduledTime)}, {formatTime(room.scheduledTime)} {durationLabel || ""}
                             </Typography>
                         </Stack>
                     )}
@@ -424,7 +413,7 @@ function RoundRow({
     isHighlighted = false,
 }) {
     const title = `Round ${index + 1}: ${round.interviewTypeName || "Interview"}`;
-    const duration = Number(round.durationInMinutes ?? round.duration ?? 0) || 0;
+    const duration = Number(round.durationMinutes ?? 0) || 0;
     const isInterviewer = user?.role === ROLES.INTERVIEWER;
     const canReviewQuestions = isInterviewer && typeof onReviewQuestions === "function";
     const isQuestionsReady = Boolean(
@@ -491,17 +480,9 @@ function RoundRow({
                         <Calendar size={13} />
                         <Typography variant="caption" fontWeight={600}>
                             {formatDate(round.scheduledTime)}, {formatTime(round.scheduledTime)}
+                            {duration > 0 ? ` (${duration}m)` : ""}
                         </Typography>
                     </Stack>
-
-                    {duration > 0 && (
-                        <Stack direction="row" spacing={0.5} alignItems="center">
-                            <Clock size={13} />
-                            <Typography variant="caption" fontWeight={600}>
-                                {duration}m
-                            </Typography>
-                        </Stack>
-                    )}
                     {/* TODO: Uncomment this block later when coach/interviewer name should be shown again for multi-round rows.
                     <Stack direction="row" spacing={0.5} alignItems="center">
                         <Users size={13} />
@@ -634,7 +615,8 @@ export default function SessionCard({
 
     const totalDurationMinutes = hasMultipleRounds
         ? computeTotalDurationMinutes(room.rounds)
-        : Number(room?.durationInMinutes ?? room?.duration ?? 0) || 0;
+        : Number(room?.durationMinutes ?? 0) || 0;
+    console.log(totalDurationMinutes);
 
     const jdUrl = room?.jobDescriptionUrl || room?.jdUrl || null;
     const cvUrl = room?.cvUrl || room?.candidateCvUrl || null;
