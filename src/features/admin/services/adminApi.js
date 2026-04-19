@@ -62,4 +62,5 @@ export const adminEndPoints = {
     BROADCAST_NOTIFICATION: `${NOTIFICATION_BASE_URL}/admin/broadcast`,
     BROADCAST_ALL: `${NOTIFICATION_BASE_URL}/admin/broadcast-all`,
     BROADCAST_ROLE: `${NOTIFICATION_BASE_URL}/admin/broadcast-role`,
+    BROADCAST_LOGS: (page = 1, pageSize = 20) => `${NOTIFICATION_BASE_URL}/admin/broadcast-logs?page=${page}&pageSize=${pageSize}`,
 };

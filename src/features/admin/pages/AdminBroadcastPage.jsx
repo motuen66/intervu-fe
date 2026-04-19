@@ -1,16 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
     Container, Box, Grid, Typography, MenuItem, Paper, Avatar, 
-    Divider, Chip, Tooltip, InputAdornment, IconButton
+    Divider, Chip, InputAdornment
 } from "@mui/material";
 import { 
     Send, Users, UserCheck, ShieldAlert, Megaphone,
-    ExternalLink, Info, Clock
+    ExternalLink, Clock
 } from "lucide-react";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import AccessAlarmIcon from "@mui/icons-material/AccessAlarm";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import toast from "react-hot-toast";
 
 import { callApi } from "../../../common/utils/apiConnector";
@@ -22,6 +23,7 @@ import FormTextField from "../../../common/components/form/FormTextField";
 import FormSelect from "../../../common/components/form/FormSelect";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import ConfirmModal from "../../../common/components/ConfirmModal";
+import DataTable from "../../../common/components/table/DataTable";
 
 const TARGET_OPTIONS = [
     { label: "All Users", value: "ALL", icon: Users },
@@ -50,21 +52,51 @@ const MAX_MESSAGE = 500;
 
 export default function AdminBroadcastPage() {
     const [loading, setLoading] = useState(false);
+    const [logsLoading, setLogsLoading] = useState(false);
+    const [broadcastLogs, setBroadcastLogs] = useState([]);
+    const [logsPage, setLogsPage] = useState(0);
+    const [logsPageSize, setLogsPageSize] = useState(10);
+    const [logsTotal, setLogsTotal] = useState(0);
     const [target, setTarget] = useState("ALL");
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [form, setForm] = useState({
         title: "",
         message: "",
         actionUrl: "",
-        type: 10,
+        type: "",
     });
 
     const handleInputChange = (field) => (e) => {
-        const value = e.target.value;
+        const value = field === "type"
+            ? (e.target.value === "" ? "" : Number(e.target.value))
+            : e.target.value;
         if (field === "title" && value.length > MAX_TITLE) return;
         if (field === "message" && value.length > MAX_MESSAGE) return;
         setForm((prev) => ({ ...prev, [field]: value }));
     };
+
+    const fetchBroadcastLogs = async () => {
+        setLogsLoading(true);
+        try {
+            const res = await callApi({
+                method: METHOD.GET,
+                endpoint: adminEndPoints.BROADCAST_LOGS(logsPage + 1, logsPageSize),
+            });
+            setBroadcastLogs(res?.data?.items || []);
+            setLogsTotal(res?.data?.totalCount || 0);
+        } catch (error) {
+            console.error(error);
+            setBroadcastLogs([]);
+            setLogsTotal(0);
+        } finally {
+            setLogsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchBroadcastLogs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [logsPage, logsPageSize]);
 
     const handleQuickLink = (path) => {
         setForm((prev) => ({ ...prev, actionUrl: path }));
@@ -76,14 +108,14 @@ export default function AdminBroadcastPage() {
             title: "",
             message: "",
             actionUrl: "",
-            type: 10,
+            type: "",
         });
     };
 
     const handleSendClick = (e) => {
         e.preventDefault();
-        if (!form.title.trim() || !form.message.trim()) {
-            toast.error("Title and Message are required.");
+        if (!form.title.trim() || !form.message.trim() || !form.type) {
+            toast.error("Title, Message and Notification Type are required.");
             return;
         }
         setConfirmOpen(true);
@@ -112,6 +144,7 @@ export default function AdminBroadcastPage() {
             if (res?.success) {
                 toast.success("Broadcast published successfully!");
                 resetForm();
+                fetchBroadcastLogs();
             } else {
                 toast.error(res?.message || "Failed to publish broadcast.");
             }
@@ -132,6 +165,61 @@ export default function AdminBroadcastPage() {
         [target]
     );
 
+    const logColumns = useMemo(() => [
+        {
+            field: "createdAt",
+            headerName: "Sent At",
+            render: (value) => (
+                <Typography variant="caption" color="text.secondary">
+                    {value ? new Date(value).toLocaleString() : "-"}
+                </Typography>
+            ),
+        },
+        {
+            field: "type",
+            headerName: "Type",
+            render: (value) => (
+                <Chip size="small" label={value || "-"} variant="outlined" sx={{ fontWeight: 600 }} />
+            ),
+        },
+        {
+            field: "title",
+            headerName: "Title",
+            render: (value) => (
+                <Typography sx={{ fontSize: 12, fontWeight: 700, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {value || "-"}
+                </Typography>
+            ),
+        },
+        {
+            field: "message",
+            headerName: "Message",
+            render: (value) => (
+                <Typography sx={{ fontSize: 12, color: "text.secondary", maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {value || "-"}
+                </Typography>
+            ),
+        },
+        {
+            field: "audience",
+            headerName: "Recipients",
+            render: (_, row) => (
+                <Typography sx={{ fontSize: 12 }}>
+                    Total: <strong>{row?.totalRecipients || 0}</strong> • Candidate: {row?.candidateRecipients || 0} • Coach: {row?.coachRecipients || 0}
+                </Typography>
+            ),
+        },
+        {
+            field: "actionUrl",
+            headerName: "Action URL",
+            render: (value) => (
+                <Typography sx={{ fontSize: 12, color: value ? "primary.main" : "text.disabled", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {value || "-"}
+                </Typography>
+            ),
+        },
+    ], []);
+
     return (
         <Container maxWidth="xl" className="admin-page" sx={{ py: { xs: 2, md: 3 } }}>
             <AdminPageHeader
@@ -150,147 +238,156 @@ export default function AdminBroadcastPage() {
                 {/* Left: Configuration Form */}
                 <Box sx={{ minWidth: 0 }}>
                     <BaseCard sx={{ p: { xs: 2, sm: 3, md: 3.5 }, borderRadius: "16px" }}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 2.5,
-                                pb: 1.5,
-                                borderBottom: "1px solid",
-                                borderColor: "divider",
-                            }}
-                        >
-                            <Typography variant="subtitle1" fontWeight={700} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <Send size={18} /> Broadcast Configuration
-                            </Typography>
-                            <Tooltip title="Broadcasting sends real-time push notifications and adds items to the recipient's notification list.">
-                                <IconButton size="small"><Info size={16} /></IconButton>
-                            </Tooltip>
-                        </Box>
-
                         <form onSubmit={handleSendClick}>
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
                                 {/* Recipient Selection */}
-                                <Box>
-                                    <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ mb: 1.5, display: "block", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                        Target Audience
-                                    </Typography>
-                                    <Grid container spacing={2}>
-                                        {TARGET_OPTIONS.map((opt) => {
-                                            const Icon = opt.icon;
-                                            const isSelected = target === opt.value;
-                                            return (
-                                                <Grid item xs={12} sm={6} md={4} key={opt.value}>
-                                                    <Paper
-                                                        onClick={() => setTarget(opt.value)}
-                                                        elevation={0}
-                                                        sx={{
-                                                            p: 1.5,
-                                                            border: "2px solid",
-                                                            borderColor: isSelected ? "primary.main" : "divider",
-                                                            borderRadius: "12px",
-                                                            cursor: "pointer",
-                                                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                                                            bgcolor: isSelected ? "rgba(99, 102, 241, 0.06)" : "common.white",
-                                                            "&:hover": { 
-                                                                borderColor: isSelected ? "primary.main" : "primary.light",
-                                                                transform: "translateY(-1px)",
-                                                                boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
-                                                            },
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "space-between",
-                                                            gap: 1,
-                                                            minHeight: 68,
-                                                            width: "100%",
-                                                        }}
-                                                    >
-                                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                            <Avatar
+                                <Grid container spacing={2.5} alignItems="flex-start">
+                                    <Grid item xs={12} lg={8}>
+                                        <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ mb: 1.5, display: "block", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                            Target Audience
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            {TARGET_OPTIONS.map((opt) => {
+                                                const Icon = opt.icon;
+                                                const isSelected = target === opt.value;
+                                                return (
+                                                    <Grid item xs={12} sm={6} md={4} key={opt.value}>
+                                                        <Paper
+                                                            onClick={() => setTarget(opt.value)}
+                                                            elevation={0}
+                                                            sx={{
+                                                                p: 1,
+                                                                border: "2px solid",
+                                                                borderColor: isSelected ? "primary.main" : "divider",
+                                                                borderRadius: "12px",
+                                                                cursor: "pointer",
+                                                                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                                                                bgcolor: isSelected ? "rgba(99, 102, 241, 0.06)" : "common.white",
+                                                                "&:hover": {
+                                                                    borderColor: isSelected ? "primary.main" : "primary.light",
+                                                                    transform: "translateY(-1px)",
+                                                                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                                                                },
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "space-between",
+                                                                gap: 1,
+                                                                minHeight: 56,
+                                                                width: "100%",
+                                                            }}
+                                                        >
+                                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                                <Avatar
+                                                                    sx={{
+                                                                        bgcolor: isSelected ? "primary.main" : "grey.100",
+                                                                        color: isSelected ? "common.white" : "text.secondary",
+                                                                        width: 26,
+                                                                        height: 26,
+                                                                    }}
+                                                                >
+                                                                    <Icon size={14} />
+                                                                </Avatar>
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    fontWeight={isSelected ? 700 : 600}
+                                                                    color={isSelected ? "primary.main" : "text.secondary"}
+                                                                    sx={{ whiteSpace: "nowrap" }}
+                                                                >
+                                                                    {opt.label}
+                                                                </Typography>
+                                                            </Box>
+                                                            <Box
                                                                 sx={{
-                                                                    bgcolor: isSelected ? "primary.main" : "grey.100",
-                                                                    color: isSelected ? "common.white" : "text.secondary",
-                                                                    width: 30,
-                                                                    height: 30,
+                                                                    width: 10,
+                                                                    height: 10,
+                                                                    borderRadius: "50%",
+                                                                    bgcolor: isSelected ? "primary.main" : "transparent",
+                                                                    border: "1.5px solid",
+                                                                    borderColor: isSelected ? "primary.main" : "divider",
+                                                                    flexShrink: 0,
                                                                 }}
-                                                            >
-                                                                <Icon size={16} />
-                                                            </Avatar>
-                                                            <Typography
-                                                                variant="body2"
-                                                                fontWeight={isSelected ? 700 : 600}
-                                                                color={isSelected ? "primary.main" : "text.secondary"}
-                                                                sx={{ whiteSpace: "nowrap" }}
-                                                            >
-                                                                {opt.label}
+                                                            />
+                                                        </Paper>
+                                                    </Grid>
+                                                );
+                                            })}
+                                        </Grid>
+                                    </Grid>
+
+                                    <Grid item xs={12} lg={4}>
+                                        <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ mb: 1.5, display: "block", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                            Notification Type
+                                        </Typography>
+                                        <Box sx={{ width: { xs: "100%", lg: 300 }, maxWidth: "100%" }}>
+                                            <FormSelect
+                                                size="medium"
+                                                fullWidth
+                                                displayEmpty
+                                                value={form.type}
+                                                onChange={handleInputChange("type")}
+                                                renderValue={(selected) => {
+                                                    if (selected === "") {
+                                                        return (
+                                                            <Typography color="text.disabled" sx={{ fontSize: 14 }}>
+                                                                Select notification type
+                                                            </Typography>
+                                                        );
+                                                    }
+                                                    const selectedType = NOTIFICATION_TYPES.find((type) => type.value === selected);
+                                                    if (!selectedType) {
+                                                        return <Typography sx={{ fontSize: 14 }}>Select notification type</Typography>;
+                                                    }
+                                                    return (
+                                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                            <selectedType.icon sx={{ fontSize: 18, color: selectedType.color }} />
+                                                            <Typography sx={{ fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                                {selectedType.label}
                                                             </Typography>
                                                         </Box>
-                                                        <Box
-                                                            sx={{
-                                                                width: 10,
-                                                                height: 10,
-                                                                borderRadius: "50%",
-                                                                bgcolor: isSelected ? "primary.main" : "transparent",
-                                                                border: "1.5px solid",
-                                                                borderColor: isSelected ? "primary.main" : "divider",
-                                                                flexShrink: 0,
-                                                            }}
-                                                        />
-                                                    </Paper>
-                                                </Grid>
-                                            );
-                                        })}
+                                                    );
+                                                }}
+                                                sx={{
+                                                    "& .MuiSelect-select": {
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1,
+                                                        minHeight: "24px !important",
+                                                        fontSize: 14,
+                                                    },
+                                                }}
+                                            >
+                                                <MenuItem value="" disabled>
+                                                    <Typography color="text.disabled">Select notification type</Typography>
+                                                </MenuItem>
+                                                {NOTIFICATION_TYPES.map((type) => (
+                                                    <MenuItem key={type.value} value={type.value} sx={{ py: 1 }}>
+                                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                                            <type.icon sx={{ fontSize: 18, color: type.color }} />
+                                                            {type.label}
+                                                        </Box>
+                                                    </MenuItem>
+                                                ))}
+                                            </FormSelect>
+                                        </Box>
                                     </Grid>
-                                </Box>
+                                </Grid>
 
                                 <Divider />
 
                                 {/* Basic Info */}
-                                <Grid container spacing={2.5}>
-                                    <Grid item xs={12} md={8}>
-                                        <FormTextField
-                                            size="medium"
-                                            fullWidth
-                                            label="Broadcast Title"
-                                            placeholder="Summarize the update..."
-                                            value={form.title}
-                                            onChange={handleInputChange("title")}
-                                            helperText={`${form.title.length}/${MAX_TITLE}`}
-                                            sx={{
-                                                "& .MuiInputBase-input": { fontSize: 15 },
-                                            }}
-                                            required
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12} md={4}>
-                                        <FormSelect
-                                            size="medium"
-                                            fullWidth
-                                            label="Notification Type"
-                                            value={form.type}
-                                            onChange={handleInputChange("type")}
-                                            sx={{
-                                                "& .MuiSelect-select": {
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                    minHeight: "24px !important",
-                                                    fontSize: 14,
-                                                },
-                                            }}
-                                        >
-                                            {NOTIFICATION_TYPES.map((type) => (
-                                                <MenuItem key={type.value} value={type.value} sx={{ py: 1 }}>
-                                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                                        <type.icon sx={{ fontSize: 18, color: type.color }} />
-                                                        {type.label}
-                                                    </Box>
-                                                </MenuItem>
-                                            ))}
-                                        </FormSelect>
-                                    </Grid>
-                                </Grid>
+                                <FormTextField
+                                    size="medium"
+                                    fullWidth
+                                    label="Broadcast Title"
+                                    placeholder="Summarize the update..."
+                                    value={form.title}
+                                    onChange={handleInputChange("title")}
+                                    helperText={`${form.title.length}/${MAX_TITLE}`}
+                                    sx={{
+                                        "& .MuiInputBase-input": { fontSize: 15 },
+                                    }}
+                                    required
+                                />
 
                                 <FormTextField
                                     size="small"
@@ -511,6 +608,34 @@ export default function AdminBroadcastPage() {
                     </Box>
                 </Box>
             </Box>
+
+            <BaseCard sx={{ mt: 3, p: 0, borderRadius: "16px", overflow: "hidden" }}>
+                <Box sx={{ px: 2.5, py: 1.75, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        Broadcast Logs
+                    </Typography>
+                    <SecondaryButton startIcon={<RefreshIcon />} onClick={fetchBroadcastLogs} disabled={logsLoading}>
+                        Refresh
+                    </SecondaryButton>
+                </Box>
+                <DataTable
+                    title=""
+                    columns={logColumns}
+                    data={broadcastLogs}
+                    totalItems={logsTotal}
+                    page={logsPage}
+                    pageSize={logsPageSize}
+                    onPageChange={setLogsPage}
+                    onPageSizeChange={(size) => {
+                        setLogsPageSize(size);
+                        setLogsPage(0);
+                    }}
+                    loading={logsLoading}
+                    actions={false}
+                    showIndex
+                    showHeader={false}
+                />
+            </BaseCard>
 
             {/* Confirm Send Modal */}
             <ConfirmModal

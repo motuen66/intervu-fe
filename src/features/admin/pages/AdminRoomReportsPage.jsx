@@ -300,7 +300,7 @@ export const AdminRoomReportsPage = () => {
             <div className="admin-card">
                 <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', display: 'flex', gap: 2, alignItems: 'center', bgcolor: '#fff' }}>
                     <SearchInput placeholder="Search by reporter or content..." onSearch={handleSearchChange} />
-                    <FilterDropdown placeholder="All Statuses" options={statusOptions} value={statusFilter} onChange={handleStatusFilterChange} />
+                    <FilterDropdown placeholder="All status" options={statusOptions} value={statusFilter} onChange={handleStatusFilterChange} />
                 </Box>
 
                 <DataTable
