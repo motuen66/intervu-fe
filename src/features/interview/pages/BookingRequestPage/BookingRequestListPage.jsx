@@ -175,7 +175,7 @@ export default function BookingRequestListPage() {
                                         {isCoach ? "Candidate" : "Coach"}
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Type</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Interview</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Type</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Amount</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Status</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>Created</TableCell>
@@ -245,7 +245,9 @@ export default function BookingRequestListPage() {
                                                             size="small"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                navigate(`/coach/candidates/${req.candidateId}/roadmap`);
+                                                                navigate(
+                                                                    `/coach/candidates/${req.candidateId}/roadmap`,
+                                                                );
                                                             }}
                                                         >
                                                             <MapIcon fontSize="small" />
