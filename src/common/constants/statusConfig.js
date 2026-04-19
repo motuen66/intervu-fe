@@ -1,24 +1,24 @@
 import { INTERVIEW_ROOM_STATUS } from "./status";
 
 export function getInterviewRoomStatusConfig(status, { isRescheduled = false, hasPendingReschedule = false } = {}) {
-    if (status === INTERVIEW_ROOM_STATUS.SCHEDULED && isRescheduled) {
-        return { label: "Rescheduled", color: "info" };
-    }
-    if (status === INTERVIEW_ROOM_STATUS.SCHEDULED && hasPendingReschedule) {
-        return { label: "Pending Reschedule", color: "warning" };
-    }
+    // if (status === INTERVIEW_ROOM_STATUS.SCHEDULED && isRescheduled) {
+    //     return { label: "Rescheduled", color: "info" };
+    // }
+    // if (status === INTERVIEW_ROOM_STATUS.SCHEDULED && hasPendingReschedule) {
+    //     return { label: "Pending Reschedule", color: "warning" };
+    // }
 
     switch (status) {
-        case INTERVIEW_ROOM_STATUS.SCHEDULED:
-            return { label: "Scheduled", color: "primary" };
+        // case INTERVIEW_ROOM_STATUS.SCHEDULED:
+        //     return { label: "Scheduled", color: "primary" };
         case INTERVIEW_ROOM_STATUS.ON_GOING:
             return { label: "Ongoing", color: "success" };
         case INTERVIEW_ROOM_STATUS.COMPLETED:
             return { label: "Completed", color: "default" };
         case INTERVIEW_ROOM_STATUS.CANCELLED:
             return { label: "Cancelled", color: "error" };
-        default:
-            return { label: "Unknown", color: "default" };
+        // default:
+        //     return { label: "Unknown", color: "default" };
     }
 }
 

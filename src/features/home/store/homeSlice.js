@@ -8,9 +8,9 @@ export const fetchInterviewers = createAsyncThunk(
     async (params = {}, {rejectWithValue, getState, dispatch}) => {
         const { useGlobalLoading = false, ...requestParams } = params || {};
         try{
-            if (useGlobalLoading) {
-                dispatch(startGlobalLoading());
-            }
+            // if (useGlobalLoading) {
+            //     dispatch(startGlobalLoading());
+            // }
             const { home } = getState();
             const { currentPage, pageSize } = home.pagination;
             const response = await axios.get(homeEndPoints.GET_ALL_INTERVIEWERS, {
@@ -24,9 +24,9 @@ export const fetchInterviewers = createAsyncThunk(
         } catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to fetch interviewers');
         } finally {
-            if (useGlobalLoading) {
-                dispatch(stopGlobalLoading());
-            }
+            // if (useGlobalLoading) {
+            //     dispatch(stopGlobalLoading());
+            // }
         }
     }
 );
@@ -36,9 +36,9 @@ export const fetchCompanies = createAsyncThunk(
     async (options = {}, {rejectWithValue, dispatch}) => {
         const { useGlobalLoading = false } = options || {};
         try{
-            if (useGlobalLoading) {
-                dispatch(startGlobalLoading());
-            }
+            // if (useGlobalLoading) {
+            //     dispatch(startGlobalLoading());
+            // }
             const response = await axios.get(homeEndPoints.GET_ALL_COMPANIES, {
                 params: {
                     page: 1,
@@ -61,9 +61,9 @@ export const fetchSkills = createAsyncThunk(
     async (options = {}, {rejectWithValue, dispatch}) => {
         const { useGlobalLoading = false } = options || {};
         try{
-            if (useGlobalLoading) {
-                dispatch(startGlobalLoading());
-            }
+            // if (useGlobalLoading) {
+            //     dispatch(startGlobalLoading());
+            // }
             const response = await axios.get(homeEndPoints.GET_ALL_SKILLS, {
                 params: {
                     page: 1,
@@ -87,9 +87,9 @@ export const fetchIndustries = createAsyncThunk(
     async (options = {}, {rejectWithValue, dispatch}) => {
         const { useGlobalLoading = false } = options || {};
         try{
-            if (useGlobalLoading) {
-                dispatch(startGlobalLoading());
-            }
+            // if (useGlobalLoading) {
+            //     dispatch(startGlobalLoading());
+            // }
             const response = await axios.get(homeEndPoints.GET_ALL_INDUSTRIES, {
                 params: {
                     page: 1,

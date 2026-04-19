@@ -13,7 +13,7 @@ export default function BaseCard({ onClick, sx, children, ...props }) {
                 cursor: onClick ? "pointer" : "default",
                 "&:hover": onClick
                     ? {
-                        borderColor: "primary.main",
+                        borderColor: "secondary.light",
                         boxShadow: 1,
                     }
                     : {},
