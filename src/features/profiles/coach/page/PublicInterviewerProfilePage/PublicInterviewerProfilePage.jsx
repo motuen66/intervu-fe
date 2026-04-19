@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { Box, Paper, Typography, Stack } from "@mui/material";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
@@ -18,7 +18,7 @@ import { CompanyLogo } from "../../../../../common/utils/logoImageGenerator";
 const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
     const navigate = useNavigate();
     const { slugProfileUrl } = useParams();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { userData } = useSelector((state) => state.auth || {});
 
     // State
@@ -43,6 +43,11 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
 
     const orderCode = searchParams.get("orderCode");
     const paymentStatus = searchParams.get("status");
+    const preselectedServiceId = searchParams.get("serviceId");
+    // Carried from the roadmap "Schedule mock" CTA so the post-interview update
+    // can deterministically target the originating node.
+    const roadmapNodeId = searchParams.get("roadmapNodeId");
+    const hasHandledAutoBookingRef = useRef(false);
 
     useEffect(() => {
         if (slugProfileUrl) {
@@ -52,6 +57,24 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
             checkTransactionStatus();
         }
     }, [slugProfileUrl, orderCode, paymentStatus]);
+
+    useEffect(() => {
+        if (hasHandledAutoBookingRef.current) return;
+        if (!preselectedServiceId || services.length === 0) return;
+
+        const matchedService = services.find((svc) => String(svc?.id) === String(preselectedServiceId));
+        if (!matchedService) return;
+
+        hasHandledAutoBookingRef.current = true;
+        setSelectedService(matchedService);
+        setBookingDialogOpen(true);
+
+        // Keep contextual params (e.g. roadmapNodeId) but remove one-time booking hints.
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete("serviceId");
+        nextParams.delete("serviceName");
+        setSearchParams(nextParams, { replace: true });
+    }, [preselectedServiceId, services, searchParams, setSearchParams]);
 
     const loadData = async () => {
         setHasLoaded(false);
@@ -173,6 +196,7 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                 coachInterviewServiceId: service.id,
                 startTime: startTime.toISOString(),
                 returnUrl: returnUrl,
+                roadmapNodeId: roadmapNodeId || null,
             },
         });
 

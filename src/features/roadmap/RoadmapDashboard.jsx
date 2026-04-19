@@ -81,6 +81,10 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                 ? nodesSource.map((node, nodeIndex) => {
                       const assessment = node.assessment ?? node.Assessment ?? {};
                       const childSkills = node.child_skills ?? node.childSkills ?? node.ChildSkills ?? [];
+                      const recommendedCoachSource =
+                          node.recommended_coach ?? node.recommendedCoach ?? node.RecommendedCoach ?? null;
+                      const recommendedServiceSource =
+                          node.recommended_service ?? node.recommendedService ?? node.RecommendedService ?? null;
 
                       return {
                           skill_id: node.skill_id ?? node.skillId ?? node.SkillId ?? `skill_${phaseIndex}_${nodeIndex}`,
@@ -113,6 +117,41 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                                     };
                                 })
                               : [],
+                          recommended_coach: recommendedCoachSource
+                              ? {
+                                    id: recommendedCoachSource.id ?? recommendedCoachSource.Id ?? "",
+                                    name: recommendedCoachSource.name ?? recommendedCoachSource.Name ?? "",
+                                    slug_profile_url:
+                                        recommendedCoachSource.slug_profile_url ??
+                                        recommendedCoachSource.slugProfileUrl ??
+                                        recommendedCoachSource.SlugProfileUrl ??
+                                        "",
+                                    avatar_url:
+                                        recommendedCoachSource.avatar_url ??
+                                        recommendedCoachSource.avatarUrl ??
+                                        recommendedCoachSource.AvatarUrl ??
+                                        "",
+                                }
+                              : null,
+                          recommended_service: recommendedServiceSource
+                              ? {
+                                    id: recommendedServiceSource.id ?? recommendedServiceSource.Id ?? "",
+                                    interview_type_name:
+                                        recommendedServiceSource.interview_type_name ??
+                                        recommendedServiceSource.interviewTypeName ??
+                                        recommendedServiceSource.InterviewTypeName ??
+                                        "",
+                                    price:
+                                        recommendedServiceSource.price ??
+                                        recommendedServiceSource.Price ??
+                                        null,
+                                    duration_minutes:
+                                        recommendedServiceSource.duration_minutes ??
+                                        recommendedServiceSource.durationMinutes ??
+                                        recommendedServiceSource.DurationMinutes ??
+                                        null,
+                                }
+                              : null,
                       };
                   })
                 : [],

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Avatar from "@mui/material/Avatar";
 import {
     BookOpen,
     CalendarClock,
@@ -208,7 +209,9 @@ function EvaluationRow({ item }) {
             </div>
 
             {item.question ? (
-                <p style={{ margin: "0 0 6px", color: "#475569", fontSize: "12px", lineHeight: 1.45 }}>{item.question}</p>
+                <p style={{ margin: "0 0 6px", color: "#475569", fontSize: "12px", lineHeight: 1.45 }}>
+                    {item.question}
+                </p>
             ) : null}
 
             <p style={{ margin: 0, color: "#334155", fontSize: "12px", lineHeight: 1.45 }}>
@@ -406,6 +409,22 @@ function NodeDetail({ phase, node, readOnly = false }) {
         navigate(`/home?${params.toString()}`);
     };
 
+    // Roadmap-driven booking: jump into the recommended coach's public profile with
+    // the node id + pre-selected service pre-filled in the query string so the booking
+    // payload can propagate RoadmapNodeId through to the InterviewRoom.
+    const handleScheduleWithRecommended = (nodeSkillId) => {
+        const coach = selectedSkill?.recommended_coach;
+        const service = selectedSkill?.recommended_service;
+        const slug = coach?.slug_profile_url ?? coach?.slugProfileUrl ?? coach?.id;
+        if (!slug) return;
+
+        const params = new URLSearchParams({ from: "roadmap" });
+        if (nodeSkillId) params.set("roadmapNodeId", nodeSkillId);
+        if (service?.id) params.set("serviceId", service.id);
+        if (service?.interview_type_name) params.set("serviceName", service.interview_type_name);
+        navigate(`/profile/${encodeURIComponent(slug)}?${params.toString()}`);
+    };
+
     // X6: jump straight to a specific interview question
     const handleOpenQuestion = (question, childSkillName) => {
         if (question?.id) {
@@ -482,6 +501,8 @@ function NodeDetail({ phase, node, readOnly = false }) {
     const status = selectedSkill?.assessment?.status ?? "Missing";
     const progress = selectedSkill?.assessment?.progress ?? 0;
     const recommendedCoaches = phase.recommended_coaches ?? [];
+    const nodeCoach = selectedSkill?.recommended_coach ?? null;
+    const nodeService = selectedSkill?.recommended_service ?? null;
     const visibleMocks = showAllMocks ? sortedMockHistory : sortedMockHistory.slice(0, RECENT_MOCKS_EXPANDED);
     const hiddenMockCount = Math.max(0, sortedMockHistory.length - RECENT_MOCKS_EXPANDED);
     const overallScoreStyle = overallMockAverage != null ? getScoreStyle(overallMockAverage) : null;
@@ -511,7 +532,14 @@ function NodeDetail({ phase, node, readOnly = false }) {
             >
                 Phase Overview
             </p>
-            <h2 style={{ marginTop: 0, marginBottom: phase.phase_description ? "10px" : "14px", fontSize: "30px", lineHeight: 1.12 }}>
+            <h2
+                style={{
+                    marginTop: 0,
+                    marginBottom: phase.phase_description ? "10px" : "14px",
+                    fontSize: "30px",
+                    lineHeight: 1.12,
+                }}
+            >
                 {phase.phase_name}
             </h2>
 
@@ -572,7 +600,78 @@ function NodeDetail({ phase, node, readOnly = false }) {
 
             {activeTab === PHASE_TABS.RECOMMENDATIONS ? (
                 <div style={{ marginBottom: "24px" }}>
-                    <h3
+                    {/* Per-node recommendation: one coach + one service the candidate can book
+                        directly to work on this specific skill. */}
+                    {nodeCoach ? (
+                        <div
+                            style={{
+                                marginBottom: "16px",
+                                borderRadius: "14px",
+                                border: "1px solid #BFDBFE",
+                                background: "linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%)",
+                                padding: "14px",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.08em",
+                                    textTransform: "uppercase",
+                                    color: "#1D4ED8",
+                                    marginBottom: "8px",
+                                }}
+                            >
+                                Recommended for this skill
+                            </div>
+                            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                                <Avatar
+                                    src={nodeCoach.avatarUrl || ""}
+                                    alt={nodeCoach.name}
+                                    sx={{
+                                        width: 48,
+                                        height: 48,
+                                        bgcolor: "#E2E8F0",
+                                    }}
+                                />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: 700, fontSize: "15px" }}>{nodeCoach.name}</div>
+                                    {nodeService ? (
+                                        <div style={{ color: "#475569", fontSize: "13px", marginTop: "2px" }}>
+                                            {nodeService.interview_type_name}
+                                            {nodeService.price != null ? ` · $${nodeService.price}` : ""}
+                                            {nodeService.duration_minutes != null
+                                                ? ` · ${nodeService.duration_minutes}min`
+                                                : ""}
+                                        </div>
+                                    ) : null}
+                                </div>
+                                {!readOnly ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleScheduleWithRecommended(selectedSkill?.skill_id)}
+                                        style={{
+                                            border: "none",
+                                            borderRadius: "10px",
+                                            background: "#0F172A",
+                                            color: "#FFFFFF",
+                                            padding: "8px 14px",
+                                            fontWeight: 700,
+                                            fontSize: "13px",
+                                            cursor: "pointer",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                        }}
+                                    >
+                                        <CalendarClock size={14} /> Schedule mock
+                                    </button>
+                                ) : null}
+                            </div>
+                        </div>
+                    ) : null}
+
+                    {/* <h3
                         style={{
                             marginTop: 0,
                             marginBottom: "12px",
@@ -582,9 +681,9 @@ function NodeDetail({ phase, node, readOnly = false }) {
                             fontSize: "20px",
                         }}
                     >
-                        <Users size={18} /> Recommended Coaches
-                    </h3>
-                    {recommendedCoaches.length === 0 ? (
+                        <Users size={18} /> {nodeCoach ? "Other coaches in this phase" : "Recommended Coaches"}
+                    </h3> */}
+                    {/* {recommendedCoaches.length === 0 ? (
                         <div
                             style={{
                                 padding: "20px",
@@ -665,7 +764,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
                                 </button>
                             ))}
                         </div>
-                    )}
+                    )} */}
                 </div>
             ) : (
                 <div style={{ marginBottom: "24px" }}>
@@ -713,12 +812,17 @@ function NodeDetail({ phase, node, readOnly = false }) {
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div
-                                    style={{ fontWeight: 700, fontSize: "14px", color: overallScoreStyle?.color ?? "#0F172A" }}
+                                    style={{
+                                        fontWeight: 700,
+                                        fontSize: "14px",
+                                        color: overallScoreStyle?.color ?? "#0F172A",
+                                    }}
                                 >
                                     Overall phase average
                                 </div>
                                 <div style={{ color: "#475569", fontSize: "12px", marginTop: "2px" }}>
-                                    {sortedMockHistory.length} mock{sortedMockHistory.length === 1 ? "" : "s"} across this phase
+                                    {sortedMockHistory.length} mock{sortedMockHistory.length === 1 ? "" : "s"} across
+                                    this phase
                                 </div>
                             </div>
                         </div>
@@ -763,7 +867,9 @@ function NodeDetail({ phase, node, readOnly = false }) {
                                         fontSize: "13px",
                                     }}
                                 >
-                                    {showAllMocks ? "Show fewer" : `Show ${hiddenMockCount} older mock${hiddenMockCount === 1 ? "" : "s"}`}
+                                    {showAllMocks
+                                        ? "Show fewer"
+                                        : `Show ${hiddenMockCount} older mock${hiddenMockCount === 1 ? "" : "s"}`}
                                 </button>
                             ) : null}
                         </div>
@@ -787,7 +893,9 @@ function NodeDetail({ phase, node, readOnly = false }) {
                         >
                             Skill Detail
                         </p>
-                        <h3 style={{ marginTop: 0, marginBottom: "10px", fontSize: "22px" }}>{selectedSkill.skill_name}</h3>
+                        <h3 style={{ marginTop: 0, marginBottom: "10px", fontSize: "22px" }}>
+                            {selectedSkill.skill_name}
+                        </h3>
 
                         <div style={{ marginBottom: "14px" }}>
                             <SkillStatusBadge status={status} />
@@ -826,9 +934,8 @@ function NodeDetail({ phase, node, readOnly = false }) {
                             >
                                 <Sparkles size={16} style={{ marginTop: "2px", flexShrink: 0 }} />
                                 <div style={{ fontSize: "13px", lineHeight: 1.5 }}>
-                                    New to this skill? Start with{" "}
-                                    <strong>{childSkillDetails[0].name}</strong> — practice the fundamentals first
-                                    before booking a mock.
+                                    New to this skill? Start with <strong>{childSkillDetails[0].name}</strong> —
+                                    practice the fundamentals first before booking a mock.
                                 </div>
                             </div>
                         ) : null}
@@ -969,7 +1076,12 @@ function NodeDetail({ phase, node, readOnly = false }) {
                                                                 {question.title}
                                                             </span>
                                                             {question.difficulty ? (
-                                                                <span style={{ opacity: 0.7, textTransform: "capitalize" }}>
+                                                                <span
+                                                                    style={{
+                                                                        opacity: 0.7,
+                                                                        textTransform: "capitalize",
+                                                                    }}
+                                                                >
                                                                     · {question.difficulty}
                                                                 </span>
                                                             ) : null}
@@ -1021,7 +1133,9 @@ function NodeDetail({ phase, node, readOnly = false }) {
                             </div>
                         )}
 
-                        <h4 style={{ marginTop: 0, marginBottom: "8px", color: "#0F172A", fontSize: "15px" }}>Mentor Note</h4>
+                        <h4 style={{ marginTop: 0, marginBottom: "8px", color: "#0F172A", fontSize: "15px" }}>
+                            Mentor Note
+                        </h4>
                         <p style={{ margin: 0, color: "#475569", lineHeight: 1.6 }}>
                             {selectedSkill.mentor_note ?? "No mentor note available."}
                         </p>

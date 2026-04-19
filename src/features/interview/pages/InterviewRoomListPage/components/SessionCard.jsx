@@ -504,7 +504,7 @@ function RoundRow({
 
             {showActions && (
                 <Stack direction="row" spacing={1.25} sx={{ ml: { md: "auto" }, width: { xs: "100%", md: "auto" } }}>
-                    {canReviewQuestions && (
+                    {/* {canReviewQuestions && (
                         <Button
                             variant="contained"
                             size="small"
@@ -533,7 +533,7 @@ function RoundRow({
                         >
                             {isQuestionsReady ? "Questions Ready" : "Prepare Questions"}
                         </Button>
-                    )}
+                    )} */}
 
                     {(canJoin || user?.role === ROLES.CANDIDATE) && (
                         <ActionButtonGroup

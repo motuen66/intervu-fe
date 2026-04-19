@@ -54,6 +54,25 @@ const RoadmapNode = ({ data }) => {
 
             <SkillProgressBar progress={progress} status={status} />
 
+            {data.recommendedCoach ? (
+                <div
+                    style={{
+                        marginTop: "8px",
+                        fontSize: "11px",
+                        color: "#1D4ED8",
+                        fontWeight: 600,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                    }}
+                    title={data.recommendedCoach.name}
+                >
+                    Coach: {data.recommendedCoach.name}
+                    {data.recommendedService?.price != null ? ` · $${data.recommendedService.price}` : ""}
+                    {data.recommendedService?.duration_minutes != null ? ` · ${data.recommendedService.duration_minutes}min` : ""}
+                </div>
+            ) : null}
+
             {childSkillPreview.length > 0 ? (
                 <div style={{ marginTop: "10px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
                     {childSkillPreview.map((skill) => (
