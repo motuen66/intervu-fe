@@ -657,7 +657,7 @@ function LandingPage() {
                       className="story-preview-surface"
                       style={{
                         transform: `rotate(${(-4 + clampedStoryProgress * 5).toFixed(2)}deg) translateY(${clampedStoryProgress * 12}px)`,
-                        background: activeStory.image ? `url(${activeStory.image}) center/cover no-repeat` : '#fff'
+                        background: activeStory.image ? `url(${activeStory.image}) center/cover no-repeat` : 'var(--claude-color-surface-pure-white, white)'
                       }}
                     >
                       {activeStory.image && <div className="story-image-overlay" />}

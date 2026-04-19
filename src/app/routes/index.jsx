@@ -7,6 +7,7 @@ import { interviewerRoutes } from "./coachRoutes.jsx";
 import { candidateRoutes } from "./candidateRoutes.jsx";
 import EmptyLayout from "../layouts/EmptyLayout";
 import AuthDesignSystemLayout from "../layouts/AuthDesignSystemLayout";
+import LandingDesignSystemLayout from "../layouts/LandingDesignSystemLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
 
@@ -55,7 +56,7 @@ const renderLazy = (LazyComponent, props = {}) => (
 
 export const routes = [
     { path: "/", element: renderLazy(RootPage) },
-    { path: "/landing", element: renderLazy(LandingPage) },
+    { element: <LandingDesignSystemLayout />, children: [{ path: "/landing", element: renderLazy(LandingPage) }] },
     ...(DesignSystemSandbox ? [{ path: "/design-system", element: renderLazy(DesignSystemSandbox) }] : []),
 
     // Auth routes

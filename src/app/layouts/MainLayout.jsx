@@ -4,6 +4,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import "./MainLayout.css";
 import { Container, Box, IconButton, Avatar } from "@mui/material";
+import { ClaudeThemeProvider } from "../../common/design-system";
 import { Menu, User, Settings, LogOut } from "lucide-react";
 import { ROLES } from "../../common/constants/common";
 import { callApi } from "../../common/utils/apiConnector";
@@ -264,7 +265,9 @@ const MainLayout = () => {
 
                     {/* Admin Main Content */}
                     <Box component="main" sx={{ flex: 1, p: { xs: 2, md: "20px 24px 32px" } }}>
-                        <Outlet />
+                        <ClaudeThemeProvider style={{ background: "transparent" }}>
+                            <Outlet />
+                        </ClaudeThemeProvider>
                     </Box>
                 </Box>
                 <SuspendedGate />
@@ -305,7 +308,9 @@ const MainLayout = () => {
 
                 <main className="main-content">
                     <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
-                        <Outlet />
+                        <ClaudeThemeProvider style={{ background: "transparent" }}>
+                            <Outlet />
+                        </ClaudeThemeProvider>
                     </Container>
                 </main>
 
