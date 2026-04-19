@@ -1,15 +1,23 @@
 import {
     Alert,
     Box,
+    Button,
     CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    IconButton,
     Stack,
     Typography,
 } from "@mui/material";
-import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
+import { alpha } from "@mui/material/styles";
+import CloseIcon from "@mui/icons-material/Close";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
+import { SecondaryButton } from "../../../../../common/components/buttons";
+import StatusChip from "../../../../../common/components/StatusChip";
 
 function CancelInterviewConfirmDialog({
     open,
@@ -22,6 +30,7 @@ function CancelInterviewConfirmDialog({
     title = "Cancel Interview",
     confirmText = "Cancel Interview",
     cancelText = "Keep Interview",
+    subtitle,
     message,
 }) {
     const previewText =
@@ -34,79 +43,259 @@ function CancelInterviewConfirmDialog({
         return `${amount.toLocaleString("vi-VN")} VND`;
     };
 
-    const defaultMessage = `Are you sure you want to cancel this interview?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${previewText}`;
+    const displaySubtitle = subtitle || message || "Are you sure you want to cancel this session?";
+    const refundPercentBadge = previewRefundPercent === null ? "Unknown" : `${previewRefundPercent}% of paid amount`;
+    const previewRefundColor =
+        previewRefundPercent === null
+            ? "default"
+            : previewRefundPercent >= 100
+              ? "success"
+              : previewRefundPercent >= 50
+                ? "warning"
+                : "error";
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-            <DialogTitle>{title}</DialogTitle>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{
+                sx: (theme) => ({
+                    borderRadius: "28px",
+                    overflow: "hidden",
+                    bgcolor: "background.paper",
+                    border: `1px solid ${theme.palette.divider}`,
+                }),
+            }}
+        >
+            <DialogTitle sx={(theme) => ({ px: 3, py: 2.5, borderBottom: `1px solid ${theme.palette.divider}` })}>
+                <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                        <Box
+                            sx={(theme) => ({
+                                width: 30,
+                                height: 30,
+                                borderRadius: "50%",
+                                border: `1px solid ${theme.palette.error.light}`,
+                                color: "error.main",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                bgcolor: alpha(theme.palette.error.main, 0.1),
+                            })}
+                        >
+                            <ErrorOutlineRoundedIcon sx={{ fontSize: 18 }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
+                                {title}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                                {displaySubtitle}
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                </Box>
+            </DialogTitle>
             <DialogContent>
-                <Stack spacing={1.25} sx={{ mt: 1 }}>
-                    <Typography variant="body2" sx={{ whiteSpace: "pre-line", color: "text.secondary" }}>
-                        {message || defaultMessage}
-                    </Typography>
+                <Stack spacing={2.25} sx={{ mt: 2.25 }}>
+                    <Box
+                        sx={(theme) => ({
+                            p: 2,
+                            borderRadius: "16px",
+                            border: `1px solid ${theme.palette.info.light}`,
+                            bgcolor: alpha(theme.palette.info.main, 0.08),
+                        })}
+                    >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                            <InfoOutlinedIcon sx={{ color: "info.main", fontSize: 18 }} />
+                            <Typography sx={{ color: "info.dark", fontWeight: 700 }}>Refund Policy</Typography>
+                        </Box>
+                        <Stack spacing={1}>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "success.main" }} />
+                                    <Typography sx={{ color: "text.secondary", fontWeight: 600 }}>
+                                        &gt;= 24 hours before start
+                                    </Typography>
+                                </Box>
+                                <StatusChip label="100% Refund" color="success" />
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "warning.main" }} />
+                                    <Typography sx={{ color: "text.secondary", fontWeight: 600 }}>
+                                        &gt;= 12 hours before start
+                                    </Typography>
+                                </Box>
+                                <StatusChip label="50% Refund" color="warning" />
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "error.main" }} />
+                                    <Typography sx={{ color: "text.secondary", fontWeight: 600 }}>
+                                        &lt; 12 hours before start
+                                    </Typography>
+                                </Box>
+                                <StatusChip label="No Refund" color="error" />
+                            </Box>
+                        </Stack>
+                    </Box>
 
-                    <Box sx={{ p: 1.25, borderRadius: 1.5, bgcolor: "action.hover" }}>
-                        <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                            Preview refund amount
-                        </Typography>
-                        <Typography variant="body2" sx={{ mt: 0.25 }}>
-                            <strong>Percent:</strong> {previewText}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mt: 0.25 }}>
-                            <strong>Amount:</strong> {formatCurrency(previewRefundAmount)}
+                    <Box
+                        sx={(theme) => ({
+                            p: 2.25,
+                            borderRadius: "16px",
+                            border: `1px solid ${theme.palette.divider}`,
+                            bgcolor: "background.paper",
+                        })}
+                    >
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.25 }}>
+                            <Typography sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.06em" }}>
+                                PREVIEW REFUND AMOUNT
+                            </Typography>
+                            <StatusChip label={refundPercentBadge} color={previewRefundColor} />
+                        </Box>
+                        <Typography
+                            sx={{ color: "text.primary", fontWeight: 900, fontSize: "2.2rem", lineHeight: 1.1 }}
+                        >
+                            {formatCurrency(previewRefundAmount)}
                         </Typography>
                     </Box>
 
-                    <Box sx={{ mt: 0.5, p: 1.5, borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                    <Box>
+                        <Typography sx={{ color: "text.primary", fontWeight: 800, mb: 1.25 }}>
                             Refund Destination
                         </Typography>
 
-                        {bankInfo?.loading ? (
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <CircularProgress size={16} />
-                                <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                    Loading bank details...
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <Stack spacing={0.75}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-                                    {bankInfo?.bankLogo ? (
-                                        <Box
-                                            component="img"
-                                            src={bankInfo.bankLogo}
-                                            alt={bankInfo.bankCode || "Bank logo"}
-                                            sx={{ width: 32, height: 32, objectFit: "contain", borderRadius: 1 }}
-                                        />
-                                    ) : null}
-                                    <Typography variant="body2">
-                                        <strong>Bank:</strong> {bankInfo?.bankCode || "N/A"}
-                                        {bankInfo?.bankShortName ? ` (${bankInfo.bankShortName})` : ""}
+                        <Box
+                            sx={(theme) => ({
+                                p: 1.75,
+                                borderRadius: "16px",
+                                border: `1px solid ${theme.palette.divider}`,
+                                bgcolor: "background.paper",
+                            })}
+                        >
+                            {bankInfo?.loading ? (
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <CircularProgress size={16} />
+                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                        Loading bank details...
                                     </Typography>
                                 </Box>
-                                <Typography variant="body2">
-                                    <strong>BIN:</strong> {bankInfo?.bankBinNumber || "N/A"}
-                                </Typography>
-                                <Typography variant="body2">
-                                    <strong>Account:</strong> {bankInfo?.maskedAccountNumber || "N/A"}
-                                </Typography>
-                            </Stack>
-                        )}
+                            ) : (
+                                <Stack spacing={1}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            justifyContent: "space-between",
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                                            {bankInfo?.bankLogo ? (
+                                                <Box
+                                                    sx={{
+                                                        width: 60,
+                                                        height: 60,
+                                                        borderRadius: "12px",
+                                                        border: `1px solid ${alpha("palette.success.main", 0.5)}`,
+                                                        bgcolor: "success.50",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                    }}
+                                                >
+                                                    <Box
+                                                        component="img"
+                                                        src={bankInfo.bankLogo}
+                                                        alt={bankInfo.bankCode || "Bank logo"}
+                                                        sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+                                                    />
+                                                </Box>
+                                            ) : (
+                                                <Box
+                                                    sx={{
+                                                        width: 48,
+                                                        height: 48,
+                                                        borderRadius: "12px",
+                                                        bgcolor: "action.hover",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        color: "text.secondary",
+                                                    }}
+                                                >
+                                                    <CreditCardOutlinedIcon fontSize="small" />
+                                                </Box>
+                                            )}
+                                            <Box>
+                                                <Typography sx={{ color: "text.primary", fontWeight: 800 }}>
+                                                    {bankInfo?.bankCode || "N/A"}
+                                                    {bankInfo?.bankShortName ? ` (${bankInfo.bankShortName})` : ""}
+                                                </Typography>
+                                                <Typography sx={{ color: "text.secondary", mt: 0.25, fontWeight: 600 }}>
+                                                    <CreditCardOutlinedIcon
+                                                        sx={{ fontSize: 13, mr: 0.6, mb: "-1px" }}
+                                                    />
+                                                    {bankInfo?.maskedAccountNumber || "N/A"}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
 
-                        {bankInfo?.error && !bankInfo?.loading && (
-                            <Alert severity="warning" sx={{ mt: 1.25 }}>
-                                {bankInfo.error}
-                            </Alert>
-                        )}
+                                    {bankInfo?.error ? (
+                                        <Alert severity="warning" sx={{ mt: 0.5 }}>
+                                            {bankInfo.error}
+                                        </Alert>
+                                    ) : null}
+                                </Stack>
+                            )}
+                        </Box>
                     </Box>
                 </Stack>
             </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
-                <SecondaryButton onClick={onClose}>{cancelText}</SecondaryButton>
-                <PrimaryButton onClick={onConfirm} loading={confirmLoading}>
+            <DialogActions sx={{ px: 3, pb: 2.5, pt: 1.5 }}>
+                <Box sx={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Button
+                        onClick={onConfirm}
+                        disabled={confirmLoading}
+                        sx={{
+                            color: "error.main",
+                            fontWeight: 800,
+                            textTransform: "none",
+                            minHeight: 44,
+                            px: 1.5,
+                        }}
+                    >
+                        {confirmLoading ? <CircularProgress size={16} color="inherit" /> : confirmText}
+                    </Button>
+                    <SecondaryButton
+                        onClick={onClose}
+                        sx={(theme) => ({
+                            minWidth: 150,
+                            borderRadius: "12px",
+                            bgcolor: "text.primary",
+                            borderColor: "text.primary",
+                            color: "background.paper",
+                            "&:hover": {
+                                bgcolor: theme.palette.grey[900],
+                                borderColor: theme.palette.grey[900],
+                            },
+                        })}
+                    >
+                        {cancelText}
+                    </SecondaryButton>
+                </Box>
+                {/* Hidden action for keyboard submit compatibility */}
+                <Button onClick={onConfirm} sx={{ display: "none" }}>
                     {confirmText}
-                </PrimaryButton>
+                </Button>
             </DialogActions>
         </Dialog>
     );

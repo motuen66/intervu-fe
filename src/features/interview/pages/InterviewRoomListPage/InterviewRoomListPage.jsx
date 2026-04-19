@@ -1,5 +1,5 @@
 import { Box, Typography, Stack, Tabs, Tab, Container, CircularProgress } from "@mui/material";
-import { interviewEndPoints } from "../../services/interviewRoomApi";
+import { interviewEndPoints, getSessions } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
@@ -12,7 +12,6 @@ import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
 import FeedbackListModal from "./FeedbackListModal.jsx";
 import RescheduleRequestModal from "./RescheduleRequestModal.jsx";
 import JDMultiRoundRescheduleModal from "./JDMultiRoundRescheduleModal.jsx";
-// import AICVSelectionModal from "./components/AICVSelectionModal.jsx";
 import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
 import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
@@ -20,14 +19,12 @@ import CoachEvaluationModal from "./CoachEvaluationModal.jsx";
 import PrecheckModal from "./PrecheckModal.jsx";
 import { userEndPoints } from "../../../../common/services/userApi.js";
 
-// Import sub-components
 import InterviewStats from "./components/InterviewStats.jsx";
 import UpcomingTab from "./components/UpcomingTab.jsx";
 import PastHistoryTab from "./components/PastHistoryTab.jsx";
 import RescheduleRequestsTab from "./components/RescheduleRequestsTab.jsx";
 import CancelInterviewConfirmDialog from "./components/CancelInterviewConfirmDialog.jsx";
 
-// Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
     return (
         <Box
@@ -49,13 +46,122 @@ function a11yProps(index) {
     };
 }
 
+const UPCOMING_STATUSES = [INTERVIEW_ROOM_STATUS.SCHEDULED, INTERVIEW_ROOM_STATUS.ON_GOING];
+const PAST_STATUSES = [INTERVIEW_ROOM_STATUS.COMPLETED, INTERVIEW_ROOM_STATUS.CANCELLED];
+const HIGHLIGHT_ELIGIBLE_STATUSES = [INTERVIEW_ROOM_STATUS.SCHEDULED, INTERVIEW_ROOM_STATUS.ON_GOING];
+
+const formatNextSessionIn = (ms) => {
+    if (ms == null || ms < 0) return "—";
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h`;
+    const mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${mins}m`;
+};
+
+const getSessionStartTimeMs = (session) => {
+    if (!session) return Number.POSITIVE_INFINITY;
+
+    const rounds = Array.isArray(session.rounds) ? session.rounds : [];
+    if (rounds.length > 0) {
+        const firstRound = [...rounds]
+            .filter((r) => r?.scheduledTime)
+            .sort((a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime())[0];
+
+        if (firstRound?.scheduledTime) {
+            const ts = new Date(firstRound.scheduledTime).getTime();
+            if (!Number.isNaN(ts)) return ts;
+        }
+    }
+
+    const fallbackTs = new Date(session.scheduledTime).getTime();
+    return Number.isNaN(fallbackTs) ? Number.POSITIVE_INFINITY : fallbackTs;
+};
+
+const sortByStartTimeNearestNow = (items = []) => {
+    const now = Date.now();
+    return [...items].sort((a, b) => {
+        const aDistance = Math.abs(getSessionStartTimeMs(a) - now);
+        const bDistance = Math.abs(getSessionStartTimeMs(b) - now);
+        return aDistance - bDistance;
+    });
+};
+
+const getSessionKey = (session) => session?.sessionId || session?.bookingRequestId || session?.id || null;
+
+const getNearestEligibleRoundForSession = (session, nowMs) => {
+    if (!session) return null;
+
+    const rounds = Array.isArray(session.rounds) && session.rounds.length > 0 ? session.rounds : [session];
+    const eligible = rounds
+        .map((round, index) => ({ round, index }))
+        .filter(({ round }) => round?.scheduledTime && HIGHLIGHT_ELIGIBLE_STATUSES.includes(round?.status))
+        .map(({ round, index }) => {
+            const timeMs = new Date(round.scheduledTime).getTime();
+            return Number.isNaN(timeMs)
+                ? null
+                : {
+                      round,
+                      index,
+                      timeMs,
+                      distanceMs: Math.abs(timeMs - nowMs),
+                  };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.distanceMs - b.distanceMs);
+
+    return eligible[0] || null;
+};
+
+const getNearestSessionFocus = (items = []) => {
+    const nowMs = Date.now();
+
+    const candidates = items
+        .map((session) => {
+            const nearestRound = getNearestEligibleRoundForSession(session, nowMs);
+            const sessionKey = getSessionKey(session);
+            if (!nearestRound || !sessionKey) return null;
+
+            return {
+                sessionKey,
+                roundId: nearestRound.round?.id || null,
+                roundIndex: nearestRound.index,
+                distanceMs: nearestRound.distanceMs,
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.distanceMs - b.distanceMs);
+
+    return candidates[0] || { sessionKey: null, roundId: null, roundIndex: null };
+};
+
+const INITIAL_UPCOMING = {
+    items: [],
+    page: 1,
+    pageSize: 6,
+    totalItems: 0,
+    totalPages: 0,
+    loading: false,
+    dirty: true,
+};
+
+const INITIAL_PAST = {
+    items: [],
+    page: 1,
+    pageSize: 5,
+    totalItems: 0,
+    totalPages: 0,
+    loading: false,
+    dirty: true,
+};
+
 function InterviewRoomListPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const user = useUser();
-    const [loading, setLoading] = useState(false);
-    const [upcomingRooms, setUpcomingRooms] = useState([]);
-    const [pastRooms, setPastRooms] = useState([]);
+    const [upcomingState, setUpcomingState] = useState(INITIAL_UPCOMING);
+    const [pastState, setPastState] = useState(INITIAL_PAST);
     const [rescheduleRequests, setRescheduleRequests] = useState([]);
     const [rescheduleLoading, setRescheduleLoading] = useState(false);
     const [hasPendingFeedbacks, setHasPendingFeedbacks] = useState(false);
@@ -80,25 +186,22 @@ function InterviewRoomListPage() {
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
     const [viewFeedbackState, setViewFeedbackState] = useState({ open: false, interviewRoomId: null });
     const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: null, nextSessionIn: "—" });
-    const hasInitializedRef = useRef(false);
-    const isFetchingRoomsRef = useRef(false);
-    // const [aiCvModalState, setAiCvModalState] = useState({ open: false, room: null });
+    const [nearestFocus, setNearestFocus] = useState({ sessionKey: null, roundId: null, roundIndex: null });
 
-    // New state for Generated Questions Modal
+    const upcomingSeqRef = useRef(0);
+    const pastSeqRef = useRef(0);
+    const pendingCoachShownRef = useRef(new Set());
+
     const [genQuestionsModalState, setGenQuestionsModalState] = useState({ open: false, roomId: null });
-
-    // Precheck modal state
     const [precheckState, setPrecheckState] = useState({ open: false, room: null });
 
     const callApiLocal = (options) => callApi({ ...options, useGlobalLoading: false });
 
-    // Helper function to get the label from the type value
     const getRoomTypeLabel = (typeValue) => {
         const roomType = INTERVIEW_ROOM_TYPE.find((t) => t.value === typeValue);
-        return roomType ? roomType.label : "Normal"; // Default to "Normal" if type is not specified
+        return roomType ? roomType.label : "Normal";
     };
 
-    // Handle deep linking from notifications
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const roomId = params.get("roomId");
@@ -110,176 +213,92 @@ function InterviewRoomListPage() {
             } else if (action === "view-feedback") {
                 setViewFeedbackState({ open: true, interviewRoomId: roomId });
             }
-            // Clean up URL without reload
             navigate(location.pathname, { replace: true });
         }
     }, [location, navigate]);
 
     useEffect(() => {
         if (!user?.id) return;
-
-        const loadData = async () => {
-            if (!hasInitializedRef.current) {
-                hasInitializedRef.current = true;
-                await fetchRescheduleRequests();
-
-                if (user.role === ROLES.CANDIDATE) {
-                    await checkPendingFeedbacks();
-                }
-            }
-
-            if (activeTab === 0) {
-                await fetchRooms([0, 1]);
-            } else if (activeTab === 1) {
-                await fetchRooms([2, 3]);
-            }
-        };
-
-        loadData();
+        fetchRescheduleRequests();
+        if (user.role === ROLES.CANDIDATE) {
+            checkPendingFeedbacks();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id, user?.role, activeTab]);
+    }, [user?.id, user?.role]);
 
-    const groupRoomsByBooking = (roomsList) => {
-        if (!Array.isArray(roomsList)) return [];
+    useEffect(() => {
+        if (!user?.id) return;
 
-        const grouped = {};
-        const standalone = [];
+        const isUpcoming = activeTab === 0;
+        const tabState = isUpcoming ? upcomingState : pastState;
+        if (!tabState.dirty) return;
 
-        roomsList.forEach((room) => {
-            if (room.bookingRequestId) {
-                if (!grouped[room.bookingRequestId]) {
-                    grouped[room.bookingRequestId] = [];
+        const setter = isUpcoming ? setUpcomingState : setPastState;
+        const seqRef = isUpcoming ? upcomingSeqRef : pastSeqRef;
+        const statuses = isUpcoming ? UPCOMING_STATUSES : PAST_STATUSES;
+        const mySeq = ++seqRef.current;
+
+        setter((prev) => ({ ...prev, loading: true }));
+
+        getSessions({
+            page: tabState.page,
+            pageSize: tabState.pageSize,
+            statuses,
+        })
+            .then((response) => {
+                if (mySeq !== seqRef.current) return;
+                const pageData = response?.page || {};
+                const sortedItems = sortByStartTimeNearestNow(pageData.items || []);
+                const focus = getNearestSessionFocus(sortedItems);
+                setter((prev) => ({
+                    ...prev,
+                    items: sortedItems,
+                    totalItems: pageData.totalItems || 0,
+                    totalPages: pageData.totalPages || 0,
+                    loading: false,
+                    dirty: false,
+                }));
+
+                if (isUpcoming) {
+                    setNearestFocus(focus);
                 }
-                grouped[room.bookingRequestId].push(room);
-            } else {
-                standalone.push(room);
-            }
-        });
 
-        const combinedRooms = Object.values(grouped).map((group) => {
-            if (group.length === 1) return group[0];
+                if (response?.stats) {
+                    setStats({
+                        upcoming: response.stats.upcoming || 0,
+                        completed: response.stats.completed || 0,
+                        avgScore: typeof response.stats.avgScore === "number" ? response.stats.avgScore : null,
+                        nextSessionIn: formatNextSessionIn(response.stats.nextSessionInMs),
+                    });
+                }
 
-            // Sort by roundNumber (or scheduledTime)
-            group.sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
+                if (user?.role === ROLES.INTERVIEWER && response?.pendingCoachEvaluationSession) {
+                    const pending = response.pendingCoachEvaluationSession;
+                    if (!pendingCoachShownRef.current.has(pending.id)) {
+                        pendingCoachShownRef.current.add(pending.id);
+                        setCoachEvaluationState({ open: true, room: pending });
+                    }
+                }
+            })
+            .catch((error) => {
+                if (mySeq !== seqRef.current) return;
+                console.error("Failed to fetch sessions:", error);
+                setter((prev) => ({ ...prev, loading: false }));
+            });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, user?.role, activeTab, upcomingState.dirty, upcomingState.page, pastState.dirty, pastState.page]);
 
-            // Find current/next round
-            let activeRoundIndex = group.findIndex((r) => r.status === INTERVIEW_ROOM_STATUS.ON_GOING);
-            if (activeRoundIndex === -1) {
-                activeRoundIndex = group.findIndex((r) => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED);
-            }
-            if (activeRoundIndex === -1) {
-                // All done or cancelled, pick the last one or last completed
-                activeRoundIndex = group.length - 1;
-            }
-
-            const activeRoom = group[activeRoundIndex];
-
-            return {
-                ...activeRoom,
-                id: activeRoom.id,
-                rounds: group,
-                currentRound: activeRoundIndex + 1,
-                // Status of the grouped card is the status of the active round
-            };
-        });
-
-        const all = [...standalone, ...combinedRooms];
-        // Sort newest first based on scheduled time
-        all.sort((a, b) => new Date(b.scheduledTime) - new Date(a.scheduledTime));
-        return all;
+    const markTabDirty = (tabKey) => {
+        if (tabKey === 0) {
+            setUpcomingState((prev) => ({ ...prev, dirty: true }));
+        } else {
+            setPastState((prev) => ({ ...prev, dirty: true }));
+        }
     };
 
-    const fetchRooms = async (statuses = null) => {
-        if (isFetchingRoomsRef.current) return;
-
-        isFetchingRoomsRef.current = true;
-        setLoading(true);
-        try {
-            // Fetch ALL rooms to properly group multi-round bookings
-            const allRoomsRes = await callApiLocal({
-                method: METHOD.GET,
-                endpoint: interviewEndPoints.INTERVIEW_ROOMS + "?PageSize=1000",
-            });
-            const allRoomsData = allRoomsRes?.data?.items || allRoomsRes?.data || [];
-
-            if (user?.role === ROLES.INTERVIEWER) {
-                checkPendingCoachEvaluations(allRoomsData);
-            }
-
-            // Group rooms
-            const groupedRooms = groupRoomsByBooking(allRoomsData);
-
-            console.log("Grouped Rooms:", groupedRooms);
-
-            // Filter into Upcoming (0, 1) and Past (2, 3)
-            const upcomingRoomsList = groupedRooms.filter(
-                (r) => r.status === INTERVIEW_ROOM_STATUS.SCHEDULED || r.status === INTERVIEW_ROOM_STATUS.ON_GOING,
-            );
-            const pastRoomsList = groupedRooms.filter(
-                (r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED || r.status === INTERVIEW_ROOM_STATUS.CANCELLED,
-            );
-
-            // Update state
-            // State updates based on status filter
-            if (statuses === null || statuses.includes(0)) {
-                setUpcomingRooms(upcomingRoomsList);
-            }
-            setPastRooms(pastRoomsList); // Always set past rooms for Recent History
-
-            // ALWAYS calculate stats based on grouped rooms shown in the list for UI consistency
-            const completedRooms = pastRoomsList.filter((r) => r.status === INTERVIEW_ROOM_STATUS.COMPLETED);
-
-            // Calculate avgScore based on role
-            // Candidate: Average of coach evaluation scores (room.score) - scale 10
-            // Coach: Average of candidate feedback ratings (room.rating) - scale 5
-            const evaluatedRooms = completedRooms.filter((r) =>
-                user.role === ROLES.CANDIDATE ? typeof r.score === "number" : typeof r.rating === "number",
-            );
-
-            let avgScore = null;
-            if (evaluatedRooms.length > 0) {
-                const totalScore = evaluatedRooms.reduce(
-                    (acc, room) => acc + (user.role === ROLES.CANDIDATE ? room.score : room.rating),
-                    0,
-                );
-                avgScore = (totalScore / evaluatedRooms.length).toFixed(1);
-            }
-
-            // Next session calculation
-            const now = new Date();
-            let nextSession = "—";
-            const upcomingFutureRooms = upcomingRoomsList
-                .map((r) => ({ ...r, dateObj: new Date(r.scheduledTime) }))
-                .filter((r) => !isNaN(r.dateObj.getTime()) && r.dateObj >= now)
-                .sort((a, b) => a.dateObj - b.dateObj);
-
-            if (upcomingFutureRooms.length > 0) {
-                const diffMs = upcomingFutureRooms[0].dateObj - now;
-                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-                if (diffDays > 0) {
-                    nextSession = `${diffDays}d ${diffHours}h`;
-                } else if (diffHours > 0) {
-                    nextSession = `${diffHours}h`;
-                } else {
-                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                    nextSession = `${diffMins}m`;
-                }
-            }
-
-            setStats({
-                upcoming: upcomingRoomsList.length,
-                completed: completedRooms.length,
-                avgScore: avgScore && !isNaN(avgScore) ? parseFloat(avgScore) : null,
-                nextSessionIn: nextSession,
-            });
-        } catch (error) {
-            console.error("Failed to fetch rooms:", error);
-        } finally {
-            isFetchingRoomsRef.current = false;
-            setLoading(false);
-        }
+    const markBothTabsDirty = () => {
+        setUpcomingState((prev) => ({ ...prev, dirty: true }));
+        setPastState((prev) => ({ ...prev, dirty: true }));
     };
 
     const fetchRescheduleRequests = async () => {
@@ -316,32 +335,16 @@ function InterviewRoomListPage() {
         }
     };
 
-    const checkPendingCoachEvaluations = async (prefetchedRooms = null) => {
-        try {
-            const rooms = prefetchedRooms || [];
-
-            if (!Array.isArray(rooms)) return;
-            // not just the ones currently marked as 'COMPLETED' in the top-level grouping.
-            const pendingRoom = rooms.find(
-                (room) => room.status === INTERVIEW_ROOM_STATUS.COMPLETED && room.isEvaluationCompleted === false,
-            );
-
-            console.log(
-                "Checked pending coach evaluations. Total rooms:",
-                rooms.length,
-                "Pending evaluation room:",
-                pendingRoom,
-            );
-            if (pendingRoom) {
-                setCoachEvaluationState({ open: true, room: pendingRoom });
-            }
-        } catch (error) {
-            console.error("Failed to check pending coach evaluations:", error);
-        }
-    };
-
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
+    };
+
+    const handleUpcomingPageChange = (_event, value) => {
+        setUpcomingState((prev) => ({ ...prev, page: value, dirty: true }));
+    };
+
+    const handlePastPageChange = (_event, value) => {
+        setPastState((prev) => ({ ...prev, page: value, dirty: true }));
     };
 
     const handleRequestReschedule = (room) => {
@@ -364,8 +367,7 @@ function InterviewRoomListPage() {
                     displaySuccessMessage: true,
                 });
 
-                await fetchRooms([0, 1]);
-                await fetchRooms([2, 3]);
+                markBothTabsDirty();
                 await fetchRescheduleRequests();
                 handleCloseRescheduleModal();
                 return;
@@ -431,7 +433,6 @@ function InterviewRoomListPage() {
             previewRefundAmount,
         });
 
-        // Load refund destination details for this candidate-facing cancel flow.
         loadCancelRefundBankInfo();
     };
 
@@ -526,8 +527,6 @@ function InterviewRoomListPage() {
         }
 
         try {
-            // Multi-round bookings (rounds.length > 1) use CANCEL_BOOKING_REQUEST
-            // Single-round or standalone sessions use CANCEL_INTERVIEW
             const endpoint =
                 room.rounds?.length > 1
                     ? interviewEndPoints.CANCEL_BOOKING_REQUEST(room.bookingRequestId)
@@ -542,8 +541,7 @@ function InterviewRoomListPage() {
 
             if (response?.success) {
                 toast.success(response.message || "Interview cancelled successfully");
-                await fetchRooms([0, 1]);
-                await fetchRooms([2, 3]);
+                markBothTabsDirty();
                 await fetchRescheduleRequests();
             }
         } catch (error) {
@@ -561,7 +559,7 @@ function InterviewRoomListPage() {
                 arg: { isApproved: true },
             });
             fetchRescheduleRequests();
-            fetchRooms();
+            markBothTabsDirty();
         } catch (error) {
             console.error("Failed to approve reschedule:", error);
         }
@@ -590,7 +588,7 @@ function InterviewRoomListPage() {
 
     const handleCoachEvaluationSubmitted = async () => {
         setCoachEvaluationState({ open: false, room: null });
-        await fetchRooms([2, 3]);
+        markTabDirty(1);
     };
 
     const handleViewFeedback = (room) => {
@@ -607,15 +605,6 @@ function InterviewRoomListPage() {
         setPrecheckState({ open: true, room });
     };
 
-    // const handleCloseAiCvModal = () => {
-    //     setAiCvModalState({ open: false, room: null });
-    // };
-
-    // const handleConfirmAiCvJoin = (room) => {
-    //     if (!room?.id) return;
-    //     navigate(`/interview/room/${room.id}`);
-    // };
-
     const handleReviewQuestions = (room) => {
         setGenQuestionsModalState({ open: true, roomId: room.id });
     };
@@ -624,7 +613,12 @@ function InterviewRoomListPage() {
         setGenQuestionsModalState({ open: false, roomId: null });
     };
 
-    if (loading && upcomingRooms.length === 0 && pastRooms.length === 0) {
+    const showFullscreenSpinner =
+        upcomingState.items.length === 0 &&
+        pastState.items.length === 0 &&
+        (upcomingState.loading || pastState.loading);
+
+    if (showFullscreenSpinner) {
         return (
             <Box sx={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <CircularProgress size={34} />
@@ -639,7 +633,6 @@ function InterviewRoomListPage() {
     return (
         <Box sx={{ minHeight: "100vh", py: 4 }}>
             <Container maxWidth="lg">
-                {/* Header */}
                 <Stack
                     direction={{ xs: "column", sm: "row" }}
                     justifyContent="space-between"
@@ -657,7 +650,6 @@ function InterviewRoomListPage() {
                     </Box>
                 </Stack>
 
-                {/* Stats Section */}
                 <InterviewStats
                     totalCount={stats.completed}
                     upcomingCount={stats.upcoming}
@@ -667,7 +659,6 @@ function InterviewRoomListPage() {
                     userRole={user?.role}
                 />
 
-                {/* Tabs Navigation */}
                 <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
                     <Tabs
                         value={activeTab}
@@ -690,33 +681,44 @@ function InterviewRoomListPage() {
                     </Tabs>
                 </Box>
 
-                {/* Tab Panels */}
                 <TabPanel value={activeTab} index={0}>
                     <UpcomingTab
-                        rooms={upcomingRooms}
-                        recentRooms={pastRooms}
+                        rooms={upcomingState.items}
+                        recentRooms={[]}
                         user={user}
-                        loading={loading}
+                        loading={upcomingState.loading}
+                        page={upcomingState.page}
+                        totalPages={upcomingState.totalPages}
+                        totalItems={upcomingState.totalItems}
+                        pageSize={upcomingState.pageSize}
+                        onPageChange={handleUpcomingPageChange}
                         onRequestReschedule={handleRequestReschedule}
                         onCancelInterview={handleCancelInterview}
                         onViewFeedback={handleViewFeedback}
                         onJoin={handleJoinRoom}
                         onReviewQuestions={handleReviewQuestions}
                         rescheduleRequests={rescheduleRequests}
+                        highlightedSessionKey={nearestFocus.sessionKey}
+                        highlightedRoundId={nearestFocus.roundId}
+                        highlightedRoundIndex={nearestFocus.roundIndex}
                     />
                 </TabPanel>
 
                 <TabPanel value={activeTab} index={1}>
                     <PastHistoryTab
-                        rooms={pastRooms}
+                        rooms={pastState.items}
                         user={user}
-                        loading={loading}
+                        loading={pastState.loading}
+                        page={pastState.page}
+                        totalPages={pastState.totalPages}
+                        totalItems={pastState.totalItems}
+                        pageSize={pastState.pageSize}
+                        onPageChange={handlePastPageChange}
                         onViewFeedback={handleViewFeedback}
                         onReviewQuestions={handleReviewQuestions}
                     />
                 </TabPanel>
 
-                {/* Modals outside Container flow for better management if needed, but here kept for logic */}
                 <FeedbackListModal
                     open={feedbackModalState.open}
                     onClose={handleCloseFeedbackModal}
@@ -738,7 +740,6 @@ function InterviewRoomListPage() {
                     user={user}
                 />
 
-                {/* Reschedule Modal */}
                 {isMultiRoundReschedule ? (
                     <JDMultiRoundRescheduleModal
                         open={rescheduleModalState.open}

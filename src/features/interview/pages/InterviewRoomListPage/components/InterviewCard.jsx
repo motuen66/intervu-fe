@@ -267,6 +267,8 @@ function InterviewCard({
             hasPendingReschedule,
         });
 
+        if (!config) return null;
+
         return <StatusChip label={config.label} color={config.color} />;
     };
 

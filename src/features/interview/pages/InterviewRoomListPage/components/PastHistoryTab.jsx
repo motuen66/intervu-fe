@@ -1,4 +1,3 @@
-import { useState, useMemo } from "react";
 import {
     Box,
     Typography,
@@ -7,31 +6,20 @@ import {
     CircularProgress,
 } from "@mui/material";
 import RecentInterviewItem from "./RecentInterviewItem";
-import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 
-const ITEMS_PER_PAGE = 5;
-
-function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestions }) {
-    const [page, setPage] = useState(1);
-
-    // Simplified list: removed internal search/filter bars
-    const filteredRooms = useMemo(() => {
-        return [...rooms];
-    }, [rooms]);
-
-    // Pagination logic
-    const totalPages = Math.ceil(filteredRooms.length / ITEMS_PER_PAGE);
-    const paginatedRooms = filteredRooms.slice(
-        (page - 1) * ITEMS_PER_PAGE,
-        page * ITEMS_PER_PAGE
-    );
-
-    const handlePageChange = (event, value) => {
-        setPage(value);
-    };
-
+function PastHistoryTab({
+    rooms,
+    user,
+    loading,
+    page = 1,
+    totalPages = 0,
+    totalItems = 0,
+    pageSize = 5,
+    onPageChange,
+    onViewFeedback,
+    onReviewQuestions,
+}) {
     const handleCardClick = (room) => {
-        // Handle viewing feedback
         if (onViewFeedback) {
             onViewFeedback(room);
         }
@@ -45,9 +33,12 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestion
         );
     }
 
+    const startIdx = totalItems > 0 ? (page - 1) * pageSize + 1 : 0;
+    const endIdx = Math.min(page * pageSize, totalItems);
+
     return (
         <Box>
-            {paginatedRooms.length === 0 ? (
+            {rooms.length === 0 ? (
                 <Box
                     sx={{
                         py: 8,
@@ -67,7 +58,7 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestion
                 </Box>
             ) : (
                 <Stack spacing={2} sx={{ width: "100%" }}>
-                    {paginatedRooms.map((room) => (
+                    {rooms.map((room) => (
                         <RecentInterviewItem
                             key={room.id}
                             room={room}
@@ -79,8 +70,7 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestion
                 </Stack>
             )}
 
-            {/* Pagination */}
-            {filteredRooms.length > 0 && (
+            {totalItems > 0 && totalPages > 1 && (
                 <Stack
                     direction="row"
                     justifyContent="space-between"
@@ -88,14 +78,12 @@ function PastHistoryTab({ rooms, user, loading, onViewFeedback, onReviewQuestion
                     sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}
                 >
                     <Typography variant="body2" color="text.secondary">
-                        Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                        {Math.min(page * ITEMS_PER_PAGE, filteredRooms.length)} of{" "}
-                        {filteredRooms.length} results
+                        Showing {startIdx} to {endIdx} of {totalItems} results
                     </Typography>
                     <Pagination
                         count={totalPages}
                         page={page}
-                        onChange={handlePageChange}
+                        onChange={onPageChange}
                         color="primary"
                         shape="rounded"
                         showFirstButton

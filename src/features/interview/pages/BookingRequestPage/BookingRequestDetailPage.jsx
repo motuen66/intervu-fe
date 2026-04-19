@@ -1037,13 +1037,9 @@ export default function BookingRequestDetailPage() {
                 previewRefundAmount={cancelRoundConfirmState.previewRefundAmount}
                 bankInfo={cancelBankInfoState}
                 title={`Cancel Round ${cancelRoundConfirmState.roundNumber ?? ""}`.trim()}
+                subtitle={`Are you sure you want to cancel round ${cancelRoundConfirmState.roundNumber ?? ""}?`}
                 confirmText="Confirm Cancel"
                 cancelText="Keep Round"
-                message={`Are you sure you want to cancel Round ${cancelRoundConfirmState.roundNumber ?? ""}?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${
-                    cancelRoundConfirmState.previewRefundPercent === null
-                        ? "Unable to calculate refund preview."
-                        : `${cancelRoundConfirmState.previewRefundPercent}% of the paid amount`
-                }`}
             />
 
             <CancelInterviewConfirmDialog
@@ -1055,13 +1051,9 @@ export default function BookingRequestDetailPage() {
                 previewRefundAmount={cancelRequestConfirmState.previewRefundAmount}
                 bankInfo={cancelBankInfoState}
                 title="Cancel Booking Request"
+                subtitle="Are you sure you want to cancel this booking request?"
                 confirmText="Cancel Request"
                 cancelText="Keep Request"
-                message={`Are you sure you want to cancel this booking request?\n\nRefund policy:\n- Cancel >= 24 hours before start time: 100% refund\n- Cancel >= 12 hours before start time: 50% refund\n- Cancel < 12 hours before start time: no refund\n\nPreview (if you cancel now): ${
-                    cancelRequestConfirmState.previewRefundPercent === null
-                        ? "Unable to calculate refund preview."
-                        : `${cancelRequestConfirmState.previewRefundPercent}% of the paid amount`
-                }`}
             />
 
             {/* REJECT DIALOG */}
