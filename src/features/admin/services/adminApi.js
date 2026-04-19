@@ -1,6 +1,7 @@
 import { BE_BASE_URL } from "../../../common/constants/env";
 
 const ADMIN_BASE_URL = `${BE_BASE_URL}/admin`;
+const NOTIFICATION_BASE_URL = `${BE_BASE_URL}/Notifications`;
 
 export const adminEndPoints = {
     GET_ANALYTICS: `${ADMIN_BASE_URL}/stats`,
@@ -54,4 +55,11 @@ export const adminEndPoints = {
         const query = params.toString();
         return `${ADMIN_BASE_URL}/system/python-ai-metrics${query ? `?${query}` : ""}`;
     },
+
+    // Notification Endpoints
+    GET_NOTIFICATIONS: (page = 1, pageSize = 20) => `${NOTIFICATION_BASE_URL}?page=${page}&pageSize=${pageSize}`,
+    SEND_NOTIFICATION: `${NOTIFICATION_BASE_URL}/admin`,
+    BROADCAST_NOTIFICATION: `${NOTIFICATION_BASE_URL}/admin/broadcast`,
+    BROADCAST_ALL: `${NOTIFICATION_BASE_URL}/admin/broadcast-all`,
+    BROADCAST_ROLE: `${NOTIFICATION_BASE_URL}/admin/broadcast-role`,
 };
