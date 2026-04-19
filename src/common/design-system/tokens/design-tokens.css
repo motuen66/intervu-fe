@@ -12,8 +12,8 @@
         --claude-color-surface-deep-dark: #141413;
 
         /* ── Colors: Brand ── */
-        --claude-color-brand-terracotta: #c96442;
-        --claude-color-brand-coral: #d97757;
+        --claude-color-brand-terracotta: #0F172A;
+        --claude-color-brand-coral: #334155;
 
         /* ── Colors: Text ── */
         --claude-color-text-near-black: #141413;
@@ -38,6 +38,20 @@
         --claude-color-semantic-error: #b53333;
         --claude-color-semantic-focus-blue: #3898ec;
         --claude-color-semantic-success: #2d6a4f;
+
+        /* ── Colors: Semantic Surface ── */
+        --claude-color-semantic-success-bg: #d4edda;
+        --claude-color-semantic-warning-bg: #fef3cd;
+        --claude-color-semantic-warning-fg: #7a5a00;
+        --claude-color-semantic-error-bg: #fde8e8;
+
+        /* ── Colors: Interactive ── */
+        --claude-color-interactive-primary-hover: #334155;
+        --claude-color-interactive-secondary-hover: #dbd9cf;
+        --claude-color-interactive-dark-hover: #3d3d3b;
+
+        /* ── Colors: Overlay ── */
+        --claude-color-overlay-scrim: rgba(20, 20, 19, 0.4);
 
         /* ── Typography: Family ── */
         --claude-font-serif: "Anthropic Serif", Georgia, serif;
@@ -118,6 +132,7 @@
         /* ── Focus ── */
         --claude-focus-ring: 0 0 0 3px rgba(56, 152, 236, 0.25);
         --claude-focus-color: var(--claude-color-semantic-focus-blue);
+        --claude-focus-ring-error: 0 0 0 3px rgba(181, 51, 51, 0.15);
 
         /* ── Motion ── */
         --claude-motion-fast: 120ms;

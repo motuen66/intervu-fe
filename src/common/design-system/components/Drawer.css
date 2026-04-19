@@ -2,7 +2,7 @@
   .claude-drawer__scrim {
     position: fixed;
     inset: 0;
-    background-color: rgba(20, 20, 19, 0.4);
+    background-color: var(--claude-color-overlay-scrim);
     z-index: 200;
     animation: claude-drawer-fade-in var(--claude-motion-base) var(--claude-motion-easing);
   }

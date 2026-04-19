@@ -1,7 +1,7 @@
 import './Button.css';
 
 export function Button({
-  variant = 'secondary',
+  variant = 'primary',
   size = 'md',
   disabled = false,
   loading = false,

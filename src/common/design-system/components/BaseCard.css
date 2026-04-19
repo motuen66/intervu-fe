@@ -1,76 +1,76 @@
 @layer claude-components {
-  .claude-card {
-    background-color: var(--claude-color-surface-ivory);
-    border: 1px solid var(--claude-color-border-cream);
-    border-radius: var(--claude-radius-comfort);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
+    .claude-card {
+        background-color: var(--claude-color-surface-ivory);
+        border: 1px solid var(--claude-color-border-cream);
+        border-radius: var(--claude-radius-comfort);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
 
-  .claude-card--elevated {
-    box-shadow: var(--claude-shadow-whisper);
-  }
+    .claude-card--elevated {
+        box-shadow: var(--claude-shadow-whisper);
+    }
 
-  .claude-card--featured {
-    border-radius: var(--claude-radius-featured);
-    border-color: var(--claude-color-border-warm);
-  }
+    .claude-card--featured {
+        border-radius: var(--claude-radius-featured);
+        border-color: var(--claude-color-border-warm);
+    }
 
-  .claude-card--hero {
-    border-radius: var(--claude-radius-hero);
-    border-color: var(--claude-color-border-warm);
-  }
+    .claude-card--hero {
+        border-radius: var(--claude-radius-hero);
+        border-color: var(--claude-color-border-warm);
+    }
 
-  .claude-card--interactive {
-    cursor: pointer;
-    transition:
-      box-shadow var(--claude-motion-fast) var(--claude-motion-easing),
-      border-color var(--claude-motion-fast) var(--claude-motion-easing);
-  }
+    .claude-card--interactive {
+        cursor: pointer;
+        transition:
+            box-shadow var(--claude-motion-fast) var(--claude-motion-easing),
+            border-color var(--claude-motion-fast) var(--claude-motion-easing);
+    }
 
-  .claude-card--interactive:hover {
-    box-shadow: var(--claude-shadow-ring-warm), var(--claude-shadow-whisper);
-    border-color: var(--claude-color-ring-warm);
-  }
+    .claude-card--interactive:hover {
+        box-shadow: var(--claude-shadow-ring-warm), var(--claude-shadow-whisper);
+        border-color: var(--claude-color-ring-warm);
+    }
 
-  .claude-card--interactive:focus-visible {
-    outline: 2px solid var(--claude-focus-color);
-    box-shadow: var(--claude-focus-ring);
-  }
+    .claude-card--interactive:focus-visible {
+        outline: 2px solid var(--claude-focus-color);
+        box-shadow: var(--claude-focus-ring);
+    }
 
-  .claude-card--dark {
-    background-color: var(--claude-color-surface-dark);
-    border-color: var(--claude-color-border-dark);
-    color: var(--claude-color-text-ivory);
-  }
+    .claude-card--dark {
+        background-color: var(--claude-color-surface-dark);
+        border-color: var(--claude-color-border-dark);
+        color: var(--claude-color-text-ivory);
+    }
 
-  .claude-card__header {
-    padding: var(--claude-space-7) var(--claude-space-9);
-    border-bottom: 1px solid var(--claude-color-border-cream);
-    display: flex;
-    align-items: center;
-    gap: var(--claude-space-4);
-  }
+    .claude-card__header {
+        padding: var(--claude-space-7) var(--claude-space-9);
+        border-bottom: 1px solid var(--claude-color-border-cream);
+        display: flex;
+        align-items: center;
+        gap: var(--claude-space-4);
+    }
 
-  .claude-card--dark .claude-card__header {
-    border-bottom-color: var(--claude-color-border-dark);
-  }
+    .claude-card--dark .claude-card__header {
+        border-bottom-color: var(--claude-color-border-dark);
+    }
 
-  .claude-card__body {
-    padding: var(--claude-space-7) var(--claude-space-9);
-    flex: 1;
-  }
+    .claude-card__body {
+        padding: var(--claude-space-7) var(--claude-space-9);
+        flex: 1;
+    }
 
-  .claude-card__footer {
-    padding: var(--claude-space-6) var(--claude-space-9);
-    border-top: 1px solid var(--claude-color-border-cream);
-    display: flex;
-    align-items: center;
-    gap: var(--claude-space-4);
-  }
+    .claude-card__footer {
+        padding: var(--claude-space-6) var(--claude-space-9);
+        border-top: 1px solid var(--claude-color-border-cream);
+        display: flex;
+        align-items: center;
+        gap: var(--claude-space-4);
+    }
 
-  .claude-card--dark .claude-card__footer {
-    border-top-color: var(--claude-color-border-dark);
-  }
+    .claude-card--dark .claude-card__footer {
+        border-top-color: var(--claude-color-border-dark);
+    }
 }

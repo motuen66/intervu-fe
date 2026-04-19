@@ -110,7 +110,7 @@
   .claude-field--invalid .claude-field__input,
   .claude-field--invalid .claude-field__textarea {
     border-color: var(--claude-color-semantic-error);
-    box-shadow: 0 0 0 3px rgba(181, 51, 51, 0.15);
+    box-shadow: var(--claude-focus-ring-error);
   }
 
   .claude-field--invalid .claude-field__label {

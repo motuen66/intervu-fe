@@ -6,7 +6,7 @@
   .claude-modal__scrim {
     position: fixed;
     inset: 0;
-    background-color: rgba(20, 20, 19, 0.4);
+    background-color: var(--claude-color-overlay-scrim);
     display: flex;
     align-items: center;
     justify-content: center;

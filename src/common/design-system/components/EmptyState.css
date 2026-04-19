@@ -1,48 +1,48 @@
 @layer claude-components {
-  .claude-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: var(--claude-space-11) var(--claude-space-9);
-    border-radius: var(--claude-radius-hero);
-    background-color: var(--claude-color-surface-ivory);
-    border: 1px solid var(--claude-color-border-cream);
-  }
+    .claude-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: var(--claude-space-8) var(--claude-space-8);
+        border-radius: var(--claude-radius-hero);
+        background-color: var(--claude-color-surface-ivory);
+        border: 1px solid var(--claude-color-border-cream);
+    }
 
-  .claude-empty--shadowed {
-    box-shadow: var(--claude-shadow-whisper);
-  }
+    .claude-empty--shadowed {
+        box-shadow: var(--claude-shadow-whisper);
+    }
 
-  .claude-empty__art {
-    margin-bottom: var(--claude-space-7);
-    color: var(--claude-color-text-stone-gray);
-    opacity: 0.6;
-  }
+    .claude-empty__art {
+        margin-bottom: var(--claude-space-7);
+        color: var(--claude-color-text-stone-gray);
+        opacity: 0.6;
+    }
 
-  .claude-empty__title {
-    font-family: var(--claude-font-serif);
-    font-size: var(--claude-font-size-feature);
-    font-weight: var(--claude-font-weight-heading);
-    line-height: var(--claude-font-lh-snug);
-    color: var(--claude-color-text-near-black);
-    margin-bottom: var(--claude-space-3);
-  }
+    .claude-empty__title {
+        font-family: var(--claude-font-serif);
+        font-size: var(--claude-font-size-feature);
+        font-weight: var(--claude-font-weight-heading);
+        line-height: var(--claude-font-lh-snug);
+        color: var(--claude-color-text-near-black);
+        margin-bottom: var(--claude-space-3);
+    }
 
-  .claude-empty__body {
-    font-family: var(--claude-font-sans);
-    font-size: var(--claude-font-size-body-std);
-    line-height: var(--claude-font-lh-relaxed);
-    color: var(--claude-color-text-olive-gray);
-    max-width: 400px;
-    margin-bottom: var(--claude-space-7);
-  }
+    .claude-empty__body {
+        font-family: var(--claude-font-sans);
+        font-size: var(--claude-font-size-body-std);
+        line-height: var(--claude-font-lh-relaxed);
+        color: var(--claude-color-text-olive-gray);
+        max-width: 400px;
+        margin-bottom: var(--claude-space-7);
+    }
 
-  .claude-empty__actions {
-    display: flex;
-    gap: var(--claude-space-4);
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+    .claude-empty__actions {
+        display: flex;
+        gap: var(--claude-space-4);
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }

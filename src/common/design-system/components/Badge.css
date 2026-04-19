@@ -25,17 +25,17 @@
   }
 
   .claude-badge--success {
-    background-color: #d4edda;
+    background-color: var(--claude-color-semantic-success-bg);
     color: var(--claude-color-semantic-success);
   }
 
   .claude-badge--warning {
-    background-color: #fef3cd;
-    color: #7a5a00;
+    background-color: var(--claude-color-semantic-warning-bg);
+    color: var(--claude-color-semantic-warning-fg);
   }
 
   .claude-badge--error {
-    background-color: #fde8e8;
+    background-color: var(--claude-color-semantic-error-bg);
     color: var(--claude-color-semantic-error);
   }
 }

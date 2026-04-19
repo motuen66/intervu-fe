@@ -24,7 +24,7 @@
   }
 
   .claude-tag--interactive:hover {
-    background-color: #dbd9cf;
+    background-color: var(--claude-color-interactive-secondary-hover);
     box-shadow: var(--claude-shadow-ring-deep);
   }
 
