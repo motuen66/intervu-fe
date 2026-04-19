@@ -2,24 +2,17 @@ import { useForm } from "react-hook-form";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { authEndPoints } from "../services/authApi";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import SplitText from "./LoginPage/SplitText";
-import { TextField, Typography, InputAdornment, IconButton } from "@mui/material";
-import { PrimaryButton } from "../../../common/components/buttons";
+import { Typography } from "@mui/material";
+import { Button, InputField } from "../../../common/design-system";
 import toast from "react-hot-toast";
 import { trackRegister } from "../../../utils/analytics";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 
 function SignUpPage() {
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const handleClickShowPassword = () => setShowPassword((s) => !s);
-    const handleMouseDownPassword = (e) => e.preventDefault();
-    const handleMouseUpPassword = (e) => e.preventDefault();
-    const [passwordFocused, setPasswordFocused] = useState(false);
     const {
         register,
         handleSubmit,
@@ -77,7 +70,7 @@ function SignUpPage() {
                 width: "100%",
                 height: "100%",
                 overflow: "hidden",
-                background: "#ffffff",
+                background: "var(--claude-color-surface-parchment)",
             }}
         >
             {/* overlay container centers the signup card */}
@@ -104,7 +97,7 @@ function SignUpPage() {
                         border: "none",
                         minHeight: "560px",
                         alignItems: "stretch",
-                        background: "#fff",
+                        background: "var(--claude-color-surface-ivory)",
                     }}
                 >
                     {/* left: info / promo column */}
@@ -117,10 +110,10 @@ function SignUpPage() {
                             flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            background: "linear-gradient(135deg, #f8f9fc 0%, #e8eef5 30%, #dfe7f5 60%, #f5f7fa 100%)",
+                            background: "linear-gradient(135deg, var(--claude-color-surface-ivory) 0%, var(--claude-color-border-warm) 30%, var(--claude-color-surface-warm-sand) 60%, var(--claude-color-surface-ivory) 100%)",
                             position: "relative",
                             overflow: "hidden",
-                            borderRight: "1px solid #f0f0f5",
+                            borderRight: "1px solid var(--claude-color-border-cream)",
                         }}
                     >
                         {/* decorative floating circles */}
@@ -180,7 +173,7 @@ function SignUpPage() {
                                     playOnMount={true}
                                     loop={true}
                                     loopDelay={1.2}
-                                    color="#2a2a3e"
+                                    color="var(--claude-color-text-near-black)"
                                 />
                             </div>
 
@@ -213,7 +206,7 @@ function SignUpPage() {
                                     playOnMount={true}
                                     loop={true}
                                     loopDelay={1.2}
-                                    color="#5a5a7a"
+                                    color="var(--claude-color-text-olive-gray)"
                                 />
                             </div>
 
@@ -237,8 +230,8 @@ function SignUpPage() {
                         style={{
                             flex: 1,
                             padding: "40px 36px",
-                            background: "#ffffff",
-                            color: "#1a1a2e",
+                            background: "var(--claude-color-surface-ivory)",
+                            color: "var(--claude-color-text-near-black)",
                             display: "flex",
                             flexDirection: "column",
                             gap: "16px",
@@ -275,7 +268,7 @@ function SignUpPage() {
                         <div style={{ textAlign: "center", marginBottom: "8px", position: "relative", zIndex: 1 }}>
                             <Typography
                                 variant="h4"
-                                style={{ fontSize: "32px", fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.5px" }}
+                                style={{ fontSize: "32px", fontWeight: 700, color: "var(--claude-color-text-near-black)", letterSpacing: "-0.5px" }}
                             >
                                 Create Account
                             </Typography>
@@ -283,7 +276,7 @@ function SignUpPage() {
                                 style={{
                                     width: "60px",
                                     height: "3px",
-                                    background: "linear-gradient(90deg, transparent, #4F46E5, transparent)",
+                                    background: "linear-gradient(90deg, transparent, var(--claude-color-semantic-focus-blue), transparent)",
                                     margin: "12px auto 0",
                                     borderRadius: "2px",
                                 }}
@@ -292,47 +285,23 @@ function SignUpPage() {
 
                         <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ position: "relative", zIndex: 1 }}>
                             <div style={{ marginBottom: "14px" }}>
-                                <TextField
+                                <InputField
                                     label="Full Name"
                                     type="text"
-                                    variant="outlined"
-                                    fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-                                            "&:hover fieldset": { borderColor: "#4F46E5" },
-                                            "&.Mui-focused fieldset": { borderColor: "#4F46E5" },
-                                        },
-                                        "& .MuiInputAdornment-root": { opacity: 1, visibility: "visible" },
-                                        "& .MuiInputLabel-root": { color: "rgba(0,0,0,0.6)" },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: "#4F46E5" },
-                                    }}
+                                    placeholder="Enter your full name"
                                     {...register("fullName", {
                                         required: "Full name is required",
                                         minLength: { value: 2, message: "Name is too short" },
                                     })}
-                                    error={!!errors.fullName}
-                                    helperText={errors.fullName?.message}
+                                    error={errors.fullName?.message}
                                 />
                             </div>
 
                             <div style={{ marginBottom: "14px" }}>
-                                <TextField
+                                <InputField
                                     label="Email"
                                     type="email"
-                                    variant="outlined"
-                                    fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-                                            "&:hover fieldset": { borderColor: "#4F46E5" },
-                                            "&.Mui-focused fieldset": { borderColor: "#4F46E5" },
-                                        },
-                                        "& .MuiInputLabel-root": { color: "rgba(0,0,0,0.6)" },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: "#4F46E5" },
-                                    }}
+                                    placeholder="Enter your email"
                                     {...register("email", {
                                         required: "Email is required",
                                         pattern: {
@@ -340,82 +309,51 @@ function SignUpPage() {
                                             message: "Invalid email format",
                                         },
                                     })}
-                                    error={!!errors.email}
-                                    helperText={errors.email?.message}
+                                    error={errors.email?.message}
                                 />
                             </div>
 
                             <div style={{ marginBottom: "20px" }}>
-                                <TextField
+                                <InputField
                                     label="Password"
-                                    type={showPassword ? "text" : "password"}
-                                    variant="outlined"
-                                    fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-                                            "&:hover fieldset": { borderColor: "#4F46E5" },
-                                            "&.Mui-focused fieldset": { borderColor: "#4F46E5" },
-                                        },
-                                        "& .MuiInputLabel-root": { color: "rgba(0,0,0,0.6)" },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: "#4F46E5" },
-                                    }}
+                                    type="password"
+                                    placeholder="Create a password"
                                     {...register("password", {
                                         required: "Password is required",
                                         minLength: { value: 8, message: "Password must be at least 8 characters" },
                                     })}
-                                    error={!!errors.password}
-                                    helperText={errors.password?.message}
-                                    onFocus={() => setPasswordFocused(true)}
-                                    onBlur={() => setPasswordFocused(false)}
-                                    InputProps={{
-                                        endAdornment: passwordFocused ? (
-                                            <InputAdornment position="end">
-                                                <IconButton
-                                                    onClick={handleClickShowPassword}
-                                                    onMouseDown={handleMouseDownPassword}
-                                                    onMouseUp={handleMouseUpPassword}
-                                                    edge="end"
-                                                >
-                                                    {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
-                                                </IconButton>
-                                            </InputAdornment>
-                                        ) : null,
-                                    }}
+                                    error={errors.password?.message}
                                 />
                             </div>
 
                             <div style={{ display: "flex", justifyContent: "center" }}>
-                                <PrimaryButton
+                                <Button
                                     type="submit"
-                                    loading={false}
+                                    variant="primary"
+                                    size="lg"
                                     disabled={isSubmitting}
-                                    fullWidth
-                                    sx={{
-                                        padding: "14px 28px",
-                                        borderRadius: "10px",
-                                        fontSize: "17px",
-                                    }}
+                                    style={{ width: "100%" }}
                                 >
                                     Sign up
-                                </PrimaryButton>
+                                </Button>
                             </div>
 
                             <div style={{ textAlign: "center", marginTop: "16px" }}>
                                 <Typography style={{ fontSize: "14px", color: "rgba(0,0,0,0.6)" }}>
                                     Already have an account?{" "}
-                                    <span
-                                        onClick={() => navigate("/login")}
+                                    <Link
+                                        to="/login"
                                         style={{
-                                            color: "#4F46E5",
+                                            color: "var(--claude-color-semantic-focus-blue)",
                                             cursor: "pointer",
                                             fontWeight: 600,
                                             textDecoration: "underline",
+                                            position: "relative",
+                                            zIndex: 2,
                                         }}
                                     >
                                         Sign in
-                                    </span>
+                                    </Link>
                                 </Typography>
                             </div>
                         </form>

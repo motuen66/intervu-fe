@@ -6,6 +6,7 @@ import { authRoutes } from "./authRoutes";
 import { interviewerRoutes } from "./coachRoutes.jsx";
 import { candidateRoutes } from "./candidateRoutes.jsx";
 import EmptyLayout from "../layouts/EmptyLayout";
+import AuthDesignSystemLayout from "../layouts/AuthDesignSystemLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
 
@@ -58,7 +59,7 @@ export const routes = [
     ...(DesignSystemSandbox ? [{ path: "/design-system", element: renderLazy(DesignSystemSandbox) }] : []),
 
     // Auth routes
-    { element: <EmptyLayout />, children: authRoutes },
+    { element: <AuthDesignSystemLayout />, children: authRoutes },
 
     // Home page (public)
     { element: <MainLayout />, children: [{ path: "/home", element: renderLazy(HomePage) }] },

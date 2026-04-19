@@ -32,6 +32,13 @@ export default defineConfig([
       ...prettierConfig.rules,
       "prettier/prettier": "error",
       "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+          message: "Avoid hardcoded hex colors — use --claude-* CSS tokens or MUI theme tokens instead.",
+        },
+      ],
     },
   },
 ]);

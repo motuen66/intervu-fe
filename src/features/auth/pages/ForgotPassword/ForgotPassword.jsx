@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { TextField, Typography, Alert } from '@mui/material';
-import { PrimaryButton } from "../../../../common/components/buttons";
+import { Link, useNavigate } from 'react-router-dom';
+import { Typography, Alert } from '@mui/material';
+import { Button, InputField } from "../../../../common/design-system";
 import { callApi } from '../../../../common/utils/apiConnector';
 import { METHOD } from '../../../../common/constants/api';
 import { authEndPoints } from '../../services/authApi';
@@ -48,7 +48,7 @@ function ForgotPassword() {
         <div className={styles.container}>
             <div className={styles.box}>
                 <div className={styles.header}>
-                    <Typography variant="h4" component="h1" style={{ fontWeight: 700, color: '#2a2a3e', marginBottom: '8px' }}>
+                    <Typography variant="h4" component="h1" style={{ fontWeight: 700, color: 'var(--claude-color-text-near-black)', marginBottom: '8px' }}>
                         Forgot Password?
                     </Typography>
                     <Typography variant="body2" style={{ color: 'rgba(0,0,0,0.6)' }}>
@@ -59,78 +59,64 @@ function ForgotPassword() {
                 {!success ? (
                     <form onSubmit={handleSubmit} className={styles.form}>
                         {error && (
-                            <Alert severity="error" style={{ marginBottom: '16px', color: '#d32f2f' }}>
+                            <Alert severity="error" style={{ marginBottom: '16px', color: 'var(--claude-color-semantic-error)' }}>
                                 {error}
                             </Alert>
                         )}
 
-                        <TextField
-                            fullWidth
+                        <InputField
                             label="Email Address"
                             type="email"
+                            placeholder="Enter your email address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            variant="outlined"
                             style={{ marginBottom: '20px' }}
-                            InputProps={{
-                                style: {
-                                    borderRadius: '8px'
-                                }
-                            }}
                         />
 
-                        <PrimaryButton
-                            fullWidth
+                        <Button
                             type="submit"
-                            loading={false}
+                            variant="primary"
+                            size="lg"
                             disabled={submitting}
-                            sx={{
-                                padding: '12px',
-                                fontSize: '15px',
-                                marginBottom: '16px'
-                            }}
+                            style={{ width: '100%', marginBottom: '16px' }}
                         >
                             Send Reset Link
-                        </PrimaryButton>
+                        </Button>
 
                         <div style={{ textAlign: 'center' }}>
-                            <Typography
-                                onClick={handleBackToLogin}
+                            <Link
+                                to="/login"
                                 style={{
                                     fontSize: '14px',
-                                    color: '#4F46E5',
+                                    color: 'var(--claude-color-semantic-focus-blue)',
                                     cursor: 'pointer',
-                                    fontWeight: 500
-                                }}
-                                sx={{
-                                    '&:hover': {
-                                        textDecoration: 'underline'
-                                    }
+                                    fontWeight: 500,
+                                    textDecoration: 'none',
+                                    position: 'relative',
+                                    zIndex: 2,
                                 }}
                             >
                                 Back to Login
-                            </Typography>
+                            </Link>
                         </div>
                     </form>
                 ) : (
                     <div className={styles.successMessage}>
-                        <Alert severity="success" style={{ marginBottom: '16px', color: '#388e3c' }}>
+                        <Alert severity="success" style={{ marginBottom: '16px', color: 'var(--claude-color-semantic-success)' }}>
                             If an account exists with that email, you will receive a password reset link shortly.
                         </Alert>
                         <Typography variant="body2" style={{ color: 'rgba(0,0,0,0.6)', marginBottom: '20px' }}>
                             Please check your email inbox and spam folder.
                         </Typography>
-                        <PrimaryButton
-                            fullWidth
+                        <Button
+                            variant="primary"
+                            size="lg"
                             onClick={handleBackToLogin}
-                            sx={{
-                                padding: '12px',
-                                fontSize: '15px',
-                            }}
+                            style={{ width: '100%' }}
                         >
                             Back to Login
-                        </PrimaryButton>
+                        </Button>
                     </div>
                 )}
             </div>

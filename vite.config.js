@@ -31,6 +31,11 @@ export default defineConfig(({ mode, command }) => {
 
     return {
         plugins: [react()],
+        resolve: {
+            alias: {
+                "@ds": path.resolve(process.cwd(), "src/common/design-system"),
+            },
+        },
         assetsInclude: ["**/*.lottie"],
         build: {
             rollupOptions: {

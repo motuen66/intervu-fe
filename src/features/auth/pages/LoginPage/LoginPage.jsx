@@ -5,20 +5,18 @@ import { METHOD } from "../../../../common/constants/api";
 import { authEndPoints } from "../../services/authApi";
 import { useDispatch } from "react-redux";
 import { setToken, setUserData } from "../../../../common/store/authSlice";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import toast from "react-hot-toast";
 import SplitText from "./SplitText";
-import { TextField, Typography, Box, InputAdornment, IconButton } from "@mui/material";
-import { PrimaryButton } from "../../../../common/components/buttons";
+import { Typography } from "@mui/material";
+import { Button, InputField } from "../../../../common/design-system";
 import { ROLES } from "../../../../common/constants/common";
 import {
     ASSESSMENT_DATA_STATE,
     getAssessmentState,
 } from "../../../profiles/candidate/candidate-assessment/services/assessmentApi";
 import { trackLogin } from "../../../../utils/analytics";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID;
 
@@ -30,11 +28,6 @@ function LoginPage() {
     const [googleReady, setGoogleReady] = useState(false);
     const [googleSubmitting, setGoogleSubmitting] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const handleClickShowPassword = () => setShowPassword((s) => !s);
-    const handleMouseDownPassword = (e) => e.preventDefault();
-    const handleMouseUpPassword = (e) => e.preventDefault();
-    const [passwordFocused, setPasswordFocused] = useState(false);
 
     const handleAuthSuccess = useCallback(
         async (responseData) => {
@@ -202,7 +195,7 @@ function LoginPage() {
                 width: "100%",
                 height: "100%",
                 overflow: "hidden",
-                background: "#ffffff",
+                background: "var(--claude-color-surface-parchment)",
             }}
         >
             {/* overlay container centers the login card */}
@@ -229,7 +222,7 @@ function LoginPage() {
                         border: "none",
                         minHeight: "560px",
                         alignItems: "stretch",
-                        background: "#fff",
+                        background: "var(--claude-color-surface-ivory)",
                     }}
                 >
                     {/* left: login column */}
@@ -237,14 +230,14 @@ function LoginPage() {
                         style={{
                             flex: 1,
                             padding: "40px 36px",
-                            background: theme.palette.background.paper,
+                            background: "var(--claude-color-surface-ivory)",
                             color: theme.palette.text.primary,
                             fontFamily: theme.typography.fontFamily,
                             display: "flex",
                             flexDirection: "column",
                             gap: "20px",
                             justifyContent: "center",
-                            borderRight: `1px solid ${theme.palette.divider}`,
+                            borderRight: "1px solid var(--claude-color-border-cream)",
                             position: "relative",
                         }}
                     >
@@ -290,7 +283,7 @@ function LoginPage() {
                                 style={{
                                     width: "60px",
                                     height: "3px",
-                                    background: "linear-gradient(90deg, transparent, #0F172A, transparent)",
+                                    background: "linear-gradient(90deg, transparent, var(--claude-color-brand-terracotta), transparent)",
                                     margin: "12px auto 0",
                                     borderRadius: "2px",
                                 }}
@@ -299,106 +292,53 @@ function LoginPage() {
 
                         <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ position: "relative", zIndex: 1 }}>
                             <div style={{ marginBottom: "16px" }}>
-                                <TextField
+                                <InputField
                                     label="Email"
                                     type="email"
-                                    variant="outlined"
-                                    fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: theme.palette.divider },
-                                            "&:hover fieldset": { borderColor: theme.palette.text.secondary },
-                                            "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
-                                        },
-                                        "& .MuiInputAdornment-root": { opacity: 1, visibility: "visible" },
-                                        "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
-                                    }}
+                                    placeholder="Enter your email"
                                     {...register("email", { required: "Email is required" })}
-                                    error={!!errors.email}
-                                    helperText={errors.email?.message}
+                                    error={errors.email?.message}
                                 />
                             </div>
 
                             <div style={{ marginBottom: "8px" }}>
-                                <TextField
+                                <InputField
                                     label="Password"
-                                    type={showPassword ? "text" : "password"}
-                                    variant="outlined"
-                                    fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: theme.palette.divider },
-                                            "&:hover fieldset": { borderColor: theme.palette.text.secondary },
-                                            "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
-                                        },
-                                        "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
-                                    }}
+                                    type="password"
+                                    placeholder="Enter your password"
                                     {...register("password", { required: "Password is required" })}
-                                    error={!!errors.password}
-                                    helperText={errors.password?.message}
-                                    onFocus={() => setPasswordFocused(true)}
-                                    onBlur={() => setPasswordFocused(false)}
-                                    InputProps={{
-                                        endAdornment: passwordFocused ? (
-                                            <InputAdornment position="end">
-                                                <IconButton
-                                                    onClick={handleClickShowPassword}
-                                                    onMouseDown={handleMouseDownPassword}
-                                                    onMouseUp={handleMouseUpPassword}
-                                                    edge="end"
-                                                >
-                                                    {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
-                                                </IconButton>
-                                            </InputAdornment>
-                                        ) : null,
-                                    }}
+                                    error={errors.password?.message}
                                 />
                             </div>
 
                             <div style={{ maxWidth: "360px", width: "100%", margin: "0 auto" }}>
                                 <div style={{ textAlign: "right", marginTop: "0px", marginBottom: "12px" }}>
-                                    <Typography
-                                        onClick={() => navigate("/forgot-password")}
+                                    <Link
+                                        to="/forgot-password"
                                         style={{
                                             fontSize: "14px",
                                             color: theme.palette.primary.main,
                                             cursor: "pointer",
                                             fontWeight: 500,
                                             textDecoration: "none",
-                                        }}
-                                        sx={{
-                                            "&:hover": {
-                                                textDecoration: "underline",
-                                            },
+                                            position: "relative",
+                                            zIndex: 2,
                                         }}
                                     >
                                         Forgot password?
-                                    </Typography>
+                                    </Link>
                                 </div>
 
                                 <div style={{ display: "flex", justifyContent: "center" }}>
-                                    <PrimaryButton
+                                    <Button
                                         type="submit"
-                                        loading={false}
+                                        variant="primary"
+                                        size="lg"
                                         disabled={isSubmitting || googleSubmitting}
-                                        fullWidth
-                                        sx={{
-                                            padding: "14px 28px",
-                                            borderRadius: "10px",
-                                            fontSize: "17px",
-                                            backgroundColor: theme.palette.secondary.main,
-                                            color: theme.palette.secondary.contrastText,
-                                            "&:hover": {
-                                                backgroundColor: theme.palette.secondary.dark,
-                                            },
-                                        }}
+                                        style={{ width: "100%" }}
                                     >
                                         Login
-                                    </PrimaryButton>
+                                    </Button>
                                 </div>
 
                                 <div
@@ -423,7 +363,7 @@ function LoginPage() {
                                 </div>
 
                                 {!GOOGLE_CLIENT_ID ? (
-                                    <Typography style={{ fontSize: "12px", color: "#B91C1C", textAlign: "center" }}>
+                                    <Typography style={{ fontSize: "12px", color: "var(--claude-color-semantic-error)", textAlign: "center" }}>
                                         Google sign-in is not configured (missing VITE_APP_GOOGLE_CLIENT_ID).
                                     </Typography>
                                 ) : (
@@ -457,17 +397,19 @@ function LoginPage() {
                                 <div style={{ textAlign: "center", marginTop: "14px" }}>
                                     <Typography style={{ fontSize: "14px", color: theme.palette.text.secondary }}>
                                         Don't have an account?{" "}
-                                        <span
-                                            onClick={() => navigate("/signup")}
+                                        <Link
+                                            to="/signup"
                                             style={{
                                                 color: theme.palette.primary.main,
                                                 cursor: "pointer",
                                                 fontWeight: 600,
                                                 textDecoration: "underline",
+                                                position: "relative",
+                                                zIndex: 2,
                                             }}
                                         >
                                             Sign up
-                                        </span>
+                                        </Link>
                                     </Typography>
                                 </div>
                             </div>
@@ -484,7 +426,7 @@ function LoginPage() {
                             flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            background: "linear-gradient(135deg, #f8f9fc 0%, #e8eef5 30%, #dfe7f5 60%, #f5f7fa 100%)",
+                            background: "linear-gradient(135deg, var(--claude-color-surface-ivory) 0%, var(--claude-color-border-warm) 30%, var(--claude-color-surface-warm-sand) 60%, var(--claude-color-surface-ivory) 100%)",
                             position: "relative",
                             overflow: "hidden",
                         }}
@@ -546,7 +488,7 @@ function LoginPage() {
                                     playOnMount={true}
                                     loop={true}
                                     loopDelay={1.2}
-                                    color="#2a2a3e"
+                                    color="var(--claude-color-text-near-black)"
                                 />
                             </div>
 
@@ -578,7 +520,7 @@ function LoginPage() {
                                     playOnMount={true}
                                     loop={true}
                                     loopDelay={1.2}
-                                    color="#5a5a7a"
+                                    color="var(--claude-color-text-olive-gray)"
                                 />
                             </div>
 
