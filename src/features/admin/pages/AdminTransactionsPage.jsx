@@ -1,24 +1,29 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Container, Box, Typography, Avatar } from '@mui/material';
+import { Container, Box, Typography, Avatar, TablePagination } from '@mui/material';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
 import toast from 'react-hot-toast';
-import DataTable from '../../../common/components/table/DataTable';
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
 import useTableState from '../../../hooks/useTableState';
-import StatusChip from '../../../common/components/StatusChip';
+import {
+    Badge,
+    DataGrid,
+    EmptyState,
+    Spinner,
+} from '../../../common/design-system';
+import AdminDesignSystemPageShell from '../components/AdminDesignSystemPageShell';
 import './AdminDashboard.css';
 
-const STATUS_COLOR_MAP = {
+const STATUS_VARIANT_MAP = {
     Paid: 'success',
-    PendingPayout: 'info',
+    PendingPayout: 'warning',
     Created: 'warning',
     Cancel: 'error',
 };
 
-const TYPE_COLOR_MAP = {
-    Payment: 'primary',
+const TYPE_VARIANT_MAP = {
+    Payment: 'brand',
     Payout: 'success',
     Refund: 'warning',
 };
@@ -42,8 +47,6 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         handlePageChange,
         handlePageSizeChange,
     } = useTableState(10);
-
-    const [selectedTransaction, setSelectedTransaction] = useState(null);
 
     useEffect(() => {
         fetchTransactions();
@@ -77,8 +80,14 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
     const columns = useMemo(
         () => [
             {
-                field: 'orderCode',
-                headerName: 'Order Code',
+                key: 'index',
+                label: '#',
+                width: 52,
+            },
+            {
+                key: 'orderCode',
+                label: 'Order Code',
+                width: 140,
                 render: (val) => (
                     <Typography sx={{ fontSize: '12px', fontWeight: 600, color: 'text.primary', fontFamily: 'monospace' }}>
                         #{val}
@@ -86,15 +95,17 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 ),
             },
             {
-                field: 'type',
-                headerName: 'Type',
+                key: 'type',
+                label: 'Type',
+                width: 130,
                 render: (val) => (
-                    <StatusChip label={val} color={TYPE_COLOR_MAP[val] || 'default'} />
+                    <Badge variant={TYPE_VARIANT_MAP[val] || 'neutral'}>{val || '-'}</Badge>
                 ),
             },
             {
-                field: 'userName',
-                headerName: 'Party',
+                key: 'userName',
+                label: 'Party',
+                width: 260,
                 render: (val, row) => (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Avatar
@@ -121,8 +132,9 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 ),
             },
             {
-                field: 'amount',
-                headerName: 'Amount',
+                key: 'amount',
+                label: 'Amount',
+                width: 170,
                 render: (val) => (
                     <Typography sx={{ fontSize: '13px', fontWeight: 600, color: 'text.primary' }}>
                         {formatVND(val)}
@@ -130,15 +142,17 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 ),
             },
             {
-                field: 'status',
-                headerName: 'Status',
+                key: 'status',
+                label: 'Status',
+                width: 150,
                 render: (val) => (
-                    <StatusChip label={val} color={STATUS_COLOR_MAP[val] || 'default'} />
+                    <Badge variant={STATUS_VARIANT_MAP[val] || 'neutral'}>{val || '-'}</Badge>
                 ),
             },
             {
-                field: 'createdAt',
-                headerName: 'Date',
+                key: 'createdAt',
+                label: 'Date',
+                width: 130,
                 render: (val) => {
                     if (!val) return '-';
                     const d = new Date(val);
@@ -151,25 +165,57 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         [],
     );
 
-    return (
-        <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
-            <AdminPageHeader title={title} subtitle={subtitle} />
+    const rows = useMemo(
+        () => transactions.map((row, index) => ({
+            ...row,
+            index: page * pageSize + index + 1,
+        })),
+        [transactions, page, pageSize],
+    );
 
-            <Box className="admin-card">
-                <DataTable
-                    showHeader={false}
-                    showIndex
-                    columns={columns}
-                    data={transactions}
-                    totalItems={totalItems}
-                    page={page}
-                    pageSize={pageSize}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={loading}
-                    actions={false}
-                />
-            </Box>
-        </Container>
+    return (
+        <AdminDesignSystemPageShell>
+            <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
+                <AdminPageHeader title={title} subtitle={subtitle} />
+
+                <Box className="admin-card">
+                    {loading ? (
+                        <Box sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
+                            <Spinner />
+                        </Box>
+                    ) : rows.length === 0 ? (
+                        <Box sx={{ p: 2 }}>
+                            <EmptyState
+                                title="No transactions found"
+                                body="There are no transactions matching current filters."
+                            />
+                        </Box>
+                    ) : (
+                        <DataGrid columns={columns} rows={rows} striped dense />
+                    )}
+
+                    <TablePagination
+                        component="div"
+                        count={totalItems}
+                        page={page}
+                        onPageChange={(_, newPage) => handlePageChange(newPage)}
+                        rowsPerPage={pageSize}
+                        onRowsPerPageChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
+                        rowsPerPageOptions={[10, 20, 50]}
+                        sx={{
+                            borderTop: '1px solid',
+                            borderColor: 'divider',
+                            '.MuiTablePagination-toolbar': {
+                                minHeight: 52,
+                            },
+                            '.MuiTablePagination-select, .MuiTablePagination-displayedRows': {
+                                fontSize: '0.78rem',
+                                color: 'text.secondary',
+                            },
+                        }}
+                    />
+                </Box>
+            </Container>
+        </AdminDesignSystemPageShell>
     );
 }

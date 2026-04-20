@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Container, Box, Avatar, Typography } from '@mui/material';
+import { Container, Box, Avatar, Typography, TablePagination } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -9,13 +9,20 @@ import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import UserFormModal from '../components/UserFormModal';
-import DataTable from '../../../common/components/table/DataTable';
 import ConfirmModal from '../../../common/components/ConfirmModal';
-import { PrimaryButton } from '../../../common/components/buttons';
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
-import SearchInput from '../../../common/components/admin/SearchInput';
 import TableActionsMenu from '../../../common/components/table/TableActionsMenu';
 import useTableState from '../../../hooks/useTableState';
+import {
+    Badge,
+    Button,
+    DataGrid,
+    EmptyState,
+    SearchField,
+    Spinner,
+    Toolbar,
+} from '../../../common/design-system';
+import AdminDesignSystemPageShell from '../components/AdminDesignSystemPageShell';
 import './AdminDashboard.css';
 
 const getInitials = (name = '') =>
@@ -189,12 +196,17 @@ export default function AdminCandidatesPage() {
     };
 
     const getStatusLabel = (status) => (status === 1 || status === 'Inactive') ? 'Suspended' : 'Active';
-    const getStatusColor = (status) => (status === 1 || status === 'Inactive') ? 'error' : 'success';
+    const getStatusVariant = (status) => (status === 1 || status === 'Inactive') ? 'error' : 'success';
 
     const columns = useMemo(() => [
         {
-            field: 'fullName',
-            headerName: 'Candidate',
+            key: 'index',
+            label: '#',
+            width: 52,
+        },
+        {
+            key: 'fullName',
+            label: 'Candidate',
             width: 240,
             render: (val, row) => (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -219,17 +231,23 @@ export default function AdminCandidatesPage() {
                 </Box>
             )
         },
-        { field: 'phoneNumber', headerName: 'Phone', width: 150 },
         {
-            field: 'status',
-            headerName: 'Status',
-            type: 'chip',
-            render: (val) => getStatusLabel(val),
-            chipColor: (val) => getStatusColor(val),
+            key: 'phoneNumber',
+            label: 'Phone',
+            width: 150,
+            render: (val) => val || '-',
         },
         {
-            field: 'createdAt',
-            headerName: 'Joined',
+            key: 'status',
+            label: 'Status',
+            width: 120,
+            render: (val) => (
+                <Badge variant={getStatusVariant(val)}>{getStatusLabel(val)}</Badge>
+            ),
+        },
+        {
+            key: 'createdAt',
+            label: 'Joined',
             width: 120,
             render: (val) => {
                 if (!val) return '-';
@@ -238,8 +256,9 @@ export default function AdminCandidatesPage() {
             }
         },
         {
-            field: 'actions',
-            headerName: 'Actions',
+            key: 'actions',
+            label: 'Actions',
+            width: 110,
             render: (_, row) => {
                 const isDeactivated = row.status === 1 || row.status === 'Inactive';
                 const actions = [
@@ -254,79 +273,123 @@ export default function AdminCandidatesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     ], []);
 
-    return (
-        <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
-            <AdminPageHeader
-                title="Candidates"
-                subtitle="Manage candidate accounts on the platform."
-                actionButton={
-                    <PrimaryButton startIcon={<AddIcon />} onClick={handleCreateUser}>
-                        Add Candidate
-                    </PrimaryButton>
-                }
-            />
+    const rows = useMemo(
+        () => users.map((row, index) => ({
+            ...row,
+            index: page * pageSize + index + 1,
+        })),
+        [users, page, pageSize],
+    );
 
-            <Box className="admin-card">
-                <Box sx={{ display: 'flex', gap: '16px', padding: '16px 20px', borderBottom: '1px solid #E2E8F0', bgcolor: '#fff' }}>
-                    <SearchInput placeholder="Search by name or email" onSearch={handleSearchChange} />
+    return (
+        <AdminDesignSystemPageShell>
+            <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
+                <AdminPageHeader
+                    title="Candidates"
+                    subtitle="Manage candidate accounts on the platform."
+                    actionButton={
+                        <Button onClick={handleCreateUser}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <AddIcon sx={{ fontSize: 18 }} />
+                                Add Candidate
+                            </span>
+                        </Button>
+                    }
+                />
+
+                <Box className="admin-card">
+                    <Toolbar
+                        group={
+                            <div style={{ minWidth: 280, width: '100%', maxWidth: 420 }}>
+                                <SearchField
+                                    placeholder="Search by name or email"
+                                    value={searchTerm}
+                                    onChange={(e) => handleSearchChange(e.target.value)}
+                                    onClear={() => handleSearchChange('')}
+                                />
+                            </div>
+                        }
+                    />
+
+                    {loading ? (
+                        <Box sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
+                            <Spinner />
+                        </Box>
+                    ) : rows.length === 0 ? (
+                        <Box sx={{ p: 2 }}>
+                            <EmptyState
+                                title="No candidates found"
+                                body="Try adjusting your search to find candidate accounts."
+                            />
+                        </Box>
+                    ) : (
+                        <DataGrid columns={columns} rows={rows} striped dense />
+                    )}
+
+                    <TablePagination
+                        component="div"
+                        count={totalItems}
+                        page={page}
+                        onPageChange={(_, newPage) => handlePageChange(newPage)}
+                        rowsPerPage={pageSize}
+                        onRowsPerPageChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
+                        rowsPerPageOptions={[10, 20, 50]}
+                        sx={{
+                            borderTop: '1px solid',
+                            borderColor: 'divider',
+                            '.MuiTablePagination-toolbar': {
+                                minHeight: 52,
+                            },
+                            '.MuiTablePagination-select, .MuiTablePagination-displayedRows': {
+                                fontSize: '0.78rem',
+                                color: 'text.secondary',
+                            },
+                        }}
+                    />
                 </Box>
 
-                <DataTable
-                    showHeader={false}
-                    showIndex
-                    columns={columns}
-                    data={users}
-                    totalItems={totalItems}
-                    page={page}
-                    pageSize={pageSize}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={loading}
-                    actions={false}
+                <UserFormModal
+                    open={openFormModal}
+                    onClose={() => setOpenFormModal(false)}
+                    onSubmit={handleFormSubmit}
+                    user={selectedUser}
+                    mode={formMode}
                 />
-            </Box>
 
-            <UserFormModal
-                open={openFormModal}
-                onClose={() => setOpenFormModal(false)}
-                onSubmit={handleFormSubmit}
-                user={selectedUser}
-                mode={formMode}
-            />
+                <ConfirmModal
+                    show={openDeleteDialog}
+                    title="Deactivate candidate"
+                    confirmText="Deactivate"
+                    cancelText="Cancel"
+                    onConfirm={handleDeleteConfirm}
+                    onCancel={() => setOpenDeleteDialog(false)}
+                    message={
+                        <>
+                            Are you sure you want to deactivate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
+                            <span style={{ display: 'block', color: '#d32f2f', fontSize: '0.875rem', marginTop: 8 }}>
+                                This will set the user&apos;s status to Inactive.
+                            </span>
+                        </>
+                    }
+                />
 
-            <ConfirmModal
-                show={openDeleteDialog}
-                title="Deactivate candidate"
-                confirmText="Deactivate"
-                cancelText="Cancel"
-                onConfirm={handleDeleteConfirm}
-                onCancel={() => setOpenDeleteDialog(false)}
-                message={
-                    <>
-                        Are you sure you want to deactivate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
-                        <span style={{ display: 'block', color: '#d32f2f', fontSize: '0.875rem', marginTop: 8 }}>
-                            This will set the user&apos;s status to Inactive.
-                        </span>
-                    </>
-                }
-            />
-
-            <ConfirmModal
-                show={openActivateDialog}
-                title="Activate candidate"
-                confirmText="Activate"
-                cancelText="Cancel"
-                onConfirm={handleActivateConfirm}
-                onCancel={() => setOpenActivateDialog(false)}
-                message={
-                    <>
-                        Activate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
-                        <span style={{ display: 'block', color: '#2e7d32', fontSize: '0.875rem', marginTop: 8 }}>
-                            This will restore the user&apos;s access to the platform.
-                        </span>
-                    </>
-                }
-            />
-        </Container>
+                <ConfirmModal
+                    show={openActivateDialog}
+                    title="Activate candidate"
+                    confirmText="Activate"
+                    cancelText="Cancel"
+                    onConfirm={handleActivateConfirm}
+                    onCancel={() => setOpenActivateDialog(false)}
+                    message={
+                        <>
+                            Activate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
+                            <span style={{ display: 'block', color: '#2e7d32', fontSize: '0.875rem', marginTop: 8 }}>
+                                This will restore the user&apos;s access to the platform.
+                            </span>
+                        </>
+                    }
+                />
+            </Container>
+        </AdminDesignSystemPageShell>
     );
 }

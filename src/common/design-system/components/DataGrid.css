@@ -59,4 +59,9 @@
     border-radius: var(--claude-radius-comfort);
     background-color: var(--claude-color-surface-ivory);
   }
+
+  /* Keep table bottom border separated from pagination top divider */
+  .claude-grid-wrap + .MuiTablePagination-root {
+    margin-top: var(--claude-space-3);
+  }
 }
