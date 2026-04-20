@@ -51,6 +51,7 @@ const MIN_SPLIT_PCT = 30;
 const MAX_SPLIT_PCT = 70;
 const MIN_VERTICAL_PCT = 15;
 const MAX_VERTICAL_PCT = 85;
+const TRANSCRIPT_HISTORY_MAX_HEIGHT = "calc(1.6em * 3 + 0.75rem)";
 
 function formatSecondsToClock(totalSeconds) {
     const safeSeconds = Math.max(0, totalSeconds);
@@ -279,6 +280,73 @@ function InterviewRoomPage() {
         handleIceCandidate,
     } = useWebRTC({ signalingSender: sendSignal, selfId: connectionId });
 
+    // ── Audio Mixing Logic (Interviewer only) ──────────────────────────────────
+    const [mixedStream, setMixedStream] = useState(null);
+    const audioContextRef = useRef(null);
+    const destRef = useRef(null);
+
+    useEffect(() => {
+        if (Number(user?.role) !== ROLES.INTERVIEWER) {
+            setMixedStream(null);
+            return;
+        }
+
+        if (!localStream && !remoteStream) return;
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+        // Reuse context
+        if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+            audioContextRef.current = new AudioContext();
+        }
+
+        const ctx = audioContextRef.current;
+
+        // Create destination ONLY ONCE
+        if (!destRef.current) {
+            destRef.current = ctx.createMediaStreamDestination();
+            setMixedStream(destRef.current.stream);
+        }
+
+        const dest = destRef.current;
+
+        try {
+            // Local stream
+            if (localStream?.getAudioTracks().length > 0) {
+                const localSource = ctx.createMediaStreamSource(localStream);
+                const localGain = ctx.createGain();
+                localGain.gain.value = 1.0;
+
+                localSource.connect(localGain).connect(dest);
+            }
+
+            // Remote stream
+            if (remoteStream?.getAudioTracks().length > 0) {
+                const remoteSource = ctx.createMediaStreamSource(remoteStream);
+                const remoteGain = ctx.createGain();
+                remoteGain.gain.value = 1;
+
+                remoteSource.connect(remoteGain).connect(dest);
+            }
+
+        } catch (err) {
+            console.error("Audio mixing error:", err);
+        }
+
+        return () => {
+            // preserve lifecycle
+        };
+
+    }, [user?.role, localStream, remoteStream]);
+
+    useEffect(() => {
+        return () => {
+            if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+                audioContextRef.current.close();
+            }
+        };
+    }, []);
+
     // ── Audio Recording & Transcription ────────────────────────────────────────
     const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(false);
 
@@ -300,13 +368,13 @@ function InterviewRoomPage() {
 
     const { transcriptHistory, interimTranscript, addRemoteTranscript, isTranscribing, clearTranscriptHistory } =
         useTranscript({
-            // Changed from useDeepgramTranscript
             roomId,
             isEnabled: !loading && !error && !isViewOnly,
             isMicOn,
-            // Per-speaker path: each client transcribes only their own mic stream.
-            // Remote speaker transcript arrives via SignalR (onReceiveTranscript).
-            audioStream: localStream,
+            // ── Storage Stream: Mixed if Coach ────────────────
+            audioStream: mixedStream,
+            // ── Transcription Stream: Always Local Mic for user's voice ───────────
+            transcriptionStream: localStream,
             // Only enable transcription service if user is INTERVIEWER AND toggle is on
             isTranscriptionEnabled: isTranscriptionEnabled && Number(user?.role) === ROLES.INTERVIEWER,
             onTranscriptUpdate: handleTranscriptUpdate,
@@ -347,7 +415,7 @@ function InterviewRoomPage() {
     const problemData =
         user?.role === ROLES.INTERVIEWER
             ? (problemDescription && problemDescription !== "<p><br></p>") ||
-              (problemShortName && problemShortName.trim() !== "")
+                (problemShortName && problemShortName.trim() !== "")
                 ? { description: problemDescription, shortName: problemShortName, testCases }
                 : null
             : receivedProblem;
@@ -526,12 +594,12 @@ function InterviewRoomPage() {
     // Broadcast camera/mic state
     useEffect(() => {
         if (!connectionId || !roomId) return;
-        sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => {});
+        sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => { });
     }, [isCameraOn, connectionId, roomId, sendSignal]);
 
     useEffect(() => {
         if (!connectionId || !roomId) return;
-        sendSignal("SendMicState", roomId, isMicOn).catch?.(() => {});
+        sendSignal("SendMicState", roomId, isMicOn).catch?.(() => { });
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
     // ── Leave room ──────────────────────────────────────────────────────────
@@ -550,7 +618,7 @@ function InterviewRoomPage() {
         return () => {
             try {
                 trackLeaveInterviewRoom(roomId);
-            } catch (err) {}
+            } catch (err) { }
         };
     }, [roomId]);
 
@@ -650,19 +718,19 @@ function InterviewRoomPage() {
     const remoteAvatar = roomInfo
         ? isCandidate
             ? roomInfo.coachAvatar ||
-              roomInfo.coachProfilePicture ||
-              roomInfo.coach?.profilePicture ||
-              roomInfo.coach?.avatarUrl ||
-              roomInfo.coach?.avatar ||
-              roomInfo.interviewer?.profilePicture ||
-              roomInfo.interviewer?.avatar ||
-              roomInfo.interviewer?.avatarUrl ||
-              roomInfo.interviewerAvatar
+            roomInfo.coachProfilePicture ||
+            roomInfo.coach?.profilePicture ||
+            roomInfo.coach?.avatarUrl ||
+            roomInfo.coach?.avatar ||
+            roomInfo.interviewer?.profilePicture ||
+            roomInfo.interviewer?.avatar ||
+            roomInfo.interviewer?.avatarUrl ||
+            roomInfo.interviewerAvatar
             : roomInfo.candidateAvatar ||
-              roomInfo.candidateProfilePicture ||
-              roomInfo.candidate?.profilePicture ||
-              roomInfo.candidate?.avatarUrl ||
-              roomInfo.candidate?.avatar
+            roomInfo.candidateProfilePicture ||
+            roomInfo.candidate?.profilePicture ||
+            roomInfo.candidate?.avatarUrl ||
+            roomInfo.candidate?.avatar
         : null;
 
     // ── Horizontal resize drag ───────────────────────────────────────────────
@@ -887,8 +955,8 @@ function InterviewRoomPage() {
                                 remainingSeconds <= 300
                                     ? "error.main"
                                     : remainingSeconds <= 600
-                                      ? "warning.main"
-                                      : "text.primary",
+                                        ? "warning.main"
+                                        : "text.primary",
                             fontVariantNumeric: "tabular-nums",
                         }}
                     >
@@ -1503,7 +1571,7 @@ function InterviewRoomPage() {
                                     width: 10,
                                     height: 10,
                                     borderRadius: "50%",
-                                    bgcolor: isTranscribing ? "#A3E635" : "#EF4444",
+                                    bgcolor: /*isTranscribing ? */"#A3E635" /*: "#EF4444"*/,
                                     boxShadow: isTranscribing ? "0 0 12px #A3E635" : "none",
                                     animation: isTranscribing ? "pulse 2s infinite" : "none",
                                 }}
@@ -1518,7 +1586,7 @@ function InterviewRoomPage() {
                                     fontSize: "0.75rem",
                                 }}
                             >
-                                {isTranscribing ? "Live Interview Transcript" : "Transcription Offline"}
+                                {isTranscribing ? "Live Interview Transcript" : "Live Interview Transcript"}
                             </Typography>
                         </Stack>
                         <Stack direction="row" spacing={1}>
@@ -1571,9 +1639,28 @@ function InterviewRoomPage() {
                             </Typography>
                         )}
 
-                        {transcriptHistory.map((item) => (
-                            <TranscriptItem key={item.index} item={item} />
-                        ))}
+                        {transcriptHistory.length > 0 && (
+                            <Box
+                                sx={{
+                                    maxHeight: TRANSCRIPT_HISTORY_MAX_HEIGHT,
+                                    overflowY: "auto",
+                                    pr: 0.5,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2,
+                                    "&::-webkit-scrollbar": { width: "6px" },
+                                    "&::-webkit-scrollbar-thumb": {
+                                        bgcolor: "rgba(255,255,255,0.1)",
+                                        borderRadius: "10px",
+                                    },
+                                }}
+                            >
+                                {transcriptHistory.map((item) => (
+                                    <TranscriptItem key={item.index} item={item} />
+                                ))}
+                                <div ref={transcriptEndRef} />
+                            </Box>
+                        )}
 
                         {/* Local Interim */}
                         {interimTranscript && (
@@ -1586,7 +1673,7 @@ function InterviewRoomPage() {
                                         opacity: 0.7,
                                     }}
                                 >
-                                    {user?.role === ROLES.INTERVIEWER ? "COACH" : "CANDIDATE"} (typing...)
+                                    {user?.role === ROLES.INTERVIEWER ? "COACH" : "CANDIDATE"} (transcribing...)
                                 </Typography>
                                 <Typography
                                     variant="body2"
@@ -1608,7 +1695,7 @@ function InterviewRoomPage() {
                                         opacity: 0.7,
                                     }}
                                 >
-                                    {user?.role === ROLES.CANDIDATE ? "COACH" : "CANDIDATE"} (typing...)
+                                    {user?.role === ROLES.CANDIDATE ? "COACH" : "CANDIDATE"} (transcribing...)
                                 </Typography>
                                 <Typography
                                     variant="body2"
@@ -1618,7 +1705,6 @@ function InterviewRoomPage() {
                                 </Typography>
                             </Box>
                         )}
-                        <div ref={transcriptEndRef} />
                     </Box>
                 </Box>
             )}
