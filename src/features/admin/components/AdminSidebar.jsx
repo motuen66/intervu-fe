@@ -69,6 +69,7 @@ const adminNavItems = [
                 children: [
                     { label: "Pinecone", path: "/admin/system/pinecone" },
                     { label: "AI Service Monitor", path: "/admin/system/python-ai-monitor" },
+                    { label: "Settings", path: "/admin/system/platform-settings" },
                 ],
             },
             { label: "Broadcast", icon: Bell, path: "/admin/broadcast" },
