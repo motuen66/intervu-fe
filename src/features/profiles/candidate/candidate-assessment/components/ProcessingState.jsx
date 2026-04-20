@@ -43,18 +43,26 @@ const ProcessingState = () => {
 
     const profile = answers?.profile || {};
     const processedSkills = useMemo(() => {
-        if (Array.isArray(answers?.answerJson?.skillScores) && answers.answerJson.skillScores.length > 0) {
-            return answers.answerJson.skillScores;
-        }
+        try {
+            if (Array.isArray(answers?.answerJson?.skillScores) && answers.answerJson.skillScores.length > 0) {
+                return answers.answerJson.skillScores;
+            }
 
-        return buildSkillScores(answers);
+            return buildSkillScores(answers);
+        } catch {
+            return [];
+        }
     }, [answers]);
     const matchPercentage = useMemo(() => {
-        if (Number.isFinite(Number(answers?.answerJson?.matchPercentage))) {
-            return Number(answers.answerJson.matchPercentage);
-        }
+        try {
+            if (Number.isFinite(Number(answers?.answerJson?.matchPercentage))) {
+                return Number(answers.answerJson.matchPercentage);
+            }
 
-        return calculateMatchPercentage(processedSkills);
+            return calculateMatchPercentage(processedSkills);
+        } catch {
+            return 35;
+        }
     }, [answers, processedSkills]);
     const statuses = useMemo(
         () => [
@@ -86,8 +94,10 @@ const ProcessingState = () => {
             window.clearInterval(progressInterval);
             window.clearInterval(statusInterval);
 
-            setSkillScores(processedSkills);
-            updateMatchPercentage(matchPercentage);
+            try {
+                setSkillScores(processedSkills);
+                updateMatchPercentage(matchPercentage);
+            } catch {}
 
             if (isCancelled) {
                 return;

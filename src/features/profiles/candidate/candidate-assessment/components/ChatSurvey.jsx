@@ -811,6 +811,7 @@ const ChatSurvey = () => {
             responses: finalResponses,
         };
         const payload = {
+            userId,
             answer: answerSnapshot,
         };
 

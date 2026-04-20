@@ -208,21 +208,6 @@ const toNumericLevelCode = (value) => {
     return "0";
 };
 
-const mapDerivedSkillToScore = (derivedSkill) => {
-    if (!derivedSkill) return 0;
-    const score = Number(derivedSkill?.score);
-    if (Number.isFinite(score)) {
-        return Math.max(0, Math.min(100, Math.round(score)));
-    }
-
-    const scoreValue = Number(derivedSkill?.scoreValue);
-    if (Number.isFinite(scoreValue)) {
-        return Math.max(0, Math.min(100, Math.round((scoreValue / 7) * 100)));
-    }
-
-    return 0;
-};
-
 const toPercentScore = (value) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return 0;
@@ -259,8 +244,6 @@ const ResultDashboard = () => {
     const {
         answers,
         surveyResult,
-        skillScores,
-        matchPercentage,
         lastMatchPercentage,
         saveAssessmentSnapshot,
         roadmap,
@@ -270,7 +253,7 @@ const ResultDashboard = () => {
     const [expandedSkills, setExpandedSkills] = useState({});
     const profile = answers?.profile || {};
 
-    const { summaryText, calculatedSkillScores, overallScorePercent, overallLevelText } = useMemo(() => {
+    const { summaryText, calculatedSkillScores, overallScorePercent, overallLevelText, resolvedProfile } = useMemo(() => {
         const evaluateResult =
             surveyResult?.answer || surveyResult?.responses || surveyResult?.current?.skills
                 ? surveyResult
@@ -280,6 +263,11 @@ const ResultDashboard = () => {
 
         if (evaluateResult) {
             const answerBlock = evaluateResult?.answer?.responses ? evaluateResult.answer : evaluateResult;
+            const apiProfile = answerBlock?.profile && typeof answerBlock.profile === "object" ? answerBlock.profile : {};
+            const mergedProfile = {
+                ...(profile || {}),
+                ...(apiProfile || {}),
+            };
             const currentSkillsList = Array.isArray(evaluateResult?.current?.skills) ? evaluateResult.current.skills : [];
             const responseSkillsList = Array.isArray(answerBlock?.responses) ? answerBlock.responses : [];
             const gapMissing = Array.isArray(evaluateResult?.gapJson?.missing)
@@ -315,12 +303,19 @@ const ResultDashboard = () => {
                 responseSkillsList.reduce((acc, item) => {
                     const skillKey = String(item?.skill || "").trim();
                     if (!skillKey) return acc;
+                    const responseScore = toPercentScore(item?.score);
                     const levelCode = toNumericLevelCode(item?.selectedLevel);
                     const numericLevel = Number(levelCode);
-                    const bucket = acc.get(skillKey) || { scoreTotal: 0, count: 0, levelTotal: 0 };
-                    bucket.scoreTotal += Math.max(0, Math.min(100, Math.round((numericLevel / 4) * 100)));
+                    const bucket = acc.get(skillKey) || { scoreTotal: 0, count: 0, levelTotal: 0, missingCount: 0 };
+                    bucket.scoreTotal +=
+                        responseScore > 0
+                            ? responseScore
+                            : Math.max(0, Math.min(100, Math.round((numericLevel / 4) * 100)));
                     bucket.levelTotal += numericLevel;
                     bucket.count += 1;
+                    if (Boolean(item?.isMissing)) {
+                        bucket.missingCount += 1;
+                    }
                     acc.set(skillKey, bucket);
                     return acc;
                 }, new Map()),
@@ -330,7 +325,11 @@ const ResultDashboard = () => {
                     const avgLevel = aggregated.count ? Math.round(aggregated.levelTotal / aggregated.count) : 0;
                     const levelCode = String(avgLevel);
                     const normalizedSkill = normalizeText(skillKey);
-                    const isMissing = missingSet.has(normalizedSkill) || levelCode === "0" || avgScore <= 0;
+                    const isMissing =
+                        missingSet.has(normalizedSkill) ||
+                        levelCode === "0" ||
+                        avgScore <= 0 ||
+                        aggregated.missingCount > 0;
                     const isWeak = weakSet.has(normalizedSkill);
                     return {
                         skillKey,
@@ -352,33 +351,32 @@ const ResultDashboard = () => {
                 calculatedSkillScores:
                     calculatedFromCurrent.length > 0
                         ? calculatedFromCurrent
-                        : calculatedFromResponses.length > 0
-                          ? calculatedFromResponses
-                          : skillScores || [],
+                        : calculatedFromResponses,
                 overallScorePercent: overallPercent,
                 overallLevelText: String(answerBlock?.overallLevel || evaluateResult?.overallLevel || "None"),
+                resolvedProfile: mergedProfile,
             };
         }
 
         return {
             summaryText: "",
-            calculatedSkillScores: skillScores || [],
+            calculatedSkillScores: [],
             overallScorePercent: null,
             overallLevelText: "None",
+            resolvedProfile: profile || {},
         };
-    }, [answers?.evaluateResponse, profile.level, skillScores, surveyResult]);
+    }, [answers?.evaluateResponse, profile, surveyResult]);
 
-    const displaySkillScores = calculatedSkillScores.length > 0 ? calculatedSkillScores : skillScores;
+    const displaySkillScores = calculatedSkillScores;
     const groupedSkillCards = useMemo(() => {
-        const selectedStacks = Array.isArray(profile?.techstack) ? profile.techstack.filter(Boolean) : [];
-        const derivedSkills = Array.isArray(answers?.derivedSkills) ? answers.derivedSkills : [];
+        const selectedStacks = Array.isArray(resolvedProfile?.techstack) ? resolvedProfile.techstack.filter(Boolean) : [];
 
         if (!selectedStacks.length) {
             const fallbackLevelBreakdown = buildLevelBreakdown(displaySkillScores);
             return [
                 {
-                    id: "other-skills",
-                    title: "Other Skills",
+                    id: "assessment-skills",
+                    title: "Skills from Assessment",
                     score: displaySkillScores.length
                         ? Math.round(
                               displaySkillScores.reduce((sum, item) => sum + (Number(item?.score) || 0), 0) /
@@ -455,13 +453,11 @@ const ResultDashboard = () => {
 
         const techGroups = selectedStacks.map((stack) => {
             const skillsInGroup = bucketMap.get(stack) || [];
-            const derived = derivedSkills.find((item) => normalizeText(item?.skillKey) === normalizeText(stack));
-            const fallbackScore = mapDerivedSkillToScore(derived);
             const score = skillsInGroup.length
                 ? Math.round(
                       skillsInGroup.reduce((sum, item) => sum + (Number(item?.score) || 0), 0) / skillsInGroup.length,
                   )
-                : fallbackScore;
+                : 0;
             const levelBreakdown = buildLevelBreakdown(skillsInGroup);
 
             return {
@@ -476,7 +472,8 @@ const ResultDashboard = () => {
                 levelBreakdown,
                 skills: skillsInGroup,
             };
-        });
+        })
+            .filter((group) => group.count > 0);
 
         if (unmatched.length > 0) {
             const unmatchedLevelBreakdown = buildLevelBreakdown(unmatched);
@@ -495,17 +492,17 @@ const ResultDashboard = () => {
         }
 
         return techGroups;
-    }, [answers?.derivedSkills, displaySkillScores, profile?.techstack]);
+    }, [displaySkillScores, resolvedProfile?.techstack]);
 
     const effectiveMatchPercentage = useMemo(() => {
         if (overallScorePercent != null && Number.isFinite(Number(overallScorePercent))) {
             return Number(overallScorePercent);
         }
-        if (!displaySkillScores.length) return matchPercentage;
+        if (!displaySkillScores.length) return 0;
         return Math.round(
             displaySkillScores.reduce((sum, item) => sum + (item.score || 0), 0) / displaySkillScores.length,
         );
-    }, [displaySkillScores, matchPercentage, overallScorePercent]);
+    }, [displaySkillScores, overallScorePercent]);
 
     const strongestSkills = useMemo(
         () =>
@@ -531,15 +528,15 @@ const ResultDashboard = () => {
           ? statusVisualMap.medium
           : statusVisualMap.weak;
     const readinessHeadline = interviewReady
-        ? `You can start ${profile.role || "interview"} practice directly.`
+        ? `You can start ${resolvedProfile.role || "interview"} practice directly.`
         : focusSkills.length
           ? `Focus next on ${focusSkills.map((skill) => skill.skillKey).join(", ")}.`
-          : `Keep strengthening ${profile.role || "your interview"} momentum.`;
+          : `Keep strengthening ${resolvedProfile.role || "your interview"} momentum.`;
     const readinessBody = interviewReady
-        ? `Benchmarked against ${profile.level || "your target"} expectations, your current tech stack is ready for mock interviews and real interview reps.`
+        ? `Benchmarked against ${resolvedProfile.level || "your target"} expectations, your current tech stack is ready for mock interviews and real interview reps.`
         : mediumSkills.length
-          ? `${mediumSkills.map((skill) => skill.skillKey).join(", ")} is already on track for ${profile.level || "your target level"}, but you still have a few core gaps to close first.`
-          : `Your score reflects both your chosen level and the stack-specific answers you gave in the assessment.`;
+          ? `${mediumSkills.map((skill) => skill.skillKey).join(", ")} is already on track for ${resolvedProfile.level || "your target level"}, but you still have a few core gaps to close first.`
+          : `Your score is based on your submitted answers from the assessment.`;
     const overallCaption = `Overall level: ${overallLevelText || "None"}`;
     const hasRoadmap = Boolean(
         (Array.isArray(roadmap?.today) && roadmap.today.length > 0) ||
@@ -620,7 +617,7 @@ const ResultDashboard = () => {
                         Level detail: {resolvedLevelLabel} (Level {levelCode})
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block" }}>
-                        {skill.score}% ready for {profile.level || "your chosen"} benchmark
+                        {skill.score}% ready for {resolvedProfile.level || "your chosen"} benchmark
                     </Typography>
                 </AccordionDetails>
             </Accordion>
@@ -666,19 +663,19 @@ const ResultDashboard = () => {
                             Assessment Summary
                         </Typography>
                         <Typography variant="h4" fontWeight={800}>
-                            {profile.role || "Candidate"} readiness snapshot
+                            {resolvedProfile.role || "Candidate"} readiness snapshot
                         </Typography>
                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                            {profile.level ? <Chip label={profile.level} /> : null}
-                            {(profile.techstack || []).map((item) => (
+                            {resolvedProfile.level ? <Chip label={resolvedProfile.level} /> : null}
+                            {(resolvedProfile.techstack || []).map((item) => (
                                 <Chip key={item} label={item} variant="outlined" />
                             ))}
-                            {(profile.domain || []).map((item) => (
+                            {(resolvedProfile.domain || []).map((item) => (
                                 <Chip key={item} label={item} variant="outlined" color="secondary" />
                             ))}
                         </Stack>
-                        {profile.freeText ? (
-                            <Typography color="text.secondary">Goal: {profile.freeText}</Typography>
+                        {resolvedProfile.freeText ? (
+                            <Typography color="text.secondary">Goal: {resolvedProfile.freeText}</Typography>
                         ) : null}
                     </Stack>
                 </Paper>
@@ -734,7 +731,7 @@ const ResultDashboard = () => {
                             </Box>
                         </Box>
                         <Typography color="text.secondary" textAlign="center">
-                            Calibrated for a {profile.level || "target"} {profile.role || "role"} using your real tech
+                            Calibrated for a {resolvedProfile.level || "target"} {resolvedProfile.role || "role"} using your real tech
                             stack answers, not just a generic average.
                         </Typography>
                         <Typography color="text.secondary" textAlign="center" sx={{ mt: 0.75 }}>
