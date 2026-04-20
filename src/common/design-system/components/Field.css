@@ -23,9 +23,9 @@
   .claude-field__input,
   .claude-field__textarea,
   .claude-field__select-trigger {
-    --claude-field-hover-border: var(--claude-color-ring-warm);
-    --claude-field-focus-color: var(--claude-focus-color);
-    --claude-field-focus-ring: var(--claude-focus-ring);
+    --claude-field-hover-border: var(--claude-focus-color-secondary);
+    --claude-field-focus-color: var(--claude-focus-color-secondary);
+    --claude-field-focus-ring: var(--claude-focus-ring-secondary);
 
     width: 100%;
     padding: var(--claude-space-5) var(--claude-space-6);
@@ -100,6 +100,10 @@
     padding-left: calc(var(--claude-space-6) + 20px + var(--claude-space-3));
   }
 
+  .claude-field--clearable .claude-field__input {
+    padding-right: calc(var(--claude-space-6) + 16px + var(--claude-space-3));
+  }
+
   .claude-field__icon {
     position: absolute;
     left: var(--claude-space-6);
@@ -116,6 +120,33 @@
     right: var(--claude-space-3);
     top: 50%;
     transform: translateY(-50%);
+  }
+
+  .claude-field__clear-btn {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--claude-color-text-stone-gray);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition:
+      color var(--claude-motion-fast) var(--claude-motion-easing),
+      background-color var(--claude-motion-fast) var(--claude-motion-easing);
+  }
+
+  .claude-field__clear-btn:hover {
+    color: var(--claude-color-text-charcoal-warm);
+    background-color: rgba(148, 163, 184, 0.14);
+  }
+
+  .claude-field__clear-btn:focus-visible {
+    outline: 2px solid var(--claude-focus-color-secondary);
+    outline-offset: 1px;
   }
 
   .claude-field--tone-secondary .claude-field__control:focus-within .claude-field__icon,

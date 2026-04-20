@@ -8,8 +8,8 @@ const SearchIcon = () => (
 );
 
 const ClearIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-    <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+    <path d="M2 2l8 8M10 2L2 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
   </svg>
 );
 
@@ -19,6 +19,7 @@ export function SearchField({ id, label, hint, error, onClear, value, tone = 'se
   const wrapClasses = [
     'claude-field',
     'claude-field--with-icon',
+    onClear && 'claude-field--clearable',
     tone === 'secondary' && 'claude-field--tone-secondary',
     hasValue && 'claude-field--has-value',
     error && 'claude-field--invalid',
@@ -41,7 +42,7 @@ export function SearchField({ id, label, hint, error, onClear, value, tone = 'se
         {onClear && value && (
           <button
             type="button"
-            className="claude-icon-btn claude-icon-btn--ghost claude-field__clear"
+            className="claude-field__clear-btn claude-field__clear"
             onClick={onClear}
             aria-label="Clear search"
           >

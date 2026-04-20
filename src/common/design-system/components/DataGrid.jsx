@@ -1,6 +1,6 @@
 import './DataGrid.css';
 
-export function DataGrid({ columns, rows, striped, dense, className = '', ...props }) {
+export function DataGrid({ columns, rows, striped, dense, className = '', getRowStyle, ...props }) {
   const tableClasses = [
     'claude-grid',
     striped && 'claude-grid--striped',
@@ -22,7 +22,7 @@ export function DataGrid({ columns, rows, striped, dense, className = '', ...pro
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={row.id ?? i} className="claude-grid__row">
+            <tr key={row.id ?? i} className="claude-grid__row" style={getRowStyle ? getRowStyle(row, i) : undefined}>
               {columns.map((col) => (
                 <td key={col.key} className="claude-grid__cell">
                   {col.render ? col.render(row[col.key], row) : row[col.key]}

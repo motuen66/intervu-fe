@@ -78,16 +78,16 @@ export const fieldStyles = {
     outlinedFocus: (theme) => ({
         "& .MuiOutlinedInput-root": {
             "& fieldset": { borderColor: theme.palette.divider },
-            "&:hover fieldset": { borderColor: theme.palette.text.secondary },
+            "&:hover fieldset": { borderColor: theme.palette.primary.light },
             "&.Mui-focused": {
-                boxShadow: `0 0 0 3px rgba(15, 23, 42, 0.08)`,
+                boxShadow: `0 0 0 3px rgba(51, 65, 85, 0.22)`,
             },
             "&.Mui-focused fieldset": {
-                borderColor: theme.palette.primary.main,
+                borderColor: theme.palette.primary.light,
                 borderWidth: "2px",
             },
         },
-        "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
+        "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.light },
     }),
 };
 
