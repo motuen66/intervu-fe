@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { 
     Container, Box, Grid, Typography, MenuItem, Paper, Avatar, 
-    Divider, Chip, InputAdornment
+    Divider, Chip, InputAdornment, TablePagination
 } from "@mui/material";
 import { 
     Send, Users, UserCheck, ShieldAlert, Megaphone,
@@ -23,7 +23,8 @@ import FormTextField from "../../../common/components/form/FormTextField";
 import FormSelect from "../../../common/components/form/FormSelect";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import ConfirmModal from "../../../common/components/ConfirmModal";
-import DataTable from "../../../common/components/table/DataTable";
+import { DataGrid, EmptyState, Spinner } from "../../../common/design-system";
+import AdminDesignSystemPageShell from "../components/AdminDesignSystemPageShell";
 
 const TARGET_OPTIONS = [
     { label: "All Users", value: "ALL", icon: Users },
@@ -166,8 +167,14 @@ export default function AdminBroadcastPage() {
 
     const logColumns = useMemo(() => [
         {
-            field: "createdAt",
-            headerName: "Sent At",
+            key: "index",
+            label: "#",
+            width: 52,
+        },
+        {
+            key: "createdAt",
+            label: "Sent At",
+            width: 170,
             render: (value) => (
                 <Typography variant="caption" color="text.secondary">
                     {value ? new Date(value).toLocaleString() : "-"}
@@ -175,15 +182,17 @@ export default function AdminBroadcastPage() {
             ),
         },
         {
-            field: "type",
-            headerName: "Type",
+            key: "type",
+            label: "Type",
+            width: 160,
             render: (value) => (
                 <Chip size="small" label={value || "-"} variant="outlined" sx={{ fontWeight: 600 }} />
             ),
         },
         {
-            field: "title",
-            headerName: "Title",
+            key: "title",
+            label: "Title",
+            width: 260,
             render: (value) => (
                 <Typography sx={{ fontSize: 12, fontWeight: 700, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {value || "-"}
@@ -191,8 +200,9 @@ export default function AdminBroadcastPage() {
             ),
         },
         {
-            field: "message",
-            headerName: "Message",
+            key: "message",
+            label: "Message",
+            width: 340,
             render: (value) => (
                 <Typography sx={{ fontSize: 12, color: "text.secondary", maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {value || "-"}
@@ -200,8 +210,9 @@ export default function AdminBroadcastPage() {
             ),
         },
         {
-            field: "audience",
-            headerName: "Recipients",
+            key: "audience",
+            label: "Recipients",
+            width: 300,
             render: (_, row) => (
                 <Typography sx={{ fontSize: 12 }}>
                     Total: <strong>{row?.totalRecipients || 0}</strong> • Candidate: {row?.candidateRecipients || 0} • Coach: {row?.coachRecipients || 0}
@@ -209,8 +220,9 @@ export default function AdminBroadcastPage() {
             ),
         },
         {
-            field: "actionUrl",
-            headerName: "Action URL",
+            key: "actionUrl",
+            label: "Action URL",
+            width: 220,
             render: (value) => (
                 <Typography sx={{ fontSize: 12, color: value ? "primary.main" : "text.disabled", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {value || "-"}
@@ -219,7 +231,17 @@ export default function AdminBroadcastPage() {
         },
     ], []);
 
+    const logRows = useMemo(
+        () => (broadcastLogs ?? []).map((row, index) => ({
+            ...row,
+            index: logsPage * logsPageSize + index + 1,
+            id: row.id ?? row.broadcastId ?? `${row.createdAt ?? "log"}-${index}`,
+        })),
+        [broadcastLogs, logsPage, logsPageSize],
+    );
+
     return (
+        <AdminDesignSystemPageShell>
         <Container maxWidth="xl" className="admin-page" sx={{ py: { xs: 2, md: 3 } }}>
             <AdminPageHeader
                 title="Publish Notification"
@@ -617,22 +639,43 @@ export default function AdminBroadcastPage() {
                         Refresh
                     </SecondaryButton>
                 </Box>
-                <DataTable
-                    title=""
-                    columns={logColumns}
-                    data={broadcastLogs}
-                    totalItems={logsTotal}
+                {logsLoading ? (
+                    <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
+                        <Spinner />
+                    </Box>
+                ) : logRows.length === 0 ? (
+                    <Box sx={{ p: 2 }}>
+                        <EmptyState
+                            title="No broadcast logs"
+                            body="No notifications have been broadcast yet."
+                        />
+                    </Box>
+                ) : (
+                    <DataGrid columns={logColumns} rows={logRows} striped dense />
+                )}
+
+                <TablePagination
+                    component="div"
+                    count={logsTotal}
                     page={logsPage}
-                    pageSize={logsPageSize}
-                    onPageChange={setLogsPage}
-                    onPageSizeChange={(size) => {
-                        setLogsPageSize(size);
+                    onPageChange={(_, newPage) => setLogsPage(newPage)}
+                    rowsPerPage={logsPageSize}
+                    onRowsPerPageChange={(e) => {
+                        setLogsPageSize(parseInt(e.target.value, 10));
                         setLogsPage(0);
                     }}
-                    loading={logsLoading}
-                    actions={false}
-                    showIndex
-                    showHeader={false}
+                    rowsPerPageOptions={[10, 20, 50]}
+                    sx={{
+                        borderTop: "1px solid",
+                        borderColor: "divider",
+                        ".MuiTablePagination-toolbar": {
+                            minHeight: 52,
+                        },
+                        ".MuiTablePagination-select, .MuiTablePagination-displayedRows": {
+                            fontSize: "0.78rem",
+                            color: "text.secondary",
+                        },
+                    }}
                 />
             </BaseCard>
 
@@ -647,5 +690,6 @@ export default function AdminBroadcastPage() {
                 cancelText="Let me double check"
             />
         </Container>
+        </AdminDesignSystemPageShell>
     );
 }

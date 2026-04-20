@@ -10,6 +10,7 @@ import {
     FormControl,
     IconButton,
     MenuItem,
+    TablePagination,
     Typography,
 } from "@mui/material";
 import FormSelect from "../../../common/components/form/FormSelect";
@@ -20,18 +21,24 @@ import CloseIcon from "@mui/icons-material/Close";
 import toast from "react-hot-toast";
 
 import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
-import SearchInput from "../../../common/components/admin/SearchInput";
-import FilterDropdown from "../../../common/components/admin/FilterDropdown";
 import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
-import DataTable from "../../../common/components/table/DataTable";
-import StatusChip from "../../../common/components/StatusChip";
-import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import {
+    Badge,
+    Button,
+    DataGrid,
+    EmptyState,
+    SearchField,
+    SelectField,
+    Spinner,
+    Toolbar,
+} from "../../../common/design-system";
 import useTableState from "../../../hooks/useTableState";
 
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
 import { dialogStyles } from "../../../common/constants/uiStyles";
+import AdminDesignSystemPageShell from "../components/AdminDesignSystemPageShell";
 import "./AdminDashboard.css";
 
 // Backend QuestionReportStatus: Pending=1, Resolved=2, Dismissed=3
@@ -110,9 +117,9 @@ const getSlaRowSx = (createdAt, statusKey) => {
     const created = new Date(createdAt).getTime();
     if (Number.isNaN(created)) return undefined;
     const hours = (Date.now() - created) / HOUR_MS;
-    if (hours > 72) return { bgcolor: "error.light" };
-    if (hours > 48) return { bgcolor: "warning.main", "& *": { color: "warning.contrastText" } };
-    if (hours > 24) return { bgcolor: "warning.light" };
+    if (hours > 72) return { backgroundColor: "rgba(239, 68, 68, 0.12)" };
+    if (hours > 48) return { backgroundColor: "rgba(245, 158, 11, 0.24)", color: "#422006" };
+    if (hours > 24) return { backgroundColor: "rgba(245, 158, 11, 0.12)" };
     return undefined;
 };
 
@@ -128,7 +135,7 @@ export default function AdminReportsPage() {
         data: reports, setData: setReports,
         loading, setLoading,
         page, setPage,
-        pageSize, setPageSize,
+        pageSize,
         totalItems, setTotalItems,
         handlePageChange, handlePageSizeChange
     } = useTableState(10);
@@ -239,16 +246,16 @@ export default function AdminReportsPage() {
         setPage(0);
     };
 
-    const statusOptions = [
-        { label: 'Pending', value: REPORT_STATUS_KEY.PENDING },
-        { label: 'Resolved', value: REPORT_STATUS_KEY.RESOLVED },
-        { label: 'Dismissed', value: REPORT_STATUS_KEY.DISMISSED }
-    ];
-
     const columns = useMemo(() => [
         {
-            field: "questionTitle",
-            headerName: "Question",
+            key: "index",
+            label: "#",
+            width: 52,
+        },
+        {
+            key: "questionTitle",
+            label: "Question",
+            width: 280,
             render: (value, row) => (
                 <Typography
                     sx={{
@@ -265,10 +272,11 @@ export default function AdminReportsPage() {
                 </Typography>
             ),
         },
-        { field: "reporterName", headerName: "Reporter" },
+        { key: "reporterName", label: "Reporter", width: 160, render: (value) => value || "-" },
         {
-            field: "reason",
-            headerName: "Reason",
+            key: "reason",
+            label: "Reason",
+            width: 260,
             render: (value) => (
                 <Typography sx={{ fontSize: "12px", color: "text.secondary", maxWidth: 320, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={value || "-"}>
                     {value || "-"}
@@ -276,8 +284,9 @@ export default function AdminReportsPage() {
             ),
         },
         {
-            field: "expectTo",
-            headerName: "Expected Action",
+            key: "expectTo",
+            label: "Expected Action",
+            width: 240,
             render: (value) => (
                 <Typography sx={{ fontSize: "12px", color: "text.secondary", maxWidth: 260, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={value || "-"}>
                     {value || "-"}
@@ -285,16 +294,18 @@ export default function AdminReportsPage() {
             ),
         },
         {
-            field: "status",
-            headerName: "Status",
+            key: "status",
+            label: "Status",
+            width: 120,
             render: (value) => {
                 const normalized = normalizeStatusKey(value);
-                return <StatusChip label={getStatusLabel(normalized)} color={statusKeyToChipColor[normalized] || "default"} />;
+                return <Badge variant={statusKeyToChipColor[normalized] || "neutral"}>{getStatusLabel(normalized)}</Badge>;
             },
         },
         {
-            field: "createdAt",
-            headerName: "Reported At",
+            key: "createdAt",
+            label: "Reported At",
+            width: 170,
             render: (value) => {
                 if (!value) return "-";
                 const date = new Date(value);
@@ -302,8 +313,9 @@ export default function AdminReportsPage() {
             },
         },
         {
-            field: "actions",
-            headerName: "Actions",
+            key: "actions",
+            label: "Actions",
+            width: 90,
             render: (_, row) => {
                 const status = normalizeStatusKey(row?.status);
                 const canResolve = status === REPORT_STATUS_KEY.PENDING;
@@ -322,100 +334,152 @@ export default function AdminReportsPage() {
         },
     ], [navigate]);
 
-    const getRowSx = (row) => getSlaRowSx(row?.createdAt, normalizeStatusKey(row?.status));
+    const rows = useMemo(
+        () => reports.map((row, index) => ({
+            ...row,
+            index: page * pageSize + index + 1,
+        })),
+        [reports, page, pageSize],
+    );
+
+    const getRowStyle = (row) => getSlaRowSx(row?.createdAt, normalizeStatusKey(row?.status));
 
     const selectedOption = RESOLVE_OPTIONS.find((o) => o.key === resolveOptionKey) || RESOLVE_OPTIONS[0];
 
     return (
-        <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
-            <AdminPageHeader
-                title="Question Reports"
-                subtitle="Monitor and resolve reports submitted for interview questions."
-                actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports}>
-                        Refresh
-                    </PrimaryButton>
-                }
-            />
+        <AdminDesignSystemPageShell>
+            <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
+                <AdminPageHeader
+                    title="Question Reports"
+                    subtitle="Monitor and resolve reports submitted for interview questions."
+                    actionButton={
+                        <Button variant="secondary" onClick={fetchReports}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                <RefreshIcon sx={{ fontSize: 18 }} />
+                                Refresh
+                            </span>
+                        </Button>
+                    }
+                />
 
-            <div className="admin-card">
-                <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', gap: 2, alignItems: 'center', bgcolor: 'background.paper' }}>
-                    <SearchInput placeholder="Search by question or reporter..." onSearch={handleSearchChange} />
-                    <FilterDropdown placeholder="All status" options={statusOptions} value={statusFilter} onChange={handleStatusFilterChange} />
+                <Box className="admin-card">
+                    <Toolbar
+                        group={
+                            <div style={{ minWidth: 280, width: "100%", maxWidth: 420 }}>
+                                <SearchField
+                                    placeholder="Search by question or reporter..."
+                                    value={searchTerm}
+                                    onChange={(e) => handleSearchChange(e.target.value)}
+                                    onClear={() => handleSearchChange("")}
+                                />
+                            </div>
+                        }
+                        actions={
+                            <div style={{ minWidth: 180 }}>
+                                <SelectField value={statusFilter} onChange={(e) => handleStatusFilterChange(e.target.value)}>
+                                    <option value={REPORT_STATUS_KEY.ALL}>All status</option>
+                                    <option value={REPORT_STATUS_KEY.PENDING}>Pending</option>
+                                    <option value={REPORT_STATUS_KEY.RESOLVED}>Resolved</option>
+                                    <option value={REPORT_STATUS_KEY.DISMISSED}>Dismissed</option>
+                                </SelectField>
+                            </div>
+                        }
+                    />
+
+                    {loading ? (
+                        <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
+                            <Spinner />
+                        </Box>
+                    ) : rows.length === 0 ? (
+                        <Box sx={{ p: 2 }}>
+                            <EmptyState
+                                title="No reports found"
+                                body="Try adjusting filters to find matching reports."
+                            />
+                        </Box>
+                    ) : (
+                        <DataGrid columns={columns} rows={rows} striped dense getRowStyle={getRowStyle} />
+                    )}
+
+                    <TablePagination
+                        component="div"
+                        count={totalItems}
+                        page={page}
+                        onPageChange={(_, newPage) => handlePageChange(newPage)}
+                        rowsPerPage={pageSize}
+                        onRowsPerPageChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
+                        rowsPerPageOptions={[10, 20, 50]}
+                        sx={{
+                            borderTop: "1px solid",
+                            borderColor: "divider",
+                            ".MuiTablePagination-toolbar": {
+                                minHeight: 52,
+                            },
+                            ".MuiTablePagination-select, .MuiTablePagination-displayedRows": {
+                                fontSize: "0.78rem",
+                                color: "text.secondary",
+                            },
+                        }}
+                    />
                 </Box>
 
-                <DataTable
-                    showHeader={false}
-                    showIndex
-                    actions={false}
-                    columns={columns}
-                    data={reports}
-                    totalItems={totalItems}
-                    page={page}
-                    pageSize={pageSize}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={loading}
-                    getRowSx={getRowSx}
-                />
-            </div>
+                <Dialog
+                    open={!!resolveTarget}
+                    onClose={closeResolveModal}
+                    PaperProps={{ sx: dialogStyles.paper }}
+                    fullWidth
+                    maxWidth="sm"
+                >
+                    <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span>Resolve report</span>
+                        <IconButton onClick={closeResolveModal} edge="end" sx={{ color: (theme) => theme.palette.grey[500] }}>
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent dividers>
+                        <Typography sx={{ mb: 2, fontSize: 13, color: "text.secondary" }}>
+                            Question: <strong>{resolveTarget?.questionTitle || "-"}</strong>
+                        </Typography>
 
-            <Dialog
-                open={!!resolveTarget}
-                onClose={closeResolveModal}
-                PaperProps={{ sx: dialogStyles.paper }}
-                fullWidth
-                maxWidth="sm"
-            >
-                <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span>Resolve report</span>
-                    <IconButton onClick={closeResolveModal} edge="end" sx={{ color: (theme) => theme.palette.grey[500] }}>
-                        <CloseIcon />
-                    </IconButton>
-                </DialogTitle>
-                <DialogContent dividers>
-                    <Typography sx={{ mb: 2, fontSize: 13, color: "text.secondary" }}>
-                        Question: <strong>{resolveTarget?.questionTitle || "-"}</strong>
-                    </Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>Resolution action</Typography>
+                        <FormSelect
+                            fullWidth
+                            size="small"
+                            value={resolveOptionKey}
+                            onChange={(e) => setResolveOptionKey(e.target.value)}
+                        >
+                            {RESOLVE_OPTIONS.map((opt) => (
+                                <MenuItem key={opt.key} value={opt.key}>{opt.label}</MenuItem>
+                            ))}
+                        </FormSelect>
 
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>Resolution action</Typography>
-                    <FormSelect
-                        fullWidth
-                        size="small"
-                        value={resolveOptionKey}
-                        onChange={(e) => setResolveOptionKey(e.target.value)}
-                    >
-                        {RESOLVE_OPTIONS.map((opt) => (
-                            <MenuItem key={opt.key} value={opt.key}>{opt.label}</MenuItem>
-                        ))}
-                    </FormSelect>
-
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1, mt: 2 }}>
-                        Resolution note <span style={{ color: "#d32f2f" }}>*</span>
-                    </Typography>
-                    <FormTextField
-                        fullWidth
-                        multiline
-                        minRows={3}
-                        maxRows={8}
-                        placeholder="Describe the reasoning and outcome of this decision..."
-                        value={resolveNote}
-                        onChange={(e) => setResolveNote(e.target.value)}
-                        inputProps={{ maxLength: 2000 }}
-                    />
-                    <Typography sx={{ mt: 1, fontSize: 12, color: "text.secondary" }}>
-                        {selectedOption.status === REPORT_STATUS.RESOLVED
-                            ? "The linked question will be hidden from the public bank."
-                            : "No changes will be made to the linked question."}
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
-                    <SecondaryButton onClick={closeResolveModal} disabled={resolveSubmitting}>Cancel</SecondaryButton>
-                    <PrimaryButton onClick={submitResolve} disabled={resolveSubmitting || !resolveNote.trim()}>
-                        {resolveSubmitting ? "Submitting..." : "Submit"}
-                    </PrimaryButton>
-                </DialogActions>
-            </Dialog>
-        </Container>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1, mt: 2 }}>
+                            Resolution note <span style={{ color: "#d32f2f" }}>*</span>
+                        </Typography>
+                        <FormTextField
+                            fullWidth
+                            multiline
+                            minRows={3}
+                            maxRows={8}
+                            placeholder="Describe the reasoning and outcome of this decision..."
+                            value={resolveNote}
+                            onChange={(e) => setResolveNote(e.target.value)}
+                            inputProps={{ maxLength: 2000 }}
+                        />
+                        <Typography sx={{ mt: 1, fontSize: 12, color: "text.secondary" }}>
+                            {selectedOption.status === REPORT_STATUS.RESOLVED
+                                ? "The linked question will be hidden from the public bank."
+                                : "No changes will be made to the linked question."}
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+                        <Button variant="secondary" onClick={closeResolveModal} disabled={resolveSubmitting}>Cancel</Button>
+                        <Button onClick={submitResolve} disabled={resolveSubmitting || !resolveNote.trim()}>
+                            {resolveSubmitting ? "Submitting..." : "Submit"}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </Container>
+        </AdminDesignSystemPageShell>
     );
 }

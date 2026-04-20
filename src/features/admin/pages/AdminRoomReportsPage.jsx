@@ -18,6 +18,7 @@ import {
     Radio,
     RadioGroup,
     FormControlLabel,
+    TablePagination,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import HistoryIcon from "@mui/icons-material/History";
@@ -27,12 +28,18 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import toast from "react-hot-toast";
 
 import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
-import SearchInput from "../../../common/components/admin/SearchInput";
-import FilterDropdown from "../../../common/components/admin/FilterDropdown";
 import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
-import DataTable from "../../../common/components/table/DataTable";
-import StatusChip from "../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../../../common/components/buttons";
+import {
+    Badge,
+    Button,
+    DataGrid,
+    EmptyState,
+    SearchField,
+    SelectField,
+    Spinner,
+    Toolbar,
+} from "../../../common/design-system";
 import FormTextField from "../../../common/components/form/FormTextField";
 import useTableState from "../../../hooks/useTableState";
 
@@ -40,6 +47,7 @@ import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
 import { dialogStyles } from "../../../common/constants/uiStyles";
+import AdminDesignSystemPageShell from "../components/AdminDesignSystemPageShell";
 import "./AdminDashboard.css";
 
 const statusLabels = {
@@ -68,7 +76,7 @@ export const AdminRoomReportsPage = () => {
         data: reports, setData: setReports,
         loading, setLoading,
         page, setPage,
-        pageSize, setPageSize,
+        pageSize,
         totalItems, setTotalItems,
         handlePageChange, handlePageSizeChange
     } = useTableState(10);
@@ -191,16 +199,15 @@ export const AdminRoomReportsPage = () => {
         setPage(0);
     };
 
-    const statusOptions = [
-        { label: 'Pending Review', value: "0" },
-        { label: 'Marked Resolved', value: "1" },
-        { label: 'Marked Rejected', value: "2" }
-    ];
-
     const columns = useMemo(() => [
         {
-            field: "reporterName",
-            headerName: "Reporter",
+            key: "index",
+            label: "#",
+            width: 52,
+        },
+        {
+            key: "reporterName",
+            label: "Reporter",
             render: (val, row) => (
                 <Typography sx={{ fontWeight: 600, color: "text.primary", fontSize: "12px" }}>
                     {val || row.reporter?.fullName || "System"}
@@ -209,8 +216,8 @@ export const AdminRoomReportsPage = () => {
             width: 200,
         },
         {
-            field: "reportType",
-            headerName: "Type",
+            key: "reportType",
+            label: "Type",
             render: (val, row) => {
                 const label = reportTypeLabels[val] || row.reason || "Unknown";
                 return (
@@ -229,8 +236,8 @@ export const AdminRoomReportsPage = () => {
             width: 160,
         },
         {
-            field: "content",
-            headerName: "Content",
+            key: "content",
+            label: "Content",
             render: (val, row) => (
                 <Tooltip title={val || row.details || "N/A"}>
                     <Typography sx={{ fontSize: "12px", color: "text.secondary", maxWidth: "300px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -241,14 +248,14 @@ export const AdminRoomReportsPage = () => {
             width: 320,
         },
         {
-            field: "status",
-            headerName: "Status",
-            render: (val) => <StatusChip label={statusLabels[val]} color={statusColors[val]} />,
+            key: "status",
+            label: "Status",
+            render: (val) => <Badge variant={statusColors[val] || "neutral"}>{statusLabels[val] || "Unknown"}</Badge>,
             width: 130,
         },
         {
-            field: "createdAt",
-            headerName: "Date Reported",
+            key: "createdAt",
+            label: "Date Reported",
             render: (val) => (
                 <Box>
                     <Typography sx={{ fontSize: "12px", color: "text.primary", fontWeight: 500 }}>
@@ -259,8 +266,8 @@ export const AdminRoomReportsPage = () => {
             width: 160,
         },
         {
-            field: "actions",
-            headerName: "Actions",
+            key: "actions",
+            label: "Actions",
             render: (_, row) => {
                 const roomId = row?.interviewRoomId || row?.roomId;
                 const id = row?.id || row?.reportId || row?.reportID;
@@ -285,38 +292,90 @@ export const AdminRoomReportsPage = () => {
         },
     ], [navigate]);
 
+    const rows = useMemo(
+        () => reports.map((row, index) => ({
+            ...row,
+            index: page * pageSize + index + 1,
+        })),
+        [reports, page, pageSize],
+    );
+
     return (
-        <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
-            <AdminPageHeader 
-                title="Room Reports"  // AdminPageHeader styling
-                subtitle="Monitor and investigate environmental audit logs for reported interview rooms."
-                actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports}>
-                        Refresh
-                    </PrimaryButton>
-                }
-            />
-
-            <div className="admin-card">
-                <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', display: 'flex', gap: 2, alignItems: 'center', bgcolor: '#fff' }}>
-                    <SearchInput placeholder="Search by reporter or content..." onSearch={handleSearchChange} />
-                    <FilterDropdown placeholder="All status" options={statusOptions} value={statusFilter} onChange={handleStatusFilterChange} />
-                </Box>
-
-                <DataTable
-                    showHeader={false}
-                    showIndex
-                    actions={false}
-                    columns={columns}
-                    data={reports}
-                    totalItems={totalItems}
-                    page={page}
-                    pageSize={pageSize}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={loading}
+        <AdminDesignSystemPageShell>
+            <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
+                <AdminPageHeader
+                    title="Room Reports"
+                    subtitle="Monitor and investigate environmental audit logs for reported interview rooms."
+                    actionButton={
+                        <Button variant="secondary" onClick={fetchReports}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                <RefreshIcon sx={{ fontSize: 18 }} />
+                                Refresh
+                            </span>
+                        </Button>
+                    }
                 />
-            </div>
+
+                <Box className="admin-card">
+                    <Toolbar
+                        group={
+                            <div style={{ minWidth: 280, width: "100%", maxWidth: 420 }}>
+                                <SearchField
+                                    placeholder="Search by reporter or content..."
+                                    value={searchTerm}
+                                    onChange={(e) => handleSearchChange(e.target.value)}
+                                    onClear={() => handleSearchChange("")}
+                                />
+                            </div>
+                        }
+                        actions={
+                            <div style={{ minWidth: 180 }}>
+                                <SelectField value={statusFilter} onChange={(e) => handleStatusFilterChange(e.target.value)}>
+                                    <option value="all">All status</option>
+                                    <option value="0">Pending Review</option>
+                                    <option value="1">Marked Resolved</option>
+                                    <option value="2">Marked Rejected</option>
+                                </SelectField>
+                            </div>
+                        }
+                    />
+
+                    {loading ? (
+                        <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
+                            <Spinner />
+                        </Box>
+                    ) : rows.length === 0 ? (
+                        <Box sx={{ p: 2 }}>
+                            <EmptyState
+                                title="No room reports found"
+                                body="Try adjusting your search or status filter."
+                            />
+                        </Box>
+                    ) : (
+                        <DataGrid columns={columns} rows={rows} striped dense />
+                    )}
+
+                    <TablePagination
+                        component="div"
+                        count={totalItems}
+                        page={page}
+                        onPageChange={(_, newPage) => handlePageChange(newPage)}
+                        rowsPerPage={pageSize}
+                        onRowsPerPageChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
+                        rowsPerPageOptions={[10, 20, 50]}
+                        sx={{
+                            borderTop: "1px solid",
+                            borderColor: "divider",
+                            ".MuiTablePagination-toolbar": {
+                                minHeight: 52,
+                            },
+                            ".MuiTablePagination-select, .MuiTablePagination-displayedRows": {
+                                fontSize: "0.78rem",
+                                color: "text.secondary",
+                            },
+                        }}
+                    />
+                </Box>
 
             {/* Audit Log Dialog ... omitted for brevity ... */}
             <Dialog open={auditLogDialogOpen} onClose={() => setAuditLogDialogOpen(false)} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: "24px", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", } }}>
@@ -421,6 +480,7 @@ export const AdminRoomReportsPage = () => {
                     <PrimaryButton loading={isResolving} onClick={() => handleResolveReport(selectedReportId, 1, refundOption, adminNote)}>Confirm & Resolve</PrimaryButton>
                 </DialogActions>
             </Dialog>
-        </Container>
+            </Container>
+        </AdminDesignSystemPageShell>
     );
 };
