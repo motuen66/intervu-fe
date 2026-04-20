@@ -1,5 +1,5 @@
 import { BE_BASE_URL } from "../../../common/constants/env";
-import { callApi } from "../../../common/utils/apiConnector";
+import { callApi, axiosInstance } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../common/constants/status";
 
@@ -95,10 +95,11 @@ export const deleteAvailability = async (availabilityId) => {
  * @param {{ coachId: string, rangeStartTime: string, rangeEndTime: string }} payload
  */
 export const deleteAvailabilityRange = async (payload) => {
-    const result = await callApi({
+    const response = await axiosInstance({
         method: METHOD.DELETE,
-        endpoint: availabilityEndPoints.DELETE_AVAILABILITY_RANGE,
-        arg: payload,
+        url: availabilityEndPoints.DELETE_AVAILABILITY_RANGE,
+        data: payload,
+        headers: { "Content-Type": "application/json" },
     });
-    return result;
+    return response.data;
 };

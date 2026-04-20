@@ -195,9 +195,13 @@ const ScheduleManagement = () => {
     };
 
     const handleDeleteFromDialog = () => {
-        if (editingId) {
+        if (originalRange) {
             setOpenModal(false);
-            setSelectedItem(editingId);
+            setSelectedItem({
+                coachId: userId,
+                rangeStartTime: originalRange.startTime,
+                rangeEndTime: originalRange.endTime,
+            });
             setEditingId(null);
             setOriginalRange(null);
             setConfirmOpen(true);
@@ -508,14 +512,25 @@ const ScheduleManagement = () => {
     const handleConfirm = async () => {
         if (selectedItem) {
             try {
-                const resultAction = await dispatch(removeAvailability(selectedItem));
-                if (removeAvailability.fulfilled.match(resultAction)) {
-                    // toast.success("Availability slot deleted");
-                    refetchMonth();
+                let resultAction;
+                if (typeof selectedItem === "object") {
+                    resultAction = await dispatch(removeAvailabilityRange(selectedItem));
+                    if (removeAvailabilityRange.fulfilled.match(resultAction)) {
+                        refetchMonth();
+                    } else {
+                        showError(
+                            resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability",
+                        );
+                    }
                 } else {
-                    showError(
-                        resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability",
-                    );
+                    resultAction = await dispatch(removeAvailability(selectedItem));
+                    if (removeAvailability.fulfilled.match(resultAction)) {
+                        refetchMonth();
+                    } else {
+                        showError(
+                            resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability",
+                        );
+                    }
                 }
             } catch (err) {
                 console.error("Error deleting availability:", err);

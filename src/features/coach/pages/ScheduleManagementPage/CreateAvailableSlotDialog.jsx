@@ -87,7 +87,7 @@ const CreateAvailableSlotDialog = ({
                             />
                         </Box>
 
-                        <Box>
+                        {/* <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
                                 Duplicate to other dates (Optional)
                             </Typography>
@@ -124,7 +124,7 @@ const CreateAvailableSlotDialog = ({
                                     />
                                 ))}
                             </Box>
-                        </Box>
+                        </Box> */}
 
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
