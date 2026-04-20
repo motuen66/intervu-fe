@@ -78,6 +78,7 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
 
     const loadData = async () => {
         setHasLoaded(false);
+        setError(null);
         try {
             // Fetch Profile
             const profileRes = await callApi({
@@ -92,11 +93,22 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
 
             if (profileData?.user?.id) {
                 // Fetch Services
-                const svcData = await getCoachInterviewServices(profileData.user.id);
-                setServices(svcData || []);
+                try {
+                    const svcData = await getCoachInterviewServices(profileData.user.id);
+                    setServices(Array.isArray(svcData) ? svcData : []);
+                } catch (serviceError) {
+                    // Coach may not have any service yet (common 404/empty case).
+                    const status = serviceError?.response?.status || serviceError?.status;
+                    if (status !== 404) {
+                        console.error("Error fetching coach services:", serviceError);
+                    }
+                    setServices([]);
+                }
 
                 // Fetch Availability for the current month
                 fetchCoachAvailability(profileData.user.id);
+            } else {
+                setServices([]);
             }
         } catch (e) {
             setError("Failed to load coach profile.");
