@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Container, Tab, Tabs, Tooltip, Typography } from "@mui/material";
+import { Box, Container, Tab, Tabs, TablePagination, Tooltip, Typography } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -8,16 +8,22 @@ import BlockIcon from "@mui/icons-material/Block";
 import toast from "react-hot-toast";
 
 import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
-import SearchInput from "../../../common/components/admin/SearchInput";
 import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
-import DataTable from "../../../common/components/table/DataTable";
-import StatusChip from "../../../common/components/StatusChip";
 import ConfirmModal from "../../../common/components/ConfirmModal";
-import { PrimaryButton } from "../../../common/components/buttons";
 import useTableState from "../../../hooks/useTableState";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
+import {
+    Badge,
+    Button,
+    DataGrid,
+    EmptyState,
+    SearchField,
+    Spinner,
+    Toolbar,
+} from "../../../common/design-system";
+import AdminDesignSystemPageShell from "../components/AdminDesignSystemPageShell";
 import "./AdminDashboard.css";
 
 // Backend QuestionStatus: Pending=1, Approved=2, Rejected=3, Removed=4
@@ -47,7 +53,7 @@ export default function AdminQuestionBankPage() {
         data: questions, setData: setQuestions,
         loading, setLoading,
         page, setPage,
-        pageSize, setPageSize,
+        pageSize,
         totalItems, setTotalItems,
         handlePageChange, handlePageSizeChange
     } = useTableState(10);
@@ -139,8 +145,13 @@ export default function AdminQuestionBankPage() {
         () => {
             const base = [
                 {
-                    field: "title",
-                    headerName: "Question",
+                    key: "index",
+                    label: "#",
+                    width: 52,
+                },
+                {
+                    key: "title",
+                    label: "Question",
                     width: 260,
                     render: (value, row) => (
                         <Tooltip title={value || "-"}>
@@ -170,32 +181,32 @@ export default function AdminQuestionBankPage() {
                     ),
                 },
                 {
-                    field: "companyNames",
-                    headerName: "Companies",
+                    key: "companyNames",
+                    label: "Companies",
                     width: 180,
                     render: (value) => (Array.isArray(value) && value.length ? value.join(", ") : "-"),
                 },
                 {
-                    field: "roles",
-                    headerName: "Roles",
+                    key: "roles",
+                    label: "Roles",
                     width: 160,
                     render: (value) => (Array.isArray(value) && value.length ? value.join(", ") : "-"),
                 },
                 {
-                    field: "category",
-                    headerName: "Category",
+                    key: "category",
+                    label: "Category",
                     width: 130,
                     render: (value) => formatEnumLabel(value),
                 },
                 {
-                    field: "level",
-                    headerName: "Level",
+                    key: "level",
+                    label: "Level",
                     width: 100,
                     render: (value) => formatEnumLabel(value),
                 },
                 {
-                    field: "round",
-                    headerName: "Round",
+                    key: "round",
+                    label: "Round",
                     width: 100,
                     render: (value) => formatEnumLabel(value),
                 },
@@ -204,30 +215,30 @@ export default function AdminQuestionBankPage() {
             if (tab === TAB_KEYS.PUBLISHED) {
                 base.push(
                     {
-                        field: "vote",
-                        headerName: "Votes",
+                        key: "vote",
+                        label: "Votes",
                         width: 80,
                         render: (value) => value ?? 0,
                     },
                     {
-                        field: "commentCount",
-                        headerName: "Comments",
+                        key: "commentCount",
+                        label: "Comments",
                         width: 100,
                         render: (value) => value ?? 0,
                     },
                 );
             } else {
                 base.push({
-                    field: "status",
-                    headerName: "Status",
+                    key: "status",
+                    label: "Status",
                     width: 110,
-                    render: () => <StatusChip label="Pending" color="warning" />,
+                    render: () => <Badge variant="warning">Pending</Badge>,
                 });
             }
 
             base.push({
-                field: "createdAt",
-                headerName: "Created",
+                key: "createdAt",
+                label: "Created",
                 width: 130,
                 render: (value) => {
                     if (!value) return "-";
@@ -238,8 +249,8 @@ export default function AdminQuestionBankPage() {
             });
 
             base.push({
-                field: "actions",
-                headerName: "Actions",
+                key: "actions",
+                label: "Actions",
                 width: 80,
                 render: (_, row) => {
                     const actions = [
@@ -275,59 +286,102 @@ export default function AdminQuestionBankPage() {
         [navigate, tab],
     );
 
+    const rows = useMemo(
+        () => questions.map((row, index) => ({
+            ...row,
+            index: page * pageSize + index + 1,
+        })),
+        [questions, page, pageSize],
+    );
+
     return (
-        <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
-            <AdminPageHeader
-                title="Question Bank"
-                subtitle="Moderate incoming contributions and manage published questions."
-                actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchQuestions}>
-                        Refresh
-                    </PrimaryButton>
-                }
-            />
-
-            <Box className="admin-card">
-                <Box sx={{ borderBottom: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
-                    <Tabs value={tab} onChange={handleTabChange} sx={{ px: 2 }}>
-                        <Tab value={TAB_KEYS.PUBLISHED} label="Published Library" />
-                        <Tab value={TAB_KEYS.PENDING} label="Pending Moderation" />
-                    </Tabs>
-                </Box>
-
-                <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', gap: 1.5, alignItems: 'center', bgcolor: 'background.paper' }}>
-                    <SearchInput placeholder="Search by question title..." onSearch={handleSearchChange} />
-                </Box>
-
-                <DataTable
+        <AdminDesignSystemPageShell>
+            <Container maxWidth="xl" sx={{ py: 3 }} className="admin-page">
+                <AdminPageHeader
                     title="Question Bank"
-                    showHeader={false}
-                    showIndex
-                    actions={false}
-                    columns={columns}
-                    data={questions}
-                    totalItems={totalItems}
-                    page={page}
-                    pageSize={pageSize}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={loading}
+                    subtitle="Moderate incoming contributions and manage published questions."
+                    actionButton={
+                        <Button variant="secondary" onClick={fetchQuestions}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                <RefreshIcon sx={{ fontSize: 18 }} />
+                                Refresh
+                            </span>
+                        </Button>
+                    }
                 />
-            </Box>
 
-            <ConfirmModal
-                show={!!moderationTarget}
-                title={moderationTarget?.action === "approve" ? "Approve question" : "Reject question"}
-                message={
-                    moderationTarget?.action === "approve"
-                        ? `Publish "${moderationTarget?.title || "this question"}" to the public library?`
-                        : `Reject "${moderationTarget?.title || "this question"}"? It will not appear in the public library.`
-                }
-                confirmText={moderating ? "Submitting..." : (moderationTarget?.action === "approve" ? "Approve" : "Reject")}
-                cancelText="Cancel"
-                onConfirm={confirmModeration}
-                onCancel={() => !moderating && setModerationTarget(null)}
-            />
-        </Container>
+                <Box className="admin-card">
+                    <Box sx={{ borderBottom: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
+                        <Tabs value={tab} onChange={handleTabChange} sx={{ px: 2 }}>
+                            <Tab value={TAB_KEYS.PUBLISHED} label="Published Library" />
+                            <Tab value={TAB_KEYS.PENDING} label="Pending Moderation" />
+                        </Tabs>
+                    </Box>
+
+                    <Toolbar
+                        group={
+                            <div style={{ minWidth: 280, width: "100%", maxWidth: 420 }}>
+                                <SearchField
+                                    placeholder="Search by question title..."
+                                    value={searchTerm}
+                                    onChange={(e) => handleSearchChange(e.target.value)}
+                                    onClear={() => handleSearchChange("")}
+                                />
+                            </div>
+                        }
+                    />
+
+                    {loading ? (
+                        <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
+                            <Spinner />
+                        </Box>
+                    ) : rows.length === 0 ? (
+                        <Box sx={{ p: 2 }}>
+                            <EmptyState
+                                title="No questions found"
+                                body="Try changing tab or adjusting your search keyword."
+                            />
+                        </Box>
+                    ) : (
+                        <DataGrid columns={columns} rows={rows} striped dense />
+                    )}
+
+                    <TablePagination
+                        component="div"
+                        count={totalItems}
+                        page={page}
+                        onPageChange={(_, newPage) => handlePageChange(newPage)}
+                        rowsPerPage={pageSize}
+                        onRowsPerPageChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
+                        rowsPerPageOptions={[10, 20, 50]}
+                        sx={{
+                            borderTop: "1px solid",
+                            borderColor: "divider",
+                            ".MuiTablePagination-toolbar": {
+                                minHeight: 52,
+                            },
+                            ".MuiTablePagination-select, .MuiTablePagination-displayedRows": {
+                                fontSize: "0.78rem",
+                                color: "text.secondary",
+                            },
+                        }}
+                    />
+                </Box>
+
+                <ConfirmModal
+                    show={!!moderationTarget}
+                    title={moderationTarget?.action === "approve" ? "Approve question" : "Reject question"}
+                    message={
+                        moderationTarget?.action === "approve"
+                            ? `Publish "${moderationTarget?.title || "this question"}" to the public library?`
+                            : `Reject "${moderationTarget?.title || "this question"}"? It will not appear in the public library.`
+                    }
+                    confirmText={moderating ? "Submitting..." : (moderationTarget?.action === "approve" ? "Approve" : "Reject")}
+                    cancelText="Cancel"
+                    onConfirm={confirmModeration}
+                    onCancel={() => !moderating && setModerationTarget(null)}
+                />
+            </Container>
+        </AdminDesignSystemPageShell>
     );
 }

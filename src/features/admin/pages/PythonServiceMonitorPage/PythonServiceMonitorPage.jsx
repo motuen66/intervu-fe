@@ -11,6 +11,7 @@ import {
     Tooltip,
     Chip,
     Container,
+    TablePagination,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -33,11 +34,10 @@ import { adminEndPoints } from "../../services/adminApi";
 import AdminPageHeader from "../../../../common/components/admin/AdminPageHeader";
 import KpiCard from "../../../../common/components/cards/KpiCard";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import { Button } from "../../../../common/design-system";
+import { Button, DataGrid, EmptyState, Spinner } from "../../../../common/design-system";
 import AdminDesignSystemPageShell from "../../components/AdminDesignSystemPageShell";
 import FormSelect from "../../../../common/components/form/FormSelect";
 import FormTextField from "../../../../common/components/form/FormTextField";
-import DataTable from "../../../../common/components/table/DataTable";
 
 const TIMEFRAME_OPTIONS = [
     { value: "24h", label: "Last 24 Hours" },
@@ -386,8 +386,9 @@ export default function PythonServiceMonitorPage() {
     const tableColumns = useMemo(
         () => [
             {
-                field: "timestamp",
-                headerName: "Timestamp",
+                key: "timestamp",
+                label: "Timestamp",
+                width: 180,
                 render: (value) => (
                     <Typography variant="caption" color="text.secondary">
                         {new Date(value).toLocaleString()}
@@ -395,8 +396,9 @@ export default function PythonServiceMonitorPage() {
                 ),
             },
             {
-                field: "useCase",
-                headerName: "Feature",
+                key: "useCase",
+                label: "Feature",
+                width: 260,
                 render: (value, row) => (
                     <Box>
                         <Typography variant="body2" fontWeight={600}>
@@ -412,8 +414,9 @@ export default function PythonServiceMonitorPage() {
                 ),
             },
             {
-                field: "provider",
-                headerName: "Provider",
+                key: "provider",
+                label: "Provider",
+                width: 130,
                 render: (value) => (
                     <Chip
                         label={value}
@@ -429,8 +432,9 @@ export default function PythonServiceMonitorPage() {
                 ),
             },
             {
-                field: "promptTokens",
-                headerName: "Prompt tokens",
+                key: "promptTokens",
+                label: "Prompt tokens",
+                width: 140,
                 render: (value) => (
                     <Typography variant="body2" fontWeight={600}>
                         {Number(value ?? 0).toLocaleString()}
@@ -438,8 +442,9 @@ export default function PythonServiceMonitorPage() {
                 ),
             },
             {
-                field: "completionTokens",
-                headerName: "Completion tokens",
+                key: "completionTokens",
+                label: "Completion tokens",
+                width: 170,
                 render: (value) => (
                     <Typography variant="body2" fontWeight={600}>
                         {Number(value ?? 0).toLocaleString()}
@@ -447,8 +452,9 @@ export default function PythonServiceMonitorPage() {
                 ),
             },
             {
-                field: "totalTokens",
-                headerName: "Total tokens",
+                key: "totalTokens",
+                label: "Total tokens",
+                width: 130,
                 render: (value) => (
                     <Typography variant="body2" fontWeight={700}>
                         {Number(value ?? 0).toLocaleString()}
@@ -456,8 +462,9 @@ export default function PythonServiceMonitorPage() {
                 ),
             },
             {
-                field: "latencyMs",
-                headerName: "Latency (ms)",
+                key: "latencyMs",
+                label: "Latency (ms)",
+                width: 120,
                 render: (value) => (
                     <Typography variant="body2" fontWeight={600} color="text.secondary">
                         {Number(value ?? 0).toLocaleString()}
@@ -466,6 +473,14 @@ export default function PythonServiceMonitorPage() {
             },
         ],
         [],
+    );
+
+    const tableRows = useMemo(
+        () => (metrics?.logs ?? []).map((row, index) => ({
+            ...row,
+            id: row.id ?? `${row.timestamp ?? "log"}-${index}`,
+        })),
+        [metrics?.logs],
     );
 
     return (
@@ -664,17 +679,43 @@ export default function PythonServiceMonitorPage() {
                         Request logs
                     </Typography>
                     <BaseCard sx={{ overflow: "hidden" }}>
-                        <DataTable
-                            columns={tableColumns}
-                            data={metrics?.logs ?? []}
-                            totalItems={totalCount}
+                        {loading ? (
+                            <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
+                                <Spinner />
+                            </Box>
+                        ) : tableRows.length === 0 ? (
+                            <Box sx={{ p: 2 }}>
+                                <EmptyState
+                                    title="No request logs"
+                                    body="No requests match the selected filters."
+                                />
+                            </Box>
+                        ) : (
+                            <DataGrid columns={tableColumns} rows={tableRows} striped dense />
+                        )}
+
+                        <TablePagination
+                            component="div"
+                            count={totalCount}
                             page={page}
-                            pageSize={pageSize}
-                            onPageChange={setPage}
-                            onPageSizeChange={setPageSize}
-                            loading={loading}
-                            actions={false}
-                            showHeader={false}
+                            onPageChange={(_, newPage) => setPage(newPage)}
+                            rowsPerPage={pageSize}
+                            onRowsPerPageChange={(e) => {
+                                setPageSize(parseInt(e.target.value, 10));
+                                setPage(0);
+                            }}
+                            rowsPerPageOptions={[10, 20, 50]}
+                            sx={{
+                                borderTop: "1px solid",
+                                borderColor: "divider",
+                                ".MuiTablePagination-toolbar": {
+                                    minHeight: 52,
+                                },
+                                ".MuiTablePagination-select, .MuiTablePagination-displayedRows": {
+                                    fontSize: "0.78rem",
+                                    color: "text.secondary",
+                                },
+                            }}
                         />
                     </BaseCard>
                 </>
