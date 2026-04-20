@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Container } from '@mui/material';
+import { useState, useEffect, useMemo } from 'react';
+import { Container, Box, TablePagination } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import MapIcon from '@mui/icons-material/Map';
-import { useNavigate } from 'react-router-dom';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { callApi } from '../../../common/utils/apiConnector';
@@ -11,25 +9,32 @@ import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import UserFormModal from '../components/UserFormModal';
-import DataTable from '../../../common/components/table/DataTable';
 import ConfirmModal from '../../../common/components/ConfirmModal';
-import { PrimaryButton } from '../../../common/components/buttons';
 
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
-import SearchInput from '../../../common/components/admin/SearchInput';
-import FilterDropdown from '../../../common/components/admin/FilterDropdown';
 import TableActionsMenu from '../../../common/components/table/TableActionsMenu';
 import useTableState from '../../../hooks/useTableState';
+import {
+    Badge,
+    Button,
+    DataGrid,
+    EmptyState,
+    SearchField,
+    SelectField,
+    Spinner,
+    Toolbar,
+} from '../../../common/design-system';
+import AdminDesignSystemPageShell from '../components/AdminDesignSystemPageShell';
 import './AdminDashboard.css';
 
 export default function UserManagementPage() {
-    const { 
-        data: users, setData: setUsers, 
-        loading, setLoading, 
-        page, setPage, 
-        pageSize, setPageSize, 
-        totalItems, setTotalItems, 
-        handlePageChange, handlePageSizeChange 
+    const {
+        data: users, setData: setUsers,
+        loading, setLoading,
+        page, setPage,
+        pageSize,
+        totalItems, setTotalItems,
+        handlePageChange, handlePageSizeChange
     } = useTableState(10);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -222,12 +227,13 @@ export default function UserManagementPage() {
         return (role || '').toString();
     };
 
-    const getRoleColor = (role) => {
+    const getRoleVariant = (role) => {
         switch (getRoleLabel(role).toUpperCase()) {
-            case 'ADMIN': return 'rgba(248,113,113,0.3)';
-            case 'INTERVIEWER': return 'rgba(59,130,246,0.3)';
-            case 'CANDIDATE': return 'rgba(34,197,94,0.3)';
-            default: return 'rgba(123,97,255,0.3)';
+            case 'ADMIN': return 'error';
+            case 'INTERVIEWER': return 'brand';
+            case 'CANDIDATE': return 'success';
+            case 'COACH': return 'warning';
+            default: return 'neutral';
         }
     };
 
@@ -236,44 +242,57 @@ export default function UserManagementPage() {
         return 'Active';
     };
 
-    const getStatusColor = (status) => {
+    const getStatusVariant = (status) => {
         if (status === 1 || status === 'Inactive') return 'error';
         return 'success';
     };
 
-    const usersColumns = [
-        { field: 'id', headerName: 'ID', width: 70 },
-        { field: 'fullName', headerName: 'Full Name', width: 200 },
-        { field: 'email', headerName: 'Email', width: 250 },
+    const usersColumns = useMemo(() => [
+        { key: 'index', label: '#', width: 52 },
+        { key: 'id', label: 'ID', width: 70 },
+        { key: 'fullName', label: 'Full Name', width: 220, render: (val) => val || '-' },
+        { key: 'email', label: 'Email', width: 260, render: (val) => val || '-' },
         {
-            field: 'role',
-            headerName: 'Role',
-            type: 'chip',
-            render: (val) => getRoleLabel(val),
-            chipColor: (val) => getRoleColor(val)
+            key: 'role',
+            label: 'Role',
+            width: 140,
+            render: (val) => (
+                <Badge variant={getRoleVariant(val)}>{getRoleLabel(val)}</Badge>
+            )
         },
         {
-            field: 'status',
-            headerName: 'Status',
-            type: 'chip',
-            render: (val) => getStatusLabel(val),
-            chipColor: (val) => getStatusColor(val)
+            key: 'status',
+            label: 'Status',
+            width: 130,
+            render: (val) => (
+                <Badge variant={getStatusVariant(val)}>{getStatusLabel(val)}</Badge>
+            )
         },
         {
-            field: 'actions',
-            headerName: 'Actions',
+            key: 'actions',
+            label: 'Actions',
+            width: 110,
             render: (_, row) => {
                 const isDeactivated = row.status === 1 || row.status === 'Inactive';
                 const actions = [
                     { label: 'Edit', icon: <EditIcon fontSize="small" sx={{ color: 'primary.main' }} />, onClick: () => handleEditUser(row) },
-                    isDeactivated 
+                    isDeactivated
                         ? { label: 'Activate', icon: <CheckCircleOutlineIcon fontSize="small" color="success" />, onClick: () => handleActivateClick(row) }
                         : { label: 'Deactivate', icon: <DeleteIcon fontSize="small" color="error" />, onClick: () => handleDeleteClick(row) }
                 ];
                 return <TableActionsMenu actions={actions} />;
             }
         }
-    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], []);
+
+    const rows = useMemo(
+        () => users.map((row, index) => ({
+            ...row,
+            index: page * pageSize + index + 1,
+        })),
+        [users, page, pageSize],
+    );
 
     const roleOptions = [
         { label: 'Candidate', value: 'Candidate' },
@@ -283,90 +302,127 @@ export default function UserManagementPage() {
     ];
 
     return (
-        <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
-            <AdminPageHeader 
-                title="Users Management" 
-                subtitle="Manage user accounts and details."
-                actionButton={
-                    <PrimaryButton
-                        startIcon={<AddIcon />}
-                        onClick={handleCreateUser}
-                    >
-                        Create User
-                    </PrimaryButton>
-                }
-            />
-
-            <div className="admin-card">
-                <div style={{ display: 'flex', gap: '16px', padding: '16px 20px', borderBottom: '1px solid #E2E8F0', backgroundColor: '#fff' }}>
-                    <SearchInput 
-                        placeholder="Search by name, email, or phone" 
-                        onSearch={handleSearchChange} 
-                    />
-                    <FilterDropdown 
-                        options={roleOptions} 
-                        value={roleFilter} 
-                        onChange={handleRoleChange} 
-                        placeholder="All roles" 
-                    />
-                </div>
-                
-                <DataTable
-                    title="Users Table"
-                    showHeader={false}
-                    showIndex
-                    columns={usersColumns}
-                    data={users}
-                    totalItems={totalItems}
-                    page={page}
-                    pageSize={pageSize}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={loading}
-                    actions={false}
+        <AdminDesignSystemPageShell>
+            <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
+                <AdminPageHeader
+                    title="Users Management"
+                    subtitle="Manage user accounts and details."
+                    actionButton={
+                        <Button onClick={handleCreateUser}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <AddIcon sx={{ fontSize: 18 }} />
+                                Create User
+                            </span>
+                        </Button>
+                    }
                 />
-            </div>
 
-            {/* Form Modal */}
-            <UserFormModal
-                open={openFormModal}
-                onClose={() => setOpenFormModal(false)}
-                onSubmit={handleFormSubmit}
-                user={selectedUser}
-                mode={formMode}
-            />
+                <Box className="admin-card">
+                    <Toolbar
+                        group={
+                            <div style={{ minWidth: 280, width: '100%', maxWidth: 420 }}>
+                                <SearchField
+                                    placeholder="Search by name, email, or phone"
+                                    value={searchTerm}
+                                    onChange={(e) => handleSearchChange(e.target.value)}
+                                    onClear={() => handleSearchChange('')}
+                                />
+                            </div>
+                        }
+                        actions={
+                            <div style={{ minWidth: 180 }}>
+                                <SelectField value={roleFilter} onChange={(e) => handleRoleChange(e.target.value)}>
+                                    <option value="all">All roles</option>
+                                    {roleOptions.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </SelectField>
+                            </div>
+                        }
+                    />
 
-            {/* Delete Confirmation Dialog */}
-            <ConfirmModal
-                show={openDeleteDialog}
-                title="Deactivate user"
-                confirmText="Deactivate"
-                cancelText="Cancel"
-                onConfirm={handleDeleteConfirm}
-                onCancel={() => setOpenDeleteDialog(false)}
-                message={
-                    <>
-                        Are you sure you want to deactivate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{"\n\n"}
-                        <span style={{ color: '#d32f2f', fontSize: '0.875rem' }}>This action will set the user's status to Inactive.</span>
-                    </>
-                }
-            />
+                    {loading ? (
+                        <Box sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
+                            <Spinner />
+                        </Box>
+                    ) : rows.length === 0 ? (
+                        <Box sx={{ p: 2 }}>
+                            <EmptyState
+                                title="No users found"
+                                body="Try adjusting your filters to find matching users."
+                            />
+                        </Box>
+                    ) : (
+                        <DataGrid columns={usersColumns} rows={rows} striped dense />
+                    )}
 
-            {/* Activate Confirmation Dialog */}
-            <ConfirmModal
-                show={openActivateDialog}
-                title="Activate user"
-                confirmText="Activate"
-                cancelText="Cancel"
-                onConfirm={handleActivateConfirm}
-                onCancel={() => setOpenActivateDialog(false)}
-                message={
-                    <>
-                        Are you sure you want to activate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{"\n\n"}
-                        <span style={{ color: '#2e7d32', fontSize: '0.875rem' }}>This action will grant the user access to the system again.</span>
-                    </>
-                }
-            />
-        </Container>
+                    <TablePagination
+                        component="div"
+                        count={totalItems}
+                        page={page}
+                        onPageChange={(_, newPage) => handlePageChange(newPage)}
+                        rowsPerPage={pageSize}
+                        onRowsPerPageChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
+                        rowsPerPageOptions={[10, 20, 50]}
+                        sx={{
+                            borderTop: '1px solid',
+                            borderColor: 'divider',
+                            '.MuiTablePagination-toolbar': {
+                                minHeight: 52,
+                            },
+                            '.MuiTablePagination-select, .MuiTablePagination-displayedRows': {
+                                fontSize: '0.78rem',
+                                color: 'text.secondary',
+                            },
+                        }}
+                    />
+                </Box>
+
+                {/* Form Modal */}
+                <UserFormModal
+                    open={openFormModal}
+                    onClose={() => setOpenFormModal(false)}
+                    onSubmit={handleFormSubmit}
+                    user={selectedUser}
+                    mode={formMode}
+                />
+
+                {/* Delete Confirmation Dialog */}
+                <ConfirmModal
+                    show={openDeleteDialog}
+                    title="Deactivate user"
+                    confirmText="Deactivate"
+                    cancelText="Cancel"
+                    onConfirm={handleDeleteConfirm}
+                    onCancel={() => setOpenDeleteDialog(false)}
+                    message={
+                        <>
+                            Are you sure you want to deactivate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{' '}
+                            <span style={{ display: 'block', color: '#d32f2f', fontSize: '0.875rem', marginTop: 8 }}>
+                                This action will set the user&apos;s status to Inactive.
+                            </span>
+                        </>
+                    }
+                />
+
+                {/* Activate Confirmation Dialog */}
+                <ConfirmModal
+                    show={openActivateDialog}
+                    title="Activate user"
+                    confirmText="Activate"
+                    cancelText="Cancel"
+                    onConfirm={handleActivateConfirm}
+                    onCancel={() => setOpenActivateDialog(false)}
+                    message={
+                        <>
+                            Are you sure you want to activate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?{' '}
+                            <span style={{ display: 'block', color: '#2e7d32', fontSize: '0.875rem', marginTop: 8 }}>
+                                This action will grant the user access to the system again.
+                            </span>
+                        </>
+                    }
+                />
+            </Container>
+        </AdminDesignSystemPageShell>
     );
 }
