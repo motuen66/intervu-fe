@@ -1,24 +1,20 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Container, Box, Avatar, Typography } from '@mui/material';
+import { Container, Box, Avatar, Typography, TablePagination } from '@mui/material';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
 import toast from 'react-hot-toast';
-import DataTable from '../../../common/components/table/DataTable';
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
-import SearchInput from '../../../common/components/admin/SearchInput';
 import useTableState from '../../../hooks/useTableState';
+import {
+    DataGrid,
+    EmptyState,
+    SearchField,
+    Spinner,
+    Toolbar,
+} from '../../../common/design-system';
+import AdminDesignSystemPageShell from '../components/AdminDesignSystemPageShell';
 import './AdminDashboard.css';
-
-// Helper: generate initials-based avatar color from name
-const stringToColor = (str = '') => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const hue = Math.abs(hash) % 360;
-    return `hsl(${hue}, 55%, 45%)`;
-};
 
 const getInitials = (name = '') =>
     name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?';
@@ -72,9 +68,14 @@ export default function AdminCoachesPage() {
 
     const columns = useMemo(() => [
         {
+            key: 'index',
+            label: '#',
+            width: 52,
+        },
+        {
             // CoachAdminDto: fullName, email
-            field: 'fullName',
-            headerName: 'Coach',
+            key: 'fullName',
+            label: 'Coach',
             width: 240,
             render: (val, row) => (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -101,8 +102,8 @@ export default function AdminCoachesPage() {
         },
         {
             // CoachAdminDto: specialization (joined skills list)
-            field: 'specialization',
-            headerName: 'Specialization',
+            key: 'specialization',
+            label: 'Specialization',
             width: 220,
             render: (val) => val || (
                 <Typography sx={{ fontSize: '12px', color: 'text.disabled', fontStyle: 'italic' }}>
@@ -112,15 +113,15 @@ export default function AdminCoachesPage() {
         },
         {
             // CoachAdminDto: experience (int, years)
-            field: 'experience',
-            headerName: 'Experience',
+            key: 'experience',
+            label: 'Experience',
             width: 120,
             render: (val) => val != null ? `${val} yr${val !== 1 ? 's' : ''}` : '-'
         },
         {
             // CoachAdminDto: createdAt
-            field: 'createdAt',
-            headerName: 'Joined',
+            key: 'createdAt',
+            label: 'Joined',
             width: 120,
             render: (val) => {
                 if (!val) return '-';
@@ -130,7 +131,16 @@ export default function AdminCoachesPage() {
         },
     ], []);
 
+    const rows = useMemo(
+        () => coaches.map((row, index) => ({
+            ...row,
+            index: page * pageSize + index + 1,
+        })),
+        [coaches, page, pageSize],
+    );
+
     return (
+        <AdminDesignSystemPageShell>
         <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
             <AdminPageHeader
                 title="Coaches"
@@ -138,32 +148,56 @@ export default function AdminCoachesPage() {
             />
 
             <Box className="admin-card">
-                <Box sx={{
-                    display: 'flex', gap: '16px',
-                    padding: '16px 20px',
-                    borderBottom: '1px solid #E2E8F0',
-                    bgcolor: '#fff'
-                }}>
-                    <SearchInput
-                        placeholder="Search by name or email"
-                        onSearch={handleSearchChange}
-                    />
-                </Box>
+                <Toolbar
+                    group={
+                        <div style={{ minWidth: 280, width: '100%', maxWidth: 420 }}>
+                            <SearchField
+                                placeholder="Search by name or email"
+                                value={searchTerm}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                onClear={() => handleSearchChange('')}
+                            />
+                        </div>
+                    }
+                />
 
-                <DataTable
-                    showHeader={false}
-                    showIndex
-                    columns={columns}
-                    data={coaches}
-                    totalItems={totalItems}
+                {loading ? (
+                    <Box sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
+                        <Spinner />
+                    </Box>
+                ) : rows.length === 0 ? (
+                    <Box sx={{ p: 2 }}>
+                        <EmptyState
+                            title="No coaches found"
+                            body="Try adjusting your search to find coach profiles."
+                        />
+                    </Box>
+                ) : (
+                    <DataGrid columns={columns} rows={rows} striped dense />
+                )}
+
+                <TablePagination
+                    component="div"
+                    count={totalItems}
                     page={page}
-                    pageSize={pageSize}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={loading}
-                    actions={false}
+                    onPageChange={(_, newPage) => handlePageChange(newPage)}
+                    rowsPerPage={pageSize}
+                    onRowsPerPageChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
+                    rowsPerPageOptions={[10, 20, 50]}
+                    sx={{
+                        borderTop: '1px solid',
+                        borderColor: 'divider',
+                        '.MuiTablePagination-toolbar': {
+                            minHeight: 52,
+                        },
+                        '.MuiTablePagination-select, .MuiTablePagination-displayedRows': {
+                            fontSize: '0.78rem',
+                            color: 'text.secondary',
+                        },
+                    }}
                 />
             </Box>
         </Container>
+        </AdminDesignSystemPageShell>
     );
 }

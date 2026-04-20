@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import './Field.css';
 
 const SearchIcon = () => (
@@ -14,11 +13,14 @@ const ClearIcon = () => (
   </svg>
 );
 
-export function SearchField({ id, label, hint, error, onClear, value, className = '', ...props }) {
+export function SearchField({ id, label, hint, error, onClear, value, tone = 'secondary', className = '', ...props }) {
   const fieldId = id || `claude-search-${Math.random().toString(36).slice(2, 8)}`;
+  const hasValue = value != null && String(value).length > 0;
   const wrapClasses = [
     'claude-field',
     'claude-field--with-icon',
+    tone === 'secondary' && 'claude-field--tone-secondary',
+    hasValue && 'claude-field--has-value',
     error && 'claude-field--invalid',
     className,
   ].filter(Boolean).join(' ');
@@ -26,12 +28,12 @@ export function SearchField({ id, label, hint, error, onClear, value, className 
   return (
     <div className={wrapClasses}>
       {label && <label className="claude-field__label" htmlFor={fieldId}>{label}</label>}
-      <div style={{ position: 'relative' }}>
+      <div className="claude-field__control">
         <span className="claude-field__icon"><SearchIcon /></span>
         <input
           id={fieldId}
           type="search"
-          className="claude-field__input"
+          className={`claude-field__input${tone === 'secondary' ? ' claude-field__input--secondary' : ''}`}
           value={value}
           aria-invalid={!!error}
           {...props}

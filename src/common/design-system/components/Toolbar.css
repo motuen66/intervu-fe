@@ -30,4 +30,9 @@
     gap: var(--claude-space-3);
     flex-wrap: wrap;
   }
+
+  /* Keep toolbar divider from visually colliding with DataGrid top border */
+  .claude-toolbar + .claude-grid-wrap {
+    margin-top: var(--claude-space-3);
+  }
 }
