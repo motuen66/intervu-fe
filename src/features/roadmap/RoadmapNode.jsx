@@ -1,10 +1,13 @@
 import React from "react";
+import { useTheme } from "@mui/material/styles";
 import { Handle, Position } from "@xyflow/react";
 import SkillStatusBadge from "./components/SkillStatusBadge";
 import SkillProgressBar from "./components/SkillProgressBar";
 import { getStatusConfig } from "./components/statusConfig";
+import { formatVndCurrency } from "./utils/formatCurrency";
 
-const RoadmapNode = ({ data }) => {
+const RoadmapNode = ({ data, selected }) => {
+    const theme = useTheme();
     const status = data.status ?? "Missing";
     const config = getStatusConfig(status);
     const isLocked = status === "Missing";
@@ -20,10 +23,13 @@ const RoadmapNode = ({ data }) => {
                 padding: "16px",
                 borderRadius: "12px",
                 background: "#fff",
-                border: `1px solid ${isLocked ? "#F1F5F9" : "#E2E8F0"}`,
+                border: selected
+                    ? `2px solid ${theme.palette.secondary.main}`
+                    : `1px solid ${isLocked ? "#F1F5F9" : "#E2E8F0"}`,
                 boxShadow: "0 4px 12px rgba(15,23,42,0.05)",
                 width: "280px",
                 fontFamily: "sans-serif",
+                transition: "border-color 140ms ease",
             }}
         >
             <Handle type="target" position={Position.Top} style={{ background: "#64748B" }} />
@@ -68,8 +74,12 @@ const RoadmapNode = ({ data }) => {
                     title={data.recommendedCoach.name}
                 >
                     Coach: {data.recommendedCoach.name}
-                    {data.recommendedService?.price != null ? ` · $${data.recommendedService.price}` : ""}
-                    {data.recommendedService?.duration_minutes != null ? ` · ${data.recommendedService.duration_minutes}min` : ""}
+                    {data.recommendedService?.price != null
+                        ? ` · ${formatVndCurrency(data.recommendedService.price)}`
+                        : ""}
+                    {data.recommendedService?.duration_minutes != null
+                        ? ` · ${data.recommendedService.duration_minutes}min`
+                        : ""}
                 </div>
             ) : null}
 

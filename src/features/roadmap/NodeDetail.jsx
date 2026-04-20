@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import SkillStatusBadge from "./components/SkillStatusBadge";
 import SkillProgressBar from "./components/SkillProgressBar";
+import { formatVndCurrency } from "./utils/formatCurrency";
 
 const PHASE_TABS = {
     RECOMMENDATIONS: "recommendations",
@@ -639,7 +640,9 @@ function NodeDetail({ phase, node, readOnly = false }) {
                                     {nodeService ? (
                                         <div style={{ color: "#475569", fontSize: "13px", marginTop: "2px" }}>
                                             {nodeService.interview_type_name}
-                                            {nodeService.price != null ? ` · $${nodeService.price}` : ""}
+                                            {nodeService.price != null
+                                                ? ` · ${formatVndCurrency(nodeService.price)}`
+                                                : ""}
                                             {nodeService.duration_minutes != null
                                                 ? ` · ${nodeService.duration_minutes}min`
                                                 : ""}
