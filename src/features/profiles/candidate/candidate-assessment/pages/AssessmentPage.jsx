@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
@@ -8,7 +8,7 @@ import ProcessingState from "../components/ProcessingState";
 import ResultDashboard from "../components/ResultDashboard";
 import RoadmapDashboard from "../../../../roadmap/RoadmapDashboard";
 import { getAssessmentDataFromCache, isAssessmentCacheValid } from "../../../../../common/utils/assessmentCache";
-import { ASSESSMENT_DATA_STATE, getAssessmentState, mapAssessmentPayloadToResult } from "../services/assessmentApi";
+import { ASSESSMENT_DATA_STATE, getAssessmentState, mapAssessmentPayloadToResult } from "../helpers/assessmentHelper";
 
 const steps = ["Survey", "Analysis", "Results", "Roadmap"];
 
@@ -28,6 +28,8 @@ function AssessmentFlow() {
     const currentUser = useSelector((state) => state.auth?.userData);
     const userId = currentUser?.id;
     const [searchParams] = useSearchParams();
+    const stepParam = useMemo(() => searchParams.get("step"), [searchParams]);
+    const initialStateCheckedRef = useRef(null);
     const hasRoadmap = Boolean(
         roadmap &&
             ((Array.isArray(roadmap?.today) && roadmap.today.length > 0) ||
@@ -65,12 +67,12 @@ function AssessmentFlow() {
             updateMatchPercentage(cached.matchPercentage);
         }
 
-        if (!searchParams.get("step") && typeof cached.currentStep === "number" && cached.currentStep >= 3) {
+        if (!stepParam && typeof cached.currentStep === "number" && cached.currentStep >= 3) {
             setCurrentStep(Math.min(4, Math.max(1, cached.currentStep)));
         }
     }, [
         answers,
-        searchParams,
+        stepParam,
         setAnswers,
         setCurrentStep,
         setRoadmap,
@@ -82,33 +84,41 @@ function AssessmentFlow() {
     ]);
 
     useEffect(() => {
-        const step = searchParams.get("step");
-
-        if (step === "result" && skillScores.length > 0) {
+        if (stepParam === "result" && skillScores.length > 0) {
             setCurrentStep(3);
             return;
         }
 
-        if (step === "roadmap") {
+        if (stepParam === "roadmap") {
             if (hasRoadmap) {
                 setCurrentStep(4);
             } else if (skillScores.length > 0) {
                 setCurrentStep(3);
             }
         }
-    }, [hasRoadmap, searchParams, setCurrentStep, skillScores.length]);
+    }, [hasRoadmap, setCurrentStep, skillScores.length, stepParam]);
+
+    useEffect(() => {
+        initialStateCheckedRef.current = null;
+    }, [stepParam, userId]);
 
     useEffect(() => {
         let cancelled = false;
 
         const applyInitialStepFromBackend = async () => {
-            if (!userId || searchParams.get("step") || skillScores.length > 0) {
+            if (!userId || stepParam || skillScores.length > 0) {
                 return;
             }
 
             if (isAssessmentCacheValid(userId)) {
                 return;
             }
+
+            const requestKey = `${userId}:no-step`;
+            if (initialStateCheckedRef.current === requestKey) {
+                return;
+            }
+            initialStateCheckedRef.current = requestKey;
 
             try {
                 const assessmentState = await getAssessmentState(userId);
@@ -144,12 +154,12 @@ function AssessmentFlow() {
             cancelled = true;
         };
     }, [
-        searchParams,
         setAnswers,
         setCurrentStep,
         setSkillScores,
         setSurveyResult,
         skillScores.length,
+        stepParam,
         updateMatchPercentage,
         userId,
     ]);

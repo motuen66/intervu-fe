@@ -6,7 +6,7 @@ import {
     ASSESSMENT_DATA_STATE,
     getAssessmentState,
     setAssessmentForceRequired,
-} from "../../features/profiles/candidate/candidate-assessment/services/assessmentApi";
+} from "../../features/profiles/candidate/candidate-assessment/helpers/assessmentHelper";
 
 function CandidateAssessmentGate({ children }) {
     const navigate = useNavigate();

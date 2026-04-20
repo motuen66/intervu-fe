@@ -32,13 +32,12 @@ import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
 import SportsEsportsRoundedIcon from "@mui/icons-material/SportsEsportsRounded";
 import { useNavigate } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
+import { assessmentEndPoints } from "../services/assessmentApi.js";
 import {
-    assessmentEndPoints,
     mapAssessmentPayloadToResult,
-    saveAssessmentAnswers,
     saveSkippedAssessment,
     setAssessmentForceRequired,
-} from "../services/assessmentApi";
+} from "../helpers/assessmentHelper";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import {
@@ -340,15 +339,18 @@ const buildGeneratedAssessment = (data) => {
     };
 };
 
-const buildFallbackSurveyResult = (responses) => ({
-    summaryObject: {
-        generated: {
-            Questions: responses.map((response) => ({
-                Skill: response.skill,
-                SelectedLevel: response.selectedLevel,
-            })),
-        },
+const buildFallbackSurveyResult = (profile, responses) => ({
+    userId: null,
+    summaryText: "",
+    answer: {
+        profile,
+        responses,
+        overallScore: 0,
+        overallLevel: "None",
     },
+    target: {},
+    current: { skills: [] },
+    missing: [],
 });
 
 const createFallbackQuestions = () => [
@@ -786,8 +788,6 @@ const ChatSurvey = () => {
         const domain = normalizeToArray(setupForm.domain || "");
         const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
         const derivedSkills = buildStackDrivenSkills(techstack, finalResponses);
-        const missingSkills = derivedSkills.filter((item) => item.status === "missing").map((item) => item.skillKey);
-        const weakSkills = derivedSkills.filter((item) => item.status === "weak").map((item) => item.skillKey);
         const answerJson = {
             profile: {
                 role,
@@ -811,31 +811,8 @@ const ChatSurvey = () => {
             responses: finalResponses,
         };
         const payload = {
-            UserId: userId,
-            AssessmentName: `${role || "Candidate"} Assessment`,
-            Responses: finalResponses.map((item) => ({
-                Phase: item.phase,
-                Skill: item.skill,
-                SelectedLevel: item.selectedLevel,
-            })),
-            Target: { Roles: role ? [role] : [], Level: level, SkillsTarget: techstack },
-            Current: {
-                Skills: derivedSkills.map((item) => ({
-                    Skill: item.skillKey,
-                    Level: item.selectedLevel,
-                    SfiaLevel: null,
-                })),
-            },
-            Gap: { Missing: missingSkills, Weak: weakSkills },
-            Roadmap: {
-                roadmap_metadata: {
-                    target_role: role,
-                    target_level: level,
-                    total_phases: 0,
-                },
-                phases: [],
-            },
-            Answer: answerSnapshot,
+            userId,
+            answer: answerSnapshot,
         };
 
         setAnswers({
@@ -851,38 +828,17 @@ const ChatSurvey = () => {
         await runBotMessage("Thanks. I'm analyzing your answers now.", { processingMs: 1500 });
 
         try {
-            let processResult;
-            try {
-                processResult = await callApi({
-                    method: METHOD.POST,
-                    endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES(),
-                    arg: payload,
-                    alertErrorMessage: false,
-                    useGlobalLoading: false,
-                });
-            } catch (error) {
-                const processUserIdError = error?.response?.data?.errors?.userId?.[0] || "";
-                if (!String(processUserIdError).includes("'process'")) {
-                    throw error;
-                }
-
-                processResult = await callApi({
-                    method: METHOD.POST,
-                    endpoint: assessmentEndPoints.PROCESS_SURVEY_RESPONSES_FALLBACK(),
-                    arg: payload,
-                    alertErrorMessage: true,
-                    useGlobalLoading: false,
-                });
-            }
+            const processResult = await callApi({
+                method: METHOD.POST,
+                // MIGRATION: evaluate-assessment now requires payload shape { answer: { profile, responses } }
+                endpoint: assessmentEndPoints.EVALUATE_ASSESSMENT(),
+                arg: payload,
+                alertErrorMessage: true,
+                useGlobalLoading: false,
+            });
 
             if (!processResult?.success) {
-                throw new Error("Process survey failed.");
-            }
-
-            try {
-                await saveAssessmentAnswers(payload);
-            } catch (saveError) {
-                console.warn("Save assessment answers failed:", saveError);
+                throw new Error("Evaluate assessment failed.");
             }
 
             const mappedResult = mapAssessmentPayloadToResult(processResult?.data, userId);
@@ -898,16 +854,14 @@ const ChatSurvey = () => {
                     processingPayload: payload,
                 });
                 setRoadmap(mappedResult.roadmap || { today: [], weeks: [] });
-                setSurveyResult(
-                    processResult?.data || mappedResult.surveyResult || buildFallbackSurveyResult(finalResponses),
-                );
+                setSurveyResult(mappedResult.surveyResult || processResult?.data || buildFallbackSurveyResult(answerSnapshot.profile, finalResponses));
             } else {
                 setAnswers((prev) => ({
                     ...(prev || {}),
                     answerJson,
                     processingPayload: payload,
                 }));
-                setSurveyResult(processResult?.data || buildFallbackSurveyResult(finalResponses));
+                setSurveyResult(processResult?.data || buildFallbackSurveyResult(answerSnapshot.profile, finalResponses));
             }
         } catch (error) {
             console.error(error);
@@ -916,7 +870,7 @@ const ChatSurvey = () => {
                 answerJson,
                 processingPayload: payload,
             }));
-            setSurveyResult(buildFallbackSurveyResult(finalResponses));
+            setSurveyResult(buildFallbackSurveyResult(answerSnapshot.profile, finalResponses));
         } finally {
             if (mountedRef.current) {
                 setIsSubmitting(false);

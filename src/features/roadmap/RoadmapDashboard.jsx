@@ -7,7 +7,9 @@ import { Check, Layers3, Link2, RefreshCw, Sparkles, Target, TrendingUp, UserRou
 import Roadmap from "./Roadmap";
 import NodeDetail from "./NodeDetail";
 import RoadmapSkeleton from "./RoadmapSkeleton";
-import { assessmentApi } from "../profiles/candidate/candidate-assessment/services/assessmentApi";
+import { METHOD } from "../../common/constants/api";
+import { callApi } from "../../common/utils/apiConnector";
+import { assessmentEndPoints } from "../profiles/candidate/candidate-assessment/services/assessmentApi.js";
 import { PrimaryButton, SecondaryButton } from "../../common/components/buttons";
 import useGlobalLoading from "../../common/hooks/useGlobalLoading";
 import { getMonthlyWins, recordRoadmapSnapshot } from "./utils/roadmapSnapshots";
@@ -294,9 +296,15 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
     const runGenerate = useCallback(
         async ({ forceRegenerate }) => {
             if (!effectiveUserId || effectiveUserId === EMPTY_GUID) return null;
-            const generateResponse = await assessmentApi.generateRoadmapFromSurvey({
-                userId: effectiveUserId,
-                forceRegenerate,
+            const generateResponse = await callApi({
+                method: METHOD.POST,
+                endpoint: assessmentEndPoints.GENERATE_ROADMAP(),
+                arg: {
+                    userId: effectiveUserId,
+                    forceRegenerate,
+                },
+                alertErrorMessage: false,
+                useGlobalLoading: false,
             });
             return extractRoadmapFromResponse(generateResponse);
         },
@@ -367,7 +375,12 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
             let syncError = null;
 
             try {
-                const fetchResponse = await assessmentApi.getRoadmapByUserId(effectiveUserId);
+                const fetchResponse = await callApi({
+                    method: METHOD.GET,
+                    endpoint: assessmentEndPoints.GET_ROADMAP(effectiveUserId),
+                    alertErrorMessage: false,
+                    useGlobalLoading: false,
+                });
                 nextRoadmap = extractRoadmapFromResponse(fetchResponse);
                 shouldGenerateRoadmap = !hasRoadmapContent(nextRoadmap);
             } catch (err) {

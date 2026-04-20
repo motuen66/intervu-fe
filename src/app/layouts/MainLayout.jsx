@@ -18,7 +18,7 @@ import CandidateAssessmentGate from "../../common/components/CandidateAssessment
 import Navbar from "../../common/components/Navbar/Navbar";
 import AdminSidebar from "../../features/admin/components/AdminSidebar";
 import usePageTracking from "../../hooks/usePageTracking";
-import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/services/assessmentApi";
+import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/helpers/assessmentHelper";
 
 const MainLayout = () => {
     // automatic SPA page tracking for routes rendered inside MainLayout

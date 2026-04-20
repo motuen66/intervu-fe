@@ -37,24 +37,32 @@ const targetLevelMap = [
 ];
 
 const ProcessingState = () => {
-    const { answers, surveyResult, setSkillScores, updateMatchPercentage, nextStep } = useAssessment();
+    const { answers, setSkillScores, updateMatchPercentage, nextStep } = useAssessment();
     const [progress, setProgress] = useState(0);
     const [statusIndex, setStatusIndex] = useState(0);
 
     const profile = answers?.profile || {};
     const processedSkills = useMemo(() => {
-        if (Array.isArray(answers?.answerJson?.skillScores) && answers.answerJson.skillScores.length > 0) {
-            return answers.answerJson.skillScores;
-        }
+        try {
+            if (Array.isArray(answers?.answerJson?.skillScores) && answers.answerJson.skillScores.length > 0) {
+                return answers.answerJson.skillScores;
+            }
 
-        return buildSkillScores(surveyResult, answers);
-    }, [answers, surveyResult]);
+            return buildSkillScores(answers);
+        } catch {
+            return [];
+        }
+    }, [answers]);
     const matchPercentage = useMemo(() => {
-        if (Number.isFinite(Number(answers?.answerJson?.matchPercentage))) {
-            return Number(answers.answerJson.matchPercentage);
-        }
+        try {
+            if (Number.isFinite(Number(answers?.answerJson?.matchPercentage))) {
+                return Number(answers.answerJson.matchPercentage);
+            }
 
-        return calculateMatchPercentage(processedSkills);
+            return calculateMatchPercentage(processedSkills);
+        } catch {
+            return 35;
+        }
     }, [answers, processedSkills]);
     const statuses = useMemo(
         () => [
@@ -86,8 +94,10 @@ const ProcessingState = () => {
             window.clearInterval(progressInterval);
             window.clearInterval(statusInterval);
 
-            setSkillScores(processedSkills);
-            updateMatchPercentage(matchPercentage);
+            try {
+                setSkillScores(processedSkills);
+                updateMatchPercentage(matchPercentage);
+            } catch {}
 
             if (isCancelled) {
                 return;
@@ -185,7 +195,7 @@ const ProcessingState = () => {
     );
 };
 
-function buildSkillScores(surveyResult, answers) {
+function buildSkillScores(answers) {
     const targetLevel = getTargetLevel(answers?.profile?.level);
 
     if (Array.isArray(answers?.derivedSkills) && answers.derivedSkills.length > 0) {
@@ -213,13 +223,7 @@ function buildSkillScores(surveyResult, answers) {
         responseMap.set((item.skill || "").toLowerCase(), item);
     });
 
-    const surveyQuestions = Object.values(surveyResult?.summaryObject || {}).flatMap((group) => group?.Questions || []);
-    const skillSource = surveyQuestions.length
-        ? surveyQuestions.map((question) => ({
-              skill: question?.Skill,
-              selectedLevel: question?.SelectedLevel,
-          }))
-        : answers?.responses || [];
+    const skillSource = answers?.responses || [];
 
     const normalizedSkills = skillSource
         .map((item) => {
