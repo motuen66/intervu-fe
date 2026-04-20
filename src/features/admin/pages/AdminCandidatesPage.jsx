@@ -366,9 +366,9 @@ export default function AdminCandidatesPage() {
                     message={
                         <>
                             Are you sure you want to deactivate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
-                            <span style={{ display: 'block', color: '#d32f2f', fontSize: '0.875rem', marginTop: 8 }}>
+                            <Typography component="span" sx={{ display: 'block', color: 'error.main', fontSize: '0.875rem', mt: 1 }}>
                                 This will set the user&apos;s status to Inactive.
-                            </span>
+                            </Typography>
                         </>
                     }
                 />
@@ -383,9 +383,9 @@ export default function AdminCandidatesPage() {
                     message={
                         <>
                             Activate <strong>{selectedUser?.fullName || selectedUser?.email}</strong>?
-                            <span style={{ display: 'block', color: '#2e7d32', fontSize: '0.875rem', marginTop: 8 }}>
+                            <Typography component="span" sx={{ display: 'block', color: 'success.main', fontSize: '0.875rem', mt: 1 }}>
                                 This will restore the user&apos;s access to the platform.
-                            </span>
+                            </Typography>
                         </>
                     }
                 />

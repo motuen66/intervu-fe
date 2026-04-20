@@ -651,7 +651,9 @@ export default function AdminBroadcastPage() {
                         />
                     </Box>
                 ) : (
-                    <DataGrid columns={logColumns} rows={logRows} striped dense />
+                    <Box sx={{ px: 2.5, py: 2 }}>
+                        <DataGrid columns={logColumns} rows={logRows} striped dense />
+                    </Box>
                 )}
 
                 <TablePagination
