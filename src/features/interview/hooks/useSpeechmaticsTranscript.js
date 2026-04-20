@@ -21,7 +21,6 @@ function getRoleTranscriptStorageKey(roomId, role) {
     return `transcript_role_${roomId}_${getDisplayRole(role)}`;
 }
 
-// Optimized AudioWorklet script with buffering to reduce main-thread traffic
 const workletCode = `
 class PCMProcessor extends AudioWorkletProcessor {
   constructor() {
@@ -35,12 +34,9 @@ class PCMProcessor extends AudioWorkletProcessor {
     const input = inputs[0];
     if (input && input.length > 0) {
       const channelData = input[0];
-      
       for (let i = 0; i < channelData.length; i++) {
         this.buffer[this.bufferIndex++] = channelData[i];
-        
         if (this.bufferIndex >= this.bufferSize) {
-          // Send a copy of the buffer to the main thread
           this.port.postMessage(this.buffer);
           this.bufferIndex = 0;
         }
@@ -53,19 +49,13 @@ registerProcessor('pcm-processor', PCMProcessor);
 `;
 
 function getPreferredMediaRecorderOptions() {
-    const candidates = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/ogg;codecs=opus",
-    ];
-
+    const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
     if (typeof MediaRecorder === "undefined") return null;
     for (const mimeType of candidates) {
         if (typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(mimeType)) {
             return { mimeType };
         }
     }
-
     return null;
 }
 
@@ -73,11 +63,12 @@ export function useSpeechmaticsTranscript({
     roomId,
     isEnabled = false,
     isMicOn = false,
-    audioStream = null,
+    audioStream = null, // USED FOR STORAGE (Mixed Stream)
+    transcriptionStream = null, // USED FOR TRANSCRIPTION (Local Mic)
     isTranscriptionEnabled = false,
     speechmaticsApiKey = import.meta.env.VITE_SPEECHMATICS_API_KEY,
     onTranscriptUpdate = null,
-    user
+    user,
 }) {
     const mediaRecorderRef = useRef(null);
     const audioContextRef = useRef(null);
@@ -109,85 +100,67 @@ export function useSpeechmaticsTranscript({
         }
     }, [roomId]);
 
-    // Debounced localStorage persistence to avoid UI lag
     useEffect(() => {
         if (!roomId || transcriptHistory.length === 0) return;
-
         const timer = setTimeout(() => {
             try {
                 localStorage.setItem(getCombinedTranscriptStorageKey(roomId), JSON.stringify(transcriptHistory));
-                
-                // Also update role-specific storage
-                const rolesInHistory = [...new Set(transcriptHistory.map(item => item.rawRole))].filter(r => r !== undefined);
-                rolesInHistory.forEach(role => {
+                const rolesInHistory = [...new Set(transcriptHistory.map((item) => item.rawRole))].filter(
+                    (r) => r !== undefined,
+                );
+                rolesInHistory.forEach((role) => {
                     const displayRole = getDisplayRole(role);
-                    const roleTranscript = transcriptHistory.filter(i => i.role === displayRole);
+                    const roleTranscript = transcriptHistory.filter((i) => i.role === displayRole);
                     localStorage.setItem(getRoleTranscriptStorageKey(roomId, role), JSON.stringify(roleTranscript));
                 });
             } catch (e) {
                 console.error("Failed to save transcript to localStorage", e);
             }
         }, 1000);
-
         return () => clearTimeout(timer);
     }, [transcriptHistory, roomId]);
 
     const addTranscriptItem = useCallback((text, role) => {
-        if (!text || !text.trim()) return;
-        
-        // ONLY take transcript from user with role coach/interviewer
-        if (Number(role) !== ROLES.INTERVIEWER) return;
-
+        if (!text || !text.trim() || Number(role) !== ROLES.INTERVIEWER) return;
         const displayRole = getDisplayRole(role);
-
         setTranscriptHistory((prev) => {
             const lastItem = prev[prev.length - 1];
             if (lastItem && lastItem.role === displayRole) {
                 const newHistory = [...prev];
-                newHistory[newHistory.length - 1] = { 
-                    ...lastItem, 
-                    text: `${lastItem.text} ${text}`.trim() 
-                };
+                newHistory[newHistory.length - 1] = { ...lastItem, text: `${lastItem.text} ${text}`.trim() };
                 return newHistory;
             } else {
                 const newIndex = lastItem ? lastItem.index + 1 : 1;
-                return [...prev, { 
-                    index: newIndex, 
-                    role: displayRole, 
-                    text: text.trim(),
-                    rawRole: role 
-                }];
+                return [...prev, { index: newIndex, role: displayRole, text: text.trim(), rawRole: role }];
             }
         });
     }, []);
 
     // --- API Upload ---
-    const uploadChunk = useCallback(async (blob, sequence) => {
-        if (!blob || blob.size === 0 || !roomId) return;
-        try {
-            const arrayBuffer = await blob.arrayBuffer();
-            const byteArray = Array.from(new Uint8Array(arrayBuffer));
-            console.log(`[AudioRecorder] Uploading chunk ${sequence} (${blob.size} bytes) for room ${roomId}`);
-            
-            // Pass useGlobalLoading: false to prevent background uploads from triggering the global spinner
-            await callApi({
-                method: METHOD.POST,
-                endpoint: interviewEndPoints.STORE_AUDIO_CHUNK,
-                arg: {
-                    audioData: byteArray,
-                    recordingSessionId: roomId,
-                    sequenceNumber: sequence
-                },
-                useGlobalLoading: false
-            });
-        } catch (error) {
-            console.error("[AudioRecorder] Upload error:", error);
-        }
-    }, [roomId]);
+    const uploadChunk = useCallback(
+        async (blob, sequence) => {
+            if (!blob || blob.size === 0 || !roomId) return;
+            try {
+                const arrayBuffer = await blob.arrayBuffer();
+                const byteArray = Array.from(new Uint8Array(arrayBuffer));
+                await callApi({
+                    method: METHOD.POST,
+                    endpoint: interviewEndPoints.STORE_AUDIO_CHUNK,
+                    arg: { audioData: byteArray, recordingSessionId: roomId, sequenceNumber: sequence },
+                    useGlobalLoading: false,
+                });
+            } catch (error) {
+                console.error("[AudioRecorder] Upload error:", error);
+            }
+        },
+        [roomId],
+    );
 
     const flushAndUpload = useCallback(async () => {
         if (accumulatedBlobs.current.length === 0) return;
+
         console.log(`[AudioRecorder] Flushing ${accumulatedBlobs.current.length} blobs...`);
+
         const blobsToUpload = [...accumulatedBlobs.current];
         accumulatedBlobs.current = [];
         lastUploadTime.current = Date.now();
@@ -197,171 +170,89 @@ export function useSpeechmaticsTranscript({
     }, [uploadChunk]);
 
     // --- Speechmatics ---
-    const clearReconnectTimer = useCallback(() => {
-        if (reconnectTimerRef.current) {
-            clearTimeout(reconnectTimerRef.current);
-            reconnectTimerRef.current = null;
-        }
-    }, []);
-
     const scheduleReconnect = useCallback(() => {
         if (reconnectTimerRef.current) return;
         reconnectTimerRef.current = setTimeout(() => {
             reconnectTimerRef.current = null;
-            if (
-                isEnabled &&
-                isMicOn &&
-                isTranscriptionEnabled &&
-                audioStream &&
-                !speechmaticsClientRef.current &&
-                !isStartingSpeechmaticsRef.current
-            ) {
-                startSpeechmatics();
-            }
+            if (isEnabled && isMicOn && isTranscriptionEnabled && transcriptionStream) startSpeechmatics();
         }, 1500);
-    }, [audioStream, isEnabled, isMicOn, isTranscriptionEnabled]);
+    }, [transcriptionStream, isEnabled, isMicOn, isTranscriptionEnabled]);
 
     const stopSpeechmatics = useCallback(async () => {
         speechmaticsSessionIdRef.current += 1;
-        clearReconnectTimer();
+        if (reconnectTimerRef.current) {
+            clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = null;
+        }
         isStartingSpeechmaticsRef.current = false;
         if (speechmaticsClientRef.current) {
             try {
-                console.log("[Speechmatics] Stopping client...");
                 await speechmaticsClientRef.current.stopRecognition({ noTimeout: true });
-            } catch (e) {
-                console.error("[Speechmatics] Error stopping client:", e);
-            }
+            } catch (e) { }
             speechmaticsClientRef.current = null;
         }
         setIsTranscribing(false);
         setInterimTranscript("");
-    }, [clearReconnectTimer]);
+    }, []);
 
     const startSpeechmatics = useCallback(async () => {
         if (speechmaticsClientRef.current || isStartingSpeechmaticsRef.current) return;
-        if (!speechmaticsApiKey || !audioStream || !isTranscriptionEnabled) return;
-        const hasEnabledAudioTrack = audioStream
-            ?.getAudioTracks()
-            ?.some((track) => track.readyState === "live" && track.enabled);
-        if (!hasEnabledAudioTrack) return;
+        if (!speechmaticsApiKey || !transcriptionStream || !isTranscriptionEnabled) return;
 
         const sessionId = speechmaticsSessionIdRef.current + 1;
         speechmaticsSessionIdRef.current = sessionId;
         isStartingSpeechmaticsRef.current = true;
-        clearReconnectTimer();
 
         try {
             const client = new RealtimeClient();
-            
             client.addEventListener("receiveMessage", ({ data }) => {
                 if (speechmaticsSessionIdRef.current !== sessionId) return;
-
-                if (data.message === "RecognitionStarted") {
-                    setIsTranscribing(true);
-                }
-
                 if (data.message === "AddTranscript") {
-                    setIsTranscribing(true);
                     let text = "";
-                    for (const result of data.results) {
+                    for (const result of data.results)
                         text += (result.type === "word" ? " " : "") + result.alternatives?.[0].content;
-                    }
                     if (text.trim()) {
                         addTranscriptItem(text, user?.role);
                         setInterimTranscript("");
                         if (onTranscriptUpdate) onTranscriptUpdate(text, true, user?.role);
                     }
                 } else if (data.message === "AddPartialTranscript") {
-                     setIsTranscribing(true);
-                     let partialText = "";
-                     for (const result of data.results) {
+                    let partialText = "";
+                    for (const result of data.results)
                         partialText += (result.type === "word" ? " " : "") + result.alternatives?.[0].content;
-                    }
                     if (partialText.trim()) {
-                        // For interim, we also filter by role if we want to only show coach interim
-                        if (Number(user?.role) === ROLES.INTERVIEWER) {
-                            setInterimTranscript(partialText);
-                        }
+                        if (Number(user?.role) === ROLES.INTERVIEWER) setInterimTranscript(partialText);
                         if (onTranscriptUpdate) onTranscriptUpdate(partialText, false, user?.role);
                     }
-                } else if (data.message === "Error") {
-                    console.error("[Speechmatics] Error:", data);
-                    if (speechmaticsSessionIdRef.current === sessionId) {
-                        speechmaticsClientRef.current = null;
-                        setInterimTranscript("");
-                        scheduleReconnect();
-                    }
-                    setIsTranscribing(false);
                 }
             });
 
-            client.addEventListener("recognitionStarted", () => {
-                if (speechmaticsSessionIdRef.current !== sessionId) return;
-                console.log("[Speechmatics] Recognition started event");
-                setIsTranscribing(true);
-            });
-
-            client.addEventListener("close", () => {
-                if (speechmaticsSessionIdRef.current !== sessionId) return;
-                console.warn("[Speechmatics] Connection closed, scheduling reconnect...");
-                speechmaticsClientRef.current = null;
-                setIsTranscribing(false);
-                setInterimTranscript("");
-                scheduleReconnect();
-            });
-
-            const jwt = await createSpeechmaticsJWT({
-                type: "rt",
-                apiKey: speechmaticsApiKey,
-                ttl: 3600,
-            });
-
+            const jwt = await createSpeechmaticsJWT({ type: "rt", apiKey: speechmaticsApiKey, ttl: 3600 });
             const sampleRate = audioContextRef.current?.sampleRate || 16000;
-            console.log(`[Speechmatics] Starting with sample rate: ${sampleRate}`);
 
             await client.start(jwt, {
-                transcription_config: {
-                    language: "en",
-                    operating_point: "enhanced",
-                    max_delay: 1.0,
-                    enable_partials: true,
-                    transcript_filtering_config: {
-                        remove_disfluencies: true,
-                    },
-                },
-                audio_format: {
-                    type: "raw",
-                    encoding: "pcm_f32le",
-                    sample_rate: sampleRate
-                }
+                transcription_config: { language: "en", operating_point: "enhanced", enable_partials: true },
+                audio_format: { type: "raw", encoding: "pcm_f32le", sample_rate: sampleRate },
             });
-
             speechmaticsClientRef.current = client;
             setIsTranscribing(true);
-
         } catch (err) {
-            console.error("[Speechmatics] Setup failed:", err);
-            speechmaticsClientRef.current = null;
-            setIsTranscribing(false);
             scheduleReconnect();
         } finally {
             isStartingSpeechmaticsRef.current = false;
         }
     }, [
         speechmaticsApiKey,
-        audioStream,
+        transcriptionStream,
         isTranscriptionEnabled,
         onTranscriptUpdate,
         addTranscriptItem,
         user?.role,
-        clearReconnectTimer,
         scheduleReconnect,
     ]);
 
-    // --- Recorder Lifecycle ---
+    // --- Recorder lifecycle ---
     const stopRecording = useCallback(async () => {
-        console.log("[Recorder] Stopping...");
         recorderSessionIdRef.current += 1;
         isStartingRecorderRef.current = false;
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -369,151 +260,83 @@ export function useSpeechmaticsTranscript({
             if (Number(user?.role) === ROLES.INTERVIEWER) flushAndUpload();
         }
         mediaRecorderRef.current = null;
-
-        if (audioSourceRef.current) {
-            audioSourceRef.current.disconnect();
-            audioSourceRef.current = null;
-        }
-
-        if (workletNodeRef.current) {
-            workletNodeRef.current.disconnect();
-            workletNodeRef.current = null;
-        }
-
+        if (audioSourceRef.current) audioSourceRef.current.disconnect();
+        if (workletNodeRef.current) workletNodeRef.current.disconnect();
         if (audioContextRef.current) {
-            try { await audioContextRef.current.close(); } catch (e) {}
+            try {
+                await audioContextRef.current.close();
+            } catch (e) { }
             audioContextRef.current = null;
         }
-
         await stopSpeechmatics();
     }, [stopSpeechmatics, user?.role, flushAndUpload]);
 
     const startRecording = useCallback(async () => {
-        if (!isEnabled || !roomId || !audioStream || !isMicOn) return;
+        if (!isEnabled || !roomId || !audioStream || !transcriptionStream || !isMicOn) return;
         if (isStartingRecorderRef.current) return;
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") return;
-
-        const hasLiveTrack = audioStream
-            ?.getAudioTracks()
-            ?.some((track) => track.readyState === "live");
-        if (!hasLiveTrack) {
-            console.warn("[Recorder] Skip start: no live audio track.");
-            return;
-        }
 
         isStartingRecorderRef.current = true;
         const sessionId = recorderSessionIdRef.current + 1;
         recorderSessionIdRef.current = sessionId;
-        console.log("[Recorder] Starting...");
+
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             audioContextRef.current = audioContext;
 
-            const blob = new Blob([workletCode], { type: 'application/javascript' });
+            const blob = new Blob([workletCode], { type: "application/javascript" });
             const workletUrl = URL.createObjectURL(blob);
             await audioContext.audioWorklet.addModule(workletUrl);
             URL.revokeObjectURL(workletUrl);
 
-            const source = audioContext.createMediaStreamSource(audioStream);
+            // ── TRANSCRIPTION: Use LOCAL MIC stream ────────────────
+            const source = audioContext.createMediaStreamSource(transcriptionStream);
             audioSourceRef.current = source;
-            const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
+            const workletNode = new AudioWorkletNode(audioContext, "pcm-processor");
             workletNodeRef.current = workletNode;
-
             workletNode.port.onmessage = (event) => {
                 if (speechmaticsClientRef.current && isTranscriptionEnabled) {
-                    const pcmData = event.data;
-                    speechmaticsClientRef.current.sendAudio(pcmData.buffer);
+                    speechmaticsClientRef.current.sendAudio(event.data.buffer);
                 }
             };
-
             source.connect(workletNode);
-            workletNode.connect(audioContext.destination);
+            // DO NOT connect to destination to avoid echoing back to user
 
-            const options = getPreferredMediaRecorderOptions();
-            const mediaRecorder = options
-                ? new MediaRecorder(audioStream, options)
-                : new MediaRecorder(audioStream);
+            // ── STORAGE: Use MIXED stream (uploaded to backend) ──────────
+            const mediaRecorder = new MediaRecorder(audioStream, getPreferredMediaRecorderOptions());
             mediaRecorderRef.current = mediaRecorder;
-
-            mediaRecorder.onerror = (event) => {
-                console.error("[Recorder] MediaRecorder error:", event?.error || event);
-            };
-
             mediaRecorder.ondataavailable = (event) => {
-                if (!(event.data && event.data.size > 0)) return;
-                
-                // Audio upload check: compare roles as numbers
-                if (Number(user?.role) === ROLES.INTERVIEWER) {
+                if (event.data && event.data.size > 0 && Number(user?.role) === ROLES.INTERVIEWER) {
                     accumulatedBlobs.current.push(event.data);
-                    if (Date.now() - lastUploadTime.current >= 15000) {
-                        flushAndUpload();
-                    }
+                    if (Date.now() - lastUploadTime.current >= 15000) flushAndUpload();
                 }
             };
 
-            if (recorderSessionIdRef.current !== sessionId) return;
-            mediaRecorder.start(1000);
-            if (isTranscriptionEnabled) await startSpeechmatics();
-
+            if (recorderSessionIdRef.current === sessionId) {
+                mediaRecorder.start(1000);
+                if (isTranscriptionEnabled) await startSpeechmatics();
+            }
         } catch (error) {
-            console.error("[Recorder] Start failed:", error);
-            mediaRecorderRef.current = null;
-            if (audioSourceRef.current) {
-                audioSourceRef.current.disconnect();
-                audioSourceRef.current = null;
-            }
-            if (workletNodeRef.current) {
-                workletNodeRef.current.disconnect();
-                workletNodeRef.current = null;
-            }
-            if (audioContextRef.current) {
-                try { await audioContextRef.current.close(); } catch (e) {}
-                audioContextRef.current = null;
-            }
+            stopRecording();
         } finally {
             isStartingRecorderRef.current = false;
-        }
-    }, [isEnabled, roomId, audioStream, isMicOn, isTranscriptionEnabled, startSpeechmatics, user?.role, flushAndUpload]);
-
-    useEffect(() => {
-        if (isEnabled && roomId && audioStream && isMicOn) {
-            if (!mediaRecorderRef.current) startRecording();
-        } else {
-            stopRecording();
-        }
-    }, [isEnabled, roomId, audioStream, isMicOn, startRecording, stopRecording]);
-
-    useEffect(() => {
-        const shouldConnect =
-            isEnabled &&
-            roomId &&
-            audioStream &&
-            isMicOn &&
-            isTranscriptionEnabled;
-
-        if (shouldConnect) {
-            if (!speechmaticsClientRef.current && !isStartingSpeechmaticsRef.current) {
-                startSpeechmatics();
-            }
-        } else {
-            stopSpeechmatics();
         }
     }, [
         isEnabled,
         roomId,
         audioStream,
+        transcriptionStream,
         isMicOn,
         isTranscriptionEnabled,
         startSpeechmatics,
-        stopSpeechmatics,
+        stopRecording,
+        user?.role,
+        flushAndUpload,
     ]);
 
     useEffect(() => {
-        return () => {
-            clearReconnectTimer();
-            stopRecording();
-        };
-    }, [stopRecording, clearReconnectTimer]);
+        if (isEnabled && roomId && audioStream && transcriptionStream && isMicOn) startRecording();
+        else stopRecording();
+    }, [isEnabled, roomId, audioStream, transcriptionStream, isMicOn, startRecording, stopRecording]);
 
     return {
         transcriptHistory,
@@ -523,6 +346,6 @@ export function useSpeechmaticsTranscript({
         clearTranscriptHistory: () => {
             setTranscriptHistory([]);
             if (roomId) localStorage.removeItem(getCombinedTranscriptStorageKey(roomId));
-        }
+        },
     };
 }
