@@ -1,773 +1,891 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Dna,
   ArrowRight,
-  MonitorPlay,
-  ScanSearch,
-  Terminal,
-  LibraryBig,
-  Zap,
-  GitMerge,
-  Trophy,
-  LineChart
+  BrainCircuit,
+  CheckCircle2,
+  Github,
+  Linkedin,
+  Sparkles,
+  Target,
+  Twitter,
+  Users,
+  Video,
+  Zap
 } from 'lucide-react';
-import { PrimaryButton, SecondaryButton, TextButton } from '../../../common/components/buttons';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import {
+  Avatar,
+  Box,
+  Chip,
+  Container,
+  Grid,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+  useTheme
+} from '@mui/material';
+
 import Navbar from '../../../common/components/Navbar/Navbar';
-import ThreeHero from '../components/ThreeHero';
+import { PrimaryButton, SecondaryButton, TextButton } from '../../../common/components/buttons';
+import FormTextField from '../../../common/components/form/FormTextField';
 import '../styles/LandingPage.css';
 
-gsap.registerPlugin(ScrollTrigger);
+const MotionBox = motion.create(Box);
+const MotionPaper = motion.create(Paper);
 
-const kineticWords = ['Train.', 'Refine.', 'Perform.'];
-
-const floatingCards = [
+const FEATURES = [
   {
-    label: 'mock_room.mov',
-    title: 'Live mock room',
-    detail: 'Video, code, pressure sync',
-    type: 'media',
-    x: '4%',
-    y: '18%',
-    rotate: -8,
-    dx: -120,
-    dy: -80,
-    drift: 28
+    icon: BrainCircuit,
+    title: 'AI-Powered Gap Analysis',
+    description:
+      'Our AI agents analyze your current skills and identify the exact technical gaps between you and your dream role.'
   },
   {
-    label: 'behavioral.ts',
-    title: 'Answer framing',
-    detail: 'Action, tradeoff, result',
-    type: 'code',
-    x: '17%',
-    y: '58%',
-    rotate: 7,
-    dx: -150,
-    dy: 55,
-    drift: 22
+    icon: Users,
+    title: 'Expert Human Coaching',
+    description:
+      'Connect with world-class engineers from top companies for 1-on-1 mock interviews and guidance.'
   },
   {
-    label: 'feedback.md',
-    title: 'Coach notes',
-    detail: 'Clarity and depth',
-    type: 'doc',
-    x: '67%',
-    y: '16%',
-    rotate: 10,
-    dx: 135,
-    dy: -90,
-    drift: 30
+    icon: Video,
+    title: 'Realistic Mock Battles',
+    description:
+      'Experience high-pressure coding challenges in a live collaborative environment that mirrors real interview loops.'
   },
   {
-    label: 'signal.json',
-    title: 'Signal report',
-    detail: 'Strengths and leaks',
-    type: 'code',
-    x: '74%',
-    y: '62%',
-    rotate: -10,
-    dx: 145,
-    dy: 72,
-    drift: 26
-  },
-  {
-    label: 'score 87',
-    title: 'Readiness',
-    detail: 'Improved after retry',
-    type: 'metric',
-    x: '58%',
-    y: '76%',
-    rotate: -6,
-    dx: 90,
-    dy: 138,
-    drift: 18
-  },
-  {
-    label: 'retry flow',
-    title: 'Next pass',
-    detail: 'Fix the weak answer',
-    type: 'metric',
-    x: '9%',
-    y: '76%',
-    rotate: -5,
-    dx: -95,
-    dy: 132,
-    drift: 20
-  }
-];
-
-const overviewCards = [
-  {
-    icon: <Dna size={20} className="text-blue-400" />,
-    label: 'AI GAP ANALYSIS',
-    title: 'Decode your DNA. Bridge the Gap.',
-    meta: 'CV VS JD MATCHING • SKILL DEFICIT • TARGET ALIGNMENT',
-    size: 'wide' // Bento wide
-  },
-  {
-    icon: <MonitorPlay size={20} className="text-purple-400" />,
-    label: 'HYBRID MOCK ROOMS',
-    title: 'Practice where the pressure is real.',
-    meta: 'AI AVATARS • ELITE COACHES • LIVE CODING',
-  },
-  {
-    icon: <Zap size={20} className="text-yellow-400" />,
-    label: 'INTELLIGENT FEEDBACK',
-    title: 'Turn your weak spots into your edge.',
-    meta: 'SENTIMENT ANALYSIS • ACTIONABLE STEPS • SCORECARD',
-  },
-  {
-    icon: <GitMerge size={20} className="text-green-400" />,
-    label: 'DYNAMIC ROADMAPS',
-    title: 'A custom path for every ambition.',
-    meta: 'ADAPTIVE LEARNING • ROLE-SPECIFIC • MILESTONES',
-    size: 'tall' // Bento tall
-  },
-  {
-    icon: <LineChart size={20} className="text-red-400" />,
-    label: 'PROGRESS ANALYTICS',
-    title: 'Visualize your growth in real-time.',
-    meta: 'READINESS INDEX • SKILL TRACKING • GROWTH CURVE',
-  },
-];
-
-const moduleStories = [
-  {
-    step: '01',
-    label: 'Identify Gaps',
-    title: 'Decode your alignment.',
-    description: 'AI scans your CV against JD requirements to pinpoint exactly where you stand.',
-    accent: 'var(--story-blue)',
-    icon: <ScanSearch size={18} />,
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000' // Placeholder 1 (GAP ANALYSIS)
-  },
-  {
-    step: '02',
-    label: 'Question Bank',
-    title: 'Weaponize your knowledge.',
-    description: 'Access 10,000+ targeted questions mapped to your specific skill gaps and job roles.',
-    accent: 'var(--story-pink)',
-    icon: <LibraryBig size={18} />,
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1000' // Placeholder 2 (ROADMAP)
-  },
-  {
-    step: '03',
-    label: 'Mock Session',
-    title: 'Execute under pressure.',
-    description: 'Apply your prep in high-fidelity rooms with AI or elite coaches and live coding.',
-    accent: 'var(--story-green)',
-    icon: <Terminal size={18} />,
-    image: 'https://images.unsplash.com/photo-1587620962725-abab7fe55159?auto=format&fit=crop&q=80&w=1000' // Placeholder 3 (MOCK ROOM)
-  },
-  {
-    step: '04',
-    label: 'Mastery',
-    title: 'Dominate the interview.',
-    description: 'Visualize your progress, fix every weakness, and step into the room with total confidence.',
-    accent: 'var(--story-violet)',
-    icon: <Trophy size={18} />,
-    image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=1000' // Placeholder 4 (MASTERY)
+    icon: Target,
+    title: 'Custom Skill Roadmaps',
+    description:
+      'Get a structured, day-by-day learning plan tailored to your specific goals and timeline.'
   }
 ];
 
 function LandingPage() {
-  const moduleStickyTop = 20;
   const navigate = useNavigate();
-  const heroRef = useRef(null);
-  const titleRef = useRef(null);
-  const pageRef = useRef(null);
-  const moduleSectionRef = useRef(null);
-  const moduleScrollTriggerRef = useRef(null);
-  const overviewSectionRef = useRef(null);
-  const storyCopyRef = useRef(null);
-  const activeModuleRef = useRef(0);
-  const [activeWord, setActiveWord] = useState(0);
-  const activeWordRef = useRef(0);
-  const [heroProgress, setHeroProgress] = useState(0);
-  const [activeModule, setActiveModule] = useState(0);
+  const theme = useTheme();
 
-  // Performance-optimized refs for high-frequency updates
-  const pointerRef = useRef({ x: 0, y: 0 });
-  const orbSyncRef = useRef({ rotation: { x: 0, y: 0 }, floatingY: 0 });
-  const cardsRef = useRef([]);
+  const [formStatus, setFormStatus] = useState('idle');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    experienceInput: '',
+    linkedin: ''
+  });
+  const [coachProgress, setCoachProgress] = useState(0);
 
-  useEffect(() => {
-    const handleMove = event => {
-      pointerRef.current = {
-        x: event.clientX / window.innerWidth - 0.5,
-        y: event.clientY / window.innerHeight - 0.5
-      };
-    };
+  const perks = [
+    'Flexible hours that fit your schedule',
+    'Global networking with high-caliber talent',
+    'Competitive compensation & platform perks',
+    'Personal brand growth as a thought leader'
+  ];
 
-    window.addEventListener('pointermove', handleMove);
-    return () => window.removeEventListener('pointermove', handleMove);
-  }, []);
+  const sectionReveal = {
+    hidden: { opacity: 0, y: 24 },
+    visible: { opacity: 1, y: 0 }
+  };
 
-  useEffect(() => {
-    const reveals = document.querySelectorAll('[data-reveal]');
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-          } else {
-            entry.target.classList.remove('is-visible');
-          }
-        });
-      },
-      { threshold: 0.16 }
-    );
-
-    reveals.forEach(node => observer.observe(node));
-    return () => observer.disconnect();
-  }, []);
+  const contentReveal = {
+    hidden: { opacity: 0, y: 14 },
+    visible: { opacity: 1, y: 0 }
+  };
 
   useEffect(() => {
-    if (!heroRef.current || !titleRef.current) return undefined;
+    const filledBase = [formData.name, formData.email, formData.phone, formData.linkedin].filter(
+      v => String(v || '').trim() !== ''
+    ).length;
+    const hasExp = Boolean(formData.experienceInput.trim());
+    setCoachProgress(Math.round(((filledBase + (hasExp ? 1 : 0)) / 5) * 100));
+  }, [formData]);
 
-    // Scroll-based Hero Parallax
-    const heroTrigger = ScrollTrigger.create({
-      trigger: heroRef.current,
-      start: 'top top',
-      end: 'bottom top',
-      scrub: true,
-      onUpdate: self => setHeroProgress(self.progress)
-    });
+  const set = field => e => setFormData(prev => ({ ...prev, [field]: e.target.value }));
 
-    // Autonomous Word Switching
-    const storyLoop = setInterval(() => {
-      setActiveWord(prev => {
-        const next = (prev + 1) % kineticWords.length;
-        activeWordRef.current = next;
-        return next;
-      });
-    }, 2500);
+  const handleFormSubmit = async e => {
+    e.preventDefault();
+    if (formStatus === 'submitting') return;
+    if (!formData.name.trim() || !formData.email.trim() || !formData.experienceInput.trim()) return;
 
-    // High-performance direct-DOM update loop for cards
-    const updateCards = () => {
-      const p = pointerRef.current;
-      const orb = orbSyncRef.current;
-      const hp = heroProgress;
+    setFormStatus('submitting');
+    await new Promise(res => setTimeout(res, 900));
+    setFormStatus('success');
+  };
 
-      cardsRef.current.forEach((cardEl, i) => {
-        if (!cardEl) return;
-        const card = floatingCards[i];
-
-        // Orbital physics calculation
-        const x = p.x * (i % 2 === 0 ? -24 : 24) + card.dx * hp + (orb.rotation.y * 50);
-        const y = p.y * (i < 3 ? -18 : 18) + card.dy * hp - Math.sin(hp * Math.PI) * card.drift + (orb.rotation.x * 50) + (orb.floatingY * 100);
-        const rotate = card.rotate + p.x * 8 + hp * (i % 2 === 0 ? -16 : 16);
-        const scale = 1 - hp * 0.12 + (i === activeWordRef.current || i === activeWordRef.current + 3 ? 0.04 : 0);
-
-        cardEl.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotate}deg) scale(${scale})`;
-        cardEl.style.opacity = (1 - hp * 0.28).toString();
-      });
-    };
-
-    gsap.ticker.add(updateCards);
-
-    return () => {
-      heroTrigger.kill();
-      clearInterval(storyLoop);
-      gsap.ticker.remove(updateCards);
-    };
-  }, [heroProgress]);
-
-  useEffect(() => {
-    if (!pageRef.current) return undefined;
-
-    const ctx = gsap.context(() => {
-      const stages = gsap.utils.toArray('[data-text-stage]');
-
-      stages.forEach(stage => {
-        const titleNodes = stage.querySelectorAll('[data-stage-title]');
-        const bodyNodes = stage.querySelectorAll('[data-text-body]');
-
-        const enterTl = gsap.timeline({ paused: true });
-        enterTl.fromTo(
-          titleNodes,
-          {
-            y: 52,
-            opacity: 0,
-            scale: 0.95,
-            filter: 'blur(10px)'
-          },
-          {
-            y: 0,
-            opacity: 1,
-            scale: 1,
-            filter: 'blur(0px)',
-            duration: 0.82,
-            ease: 'power4.out',
-          }
-        );
-        enterTl.fromTo(
-          bodyNodes,
-          {
-            y: 26,
-            opacity: 0,
-            filter: 'blur(10px)'
-          },
-          {
-            y: 0,
-            opacity: 1,
-            filter: 'blur(0px)',
-            duration: 0.7,
-            ease: 'power3.out',
-            stagger: 0.05
-          },
-          '-=0.45'
-        );
-
-        const exitTl = gsap.timeline({ paused: true });
-        exitTl.to(titleNodes, {
-          y: -20,
-          opacity: 0,
-          scale: 0.94,
-          filter: 'blur(8px)',
-          duration: 0.42,
-          ease: 'power2.in'
-        });
-        exitTl.to(
-          bodyNodes,
-          {
-            y: -18,
-            opacity: 0,
-            filter: 'blur(8px)',
-            duration: 0.32,
-            ease: 'power2.in'
-          },
-          '<'
-        );
-
-        ScrollTrigger.create({
-          trigger: stage,
-          start: 'top 72%',
-          end: 'bottom 24%',
-          onEnter: () => {
-            exitTl.pause(0);
-            enterTl.restart();
-          },
-          onEnterBack: () => {
-            exitTl.pause(0);
-            enterTl.restart();
-          },
-          onLeave: () => {
-            enterTl.pause(0);
-            exitTl.restart();
-          },
-          onLeaveBack: () => {
-            enterTl.pause(0);
-            exitTl.restart();
-          }
-        });
-      });
-    }, pageRef);
-
-    return () => ctx.revert();
-  }, []);
-
-  useEffect(() => {
-    if (!overviewSectionRef.current) return undefined;
-
-    const ctx = gsap.context(() => {
-      const headingNodes = overviewSectionRef.current.querySelectorAll(
-        '.section-kicker span, .section-kicker p, .section-stage-title'
-      );
-      const cards = overviewSectionRef.current.querySelectorAll('.overview-card');
-
-      gsap.set(headingNodes, {
-        opacity: 0,
-        y: 24,
-        filter: 'blur(8px)'
-      });
-
-      gsap.set(cards, {
-        opacity: 0,
-        x: 90,
-        rotateY: -8,
-        scale: 0.97
-      });
-
-      const inTl = gsap.timeline({ paused: true });
-      inTl.to(
-        headingNodes,
-        {
-          opacity: 1,
-          y: 0,
-          filter: 'blur(0px)',
-          duration: 0.6,
-          ease: 'power3.out',
-          stagger: 0.08
-        },
-        0
-      );
-      inTl.to(
-        cards,
-        {
-          opacity: 1,
-          y: 0,
-          x: 0,
-          rotateY: 0,
-          scale: 1,
-          duration: 0.85,
-          ease: 'power3.out',
-          stagger: 0.18
-        }
-      );
-
-      ScrollTrigger.create({
-        trigger: overviewSectionRef.current,
-        start: 'top 76%',
-        end: 'bottom 24%',
-        onEnter: () => {
-          inTl.pause(0);
-          inTl.play();
-        },
-        onEnterBack: () => {
-          inTl.pause(0);
-          inTl.play();
-        },
-        onLeaveBack: () => {
-          inTl.reverse();
-        }
-      });
-    }, overviewSectionRef);
-
-    return () => ctx.revert();
-  }, []);
-
-  useEffect(() => {
-    activeModuleRef.current = activeModule;
-  }, [activeModule]);
-
-  useEffect(() => {
-    if (!storyCopyRef.current) return undefined;
-
-    const ctx = gsap.context(() => {
-      const titleNode = storyCopyRef.current.querySelector('[data-story-title]');
-      const bodyNodes = storyCopyRef.current.querySelectorAll('[data-text-body]');
-
-      gsap.fromTo(
-        titleNode,
-        {
-          y: 56,
-          opacity: 0,
-          scale: 0.94,
-          filter: 'blur(10px)'
-        },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          filter: 'blur(0px)',
-          duration: 0.78,
-          ease: 'power4.out',
-        }
-      );
-
-      gsap.fromTo(
-        bodyNodes,
-        {
-          y: 20,
-          opacity: 0,
-          filter: 'blur(10px)'
-        },
-        {
-          y: 0,
-          opacity: 1,
-          filter: 'blur(0px)',
-          duration: 0.55,
-          ease: 'power3.out'
-        }
-      );
-    }, storyCopyRef);
-
-    return () => ctx.revert();
-  }, [activeModule]);
-
-  useEffect(() => {
-    if (!moduleSectionRef.current) return undefined;
-
-    const ctx = gsap.context(() => {
-      const storyCount = moduleStories.length;
-      const pinnedPanel = moduleSectionRef.current.querySelector('.modules-story-layout');
-      let lastIndex = -1;
-
-      moduleScrollTriggerRef.current = ScrollTrigger.create({
-        trigger: moduleSectionRef.current,
-        start: () => `top top+=${moduleStickyTop}`,
-        end: () => `+=${window.innerHeight * (storyCount + 0.6)}`,
-        pin: pinnedPanel,
-        pinSpacing: true,
-        scrub: 0.9,
-        onUpdate: self => {
-          const nextIndex = Math.max(
-            0,
-            Math.min(storyCount - 1, Math.round(self.progress * (storyCount - 1)))
-          );
-
-          if (nextIndex !== lastIndex) {
-            lastIndex = nextIndex;
-            setActiveModule(nextIndex);
-          }
-        }
-      });
-    }, moduleSectionRef);
-
-    return () => {
-      if (moduleScrollTriggerRef.current) {
-        moduleScrollTriggerRef.current.kill();
-        moduleScrollTriggerRef.current = null;
-      }
-      ctx.revert();
-    };
-  }, []);
-
-
-
-  const heroVisualStyle = useMemo(
-    () => ({
-      transform: `translateY(${heroProgress * 28}px) scale(${1 - heroProgress * 0.06})`,
-      opacity: 1 - heroProgress * 0.08
-    }),
-    [heroProgress]
-  );
-
-  const activeStory = moduleStories[activeModule];
-  const moduleProgress = (activeModule + 1) / moduleStories.length;
-  const clampedStoryProgress =
-    moduleStories.length > 1 ? activeModule / (moduleStories.length - 1) : 1;
-
-  const focusModuleSection = index => {
-    setActiveModule(index);
-    activeModuleRef.current = index;
-
-    const trigger = moduleScrollTriggerRef.current;
-    if (!trigger || typeof trigger.start !== 'number' || typeof trigger.end !== 'number') return;
-
-    const ratio = moduleStories.length > 1 ? index / (moduleStories.length - 1) : 0;
-    const targetY = trigger.start + (trigger.end - trigger.start) * ratio;
-
-    window.scrollTo({
-      top: targetY,
-      behavior: 'smooth'
-    });
+  const handleResetForm = () => {
+    setFormStatus('idle');
+    setFormData({ name: '', email: '', phone: '', experienceInput: '', linkedin: '' });
   };
 
   return (
-    <div className="landing-page polished-light" ref={pageRef}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary', overflowX: 'hidden' }}>
       <Navbar />
 
-      <section className="hero-polished" ref={heroRef}>
-        <div className="hero-noise" />
-        <div className="hero-grid-pattern" />
+      {/* Background blobs */}
+      <Box sx={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <MotionBox
+          animate={{ x: [0, 50, 0], y: [0, 30, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          sx={{
+            position: 'absolute',
+            top: -80,
+            right: -80,
+            width: 600,
+            height: 600,
+            borderRadius: '50%',
+            bgcolor: 'info.light',
+            filter: 'blur(120px)',
+            opacity: 0.35
+          }}
+        />
+        <MotionBox
+          animate={{ x: [0, -40, 0], y: [0, 50, 0], scale: [1, 1.2, 1] }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+          sx={{
+            position: 'absolute',
+            top: '25%',
+            left: -80,
+            width: 500,
+            height: 500,
+            borderRadius: '50%',
+            bgcolor: 'secondary.light',
+            filter: 'blur(110px)',
+            opacity: 0.4
+          }}
+        />
+      </Box>
 
-        <div className="landing-shell">
-          <div className="hero-polished-layout">
-            <div className="hero-copy-polished">
-              <div className="hero-copy-topline">
-                <span>Interview rehearsal</span>
-              </div>
-              <div className="kinetic-stack" ref={titleRef}>
-                {kineticWords.map((word, index) => (
-                  <span
-                    key={word}
-                    className={index === activeWord ? 'kinetic-word is-active' : 'kinetic-word'}
-                  >
-                    {word}
-                  </span>
-                ))}
-              </div>
-
-              <div className="hero-cta-row">
-                <PrimaryButton onClick={() => navigate('/home')} sx={{ minWidth: 140 }}>
-                  Start now
-                </PrimaryButton>
-                <SecondaryButton onClick={() => navigate('/questions')} sx={{ minWidth: 140 }}>
-                  Explore bank <ArrowRight size={16} />
-                </SecondaryButton>
-              </div>
-            </div>
-
-            <div className="hero-visual-polished" style={heroVisualStyle}>
-              <ThreeHero
-                pointer={pointerRef.current}
-                onUpdate={(sync) => { orbSyncRef.current = sync; }}
-              />
-
-              {floatingCards.map((card, index) => (
-                <article
-                  key={card.label}
-                  ref={el => { cardsRef.current[index] = el; }}
-                  className={`floating-card ${card.type}`}
-                  style={{ left: card.x, top: card.y }}
-                >
-                  <span className="floating-card-label">{card.label}</span>
-                  <strong className="floating-card-title">{card.title}</strong>
-                  <small className="floating-card-detail">{card.detail}</small>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="landing-section modules-story-section"
-        id="modules"
-        ref={moduleSectionRef}
+      <Box
+        component="main"
+        sx={{
+          position: 'relative',
+          zIndex: 1,
+          // FIX: reduced from +52px to +24px so hero isn't pushed too far down
+          pt: 'calc(var(--nav-height, 80px) + 24px)'
+        }}
       >
-        <div className="landing-shell">
-          <div className="modules-story-layout story-single-layout">
-            <div className="story-single-wrap">
-              <div className="section-kicker">
-                <span data-reveal>Modules</span>
-                <p data-reveal>One card stays pinned. Scroll to move through each state of the system.</p>
-              </div>
-
-              <article
-                className="story-single-card"
-                style={{ '--story-accent': activeStory.accent }}
+        {/* ─── Hero ─── */}
+        <Container maxWidth="xl" sx={{ pb: 14 }}>
+          <Grid container spacing={8} alignItems="center" justifyContent="center" className="landing-hero-grid">
+            {/* Left: copy */}
+            <Grid item xs={12} md={6} className="landing-hero-copy">
+              <MotionBox
+                initial={{ opacity: 0, x: -24 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7 }}
               >
-                <div className="story-single-header">
-                  <div className="story-single-head">
-                    <span className="story-preview-icon">{activeStory.icon}</span>
-                    <div>
-                      <p>{activeStory.label}</p>
-                      <strong>{activeStory.step}</strong>
-                    </div>
-                  </div>
-                  <div className="story-single-mini-progress">
-                    <span>{activeStory.step}</span>
-                    <small>{moduleStories.length.toString().padStart(2, '0')}</small>
-                  </div>
-                </div>
+                <Chip
+                  icon={<Sparkles size={14} />}
+                  label="The New Standard for Interview Excellence"
+                  color="secondary"
+                  size="small"
+                  sx={{ mb: 3, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+                />
+                <Typography
+                  variant="h1"
+                  sx={{
+                    lineHeight: 0.95,
+                    mb: 3,
+                    fontSize: { xs: '2.9rem', md: '4rem', lg: '4.5rem' }
+                  }}
+                >
+                  Master The Art Of The Interview.
+                </Typography>
+                <Typography color="text.secondary" sx={{ maxWidth: 600, mb: 4 }}>
+                  Combining world-class engineering coaching with advanced AI agents to identify gaps
+                  and build your personalized path to success.
+                </Typography>
+                <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
+                  <PrimaryButton onClick={() => navigate('/signup')} endIcon={<ArrowRight size={16} />}>
+                    Boost Your Career
+                  </PrimaryButton>
+                  <SecondaryButton onClick={() => navigate('/questions')}>Learn More</SecondaryButton>
+                </Stack>
+              </MotionBox>
+            </Grid>
 
-                <div className="story-single-body">
-                  <div className="story-single-copy" ref={storyCopyRef} key={activeStory.step}>
-                    <h2 data-story-title>{activeStory.title}</h2>
-                    <p data-text-body>{activeStory.description}</p>
-                  </div>
-
-                  <div className="story-single-art">
-                    <div
-                      className="story-preview-surface"
-                      style={{
-                        transform: `rotate(${(-4 + clampedStoryProgress * 5).toFixed(2)}deg) translateY(${clampedStoryProgress * 12}px)`,
-                        background: activeStory.image ? `url(${activeStory.image}) center/cover no-repeat` : '#fff'
-                      }}
-                    >
-                      {activeStory.image && <div className="story-image-overlay" />}
-                    </div>
-                    <div
-                      className="story-preview-orb"
-                      style={{
-                        transform: `rotate(${(18 - clampedStoryProgress * 14).toFixed(2)}deg) scale(${(0.96 + clampedStoryProgress * 0.08).toFixed(3)}) translateY(${(clampedStoryProgress * -10).toFixed(2)}px)`
-                      }}
-                    />
-                    <div className="story-preview-glow" />
-                  </div>
-                </div>
-
-                <div className="story-progress">
-                  <div className="story-progress-track">
-                    <span
-                      className="story-progress-fill"
-                      style={{ width: `${moduleProgress * 100}%` }}
-                    />
-                  </div>
-                  <div className="story-progress-steps">
-                    {moduleStories.map((story, index) => (
-                      <button
-                        key={story.step}
-                        type="button"
-                        className={index === activeModule ? 'is-active' : ''}
-                        onClick={() => focusModuleSection(index)}
-                      >
-                        <strong>{story.step}</strong>
-                        <small>{story.label}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </article>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="landing-section reveal-section modules-grid-section"
-        data-reveal
-        ref={overviewSectionRef}
-      >
-        <div className="landing-shell">
-          <div className="section-heading-block">
-            <div className="section-kicker section-kicker-spread" data-reveal>
-              <span data-text-body>Overview</span>
-              <p data-text-body>The full system, summarized after the story finishes.</p>
-            </div>
-            <h2 className="section-stage-title" data-reveal>
-              See the full rehearsal system.
-            </h2>
-          </div>
-
-          <div className="overview-grid">
-            {overviewCards.map((card, idx) => (
-              <article
-                key={card.label}
-                className={`overview-card ${card.size ? `bento-${card.size}` : ''}`}
-                data-reveal
-                style={{ transitionDelay: `${idx * 0.08}s` }}
-                onPointerMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-                  e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+            {/* Right: animated card */}
+            <Grid
+              item
+              xs={12}
+              md={6}
+              className="landing-hero-visual"
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              <MotionPaper
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.7 }}
+                className="orbit-card-shell"
+                sx={{
+                  p: 2,
+                  borderRadius: 5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  width: '100%',
+                  maxWidth: 600,
+                  display: 'block',
+                  mx: 'auto'
                 }}
               >
-                <div className="bento-card-spotlight" />
-                <div className="bento-card-top">
-                  <span className="bento-icon">{card.icon}</span>
-                  <p>{card.label}</p>
-                </div>
-                <h3>{card.title}</h3>
-                <span className="bento-meta">{card.meta}</span>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+                <Box
+                  className="orbit-card-stage"
+                  sx={{
+                    width: '100%',
+                    borderRadius: 5,
+                    height: 350,
+                    minHeight: 350,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: '#f1f2f4',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: 'inset 0 0 0 12px rgba(255,255,255,0.18)'
+                  }}
+                >
+                  <Box
+                    className="orbit-ring"
+                    sx={{
+                      width: 300,
+                      height: 300,
+                      borderRadius: '50%',
+                      border: '1px solid',
+                      borderColor: 'rgba(80, 210, 242, 0.35)',
+                      position: 'absolute',
+                      inset: 0,
+                      m: 'auto'
+                    }}
+                  />
 
-      <section className="landing-section reveal-section" id="cta" data-reveal>
-        <div className="landing-shell">
-          <div className="landing-cta-panel premium-cta">
-            <div className="cta-copy-block">
-              <div className="cta-marquee">
-                <div className="cta-marquee-track">
-                  <span>Kill the Gap. Claim the Seat.</span>
-                  <span>Kill the Gap. Claim the Seat.</span>
-                  <span>Kill the Gap. Claim the Seat.</span>
-                </div>
-              </div>
-            </div>
-            <div className="hero-cta-row">
-              <PrimaryButton onClick={() => navigate('/home')} sx={{ minWidth: 140 }}>
-                Start now
-              </PrimaryButton>
-            </div>
-          </div>
-        </div>
-      </section>
+                  <MotionBox
+                    className="orbit-rotator"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+                    sx={{
+                      width: 300,
+                      height: 300,
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      inset: 0,
+                      m: 'auto'
+                    }}
+                  >
+                    <Box
+                      className="orbit-dot orbit-dot-purple"
+                      sx={{
+                        position: 'absolute',
+                        top: 18,
+                        right: 70,
+                        width: 15,
+                        height: 15,
+                        borderRadius: '50%',
+                        bgcolor: '#a855f7'
+                      }}
+                    />
+                    <Box
+                      className="orbit-dot orbit-dot-cyan"
+                      sx={{
+                        position: 'absolute',
+                        bottom: 42,
+                        left: 54,
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        bgcolor: '#06b6d4'
+                      }}
+                    />
+                  </MotionBox>
 
-      <footer className="landing-footer-simple">
-        <div className="landing-shell">
-          <p>&copy; 2026 Intervu. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
+                  {/* Center icon */}
+                  <MotionBox
+                    animate={{ scale: [1, 1.1, 1], y: [0, -6, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: 'primary.main'
+                    }}
+                  >
+                    <BrainCircuit size={64} />
+                  </MotionBox>
+
+                  {/* Decorative mini window */}
+                  <Paper
+                    sx={{
+                      position: 'absolute',
+                      top: 34,
+                      left: 28,
+                      p: 2.1,
+                      borderRadius: 3,
+                      border: '1px solid',
+                      borderColor: 'rgba(255,255,255,0.75)',
+                      bgcolor: 'rgba(255,255,255,0.74)',
+                      boxShadow: '0 16px 30px rgba(17, 24, 39, 0.12)',
+                      backdropFilter: 'blur(4px)'
+                    }}
+                  >
+                    <Stack direction="row" gap={0.75} mb={1}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
+                    </Stack>
+                    <Box sx={{ height: 8, width: 120, bgcolor: 'grey.200', borderRadius: 99, mb: 1 }} />
+                    <Box sx={{ height: 8, width: 88, bgcolor: '#7dd3fc', borderRadius: 99, opacity: 0.55 }} />
+                  </Paper>
+
+                  <Paper
+                    sx={{
+                      position: 'absolute',
+                      right: 34,
+                      bottom: 30,
+                      px: 2.3,
+                      py: 2,
+                      borderRadius: 4,
+                      border: '1px solid',
+                      borderColor: 'rgba(255,255,255,0.75)',
+                      bgcolor: 'rgba(255,255,255,0.74)',
+                      boxShadow: '0 16px 30px rgba(17, 24, 39, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      minWidth: 220
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: '50%',
+                        bgcolor: '#efe2ff',
+                        color: '#9333ea',
+                        display: 'grid',
+                        placeItems: 'center'
+                      }}
+                    >
+                      <Users size={20} />
+                    </Box>
+                    <Box>
+                      <Box sx={{ height: 8, width: 88, bgcolor: 'grey.200', borderRadius: 99, mb: 1 }} />
+                      <Box sx={{ height: 8, width: 72, bgcolor: 'grey.100', borderRadius: 99 }} />
+                    </Box>
+                  </Paper>
+                </Box>
+              </MotionPaper>
+            </Grid>
+          </Grid>
+        </Container>
+
+        {/* ─── Features ─── */}
+        <Box
+          id="features"
+          sx={{
+            py: 12,
+            borderTop: '1px solid',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'rgba(255,255,255,0.55)'
+          }}
+        >
+          <Container maxWidth="xl">
+            <Typography
+              sx={{
+                textAlign: 'center',
+                color: 'secondary.dark',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                mb: 1
+              }}
+            >
+              Innovative Ecosystem
+            </Typography>
+            <Typography
+              variant="h2"
+              sx={{ textAlign: 'center', mb: 6, fontSize: { xs: '2.2rem', md: '3rem' } }}
+            >
+              Engineered For Results
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                gap: 3,
+                maxWidth: 1120,
+                mx: 'auto'
+              }}
+            >
+              {FEATURES.map((feature, idx) => {
+                const Icon = feature.icon;
+                return (
+                  <Box key={feature.title} sx={{ display: 'flex' }}>
+                    <MotionPaper
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.08 }}
+                      whileHover={{ y: -8 }}
+                      sx={{
+                        p: 3.5,
+                        borderRadius: 4,
+                        minHeight: 280,
+                        width: '100%',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'block',
+                        mx: 'auto'
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 2.5,
+                          display: 'grid',
+                          placeItems: 'center',
+                          mb: 2,
+                          bgcolor: 'secondary.light',
+                          color: 'primary.main'
+                        }}
+                      >
+                        <Icon size={24} />
+                      </Box>
+                      <Typography variant="h5" sx={{ mb: 1.25 }}>
+                        {feature.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {feature.description}
+                      </Typography>
+                    </MotionPaper>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Container>
+        </Box>
+
+        {/* ─── Coaches / Apply ─── */}
+        <Box id="coaches" sx={{ py: 12 }}>
+          <Container maxWidth="lg">
+            <Grid container spacing={6} alignItems="stretch">
+              {/* Left: perks */}
+              <Grid item xs={12} md={6}>
+                <MotionBox
+                  variants={sectionReveal}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <Stack gap={2.5} sx={{ height: '100%', justifyContent: 'center' }}>
+                    <Chip
+                      label="Join our network"
+                      color="secondary"
+                      size="small"
+                      sx={{ width: 'fit-content', fontWeight: 800, letterSpacing: '0.08em' }}
+                    />
+                    <Typography variant="h2" sx={{ maxWidth: 520, fontSize: { xs: '2.1rem', md: '2.9rem' } }}>
+                      Share your expertise. Mentor the next generation.
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ maxWidth: 520 }}>
+                      We are looking for Senior Engineers, Architects, and Tech Leads from global tech companies.
+                    </Typography>
+                    <Stack gap={1.25}>
+                      {perks.map((item, idx) => (
+                        <MotionBox
+                          key={item}
+                          variants={contentReveal}
+                          initial="hidden"
+                          whileInView="visible"
+                          viewport={{ once: true, amount: 0.55 }}
+                          transition={{ duration: 0.45, delay: idx * 0.08 }}
+                        >
+                          <Stack direction="row" gap={1.25} alignItems="center">
+                            <Box
+                              sx={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: '50%',
+                                bgcolor: 'secondary.main',
+                                color: 'secondary.contrastText',
+                                display: 'grid',
+                                placeItems: 'center'
+                              }}
+                            >
+                              <CheckCircle2 size={13} />
+                            </Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {item}
+                            </Typography>
+                          </Stack>
+                        </MotionBox>
+                      ))}
+                    </Stack>
+                    <Stack direction="row" gap={1.5} pt={1}>
+                      <PrimaryButton onClick={() => navigate('/home')}>Start now</PrimaryButton>
+                      <SecondaryButton onClick={() => navigate('/questions')}>Explore bank</SecondaryButton>
+                    </Stack>
+                  </Stack>
+                </MotionBox>
+              </Grid>
+
+              {/* Right: form */}
+              <Grid item xs={12} md={6}>
+                <MotionPaper
+                  variants={sectionReveal}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.65, delay: 0.1 }}
+                  sx={{
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: 4,
+                      background: `linear-gradient(90deg, ${theme.palette.secondary.dark}, ${theme.palette.secondary.main})`
+                    }}
+                  />
+                  <Box sx={{ p: 3 }}>
+                    <Typography variant="h4" sx={{ mb: 0.5, fontWeight: 800 }}>
+                      Apply now
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Takes 2 minutes · We&apos;ll review within 48h
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={formStatus === 'submitting' ? 100 : coachProgress}
+                      sx={{ mb: 3, height: 6, borderRadius: 99 }}
+                    />
+                    <AnimatePresence mode="wait">
+                      {formStatus === 'success' ? (
+                        <MotionBox
+                          key="success"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 1.03 }}
+                        >
+                          <Stack alignItems="center" textAlign="center" gap={1.5} py={2}>
+                            <Avatar
+                              sx={{
+                                width: 60,
+                                height: 60,
+                                bgcolor: 'secondary.main',
+                                color: 'secondary.contrastText'
+                              }}
+                            >
+                              <CheckCircle2 size={28} />
+                            </Avatar>
+                            <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                              Application Received
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ maxWidth: 320 }}
+                            >
+                              Thank you for applying. Our team will review your profile and reach out
+                              within 48 hours.
+                            </Typography>
+                            <TextButton onClick={handleResetForm}>Submit another →</TextButton>
+                          </Stack>
+                        </MotionBox>
+                      ) : (
+                        <MotionBox
+                          key="form"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                        >
+                          <Stack component="form" onSubmit={handleFormSubmit} gap={2}>
+                            <FormTextField
+                              id="f-name"
+                              label="Full Name"
+                              value={formData.name}
+                              onChange={set('name')}
+                              required
+                              fullWidth
+                            />
+                            <Grid container spacing={2}>
+                              <Grid item xs={6}>
+                                <FormTextField
+                                  id="f-email"
+                                  label="Work Email"
+                                  type="email"
+                                  value={formData.email}
+                                  onChange={set('email')}
+                                  required
+                                  fullWidth
+                                />
+                              </Grid>
+                              <Grid item xs={6}>
+                                <FormTextField
+                                  id="f-phone"
+                                  label="Phone Number"
+                                  type="tel"
+                                  value={formData.phone}
+                                  onChange={set('phone')}
+                                  fullWidth
+                                />
+                              </Grid>
+                            </Grid>
+                            <FormTextField
+                              id="f-exp"
+                              label="Years of Experience"
+                              value={formData.experienceInput}
+                              onChange={set('experienceInput')}
+                              required
+                              fullWidth
+                            />
+                            <FormTextField
+                              id="f-linkedin"
+                              label="LinkedIn Profile URL"
+                              type="url"
+                              value={formData.linkedin}
+                              onChange={set('linkedin')}
+                              fullWidth
+                            />
+                            <PrimaryButton
+                              type="submit"
+                              loading={formStatus === 'submitting'}
+                              sx={{ width: '100%', py: 1.4 }}
+                            >
+                              Submit application
+                            </PrimaryButton>
+                          </Stack>
+                        </MotionBox>
+                      )}
+                    </AnimatePresence>
+                  </Box>
+                </MotionPaper>
+              </Grid>
+            </Grid>
+          </Container>
+        </Box>
+
+        {/* ─── Stats ─── */}
+        {/* <Box
+          id="stats"
+          sx={{
+            py: 8,
+            borderTop: '1px solid',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'rgba(255,255,255,0.55)'
+          }}
+        >
+          <Container maxWidth="xl">
+            <Stack
+              direction="row"
+              flexWrap="wrap"
+              justifyContent="center"
+              gap={{ xs: 5, md: 10 }}
+            >
+              {[
+                { label: 'Successful Placements', value: '12,400+' },
+                { label: 'Active FAANG Coaches', value: '850+' },
+                { label: 'Global Study Rooms', value: '500+' },
+                { label: 'Avg Rating', value: '4.95/5' }
+              ].map((stat, i) => (
+                <MotionBox
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  sx={{ textAlign: 'center' }}
+                >
+                  <Typography variant="h3" sx={{ fontWeight: 800 }}>
+                    {stat.value}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      color: 'text.secondary',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em'
+                    }}
+                  >
+                    {stat.label}
+                  </Typography>
+                </MotionBox>
+              ))}
+            </Stack>
+          </Container>
+        </Box> */}
+
+        {/* ─── Footer ─── */}
+        <Box
+          component="footer"
+          sx={{
+            py: 10,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper'
+          }}
+        >
+          <Container maxWidth="xl">
+            <MotionBox
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.55 }}
+            >
+              <Grid container spacing={{ xs: 5, md: 7 }} justifyContent="center">
+                <Grid item xs={12} md={4}>
+                  <Stack direction="row" alignItems="center" justifyContent={{ xs: 'center', md: 'center' }} gap={1.1} mb={2.5}>
+                    <Box
+                      sx={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 2,
+                        bgcolor: 'secondary.main',
+                        color: 'secondary.contrastText',
+                        display: 'grid',
+                        placeItems: 'center',
+                        boxShadow: '0 10px 24px rgba(59, 130, 246, 0.22)'
+                      }}
+                    >
+                      <Zap size={18} />
+                    </Box>
+                    <Typography
+                      sx={{
+                        fontSize: 22,
+                        fontWeight: 900,
+                        textTransform: 'uppercase',
+                        letterSpacing: '-0.02em',
+                        fontStyle: 'italic'
+                      }}
+                    >
+                      Intervu
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ maxWidth: 280, lineHeight: 1.75, mx: { xs: 'auto', md: 'auto' }, textAlign: 'center' }}
+                  >
+                    Redefining technical interview preparation through AI and expert human guidance.
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={6} md={2} sx={{ textAlign: { xs: 'center', md: 'center' } }}>
+                  <Typography sx={{ mb: 2.5, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                    Product
+                  </Typography>
+                  <Stack
+                    gap={1.4}
+                    sx={{
+                      '& a': {
+                        color: 'text.secondary',
+                        textDecoration: 'none',
+                        fontWeight: 700,
+                        fontSize: 13
+                      },
+                      '& a:hover': { color: 'text.primary' }
+                    }}
+                  >
+                    <Link to="/questions">Questions</Link>
+                    <Link to="/find-coach">Find a Coach</Link>
+                    <Link to="/battle-arena">Battle Arena</Link>
+                  </Stack>
+                </Grid>
+
+                <Grid item xs={6} md={2} sx={{ textAlign: { xs: 'center', md: 'center' } }}>
+                  <Typography sx={{ mb: 2.5, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                    Company
+                  </Typography>
+                  <Stack
+                    gap={1.4}
+                    sx={{
+                      '& a': {
+                        color: 'text.secondary',
+                        textDecoration: 'none',
+                        fontWeight: 700,
+                        fontSize: 13
+                      },
+                      '& a:hover': { color: 'text.primary' }
+                    }}
+                  >
+                    <Box component="a" href="#">
+                      About Us
+                    </Box>
+                    <Box component="a" href="#">
+                      Contact
+                    </Box>
+                    <Box component="a" href="#">
+                      Privacy Policy
+                    </Box>
+                  </Stack>
+                </Grid>
+
+                <Grid item xs={12} md={4} sx={{ textAlign: { xs: 'center', md: 'center' } }}>
+                  <Typography sx={{ mb: 2.5, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                    Connect
+                  </Typography>
+                  <Stack direction="row" gap={1.5} justifyContent="center">
+                    {[Github, Twitter, Linkedin].map((Icon, idx) => (
+                      <MotionBox
+                        key={idx}
+                        component="a"
+                        href="#"
+                        whileHover={{ scale: 1.08, y: -4 }}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 2.5,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: 'grey.50',
+                          color: 'text.secondary',
+                          display: 'grid',
+                          placeItems: 'center',
+                          textDecoration: 'none',
+                          '&:hover': { color: 'text.primary', bgcolor: 'background.paper', boxShadow: 2 }
+                        }}
+                      >
+                        <Icon size={18} />
+                      </MotionBox>
+                    ))}
+                  </Stack>
+                </Grid>
+              </Grid>
+
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                justifyContent="center"
+                alignItems="center"
+                mt={8}
+                pt={3.5}
+                borderTop="1px solid"
+                borderColor="divider"
+                gap={{ xs: 1.2, md: 4 }}
+              >
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                  © 2026 Intervu. All rights reserved.
+                </Typography>
+                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.14em', fontStyle: 'italic' }}>
+                  Made by experts for future leaders.
+                </Typography>
+              </Stack>
+            </MotionBox>
+          </Container>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
