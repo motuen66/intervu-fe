@@ -23,6 +23,7 @@ import { ROLES } from "../../../../../common/constants/common";
 import { getInterviewRoomStatusConfig } from "../../../../../common/constants/statusConfig";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
+import PreparedQuestionsModal from "../../../components/preparedQuestions/PreparedQuestionsModal";
 
 /**
  * @typedef {Object} SessionCardProps
@@ -411,7 +412,7 @@ function RoundRow({
     onJoin,
     onCancel,
     onReschedule,
-    onReviewQuestions,
+    onPrepareQuestions,
     showActions,
     nowTs,
     isHighlighted = false,
@@ -419,7 +420,11 @@ function RoundRow({
     const title = `Round ${index + 1}: ${round.interviewTypeName || "Interview"}`;
     const duration = Number(round.durationMinutes ?? 0) || 0;
     const isInterviewer = user?.role === ROLES.INTERVIEWER;
-    const canReviewQuestions = isInterviewer && typeof onReviewQuestions === "function";
+    const canPrepareQuestions =
+        isInterviewer
+        && typeof onPrepareQuestions === "function"
+        && (round?.status === INTERVIEW_ROOM_STATUS.SCHEDULED
+            || round?.status === INTERVIEW_ROOM_STATUS.ON_GOING);
     const isQuestionsReady = Boolean(
         round?.isQuestionsReady ??
             round?.questionsReady ??
@@ -504,16 +509,16 @@ function RoundRow({
 
             {showActions && (
                 <Stack direction="row" spacing={1.25} sx={{ ml: { md: "auto" }, width: { xs: "100%", md: "auto" } }}>
-                    {/* {canReviewQuestions && (
+                    {canPrepareQuestions && (
                         <Button
                             variant="contained"
                             size="small"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onReviewQuestions(round);
+                                onPrepareQuestions(round);
                             }}
                             startIcon={isQuestionsReady ? <CircleCheck size={14} /> : undefined}
-                            sx={(theme) => ({
+                            sx={() => ({
                                 textTransform: "none",
                                 borderRadius: 1.25,
                                 minHeight: 36,
@@ -533,7 +538,7 @@ function RoundRow({
                         >
                             {isQuestionsReady ? "Questions Ready" : "Prepare Questions"}
                         </Button>
-                    )} */}
+                    )}
 
                     {(canJoin || user?.role === ROLES.CANDIDATE) && (
                         <ActionButtonGroup
@@ -574,6 +579,13 @@ export default function SessionCard({
     const [participantAvatarUrl, setParticipantAvatarUrl] = useState(null);
     const [nowTs, setNowTs] = useState(() => Date.now());
     const [preview, setPreview] = useState({ open: false, url: null, title: "CV View" });
+    const [prepareTarget, setPrepareTarget] = useState(null);
+
+    const handleOpenPrepare = (round) => {
+        if (!round) return;
+        setPrepareTarget(round);
+    };
+    const handleClosePrepare = () => setPrepareTarget(null);
 
     const rescheduleHandler = onReschedule ?? onRequestReschedule;
     const hasMultipleRounds = Array.isArray(room?.rounds) && room.rounds.length > 1;
@@ -629,6 +641,20 @@ export default function SessionCard({
     const jdUrl = room?.jobDescriptionUrl || room?.jdUrl || null;
     const cvUrl = room?.cvUrl || room?.candidateCvUrl || null;
 
+    // Prepare-questions affordance for single-round cards (multi-round handled in RoundRow).
+    const isInterviewer = user?.role === ROLES.INTERVIEWER;
+    const singleRoundCanPrepare =
+        !hasMultipleRounds
+        && isInterviewer
+        && (room?.status === INTERVIEW_ROOM_STATUS.SCHEDULED
+            || room?.status === INTERVIEW_ROOM_STATUS.ON_GOING);
+    const singleRoundIsQuestionsReady = Boolean(
+        room?.isQuestionsReady
+            ?? room?.questionsReady
+            ?? room?.hasGeneratedQuestions
+            ?? (typeof room?.generatedQuestionCount === "number" && room.generatedQuestionCount > 0),
+    );
+
     if (!hasMultipleRounds) {
         return (
             <BaseCard
@@ -668,17 +694,58 @@ export default function SessionCard({
                         />
                     </Box>
                     {showActions && (
-                        <ActionButtonGroup
-                            target={room}
-                            status={room.status}
-                            canReschedule={canReschedule}
-                            hasPendingReschedule={hasPendingReschedule}
-                            isRescheduled={isRescheduled}
-                            role={user?.role}
-                            onJoin={onJoin}
-                            onCancel={onCancel}
-                            onReschedule={rescheduleHandler}
-                        />
+                        <Stack
+                            direction="row"
+                            spacing={1.25}
+                            alignItems="center"
+                            sx={{ width: { xs: "100%", md: "auto" } }}
+                        >
+                            {singleRoundCanPrepare && (
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenPrepare(room);
+                                    }}
+                                    startIcon={
+                                        singleRoundIsQuestionsReady ? <CircleCheck size={14} /> : undefined
+                                    }
+                                    sx={() => ({
+                                        textTransform: "none",
+                                        borderRadius: 1.25,
+                                        minHeight: 36,
+                                        px: 2,
+                                        fontWeight: 700,
+                                        whiteSpace: "nowrap",
+                                        bgcolor: singleRoundIsQuestionsReady ? "#E7F7EE" : "#ECEFFD",
+                                        color: singleRoundIsQuestionsReady ? "#2C8D60" : "#3A47D5",
+                                        boxShadow: "none",
+                                        border: `1px solid ${
+                                            singleRoundIsQuestionsReady ? "#C8EAD7" : "#D4D9FA"
+                                        }`,
+                                        "&:hover": {
+                                            bgcolor: singleRoundIsQuestionsReady ? "#D9F1E5" : "#E2E7FC",
+                                            boxShadow: "none",
+                                        },
+                                        width: { xs: "100%", md: "auto" },
+                                    })}
+                                >
+                                    {singleRoundIsQuestionsReady ? "Questions Ready" : "Prepare Questions"}
+                                </Button>
+                            )}
+                            <ActionButtonGroup
+                                target={room}
+                                status={room.status}
+                                canReschedule={canReschedule}
+                                hasPendingReschedule={hasPendingReschedule}
+                                isRescheduled={isRescheduled}
+                                role={user?.role}
+                                onJoin={onJoin}
+                                onCancel={onCancel}
+                                onReschedule={rescheduleHandler}
+                            />
+                        </Stack>
                     )}
                 </Stack>
                 <CvDialog
@@ -686,6 +753,12 @@ export default function SessionCard({
                     onClose={() => setPreview({ open: false, url: null, title: "CV View" })}
                     url={preview.url}
                     title={preview.title}
+                />
+                <PreparedQuestionsModal
+                    open={Boolean(prepareTarget)}
+                    onClose={handleClosePrepare}
+                    roomId={prepareTarget?.id ?? null}
+                    roomTitle={prepareTarget?.interviewTypeName || room?.title}
                 />
             </BaseCard>
         );
@@ -780,7 +853,7 @@ export default function SessionCard({
                                     onJoin={onJoin}
                                     onCancel={onCancel}
                                     onReschedule={rescheduleHandler}
-                                    onReviewQuestions={onReviewQuestions}
+                                    onPrepareQuestions={handleOpenPrepare}
                                     showActions={showActions}
                                     nowTs={nowTs}
                                     isHighlighted={
@@ -800,6 +873,12 @@ export default function SessionCard({
                 onClose={() => setPreview({ open: false, url: null, title: "CV View" })}
                 url={preview.url}
                 title={preview.title}
+            />
+            <PreparedQuestionsModal
+                open={Boolean(prepareTarget)}
+                onClose={handleClosePrepare}
+                roomId={prepareTarget?.id ?? null}
+                roomTitle={prepareTarget?.interviewTypeName || room?.title}
             />
         </BaseCard>
     );

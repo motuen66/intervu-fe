@@ -20,6 +20,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import FlagIcon from "@mui/icons-material/Flag";
 import ClosedCaptionIcon from "@mui/icons-material/ClosedCaption";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 
 import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -32,6 +33,7 @@ const CodeEditorPanel = lazy(() => import("./CodeEditorPanel"));
 const WhiteboardPanel = lazy(() => import("./WhiteboardPanel").then((m) => ({ default: m.WhiteboardPanel })));
 import { CameraWidget } from "./CameraWidget";
 import { JdCvPanel } from "./JdCvPanel";
+import PreparedQuestionsWorkspace from "../../components/preparedQuestions/PreparedQuestionsWorkspace";
 
 import { useWebRTC } from "../../hooks/useWebRTC.js";
 import { useInterviewSignalR } from "../../hooks/useInterviewSignalR.js";
@@ -223,6 +225,14 @@ function InterviewRoomPage() {
 
     // ── Callback bag ─────────────────────────────────────────────────────────
     const callbacks = useRef({});
+
+    // ── Prepared-questions roadmap (coach-only overlay) ─────────────────────
+    // Ref is declared unconditionally to keep hook order stable; the referenced
+    // child component is itself only mounted when the coach toggles the drawer
+    // (see <Drawer> below). The SignalR callback forwards status updates to the
+    // live imperative handle if the drawer has ever been opened this session.
+    const preparedQuestionsRef = useRef(null);
+    const [roadmapOpen, setRoadmapOpen] = useState(false);
 
     // ── SignalR ──────────────────────────────────────────────────────────────
     const { connectionId, peers, sendSignal, leaveRoom } = useInterviewSignalR({
@@ -570,6 +580,9 @@ function InterviewRoomPage() {
                 // Clear remote interim if a non-interviewer is speaking
                 setRemoteInterim("");
             }
+        },
+        onPreparedQuestionStatusChanged: (dto) => {
+            preparedQuestionsRef.current?.applyStatusUpdate(dto);
         },
     };
 
@@ -1009,6 +1022,15 @@ function InterviewRoomPage() {
                         active={showPanelD}
                         onClick={() => setShowPanelD((v) => !v)}
                     />
+                    {user?.role === ROLES.INTERVIEWER && (
+                        <HeaderToggle
+                            id="header-toggle-prepared-questions"
+                            icon={<AssignmentOutlinedIcon sx={{ fontSize: 18 }} />}
+                            label="Prepared Questions"
+                            active={roadmapOpen}
+                            onClick={() => setRoadmapOpen((v) => !v)}
+                        />
+                    )}
                 </Box>
             </Box>
 
@@ -1375,6 +1397,39 @@ function InterviewRoomPage() {
                     </Box>
                 </Box>
             </Box>
+
+            {/* ═══ Prepared Questions sidebar (coach-only, additive overlay) ═══ */}
+            {/* Rendered as a fixed-position sliding panel instead of a MUI
+                Drawer: a Drawer's Modal wrapper captures pointer events on the
+                whole viewport (even with hideBackdrop) which breaks the header
+                toggle's click-to-close. The Box below has no overlay, so the
+                header button is fully clickable. The child component stays
+                mounted at all times so SignalR status updates keep arriving. */}
+            {user?.role === ROLES.INTERVIEWER && !isViewOnly && (
+                <Box
+                    sx={{
+                        position: "fixed",
+                        top: 56,
+                        right: 0,
+                        bottom: 64,
+                        width: 360,
+                        zIndex: 1200,
+                        display: "flex",
+                        flexDirection: "column",
+                        bgcolor: "background.paper",
+                        borderLeft: "1px solid #E5E7EB",
+                        transform: roadmapOpen ? "translateX(0)" : "translateX(100%)",
+                        pointerEvents: roadmapOpen ? "auto" : "none",
+                        boxShadow: roadmapOpen
+                            ? "-8px 0 24px rgba(15, 23, 42, 0.12)"
+                            : "none",
+                        transition:
+                            "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s",
+                    }}
+                >
+                    <PreparedQuestionsWorkspace ref={preparedQuestionsRef} roomId={roomId} />
+                </Box>
+            )}
 
             {/* ═══ Footer Bar ═══ */}
             <Box
