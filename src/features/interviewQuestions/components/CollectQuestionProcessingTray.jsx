@@ -13,7 +13,7 @@ export default function CollectQuestionProcessingTray({
     onReview,
     onClose,
 }) {
-    const headerBg = isComplete ? "success.main" : "primary.main";
+    const headerBg = isComplete ? "success.main" : "secondary.main";
     const Icon = isComplete ? CheckCircle : Bot;
     const title = isComplete ? "Analysis Complete!" : "Analyzing questions…";
 
@@ -41,7 +41,7 @@ export default function CollectQuestionProcessingTray({
                     py: 1.25,
                     cursor: "pointer",
                     bgcolor: headerBg,
-                    color: "primary.contrastText",
+                    color: "primary.main",
                     transition: "background-color .4s ease",
                     userSelect: "none",
                 }}

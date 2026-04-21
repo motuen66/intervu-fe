@@ -18,7 +18,7 @@ function extractRoomIdFromActionUrl(actionUrl) {
 const CollectQuestionTrayContext = createContext(null);
 
 const MOCK_CAP = 95;
-const TICK_MS = 600;
+const TICK_MS = 15;
 const TICK_STEP = 9;
 const STORAGE_KEY = "intervu:collectTray";
 const MAX_RESUME_AGE_MS = 15 * 60 * 1000; // 15 min window after which we give up
