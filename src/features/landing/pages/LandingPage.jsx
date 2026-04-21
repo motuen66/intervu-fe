@@ -10,9 +10,11 @@ import {
   Zap,
   GitMerge,
   Trophy,
-  LineChart
+  LineChart,
+  CheckCircle2
 } from 'lucide-react';
 import { PrimaryButton, SecondaryButton, TextButton } from '../../../common/components/buttons';
+import FormTextField from '../../../common/components/form/FormTextField';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Navbar from '../../../common/components/Navbar/Navbar';
@@ -187,6 +189,17 @@ function LandingPage() {
   const activeWordRef = useRef(0);
   const [heroProgress, setHeroProgress] = useState(0);
   const [activeModule, setActiveModule] = useState(0);
+  const [formStatus, setFormStatus] = useState('idle');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    experienceInput: '',
+    linkedin: ''
+  });
+  const [coachProgress, setCoachProgress] = useState(0);
+  const [mounted] = useState(true);
+  const btnRef = useRef(null);
 
   // Performance-optimized refs for high-frequency updates
   const pointerRef = useRef({ x: 0, y: 0 });
@@ -526,6 +539,14 @@ function LandingPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const filledBase = [formData.name, formData.email, formData.phone, formData.linkedin]
+      .filter(v => String(v || '').trim() !== '').length;
+    const hasExperience = Boolean(formData.experienceInput.trim());
+    const filled = filledBase + (hasExperience ? 1 : 0);
+    setCoachProgress(Math.round((filled / 5) * 100));
+  }, [formData]);
+
 
 
   const heroVisualStyle = useMemo(
@@ -555,6 +576,82 @@ function LandingPage() {
       top: targetY,
       behavior: 'smooth'
     });
+  };
+
+  const set = field => e => setFormData(prev => ({ ...prev, [field]: e.target.value }));
+
+  const handleRipple = e => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const ripple = document.createElement('span');
+    ripple.style.cssText = `
+      position:absolute;border-radius:50%;
+      background:rgba(255,255,255,0.25);
+      width:${size}px;height:${size}px;
+      left:${e.clientX - rect.left - size / 2}px;
+      top:${e.clientY - rect.top - size / 2}px;
+      transform:scale(0);
+      animation:rippleOut 0.6s linear forwards;
+      pointer-events:none;
+    `;
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 700);
+  };
+
+  const handleFormSubmit = async e => {
+    e.preventDefault();
+    if (formStatus === 'submitting') return;
+
+    const required = ['name', 'email'];
+    let hasError = false;
+    required.forEach(field => {
+      if (!formData[field].trim()) hasError = true;
+    });
+    if (!formData.experienceInput.trim()) {
+      hasError = true;
+    }
+    if (hasError) return;
+
+    setFormStatus('submitting');
+    await new Promise(res => setTimeout(res, 1100));
+    setFormStatus('success');
+  };
+
+  const handleResetForm = () => {
+    setFormStatus('idle');
+    setFormData({ name: '', email: '', phone: '', experienceInput: '', linkedin: '' });
+  };
+
+  const animDelay = i => (mounted ? `${i * 0.07}s` : '0s');
+  const fieldStyle = i => ({
+    opacity: mounted ? 1 : 0,
+    transform: mounted ? 'translateY(0)' : 'translateY(16px)',
+    transition: `opacity 0.5s ${animDelay(i)} cubic-bezier(0.16,1,0.3,1), transform 0.5s ${animDelay(i)} cubic-bezier(0.16,1,0.3,1)`,
+  });
+  const coachFieldSx = {
+    '& .MuiOutlinedInput-root': {
+      minHeight: 52,
+      borderRadius: '12px',
+      backgroundColor: '#fafafa',
+      '&:hover': { backgroundColor: '#fff' },
+      '&.Mui-focused': {
+        backgroundColor: '#fff',
+        boxShadow: '0 0 0 4px rgba(16,185,129,0.1)'
+      }
+    },
+    '& .MuiInputLabel-root': {
+      fontFamily: "'Outfit', sans-serif",
+      fontWeight: 600,
+      color: '#94a3b8'
+    },
+    '& .MuiInputBase-input': {
+      fontFamily: "'Outfit', sans-serif",
+      fontSize: '0.9rem',
+      fontWeight: 600,
+      color: '#020617'
+    }
   };
 
   return (
@@ -741,6 +838,249 @@ function LandingPage() {
         </div>
       </section>
 
+      <section id="coaches" style={{ fontFamily: "'Outfit', sans-serif", padding: '8rem 0', background: '#fff', position: 'relative', overflow: 'hidden' }}>
+        <div className="coach-grid" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 2rem', display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '4rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <span style={{
+              fontSize: 10, fontWeight: 900, letterSpacing: '0.25em', textTransform: 'uppercase',
+              color: '#10b981', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)',
+              borderRadius: 99, padding: '6px 14px', display: 'inline-block', width: 'fit-content',
+              animation: 'fadeSlideUp 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both',
+            }}>
+              Join our network
+            </span>
+
+            <div style={{ animation: 'fadeSlideUp 0.6s 0.2s cubic-bezier(0.16,1,0.3,1) both' }}>
+              <h2 style={{ fontSize: 'clamp(2.5rem, 4vw, 3.5rem)', fontWeight: 950, lineHeight: 0.95, letterSpacing: '-0.04em', color: '#0f172a', margin: '0 0 0.5rem' }}>
+                SHARE YOUR
+              </h2>
+              <h2 style={{
+                fontSize: 'clamp(2.5rem, 4vw, 3.5rem)', fontWeight: 950, lineHeight: 0.95,
+                letterSpacing: '-0.04em', margin: 0,
+                background: 'linear-gradient(90deg, #10b981, #d9f99d)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>
+                EXPERTISE.
+              </h2>
+            </div>
+
+            <p style={{ fontSize: '1rem', fontWeight: 500, color: '#64748b', lineHeight: 1.65, margin: 0, animation: 'fadeSlideUp 0.6s 0.3s cubic-bezier(0.16,1,0.3,1) both' }}>
+              We are looking for Senior Engineers, Architects, and Tech Leads from global tech giants to mentor the next generation of talent.
+            </p>
+
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem', animation: 'fadeSlideUp 0.6s 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
+              {[
+                'Flexible hours that fit your schedule',
+                'Global networking with high-caliber talent',
+                'Competitive compensation & platform perks',
+                'Personal brand growth as a thought leader',
+              ].map((item, i) => (
+                <li key={i} className="perk-item" style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.88rem', fontWeight: 700, color: '#334155', transition: 'transform 0.2s' }}>
+                  <span style={{
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <CheckCircle2 size={13} color="#10b981" />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+
+            <div style={{
+              padding: '1.5rem', borderRadius: 20,
+              background: 'linear-gradient(135deg, #f0fdf4, #f8fafc)',
+              border: '1px solid rgba(16,185,129,0.15)',
+              animation: 'fadeSlideUp 0.6s 0.5s cubic-bezier(0.16,1,0.3,1) both',
+              position: 'relative',
+            }}>
+              <span style={{ position: 'absolute', top: -10, left: 16, fontSize: '3.5rem', fontWeight: 900, color: '#10b981', lineHeight: 1, opacity: 0.4 }}>"</span>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #10b981, #d9f99d)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 900, color: '#020617',
+                }}>SS</div>
+                <div>
+                  <p style={{ fontSize: '0.82rem', fontStyle: 'italic', fontWeight: 500, color: '#475569', margin: '0 0 0.6rem', lineHeight: 1.6 }}>
+                    "INTERVU allows me to give back to the community while staying sharp on technical fundamentals."
+                  </p>
+                  <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#10b981' }}>
+                    Sarah S., Staff Engineer at Google
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', bottom: -40, right: -40, width: 240, height: 240, borderRadius: '50%', background: 'rgba(217,249,157,0.3)', filter: 'blur(80px)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: -40, left: -40, width: 240, height: 240, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', filter: 'blur(80px)', pointerEvents: 'none' }} />
+
+            <div style={{
+              position: 'relative', zIndex: 1,
+              background: '#fff', borderRadius: 28,
+              border: '1px solid #f1f5f9',
+              boxShadow: '0 40px 100px rgba(0,0,0,0.08), 0 0 0 1px rgba(16,185,129,0.05)',
+              overflow: 'hidden',
+            }}>
+              <div style={{ height: 4, background: 'linear-gradient(90deg, #10b981, #d9f99d, #10b981)', backgroundSize: '200% 100%' }} />
+
+              <div style={{ padding: '2.5rem 2.5rem 2rem' }}>
+                <div style={{ marginBottom: '1.5rem', ...fieldStyle(0) }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#020617', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Apply now</h3>
+                  <p style={{ fontSize: '0.78rem', fontWeight: 500, color: '#94a3b8', margin: 0 }}>Takes 2 minutes · We'll review within 48h</p>
+                </div>
+
+                <div style={{ height: 4, background: '#f1f5f9', borderRadius: 2, marginBottom: '2rem', overflow: 'hidden', ...fieldStyle(1) }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${formStatus === 'submitting' ? 100 : coachProgress}%`,
+                    background: 'linear-gradient(90deg, #10b981, #d9f99d)',
+                    borderRadius: 2,
+                    transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+                    boxShadow: '0 0 10px rgba(16,185,129,0.4)',
+                  }} />
+                </div>
+
+                {formStatus === 'success' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem', padding: '2rem 1rem' }}>
+                    <div style={{
+                      width: 72, height: 72, borderRadius: '50%',
+                      background: 'rgba(16,185,129,0.08)',
+                      border: '2px solid rgba(16,185,129,0.25)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      animation: 'popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+                    }}>
+                      <CheckCircle2 size={32} color="#10b981" />
+                    </div>
+                    <h4 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#020617', margin: 0 }}>Application Received!</h4>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500, margin: 0, lineHeight: 1.65, maxWidth: 280 }}>
+                      Thank you for applying. Our team will review your profile and reach out within 48 hours.
+                    </p>
+                    <button onClick={handleResetForm} style={{
+                      fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em',
+                      color: '#10b981', background: 'none', border: 'none', cursor: 'pointer',
+                      padding: '8px 16px', borderRadius: 8, marginTop: '0.5rem',
+                      fontFamily: "'Outfit', sans-serif",
+                    }}>
+                      Submit another →
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <div style={{ ...fieldStyle(2), marginBottom: '1.5rem' }}>
+                      <FormTextField
+                        id="f-name"
+                        placeholder="Full Name"
+                        type="text"
+                        value={formData.name}
+                        onChange={set('name')}
+                        required
+                        fullWidth
+                        sx={coachFieldSx}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', ...fieldStyle(3), marginBottom: '1.5rem' }}>
+                      <FormTextField
+                        id="f-email"
+                        placeholder="Work Email"
+                        type="email"
+                        value={formData.email}
+                        onChange={set('email')}
+                        required
+                        fullWidth
+                        sx={coachFieldSx}
+                      />
+                      <FormTextField
+                        id="f-phone"
+                        placeholder="Phone Number"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={set('phone')}
+                        fullWidth
+                        sx={coachFieldSx}
+                      />
+                    </div>
+
+                    <div style={{...fieldStyle(5), marginBottom: '1.5rem'}} >
+                      <FormTextField
+                        id="f-experience-input"
+                        placeholder="Years of Experience"
+                        type="text"
+                        value={formData.experienceInput}
+                        onChange={set('experienceInput')}
+                        required
+                        fullWidth
+                        sx={coachFieldSx}
+                      />
+                    </div>
+
+                    <div style={{...fieldStyle(5), marginBottom: '1.5rem'}}>
+                      <FormTextField
+                        id="f-linkedin"
+                        placeholder="LinkedIn Profile URL"
+                        type="url"
+                        value={formData.linkedin}
+                        onChange={set('linkedin')}
+                        fullWidth
+                        sx={coachFieldSx}
+                      />
+                    </div>
+
+                    <div style={{...fieldStyle(5), marginBottom: '1.5rem'}}>
+                    <button 
+                      ref={btnRef}
+                      type="submit"
+                      disabled={formStatus === 'submitting'}
+                      className="intervu-submit-btn"
+                      onMouseDown={handleRipple}
+                      style={{
+                        width: '100%', height: 54,
+                        background: '#020617', color: '#fff', border: 'none',
+                        borderRadius: 12, fontFamily: "'Outfit', sans-serif",
+                        cursor: formStatus === 'submitting' ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                        transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                        position: 'relative', overflow: 'hidden',
+                        opacity: formStatus === 'submitting' ? 0.8 : 1,
+                        ...fieldStyle(6),
+                      }}
+                    >
+                      <span className="btn-overlay" style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(135deg, #10b981, #d9f99d)',
+                        opacity: 0, transition: 'opacity 0.3s',
+                      }} />
+                      {formStatus === 'submitting' ? (
+                        <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', position: 'relative', zIndex: 1 }} />
+                      ) : (
+                        <>
+                          <span className="btn-text-inner" style={{ position: 'relative', zIndex: 1, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', transition: 'color 0.3s' }}>
+                            Submit Application
+                          </span>
+                          <span className="btn-arrow-inner" style={{
+                            position: 'relative', zIndex: 1,
+                            width: 20, height: 20, borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.12)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 14, transition: 'all 0.3s',
+                          }}>›</span>
+                        </>
+                      )}
+                    </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="landing-section reveal-section" id="cta" data-reveal>
         <div className="landing-shell">
           <div className="landing-cta-panel premium-cta">
@@ -772,3 +1112,4 @@ function LandingPage() {
 }
 
 export default LandingPage;
+

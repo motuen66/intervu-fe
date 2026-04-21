@@ -852,3 +852,79 @@
   color: var(--mui-palette-text-secondary, #64748b);
   font-weight: 500;
 }
+
+/* Coach Form Reusable Styles */
+@keyframes rippleOut {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.intervu-submit-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.25) !important;
+}
+
+.intervu-submit-btn:hover .btn-overlay {
+  opacity: 1 !important;
+}
+
+.intervu-submit-btn:hover .btn-text-inner {
+  color: #020617 !important;
+}
+
+.intervu-submit-btn:hover .btn-arrow-inner {
+  background: rgba(2, 6, 23, 0.15) !important;
+  transform: translateX(3px) !important;
+}
+
+.intervu-submit-btn:active {
+  transform: scale(0.98) !important;
+}
+
+.intervu-select:focus {
+  border-color: #10b981 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1) !important;
+}
+
+.perk-item:hover {
+  transform: translateX(4px);
+}
+
+@media (max-width: 1024px) {
+  .coach-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
