@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Accordion,
@@ -16,7 +16,12 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { alpha } from "@mui/material/styles";
 import { useAssessment } from "../context/AssessmentContext";
 import { PrimaryButton } from "../../../../../common/components/buttons";
-import { setAssessmentForceRequired } from "../helpers/assessmentHelper";
+import {
+    getAssessmentData,
+    mapAssessmentPayloadToResult,
+    normalizeEvaluateResponse,
+    setAssessmentForceRequired,
+} from "../helpers/assessmentHelper";
 
 const statusVisualMap = {
     good: {
@@ -65,7 +70,6 @@ const TECHSTACK_GROUP_HINTS = {
     graphql: { categories: ["Backend", "Frontend"], keywords: ["graphql", "schema", "resolver"] },
 };
 
-const DATABASE_KEYWORDS = ["sql", "database", "query", "schema", "table", "join", "postgres", "mysql", "mssql"];
 const GENERIC_BACKEND_KEYWORDS = [
     "backend",
     "api",
@@ -98,35 +102,6 @@ const GENERIC_BACKEND_KEYWORDS = [
     "authz",
 ];
 
-const BACKEND_STACK_FALLBACK_KEYWORDS = [
-    "backend",
-    "api",
-    "server",
-    "service",
-    "node",
-    "express",
-    ".net",
-    "dotnet",
-    "asp.net",
-    "c#",
-    "java",
-    "spring",
-    "go",
-    "golang",
-    "python",
-    "django",
-    "flask",
-    "fastapi",
-    "graphql",
-    "sql",
-    "postgres",
-    "mysql",
-    "mssql",
-    "aws",
-    "cloud",
-    "deployment",
-];
-
 const levelLabel = {
     0: "Missing",
     1: "Basic",
@@ -135,48 +110,20 @@ const levelLabel = {
     4: "Expert",
 };
 
-const mapProfileLevelToTargetSfia = (level) => {
-    const normalized = String(level || "").toLowerCase();
-    if (["staff", "lead", "principal", "senior", "advanced", "expert"].some((item) => normalized.includes(item))) {
-        return 5;
-    }
-    if (["mid", "intermediate", "confident"].some((item) => normalized.includes(item))) {
-        return 3;
-    }
-    if (["junior", "entry", "basic", "comfortable", "beginner"].some((item) => normalized.includes(item))) {
-        return 2;
-    }
-    return 3;
-};
-
 const normalizeText = (value) =>
     String(value || "")
         .trim()
         .toLowerCase();
 
-const getStackHint = (stack) => {
-    const normalizedStack = normalizeText(stack);
-    const directHint = TECHSTACK_GROUP_HINTS[normalizedStack];
-    if (directHint) {
-        return directHint;
+const toArray = (value) => {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (typeof value === "string") {
+        return value
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
     }
-
-    const matchedHintKey = Object.keys(TECHSTACK_GROUP_HINTS).find(
-        (key) => normalizedStack.includes(key) || key.includes(normalizedStack),
-    );
-
-    return matchedHintKey ? TECHSTACK_GROUP_HINTS[matchedHintKey] : null;
-};
-
-const isLikelyBackendStack = (stack) => {
-    const normalizedStack = normalizeText(stack);
-    const hint = getStackHint(stack) || {};
-    const categories = (hint.categories || []).map((item) => normalizeText(item));
-    if (categories.includes("backend")) {
-        return true;
-    }
-
-    return BACKEND_STACK_FALLBACK_KEYWORDS.some((keyword) => keyword && normalizedStack.includes(keyword));
+    return [];
 };
 
 const inferSkillCategory = (skillName) => {
@@ -218,7 +165,7 @@ const toOverallPercentScore = (value) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return null;
     const asPercent = num <= 4 ? num * 25 : num;
-    return Math.max(0, Math.min(100, Math.round(asPercent)));
+    return Math.max(0, Math.min(100, asPercent));
 };
 
 const toStatusByScore = (score, isMissing) => {
@@ -247,58 +194,46 @@ const ResultDashboard = () => {
         lastMatchPercentage,
         saveAssessmentSnapshot,
         roadmap,
+        setAnswers,
+        setSkillScores,
+        updateMatchPercentage,
     } = useAssessment();
     const [isSaving, setIsSaving] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState({});
     const [expandedSkills, setExpandedSkills] = useState({});
     const profile = answers?.profile || {};
+    const refreshedUserRef = useRef(null);
+
+    useEffect(() => {
+        try {
+            const reloadState = sessionStorage.getItem("assessment_result_hard_reload");
+            if (reloadState === "ready") {
+                sessionStorage.setItem("assessment_result_hard_reload", "done");
+                window.location.reload();
+                return;
+            }
+            if (reloadState === "done") {
+                sessionStorage.removeItem("assessment_result_hard_reload");
+            }
+        } catch {
+            // ignore storage access issues
+        }
+    }, []);
 
     const { summaryText, calculatedSkillScores, overallScorePercent, overallLevelText, resolvedProfile } = useMemo(() => {
-        const evaluateResult =
-            surveyResult?.answer || surveyResult?.responses || surveyResult?.current?.skills
-                ? surveyResult
-                : answers?.evaluateResponse
-                  ? answers.evaluateResponse
-                  : null;
+        const rawPayload = surveyResult?.data || surveyResult || answers?.evaluateResponse || null;
+        const normalized = rawPayload ? normalizeEvaluateResponse(rawPayload) : null;
 
-        if (evaluateResult) {
-            const answerBlock = evaluateResult?.answer?.responses ? evaluateResult.answer : evaluateResult;
+        if (normalized?.answer) {
+            const answerBlock = normalized.answer;
             const apiProfile = answerBlock?.profile && typeof answerBlock.profile === "object" ? answerBlock.profile : {};
             const mergedProfile = {
                 ...(profile || {}),
                 ...(apiProfile || {}),
+                techstack: toArray(apiProfile?.techstack ?? profile?.techstack),
+                domain: toArray(apiProfile?.domain ?? profile?.domain),
             };
-            const currentSkillsList = Array.isArray(evaluateResult?.current?.skills) ? evaluateResult.current.skills : [];
             const responseSkillsList = Array.isArray(answerBlock?.responses) ? answerBlock.responses : [];
-            const gapMissing = Array.isArray(evaluateResult?.gapJson?.missing)
-                ? evaluateResult.gapJson.missing
-                : evaluateResult?.missing || [];
-            const gapWeak = Array.isArray(evaluateResult?.gapJson?.weak) ? evaluateResult.gapJson.weak : [];
-            const missingSet = new Set(gapMissing.map((item) => String(item || "").toLowerCase()));
-            const weakSet = new Set(gapWeak.map((item) => String(item || "").toLowerCase()));
-            const targetLevel = mapProfileLevelToTargetSfia(
-                answerBlock?.overallLevel || answerBlock?.profile?.level || profile.level,
-            );
-            const calculatedFromCurrent = currentSkillsList
-                .map((item) => {
-                    const levelCode = toNumericLevelCode(item?.level);
-                    const score = toPercentScore(item?.score);
-                    const skillKey = String(item?.skill || "Unknown Skill");
-                    const normalizedSkill = normalizeText(skillKey);
-                    const isMissing = missingSet.has(normalizedSkill) || levelCode === "0" || score <= 0;
-                    const isWeak = weakSet.has(normalizedSkill);
-                    return {
-                        skillKey,
-                        status: isMissing ? "missing" : isWeak ? "weak" : toStatusByScore(score, false),
-                        score,
-                        levelCode,
-                        sfiaLevel: Number.isFinite(Number(item?.sfiaLevel)) ? Math.max(0, Math.round(Number(item.sfiaLevel))) : 0,
-                        targetLevel,
-                        selectedLevel: levelLabel[levelCode] || levelLabel["0"],
-                        category: inferSkillCategory(skillKey),
-                    };
-                })
-                .sort((a, b) => b.score - a.score);
             const calculatedFromResponses = Array.from(
                 responseSkillsList.reduce((acc, item) => {
                     const skillKey = String(item?.skill || "").trim();
@@ -324,36 +259,26 @@ const ResultDashboard = () => {
                     const avgScore = aggregated.count ? Math.round(aggregated.scoreTotal / aggregated.count) : 0;
                     const avgLevel = aggregated.count ? Math.round(aggregated.levelTotal / aggregated.count) : 0;
                     const levelCode = String(avgLevel);
-                    const normalizedSkill = normalizeText(skillKey);
-                    const isMissing =
-                        missingSet.has(normalizedSkill) ||
-                        levelCode === "0" ||
-                        avgScore <= 0 ||
-                        aggregated.missingCount > 0;
-                    const isWeak = weakSet.has(normalizedSkill);
+                    const isMissing = levelCode === "0" || avgScore <= 0 || aggregated.missingCount > 0;
                     return {
                         skillKey,
-                        status: isMissing ? "missing" : isWeak ? "weak" : toStatusByScore(avgScore, false),
+                        status: toStatusByScore(avgScore, isMissing),
                         score: avgScore,
                         levelCode,
                         sfiaLevel: 0,
-                        targetLevel,
                         selectedLevel: levelLabel[levelCode] || levelLabel["0"],
                         category: inferSkillCategory(skillKey),
                     };
                 })
                 .sort((a, b) => b.score - a.score);
 
-            const overallPercent = toOverallPercentScore(answerBlock?.overallScore ?? evaluateResult?.overallScore);
+            const overallPercent = toOverallPercentScore(answerBlock?.overallScore);
 
             return {
-                summaryText: String(evaluateResult?.summaryText || ""),
-                calculatedSkillScores:
-                    calculatedFromCurrent.length > 0
-                        ? calculatedFromCurrent
-                        : calculatedFromResponses,
+                summaryText: String(normalized?.summaryText || ""),
+                calculatedSkillScores: calculatedFromResponses,
                 overallScorePercent: overallPercent,
-                overallLevelText: String(answerBlock?.overallLevel || evaluateResult?.overallLevel || "None"),
+                overallLevelText: String(answerBlock?.overallLevel || "None"),
                 resolvedProfile: mergedProfile,
             };
         }
@@ -363,136 +288,73 @@ const ResultDashboard = () => {
             calculatedSkillScores: [],
             overallScorePercent: null,
             overallLevelText: "None",
-            resolvedProfile: profile || {},
+            resolvedProfile: {
+                ...(profile || {}),
+                techstack: toArray(profile?.techstack),
+                domain: toArray(profile?.domain),
+            },
         };
     }, [answers?.evaluateResponse, profile, surveyResult]);
 
+    // Refresh once per user only when result data is missing/incomplete.
+    useEffect(() => {
+        let cancelled = false;
+
+        const tryRefresh = async () => {
+            const userId = answers?.userId;
+            if (!userId) return;
+
+            const normalizedExisting = normalizeEvaluateResponse(
+                surveyResult?.data || surveyResult || answers?.evaluateResponse || null,
+            );
+            const hasResponseData =
+                Array.isArray(normalizedExisting?.answer?.responses) && normalizedExisting.answer.responses.length > 0;
+
+            if (hasResponseData || refreshedUserRef.current === userId) return;
+            refreshedUserRef.current = userId;
+
+            try {
+                const data = await getAssessmentData(userId);
+                if (!data || cancelled) return;
+                const mapped = mapAssessmentPayloadToResult(data, userId);
+                if (mapped && !cancelled) {
+                    setAnswers(mapped.answers);
+                    setSkillScores(mapped.skillScores || []);
+                    updateMatchPercentage(mapped.matchPercentage || 0);
+                }
+            } catch (err) {
+                // ignore - keep showing whatever we have
+            }
+        };
+
+        tryRefresh();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [answers?.evaluateResponse, answers?.userId, setAnswers, setSkillScores, surveyResult, updateMatchPercentage]);
+
     const displaySkillScores = calculatedSkillScores;
     const groupedSkillCards = useMemo(() => {
-        const selectedStacks = Array.isArray(resolvedProfile?.techstack) ? resolvedProfile.techstack.filter(Boolean) : [];
-
-        if (!selectedStacks.length) {
-            const fallbackLevelBreakdown = buildLevelBreakdown(displaySkillScores);
-            return [
-                {
-                    id: "assessment-skills",
-                    title: "Skills from Assessment",
-                    score: displaySkillScores.length
-                        ? Math.round(
-                              displaySkillScores.reduce((sum, item) => sum + (Number(item?.score) || 0), 0) /
-                                  displaySkillScores.length,
-                          )
-                        : 0,
-                    count: displaySkillScores.length,
-                    missingCount: displaySkillScores.filter((item) => item?.status === "missing").length,
-                    weakCount: displaySkillScores.filter((item) => item?.status === "weak").length,
-                    levelBreakdown: fallbackLevelBreakdown,
-                    skills: displaySkillScores,
-                },
-            ];
-        }
-
-        const bucketMap = new Map(selectedStacks.map((stack) => [stack, []]));
-        const unmatched = [];
-        const backendStacks = selectedStacks.filter((stack) => isLikelyBackendStack(stack));
-        let backendRoundRobinIndex = 0;
-        const sqlStack = selectedStacks.find((stack) => {
-            const normalized = normalizeText(stack);
-            return ["sql", "postgresql", "postgres", "mysql", "mssql", "sql server"].includes(normalized);
-        });
-
-        displaySkillScores.forEach((skill) => {
-            const skillName = normalizeText(skill?.skillKey);
-            const skillCategory = normalizeText(skill?.category);
-            const isDatabaseSkill = DATABASE_KEYWORDS.some((keyword) => skillName.includes(keyword));
-
-            if (sqlStack && isDatabaseSkill) {
-                bucketMap.get(sqlStack)?.push(skill);
-                return;
-            }
-
-            const keywordMatches = selectedStacks.filter((stack) => {
-                const hint = getStackHint(stack) || {};
-                const keywords = hint.keywords || [normalizeText(stack)];
-                return keywords.some((keyword) => keyword && skillName.includes(keyword));
-            });
-
-            if (keywordMatches.length === 1) {
-                bucketMap.get(keywordMatches[0]).push(skill);
-                return;
-            }
-
-            if (keywordMatches.length > 1) {
-                bucketMap.get(keywordMatches[0]).push(skill);
-                return;
-            }
-
-            const categoryMatches = selectedStacks.filter((stack) => {
-                const hint = getStackHint(stack) || {};
-                const categories = (hint.categories || []).map((item) => normalizeText(item));
-                return categories.includes(skillCategory);
-            });
-
-            if (categoryMatches.length > 0) {
-                bucketMap.get(categoryMatches[0]).push(skill);
-                return;
-            }
-
-            const isGenericBackendSkill =
-                skillCategory === "backend" ||
-                GENERIC_BACKEND_KEYWORDS.some((keyword) => keyword && skillName.includes(keyword));
-            if (isGenericBackendSkill && backendStacks.length > 0) {
-                const assignedStack = backendStacks[backendRoundRobinIndex % backendStacks.length];
-                backendRoundRobinIndex += 1;
-                bucketMap.get(assignedStack)?.push(skill);
-                return;
-            }
-
-            unmatched.push(skill);
-        });
-
-        const techGroups = selectedStacks.map((stack) => {
-            const skillsInGroup = bucketMap.get(stack) || [];
-            const score = skillsInGroup.length
-                ? Math.round(
-                      skillsInGroup.reduce((sum, item) => sum + (Number(item?.score) || 0), 0) / skillsInGroup.length,
-                  )
-                : 0;
-            const levelBreakdown = buildLevelBreakdown(skillsInGroup);
-
-            return {
-                id: `stack-${normalizeText(stack)}`,
-                title: ["postgresql", "postgres", "sql", "mysql", "mssql", "sql server"].includes(normalizeText(stack))
-                    ? "SQL"
-                    : stack,
-                score,
-                count: skillsInGroup.length,
-                missingCount: skillsInGroup.filter((item) => item?.status === "missing").length,
-                weakCount: skillsInGroup.filter((item) => item?.status === "weak").length,
+        const levelBreakdown = buildLevelBreakdown(displaySkillScores);
+        return [
+            {
+                id: "assessment-skills",
+                title: "Skills from API",
+                score: displaySkillScores.length
+                    ? Math.round(
+                          displaySkillScores.reduce((sum, item) => sum + (Number(item?.score) || 0), 0) /
+                              displaySkillScores.length,
+                      )
+                    : 0,
+                count: displaySkillScores.length,
+                missingCount: displaySkillScores.filter((item) => item?.status === "missing").length,
+                weakCount: displaySkillScores.filter((item) => item?.status === "weak").length,
                 levelBreakdown,
-                skills: skillsInGroup,
-            };
-        })
-            .filter((group) => group.count > 0);
-
-        if (unmatched.length > 0) {
-            const unmatchedLevelBreakdown = buildLevelBreakdown(unmatched);
-            techGroups.push({
-                id: "other-skills",
-                title: "Other Skills",
-                score: Math.round(
-                    unmatched.reduce((sum, item) => sum + (Number(item?.score) || 0), 0) / unmatched.length,
-                ),
-                count: unmatched.length,
-                missingCount: unmatched.filter((item) => item?.status === "missing").length,
-                weakCount: unmatched.filter((item) => item?.status === "weak").length,
-                levelBreakdown: unmatchedLevelBreakdown,
-                skills: unmatched,
-            });
-        }
-
-        return techGroups;
-    }, [displaySkillScores, resolvedProfile?.techstack]);
+                skills: displaySkillScores,
+            },
+        ];
+    }, [displaySkillScores]);
 
     const effectiveMatchPercentage = useMemo(() => {
         if (overallScorePercent != null && Number.isFinite(Number(overallScorePercent))) {

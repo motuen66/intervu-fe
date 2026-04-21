@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box, CircularProgress, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { alpha } from "@mui/material/styles";
 import { useAssessment } from "../context/AssessmentContext";
+import { normalizeEvaluateResponse } from "../helpers/assessmentHelper";
 
 const levelMap = {
     none: 0,
@@ -37,11 +38,14 @@ const targetLevelMap = [
 ];
 
 const ProcessingState = () => {
-    const { answers, setSkillScores, updateMatchPercentage, nextStep } = useAssessment();
+    const { answers, setAnswers, setSkillScores, updateMatchPercentage, nextStep, saveAssessmentSnapshot } =
+        useAssessment();
     const [progress, setProgress] = useState(0);
     const [statusIndex, setStatusIndex] = useState(0);
+    const startedRef = useRef(false);
 
     const profile = answers?.profile || {};
+    const safeTechstack = Array.isArray(profile?.techstack) ? profile.techstack : [];
     const processedSkills = useMemo(() => {
         try {
             if (Array.isArray(answers?.answerJson?.skillScores) && answers.answerJson.skillScores.length > 0) {
@@ -67,32 +71,55 @@ const ProcessingState = () => {
     const statuses = useMemo(
         () => [
             `Analyzing ${profile.role || "your"} assessment answers...`,
-            `Mapping ${profile.techstack?.slice(0, 2).join(" / ") || "your stack"} confidence levels...`,
+            `Mapping ${safeTechstack.slice(0, 2).join(" / ") || "your stack"} confidence levels...`,
             "Calibrating skill gaps and readiness score...",
             "Preparing your result dashboard...",
         ],
-        [profile.role, profile.techstack],
+        [profile.role, safeTechstack],
     );
 
     useEffect(() => {
+        if (startedRef.current) {
+            return undefined;
+        }
+        startedRef.current = true;
+
         let isCancelled = false;
         const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+        const withTimeout = async (promise, timeoutMs) =>
+            Promise.race([
+                promise,
+                new Promise((resolve) => window.setTimeout(() => resolve(null), timeoutMs)),
+            ]);
 
         const progressInterval = window.setInterval(() => {
-            setProgress((prev) => (prev >= 90 ? 90 : Math.min(90, prev + Math.random() * 6 + 1)));
+            setProgress((prev) => (prev >= 94 ? 94 : Math.min(94, prev + (prev < 60 ? Math.random() * 8 + 2 : Math.random() * 3 + 0.8))));
         }, 300);
 
         const statusInterval = window.setInterval(() => {
-            setStatusIndex((prev) => (prev >= statuses.length - 1 ? prev : prev + 1));
+            setStatusIndex((prev) => (prev >= statuses.length - 2 ? prev : prev + 1));
         }, 1100);
 
         const run = async () => {
-            await wait(2500);
-            if (isCancelled) {
-                return;
-            }
-            window.clearInterval(progressInterval);
-            window.clearInterval(statusInterval);
+            await wait(800);
+
+            try {
+                const snapshot = await withTimeout(saveAssessmentSnapshot(), 12000);
+                const normalizedSnapshot = normalizeEvaluateResponse(snapshot?.data || snapshot);
+
+                if (normalizedSnapshot?.answer && !isCancelled) {
+                    setAnswers((prev) => ({
+                        ...(prev || {}),
+                        evaluateResponse: normalizedSnapshot,
+                        answerJson: {
+                            ...(prev?.answerJson || {}),
+                            responses: Array.isArray(normalizedSnapshot.answer.responses)
+                                ? normalizedSnapshot.answer.responses
+                                : prev?.answerJson?.responses || [],
+                        },
+                    }));
+                }
+            } catch {}
 
             try {
                 setSkillScores(processedSkills);
@@ -103,11 +130,16 @@ const ProcessingState = () => {
                 return;
             }
 
+            window.clearInterval(progressInterval);
+            window.clearInterval(statusInterval);
             setProgress(100);
             setStatusIndex(statuses.length - 1);
-            await wait(500);
+            await wait(350);
 
             if (!isCancelled) {
+                try {
+                    sessionStorage.setItem("assessment_result_hard_reload", "ready");
+                } catch {}
                 nextStep();
             }
         };
@@ -119,7 +151,7 @@ const ProcessingState = () => {
             window.clearInterval(progressInterval);
             window.clearInterval(statusInterval);
         };
-    }, [matchPercentage, nextStep, processedSkills, setSkillScores, statuses.length, updateMatchPercentage]);
+    }, []);
 
     return (
         <Box sx={{ maxWidth: 760, mx: "auto", px: 3, py: 10 }}>
