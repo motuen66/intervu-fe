@@ -4,26 +4,29 @@ import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import toast from "react-hot-toast";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 import { ROLES } from "../../../../common/constants/common.js";
 import { INTERVIEW_ROOM_TYPE } from "../../../../common/constants/types.js";
-import FeedbackListModal from "./FeedbackListModal.jsx";
-import RescheduleRequestModal from "./RescheduleRequestModal.jsx";
-import JDMultiRoundRescheduleModal from "./JDMultiRoundRescheduleModal.jsx";
-import GeneratedQuestionsModal from "./GeneratedQuestionsModal.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
-import ViewFeedbackModal from "./ViewFeedbackModal.jsx";
-import CoachEvaluationModal from "./CoachEvaluationModal.jsx";
-import PrecheckModal from "./PrecheckModal.jsx";
 import { userEndPoints } from "../../../../common/services/userApi.js";
 
 import InterviewStats from "./components/InterviewStats.jsx";
 import UpcomingTab from "./components/UpcomingTab.jsx";
-import PastHistoryTab from "./components/PastHistoryTab.jsx";
-import RescheduleRequestsTab from "./components/RescheduleRequestsTab.jsx";
-import CancelInterviewConfirmDialog from "./components/CancelInterviewConfirmDialog.jsx";
+
+// Lazy-loaded below-the-fold / modal chunks — keeps initial render light.
+const PastHistoryTab = lazy(() => import("./components/PastHistoryTab.jsx"));
+const FeedbackListModal = lazy(() => import("./FeedbackListModal.jsx"));
+const RescheduleRequestModal = lazy(() => import("./RescheduleRequestModal.jsx"));
+const JDMultiRoundRescheduleModal = lazy(() => import("./JDMultiRoundRescheduleModal.jsx"));
+const GeneratedQuestionsModal = lazy(() => import("./GeneratedQuestionsModal.jsx"));
+const ViewFeedbackModal = lazy(() => import("./ViewFeedbackModal.jsx"));
+const CoachEvaluationModal = lazy(() => import("./CoachEvaluationModal.jsx"));
+const PrecheckModal = lazy(() => import("./PrecheckModal.jsx"));
+const CancelInterviewConfirmDialog = lazy(
+    () => import("./components/CancelInterviewConfirmDialog.jsx"),
+);
 
 function TabPanel({ children, value, index, ...other }) {
     return (
@@ -705,77 +708,104 @@ function InterviewRoomListPage() {
                 </TabPanel>
 
                 <TabPanel value={activeTab} index={1}>
-                    <PastHistoryTab
-                        rooms={pastState.items}
-                        user={user}
-                        loading={pastState.loading}
-                        page={pastState.page}
-                        totalPages={pastState.totalPages}
-                        totalItems={pastState.totalItems}
-                        pageSize={pastState.pageSize}
-                        onPageChange={handlePastPageChange}
-                        onViewFeedback={handleViewFeedback}
-                        onReviewQuestions={handleReviewQuestions}
-                    />
+                    <Suspense
+                        fallback={
+                            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                                <CircularProgress size={30} />
+                            </Box>
+                        }
+                    >
+                        <PastHistoryTab
+                            rooms={pastState.items}
+                            user={user}
+                            loading={pastState.loading}
+                            page={pastState.page}
+                            totalPages={pastState.totalPages}
+                            totalItems={pastState.totalItems}
+                            pageSize={pastState.pageSize}
+                            onPageChange={handlePastPageChange}
+                            onViewFeedback={handleViewFeedback}
+                            onReviewQuestions={handleReviewQuestions}
+                        />
+                    </Suspense>
                 </TabPanel>
 
-                <FeedbackListModal
-                    open={feedbackModalState.open}
-                    onClose={handleCloseFeedbackModal}
-                    mode={feedbackModalState.mode}
-                    onFeedbackSubmitted={checkPendingFeedbacks}
-                />
+                <Suspense fallback={null}>
+                    {feedbackModalState.open && (
+                        <FeedbackListModal
+                            open={feedbackModalState.open}
+                            onClose={handleCloseFeedbackModal}
+                            mode={feedbackModalState.mode}
+                            onFeedbackSubmitted={checkPendingFeedbacks}
+                        />
+                    )}
 
-                <CoachEvaluationModal
-                    open={coachEvaluationState.open}
-                    room={coachEvaluationState.room}
-                    onClose={handleCloseCoachEvaluation}
-                    onSubmitted={handleCoachEvaluationSubmitted}
-                />
+                    {coachEvaluationState.open && (
+                        <CoachEvaluationModal
+                            open={coachEvaluationState.open}
+                            room={coachEvaluationState.room}
+                            onClose={handleCloseCoachEvaluation}
+                            onSubmitted={handleCoachEvaluationSubmitted}
+                        />
+                    )}
 
-                <ViewFeedbackModal
-                    open={viewFeedbackState.open}
-                    onClose={handleCloseViewFeedback}
-                    interviewRoomId={viewFeedbackState.interviewRoomId}
-                    user={user}
-                />
+                    {viewFeedbackState.open && (
+                        <ViewFeedbackModal
+                            open={viewFeedbackState.open}
+                            onClose={handleCloseViewFeedback}
+                            interviewRoomId={viewFeedbackState.interviewRoomId}
+                            user={user}
+                        />
+                    )}
 
-                {isMultiRoundReschedule ? (
-                    <JDMultiRoundRescheduleModal
-                        open={rescheduleModalState.open}
-                        onClose={handleCloseRescheduleModal}
-                        onSubmit={handleSubmitReschedule}
-                        currentSession={rescheduleModalState.room}
-                    />
-                ) : (
-                    <RescheduleRequestModal
-                        open={rescheduleModalState.open}
-                        onClose={handleCloseRescheduleModal}
-                        onSubmit={handleSubmitReschedule}
-                        currentSession={rescheduleModalState.room}
+                    {rescheduleModalState.open && (
+                        isMultiRoundReschedule ? (
+                            <JDMultiRoundRescheduleModal
+                                open={rescheduleModalState.open}
+                                onClose={handleCloseRescheduleModal}
+                                onSubmit={handleSubmitReschedule}
+                                currentSession={rescheduleModalState.room}
+                            />
+                        ) : (
+                            <RescheduleRequestModal
+                                open={rescheduleModalState.open}
+                                onClose={handleCloseRescheduleModal}
+                                onSubmit={handleSubmitReschedule}
+                                currentSession={rescheduleModalState.room}
+                            />
+                        )
+                    )}
+
+                    {cancelConfirmState.open && (
+                        <CancelInterviewConfirmDialog
+                            open={cancelConfirmState.open}
+                            onClose={handleCloseCancelConfirm}
+                            onConfirm={handleConfirmCancelInterview}
+                            previewRefundPercent={cancelConfirmState.previewRefundPercent}
+                            previewRefundAmount={cancelConfirmState.previewRefundAmount}
+                            bankInfo={cancelBankInfoState}
+                        />
+                    )}
+                </Suspense>
+            </Container>
+
+            <Suspense fallback={null}>
+                {genQuestionsModalState.open && (
+                    <GeneratedQuestionsModal
+                        open={genQuestionsModalState.open}
+                        onClose={handleCloseGenQuestionsModal}
+                        roomId={genQuestionsModalState.roomId}
                     />
                 )}
 
-                <CancelInterviewConfirmDialog
-                    open={cancelConfirmState.open}
-                    onClose={handleCloseCancelConfirm}
-                    onConfirm={handleConfirmCancelInterview}
-                    previewRefundPercent={cancelConfirmState.previewRefundPercent}
-                    previewRefundAmount={cancelConfirmState.previewRefundAmount}
-                    bankInfo={cancelBankInfoState}
-                />
-            </Container>
-            <GeneratedQuestionsModal
-                open={genQuestionsModalState.open}
-                onClose={handleCloseGenQuestionsModal}
-                roomId={genQuestionsModalState.roomId}
-            />
-
-            <PrecheckModal
-                open={precheckState.open}
-                onClose={() => setPrecheckState({ open: false, room: null })}
-                room={precheckState.room}
-            />
+                {precheckState.open && (
+                    <PrecheckModal
+                        open={precheckState.open}
+                        onClose={() => setPrecheckState({ open: false, room: null })}
+                        room={precheckState.room}
+                    />
+                )}
+            </Suspense>
         </Box>
     );
 }
