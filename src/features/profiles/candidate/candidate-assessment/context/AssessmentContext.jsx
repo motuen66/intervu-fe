@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { METHOD } from "../../../../../common/constants/api";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { assessmentEndPoints } from "../services/assessmentApi.js";
@@ -14,12 +14,58 @@ export function AssessmentProvider({ children }) {
     const [matchPercentage, setMatchPercentage] = useState(0);
     const [lastMatchPercentage, setLastMatchPercentage] = useState(0);
 
+    const nextStep = useCallback(() => setCurrentStep((prev) => prev + 1), []);
+    const prevStep = useCallback(() => setCurrentStep((prev) => Math.max(1, prev - 1)), []);
+
+    const saveAssessmentSnapshot = useCallback(async () => {
+        if (surveyResult) {
+            return surveyResult;
+        }
+
+        const payload = answers?.processingPayload;
+        if (!payload) {
+            return surveyResult;
+        }
+
+        const apiResult = await callApi({
+            method: METHOD.POST,
+            // MIGRATION: evaluate-assessment now requires payload shape { answer: { profile, responses } }
+            endpoint: assessmentEndPoints.EVALUATE_ASSESSMENT(),
+            arg: payload,
+            alertErrorMessage: true,
+            useGlobalLoading: false,
+        });
+        if (apiResult?.data) {
+            setSurveyResult(apiResult.data);
+            return apiResult.data;
+        }
+
+        return surveyResult;
+    }, [answers?.processingPayload, surveyResult]);
+
+    const resetAssessment = useCallback(() => {
+        setAnswers(null);
+        setSurveyResult(null);
+        setSkillScores([]);
+        setRoadmap({ today: [], weeks: [] });
+        setMatchPercentage(0);
+        setLastMatchPercentage(0);
+        setCurrentStep(1);
+    }, []);
+
+    const updateMatchPercentage = useCallback((nextValue) => {
+        setMatchPercentage((prev) => {
+            setLastMatchPercentage(prev);
+            return nextValue;
+        });
+    }, []);
+
     const value = useMemo(
         () => ({
             currentStep,
             setCurrentStep,
-            nextStep: () => setCurrentStep((prev) => prev + 1),
-            prevStep: () => setCurrentStep((prev) => Math.max(1, prev - 1)),
+            nextStep,
+            prevStep,
             answers,
             setAnswers,
             surveyResult,
@@ -28,48 +74,26 @@ export function AssessmentProvider({ children }) {
             setSkillScores,
             roadmap,
             setRoadmap,
-            saveAssessmentSnapshot: async () => {
-                if (surveyResult) {
-                    return surveyResult;
-                }
-
-                const payload = answers?.processingPayload;
-                if (!payload) {
-                    return surveyResult;
-                }
-
-                const apiResult = await callApi({
-                    method: METHOD.POST,
-                    // MIGRATION: evaluate-assessment now requires payload shape { answer: { profile, responses } }
-                    endpoint: assessmentEndPoints.EVALUATE_ASSESSMENT(),
-                    arg: payload,
-                    alertErrorMessage: true,
-                    useGlobalLoading: false,
-                });
-                if (apiResult?.data) {
-                    setSurveyResult(apiResult.data);
-                    return apiResult.data;
-                }
-
-                return surveyResult;
-            },
-            resetAssessment: () => {
-                setAnswers(null);
-                setSurveyResult(null);
-                setSkillScores([]);
-                setRoadmap({ today: [], weeks: [] });
-                setMatchPercentage(0);
-                setLastMatchPercentage(0);
-                setCurrentStep(1);
-            },
+            saveAssessmentSnapshot,
+            resetAssessment,
             matchPercentage,
             lastMatchPercentage,
-            updateMatchPercentage: (nextValue) => {
-                setLastMatchPercentage(matchPercentage);
-                setMatchPercentage(nextValue);
-            },
+            updateMatchPercentage,
         }),
-        [answers, currentStep, lastMatchPercentage, matchPercentage, roadmap, skillScores, surveyResult],
+        [
+            answers,
+            currentStep,
+            lastMatchPercentage,
+            matchPercentage,
+            nextStep,
+            prevStep,
+            resetAssessment,
+            roadmap,
+            saveAssessmentSnapshot,
+            skillScores,
+            surveyResult,
+            updateMatchPercentage,
+        ],
     );
 
     return <AssessmentContext.Provider value={value}>{children}</AssessmentContext.Provider>;

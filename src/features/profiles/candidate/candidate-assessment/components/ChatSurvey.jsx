@@ -833,7 +833,7 @@ const ChatSurvey = () => {
                 // MIGRATION: evaluate-assessment now requires payload shape { answer: { profile, responses } }
                 endpoint: assessmentEndPoints.EVALUATE_ASSESSMENT(),
                 arg: payload,
-                alertErrorMessage: true,
+                alertErrorMessage: false,
                 useGlobalLoading: false,
             });
 
@@ -841,7 +841,8 @@ const ChatSurvey = () => {
                 throw new Error("Evaluate assessment failed.");
             }
 
-            const mappedResult = mapAssessmentPayloadToResult(processResult?.data, userId);
+            const evaluatePayload = processResult?.data?.data || processResult?.data || null;
+            const mappedResult = mapAssessmentPayloadToResult(evaluatePayload, userId);
 
             if (mappedResult) {
                 setAnswers({
@@ -853,23 +854,33 @@ const ChatSurvey = () => {
                     },
                     processingPayload: payload,
                 });
+                setSkillScores(mappedResult.skillScores || []);
+                updateMatchPercentage(mappedResult.matchPercentage || 0);
                 setRoadmap(mappedResult.roadmap || { today: [], weeks: [] });
-                setSurveyResult(mappedResult.surveyResult || processResult?.data || buildFallbackSurveyResult(answerSnapshot.profile, finalResponses));
+                setSurveyResult(
+                    mappedResult.surveyResult ||
+                        evaluatePayload ||
+                        buildFallbackSurveyResult(answerSnapshot.profile, finalResponses),
+                );
             } else {
                 setAnswers((prev) => ({
                     ...(prev || {}),
                     answerJson,
                     processingPayload: payload,
                 }));
-                setSurveyResult(processResult?.data || buildFallbackSurveyResult(answerSnapshot.profile, finalResponses));
+                setSkillScores([]);
+                updateMatchPercentage(0);
+                setSurveyResult(evaluatePayload || buildFallbackSurveyResult(answerSnapshot.profile, finalResponses));
             }
         } catch (error) {
-            console.error(error);
+            console.warn("Evaluate assessment failed. Falling back to local result.", error);
             setAnswers((prev) => ({
                 ...(prev || {}),
                 answerJson,
                 processingPayload: payload,
             }));
+            setSkillScores([]);
+            updateMatchPercentage(0);
             setSurveyResult(buildFallbackSurveyResult(answerSnapshot.profile, finalResponses));
         } finally {
             if (mountedRef.current) {
