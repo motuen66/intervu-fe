@@ -1,18 +1,34 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyWithRetry } from "../../common/utils/lazyWithRetry";
+import RouteLoadingFallback from "../../common/components/loaders/RouteLoadingFallback";
 
-const ScheduleManagement = lazy(
+const ScheduleManagement = lazyWithRetry(
     () => import("../../features/coach/pages/ScheduleManagementPage/ScheduleManagement.jsx"),
+    "schedule-management-page",
 );
-const CoachInterviewServicePage = lazy(
+const CoachInterviewServicePage = lazyWithRetry(
     () => import("../../features/coach/pages/CoachInterviewServicePage/CoachInterviewServicePage.jsx"),
+    "coach-interview-service-page",
 );
-const InterviewerProfilePage = lazy(() => import("../../features/profiles/coach/page/InterviewerProfilePage.jsx"));
-const CandidateProfilePage = lazy(() => import("../../features/profiles/candidate/page/CandidateProfilePage.jsx"));
-const CoachDashboardPage = lazy(() => import("../../features/coach/pages/CoachDashboardPage/CoachDashboardPage.jsx"));
-const CoachWalletPage = lazy(() => import("../../features/coach/pages/CoachWalletPage/CoachWalletPage.jsx"));
+const InterviewerProfilePage = lazyWithRetry(
+    () => import("../../features/profiles/coach/page/InterviewerProfilePage.jsx"),
+    "interviewer-profile-page",
+);
+const CandidateProfilePage = lazyWithRetry(
+    () => import("../../features/profiles/candidate/page/CandidateProfilePage.jsx"),
+    "candidate-profile-for-coach-page",
+);
+const CoachDashboardPage = lazyWithRetry(
+    () => import("../../features/coach/pages/CoachDashboardPage/CoachDashboardPage.jsx"),
+    "coach-dashboard-page",
+);
+const CoachWalletPage = lazyWithRetry(
+    () => import("../../features/coach/pages/CoachWalletPage/CoachWalletPage.jsx"),
+    "coach-wallet-page",
+);
 
 const renderLazy = (LazyComponent) => (
-    <Suspense fallback={null}>
+    <Suspense fallback={<RouteLoadingFallback />}>
         <LazyComponent />
     </Suspense>
 );

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { Navigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { adminRoutes } from "./adminRoutes";
@@ -8,43 +8,65 @@ import { candidateRoutes } from "./candidateRoutes.jsx";
 import EmptyLayout from "../layouts/EmptyLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
+import { lazyWithRetry } from "../../common/utils/lazyWithRetry";
+import RouteLoadingFallback from "../../common/components/loaders/RouteLoadingFallback";
 
-const HomePage = lazy(() => import("../../features/home/pages/HomePage"));
-const LandingPage = lazy(() => import("../../features/landing/pages/LandingPage"));
-const RootPage = lazy(() => import("./RootPage"));
-const CandidateProfilePage = lazy(() => import("../../features/profiles/candidate/page/CandidateProfilePage.jsx"));
-const PublicCandidateProfilePage = lazy(
+const HomePage = lazyWithRetry(() => import("../../features/home/pages/HomePage"), "home-page");
+const LandingPage = lazyWithRetry(() => import("../../features/landing/pages/LandingPage"), "landing-page");
+const RootPage = lazyWithRetry(() => import("./RootPage"), "root-page");
+const CandidateProfilePage = lazyWithRetry(
+    () => import("../../features/profiles/candidate/page/CandidateProfilePage.jsx"),
+    "candidate-profile-page",
+);
+const PublicCandidateProfilePage = lazyWithRetry(
     () => import("../../features/profiles/candidate/page/PublicCandidateProfilePage.jsx"),
+    "public-candidate-profile-page",
 );
-const UserProfilePage = lazy(() => import("../../features/profile/pages/UserProfilePage"));
-const InterviewRoomListPage = lazy(
+const UserProfilePage = lazyWithRetry(() => import("../../features/profile/pages/UserProfilePage"), "user-profile-page");
+const InterviewRoomListPage = lazyWithRetry(
     () => import("../../features/interview/pages/InterviewRoomListPage/InterviewRoomListPage"),
+    "interview-room-list-page",
 );
-const InterviewRoomPage = lazy(() => import("../../features/interview/pages/InterviewRoomPage/InterviewRoomPage"));
-const BookingRequestListPage = lazy(
+const InterviewRoomPage = lazyWithRetry(
+    () => import("../../features/interview/pages/InterviewRoomPage/InterviewRoomPage"),
+    "interview-room-page",
+);
+const BookingRequestListPage = lazyWithRetry(
     () => import("../../features/interview/pages/BookingRequestPage/BookingRequestListPage"),
+    "booking-request-list-page",
 );
-const BookingRequestDetailPage = lazy(
+const BookingRequestDetailPage = lazyWithRetry(
     () => import("../../features/interview/pages/BookingRequestPage/BookingRequestDetailPage"),
+    "booking-request-detail-page",
 );
-const App = lazy(() => import("../../App"));
-const PaymentHistoryPage = lazy(() => import("../../features/payments/pages/PaymentHistoryPage.jsx"));
-const InterviewQuestionsPage = lazy(
+const App = lazyWithRetry(() => import("../../App"), "app-page");
+const PaymentHistoryPage = lazyWithRetry(
+    () => import("../../features/payments/pages/PaymentHistoryPage.jsx"),
+    "payment-history-page",
+);
+const InterviewQuestionsPage = lazyWithRetry(
     () => import("../../features/interviewQuestions/page/InterviewQuestionsPage/InterviewQuestionsPage.jsx"),
+    "interview-questions-page",
 );
-const QuestionDetailPage = lazy(
+const QuestionDetailPage = lazyWithRetry(
     () => import("../../features/interviewQuestions/page/QuestionDetailPage/QuestionDetailPage.jsx"),
+    "question-detail-page",
 );
-const ShareExperiencePage = lazy(
+const ShareExperiencePage = lazyWithRetry(
     () => import("../../features/interviewQuestions/page/ShareExperiencePage/ShareExperiencePage.jsx"),
+    "share-experience-page",
 );
-const SavedQuestionsPage = lazy(
+const SavedQuestionsPage = lazyWithRetry(
     () => import("../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx"),
+    "saved-questions-page",
 );
-const PublicProfilePage = lazy(() => import("../../features/profiles/page/PublicProfilePage.jsx"));
+const PublicProfilePage = lazyWithRetry(
+    () => import("../../features/profiles/page/PublicProfilePage.jsx"),
+    "public-profile-page",
+);
 
 const renderLazy = (LazyComponent, props = {}) => (
-    <Suspense fallback={null}>
+    <Suspense fallback={<RouteLoadingFallback />}>
         <LazyComponent {...props} />
     </Suspense>
 );

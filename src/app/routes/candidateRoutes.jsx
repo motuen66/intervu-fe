@@ -1,12 +1,17 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyWithRetry } from "../../common/utils/lazyWithRetry";
+import RouteLoadingFallback from "../../common/components/loaders/RouteLoadingFallback";
 
-const Test = lazy(() => import("../../features/test/pages/Test"));
-const HomePage = lazy(() => import("../../features/home/pages/HomePage"));
-const RoadmapDashboard = lazy(() => import("../../features/roadmap/RoadmapDashboard"));
-const CandidateAssessmentPage = lazy(() => import("../../features/profiles/candidate/pages/CandidateAssessmentPage"));
+const Test = lazyWithRetry(() => import("../../features/test/pages/Test"), "candidate-test-page");
+const HomePage = lazyWithRetry(() => import("../../features/home/pages/HomePage"), "candidate-home-page");
+const RoadmapDashboard = lazyWithRetry(() => import("../../features/roadmap/RoadmapDashboard"), "roadmap-dashboard-page");
+const CandidateAssessmentPage = lazyWithRetry(
+    () => import("../../features/profiles/candidate/pages/CandidateAssessmentPage"),
+    "candidate-assessment-page",
+);
 
 const renderLazy = (LazyComponent) => (
-    <Suspense fallback={null}>
+    <Suspense fallback={<RouteLoadingFallback />}>
         <LazyComponent />
     </Suspense>
 );

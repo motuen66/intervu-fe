@@ -1,14 +1,22 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
+import { lazyWithRetry } from "../../common/utils/lazyWithRetry";
+import RouteLoadingFallback from "../../common/components/loaders/RouteLoadingFallback";
 
-const LoginPage = lazy(() => import("../../features/auth/pages/LoginPage/LoginPage"));
-const SignUpPage = lazy(() => import("../../features/auth/pages/SignUpPage"));
-const Test = lazy(() => import("../../features/test/pages/Test"));
-const ResetPassword = lazy(() => import("../../features/auth/pages/ForgotPassword/ResetPassword"));
-const ForgotPassword = lazy(() => import("../../features/auth/pages/ForgotPassword/ForgotPassword"));
+const LoginPage = lazyWithRetry(() => import("../../features/auth/pages/LoginPage/LoginPage"), "login-page");
+const SignUpPage = lazyWithRetry(() => import("../../features/auth/pages/SignUpPage"), "signup-page");
+const Test = lazyWithRetry(() => import("../../features/test/pages/Test"), "test-page");
+const ResetPassword = lazyWithRetry(
+    () => import("../../features/auth/pages/ForgotPassword/ResetPassword"),
+    "reset-password-page",
+);
+const ForgotPassword = lazyWithRetry(
+    () => import("../../features/auth/pages/ForgotPassword/ForgotPassword"),
+    "forgot-password-page",
+);
 
 const renderLazy = (LazyComponent) => (
-    <Suspense fallback={null}>
+    <Suspense fallback={<RouteLoadingFallback />}>
         <LazyComponent />
     </Suspense>
 );

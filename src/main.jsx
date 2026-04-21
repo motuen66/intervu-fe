@@ -13,6 +13,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { initGA, trackAppOpen } from "./utils/analytics";
 import GlobalLoadingOverlay from "./common/components/loaders/GlobalLoadingOverlay";
+import ChunkErrorBoundary from "./common/components/ChunkErrorBoundary";
 
 const router = createBrowserRouter(routes);
 export const store = configureStore({ reducer: rootReducer });
@@ -35,48 +36,50 @@ try {
 }
 
 createRoot(document.getElementById("root")).render(
-    <ThemeProvider theme={theme}>
-        <GlobalStyles styles={{ html: { scrollBehavior: "smooth" }, body: appBackground }} />
-        <Provider store={store}>
-            <RouterProvider router={router} />
-            <GlobalLoadingOverlay />
-            <Toaster
-                position="top-right"
-                toastOptions={{
-                    duration: 4000,
-                    error: {
+    <ChunkErrorBoundary>
+        <ThemeProvider theme={theme}>
+            <GlobalStyles styles={{ html: { scrollBehavior: "smooth" }, body: appBackground }} />
+            <Provider store={store}>
+                <RouterProvider router={router} />
+                <GlobalLoadingOverlay />
+                <Toaster
+                    position="top-right"
+                    toastOptions={{
                         duration: 4000,
-                    },
-                }}
-            >
-                {(t) => (
-                    <ToastBar toast={t}>
-                        {({ icon, message }) => (
-                            <>
-                                {icon}
-                                {message}
-                                {t.type !== "loading" && (
-                                    <button
-                                        onClick={() => toast.dismiss(t.id)}
-                                        style={{
-                                            background: "transparent",
-                                            border: "none",
-                                            cursor: "pointer",
-                                            marginLeft: "8px",
-                                            fontSize: "16px",
-                                            padding: "0 4px",
-                                        }}
-                                    >
-                                        x
-                                    </button>
-                                )}
-                            </>
-                        )}
-                    </ToastBar>
-                )}
-            </Toaster>
-            <Analytics />
-            <SpeedInsights />
-        </Provider>
-    </ThemeProvider>,
+                        error: {
+                            duration: 4000,
+                        },
+                    }}
+                >
+                    {(t) => (
+                        <ToastBar toast={t}>
+                            {({ icon, message }) => (
+                                <>
+                                    {icon}
+                                    {message}
+                                    {t.type !== "loading" && (
+                                        <button
+                                            onClick={() => toast.dismiss(t.id)}
+                                            style={{
+                                                background: "transparent",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                marginLeft: "8px",
+                                                fontSize: "16px",
+                                                padding: "0 4px",
+                                            }}
+                                        >
+                                            x
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </ToastBar>
+                    )}
+                </Toaster>
+                <Analytics />
+                <SpeedInsights />
+            </Provider>
+        </ThemeProvider>
+    </ChunkErrorBoundary>,
 );

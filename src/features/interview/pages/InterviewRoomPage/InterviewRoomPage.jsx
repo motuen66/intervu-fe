@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useRef, useState, useCallback, lazy, Suspense, memo } from "react";
+import { useEffect, useRef, useState, useCallback, Suspense, memo } from "react";
 import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack } from "@mui/material";
 import toast from "react-hot-toast";
 
@@ -25,11 +25,15 @@ import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { ROLES } from "../../../../common/constants/common.js";
+import { lazyWithRetry } from "../../../../common/utils/lazyWithRetry.js";
 
 import QuestionPanel from "./QuestionPanel";
 import RoomReportModal from "./RoomReportModal";
-const CodeEditorPanel = lazy(() => import("./CodeEditorPanel"));
-const WhiteboardPanel = lazy(() => import("./WhiteboardPanel").then((m) => ({ default: m.WhiteboardPanel })));
+const CodeEditorPanel = lazyWithRetry(() => import("./CodeEditorPanel"), "code-editor-panel");
+const WhiteboardPanel = lazyWithRetry(
+    () => import("./WhiteboardPanel").then((m) => ({ default: m.WhiteboardPanel })),
+    "whiteboard-panel",
+);
 import { CameraWidget } from "./CameraWidget";
 import { JdCvPanel } from "./JdCvPanel";
 

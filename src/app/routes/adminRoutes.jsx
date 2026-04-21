@@ -1,33 +1,67 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { Navigate } from "react-router-dom";
+import { lazyWithRetry } from "../../common/utils/lazyWithRetry";
+import RouteLoadingFallback from "../../common/components/loaders/RouteLoadingFallback";
 
-const AdminDashboard = lazy(() => import("../../features/admin/pages/AdminDashboardPage/AdminDashboardPage"));
-const UserManagementPage = lazy(() => import("../../features/admin/pages/UserManagementPage"));
-const AdminCandidatesPage = lazy(() => import("../../features/admin/pages/AdminCandidatesPage"));
-const AdminCoachesPage = lazy(() => import("../../features/admin/pages/AdminCoachesPage"));
-const CompanyManagementPage = lazy(() => import("../../features/admin/pages/CompanyManagementPage"));
-const AdminEmptyPage = lazy(() => import("../../features/admin/pages/AdminEmptyPage"));
-const AdminTransactionsPage = lazy(() => import("../../features/admin/pages/AdminTransactionsPage"));
-const AdminInterviewsPage = lazy(() => import("../../features/admin/pages/AdminInterviewsPage"));
-const AdminReportsPage = lazy(() => import("../../features/admin/pages/AdminReportsPage"));
-const AdminRoomReportsPage = lazy(() =>
+const AdminDashboard = lazyWithRetry(
+    () => import("../../features/admin/pages/AdminDashboardPage/AdminDashboardPage"),
+    "admin-dashboard-page",
+);
+const UserManagementPage = lazyWithRetry(
+    () => import("../../features/admin/pages/UserManagementPage"),
+    "admin-user-management-page",
+);
+const AdminCandidatesPage = lazyWithRetry(
+    () => import("../../features/admin/pages/AdminCandidatesPage"),
+    "admin-candidates-page",
+);
+const AdminCoachesPage = lazyWithRetry(() => import("../../features/admin/pages/AdminCoachesPage"), "admin-coaches-page");
+const CompanyManagementPage = lazyWithRetry(
+    () => import("../../features/admin/pages/CompanyManagementPage"),
+    "admin-company-management-page",
+);
+const AdminEmptyPage = lazyWithRetry(() => import("../../features/admin/pages/AdminEmptyPage"), "admin-empty-page");
+const AdminTransactionsPage = lazyWithRetry(
+    () => import("../../features/admin/pages/AdminTransactionsPage"),
+    "admin-transactions-page",
+);
+const AdminInterviewsPage = lazyWithRetry(
+    () => import("../../features/admin/pages/AdminInterviewsPage"),
+    "admin-interviews-page",
+);
+const AdminReportsPage = lazyWithRetry(() => import("../../features/admin/pages/AdminReportsPage"), "admin-reports-page");
+const AdminRoomReportsPage = lazyWithRetry(() =>
     import("../../features/admin/pages/AdminRoomReportsPage").then((module) => ({
         default: module.AdminRoomReportsPage,
     })),
 );
-const AdminQuestionBankPage = lazy(() => import("../../features/admin/pages/AdminQuestionBankPage"));
-const ProblemResolutionDetail = lazy(() => import("../../features/admin/pages/ProblemResolutionDetail"));
-const AdminPineconeManagementPage = lazy(() =>
-    import("../../features/admin/pages/AdminPineconeManagementPage/AdminPineconeManagementPage"),
+const AdminQuestionBankPage = lazyWithRetry(
+    () => import("../../features/admin/pages/AdminQuestionBankPage"),
+    "admin-question-bank-page",
 );
-const PythonServiceMonitorPage = lazy(() =>
-    import("../../features/admin/pages/PythonServiceMonitorPage/PythonServiceMonitorPage"),
+const ProblemResolutionDetail = lazyWithRetry(
+    () => import("../../features/admin/pages/ProblemResolutionDetail"),
+    "problem-resolution-detail-page",
 );
-const AdminBroadcastPage = lazy(() => import("../../features/admin/pages/AdminBroadcastPage"));
-const AdminPlatformSettingsPage = lazy(() => import("../../features/admin/pages/AdminPlatformSettingsPage"));
+const AdminPineconeManagementPage = lazyWithRetry(
+    () => import("../../features/admin/pages/AdminPineconeManagementPage/AdminPineconeManagementPage"),
+    "admin-pinecone-management-page",
+);
+const PythonServiceMonitorPage = lazyWithRetry(
+    () => import("../../features/admin/pages/PythonServiceMonitorPage/PythonServiceMonitorPage"),
+    "python-service-monitor-page",
+);
+const AdminBroadcastPage = lazyWithRetry(
+    () => import("../../features/admin/pages/AdminBroadcastPage"),
+    "admin-broadcast-page",
+);
+const AdminPlatformSettingsPage = lazyWithRetry(
+    () => import("../../features/admin/pages/AdminPlatformSettingsPage"),
+    "admin-platform-settings-page",
+);
 
 const renderLazy = (LazyComponent, props = {}) => (
-    <Suspense fallback={null}>
+    <Suspense fallback={<RouteLoadingFallback />}>
         <LazyComponent {...props} />
     </Suspense>
 );
@@ -93,4 +127,3 @@ export const adminRoutes = [
     { path: "/admin/broadcast", element: renderLazy(AdminBroadcastPage) },
     { path: "/admin/system/platform-settings", element: renderLazy(AdminPlatformSettingsPage) },
 ];
-
