@@ -42,6 +42,7 @@ import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
 
 // Analytics
 import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
+import { useCollectQuestionTray } from "../../../../common/context/CollectQuestionTrayContext";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -602,6 +603,8 @@ function InterviewRoomPage() {
         sendSignal("SendMicState", roomId, isMicOn).catch?.(() => { });
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
+    const { startCollecting } = useCollectQuestionTray();
+
     // ── Leave room ──────────────────────────────────────────────────────────
     const handleLeaveRoom = useCallback(() => {
         leaveRoom();
@@ -610,8 +613,13 @@ function InterviewRoomPage() {
         } catch (err) {
             console.warn("trackLeaveInterviewRoom failed", err);
         }
+        // Only the coach receives the AiAnalysisCompleted notification, so only
+        // start the collection tray for interviewers leaving a transcript-bearing room.
+        if (roomId && Number(user?.role) === ROLES.INTERVIEWER) {
+            startCollecting({ roomId });
+        }
         navigate("/interview");
-    }, [leaveRoom, navigate]);
+    }, [leaveRoom, navigate, roomId, user?.role, startCollecting]);
 
     // Ensure we emit leave event on unmount/navigation
     useEffect(() => {

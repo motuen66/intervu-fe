@@ -20,6 +20,40 @@ const CollectQuestionTrayContext = createContext(null);
 const MOCK_CAP = 95;
 const TICK_MS = 600;
 const TICK_STEP = 9;
+const STORAGE_KEY = "intervu:collectTray";
+const MAX_RESUME_AGE_MS = 15 * 60 * 1000; // 15 min window after which we give up
+
+function readPersisted() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed?.roomId || !parsed?.startedAt) return null;
+        if (Date.now() - parsed.startedAt > MAX_RESUME_AGE_MS) {
+            localStorage.removeItem(STORAGE_KEY);
+            return null;
+        }
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+function writePersisted(data) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+        /* storage full / disabled — ignore */
+    }
+}
+
+function clearPersisted() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch {
+        /* ignore */
+    }
+}
 
 function getStatus(progress) {
     if (progress >= 100) return "Analysis Complete!";
@@ -70,6 +104,15 @@ export function CollectQuestionTrayProvider({ children }) {
         }
     }, []);
 
+    const startTicker = useCallback(() => {
+        intervalRef.current = setInterval(() => {
+            setProgress((prev) => {
+                const next = prev + TICK_STEP;
+                return next >= MOCK_CAP ? MOCK_CAP : next;
+            });
+        }, TICK_MS);
+    }, []);
+
     const startCollecting = useCallback(
         ({ roomId: rid } = {}) => {
             clearTicker();
@@ -78,19 +121,16 @@ export function CollectQuestionTrayProvider({ children }) {
             setVisible(true);
             setExpanded(true);
             setModalOpen(false);
-            intervalRef.current = setInterval(() => {
-                setProgress((prev) => {
-                    const next = prev + TICK_STEP;
-                    return next >= MOCK_CAP ? MOCK_CAP : next;
-                });
-            }, TICK_MS);
+            if (rid) writePersisted({ roomId: rid, startedAt: Date.now() });
+            startTicker();
         },
-        [clearTicker],
+        [clearTicker, startTicker],
     );
 
     const completeCollecting = useCallback(
         ({ roomId: rid } = {}) => {
             clearTicker();
+            clearPersisted();
             if (rid !== undefined) setRoomId(rid);
             setProgress((prev) => {
                 if (prev >= 100) return prev;
@@ -104,29 +144,45 @@ export function CollectQuestionTrayProvider({ children }) {
 
     const hideTray = useCallback(() => {
         clearTicker();
+        clearPersisted();
         setVisible(false);
     }, [clearTicker]);
 
     useEffect(() => () => clearTicker(), [clearTicker]);
 
-    // Subscribe to incoming SignalR notifications: when an "AiAnalysisCompleted"
-    // arrives for the currently-tracked room, snap the tray to 100%.
-    const latestNotification = useSelector((s) => s.notification?.items?.[0]);
+    // Resume on mount if a collection was in-flight before a reload/navigation.
+    // Runs once — the provider lives at the MainLayout level.
+    const resumedRef = useRef(false);
+    useEffect(() => {
+        if (resumedRef.current) return;
+        resumedRef.current = true;
+        const persisted = readPersisted();
+        if (!persisted) return;
+        setRoomId(persisted.roomId);
+        setProgress(0);
+        setVisible(true);
+        setExpanded(true);
+        startTicker();
+    }, [startTicker]);
+
+    // Subscribe to SignalR notifications (live + fetched-on-reload). When an
+    // "AiAnalysisCompleted" for the currently-tracked room is present, snap to 100%.
+    // Matching by roomId avoids firing on unrelated notifications that happen to
+    // arrive or get hydrated from the server after a page reload.
+    const notifications = useSelector((s) => s.notification?.items);
     const handledNotifIdRef = useRef(null);
 
     useEffect(() => {
-        if (!latestNotification) return;
-        if (latestNotification.id === handledNotifIdRef.current) return;
-        if (latestNotification.type !== AI_ANALYSIS_COMPLETED_TYPE) return;
-
-        const rid =
-            latestNotification.referenceId ??
-            extractRoomIdFromActionUrl(latestNotification.actionUrl);
-        if (!rid) return;
-
-        handledNotifIdRef.current = latestNotification.id;
-        completeCollecting({ roomId: rid });
-    }, [latestNotification, completeCollecting]);
+        if (!visible || progress >= 100 || !roomId || !notifications?.length) return;
+        const match = notifications.find((n) => {
+            if (n.type !== AI_ANALYSIS_COMPLETED_TYPE) return false;
+            const rid = n.referenceId ?? extractRoomIdFromActionUrl(n.actionUrl);
+            return rid && String(rid) === String(roomId);
+        });
+        if (!match || match.id === handledNotifIdRef.current) return;
+        handledNotifIdRef.current = match.id;
+        completeCollecting({ roomId });
+    }, [notifications, visible, progress, roomId, completeCollecting]);
 
     useEffect(() => {
         if (import.meta.env?.DEV) {
