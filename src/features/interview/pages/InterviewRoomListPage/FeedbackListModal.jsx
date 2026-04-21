@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import {
     Alert,
-    Modal,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
     Box,
     Typography,
     List,
@@ -10,23 +13,38 @@ import {
     ListItemIcon,
     ListItemText,
     Rating,
-    TextField,
-    Button,
     Stack,
     CircularProgress,
-    Chip,
-    Divider,
     IconButton,
+    Tooltip,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
+import { alpha, useTheme } from "@mui/material/styles";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import PendingActionsRoundedIcon from "@mui/icons-material/PendingActionsRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
+import StarBorderRoundedIcon from "@mui/icons-material/StarBorderRounded";
+import InboxRoundedIcon from "@mui/icons-material/InboxRounded";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
-import { buttonStyles, fieldStyles, dialogStyles } from "../../../../common/constants/uiStyles";
+import { dialogStyles } from "../../../../common/constants/uiStyles";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import StatusChip from "../../../../common/components/StatusChip";
+import FormTextField from "../../../../common/components/form/FormTextField";
+
+const MAX_COMMENT_LENGTH = 1000;
+
+const RATING_LABELS = {
+    1: "Poor",
+    2: "Fair",
+    3: "Good",
+    4: "Very good",
+    5: "Excellent",
+};
 
 const formatFeedbackTimeRange = (scheduledTime, durationMinutes) => {
     const startTime = scheduledTime ? new Date(scheduledTime) : null;
@@ -56,7 +74,8 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [selectedFeedback, setSelectedFeedback] = useState(null);
-    const [rating, setRating] = useState(0);
+    const [rating, setRating] = useState(5);
+    const [hoverRating, setHoverRating] = useState(-1);
     const [comments, setComments] = useState('');
     const [error, setError] = useState('');
     const [feedbackTimeRange, setFeedbackTimeRange] = useState('');
@@ -100,7 +119,15 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
         setFeedbackTimeRange(timerange);
         setRating(feedback.rating || 0);
         setComments(feedback.comments || '');
-        setError(''); // Clear previous errors when selecting a new item
+        setError('');
+    };
+
+    const handleBackToList = () => {
+        setSelectedFeedback(null);
+        setRating(0);
+        setComments('');
+        setFeedbackTimeRange('');
+        setError('');
     };
 
     const handleRatingChange = (event, newRating) => {
@@ -108,7 +135,10 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
     };
 
     const handleCommentsChange = (event) => {
-        setComments(event.target.value);
+        const next = event.target.value;
+        if (next.length <= MAX_COMMENT_LENGTH) {
+            setComments(next);
+        }
     };
 
     const handleSubmit = async () => {
@@ -176,297 +206,424 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
     };
 
     const hasPendingFeedbacks = mode === 'pending' && feedbacks.length > 0;
+    const isReadOnly = !!selectedFeedback?.comments;
+    const isSinglePendingFlow = mode === 'pending' && feedbacks.length === 1 && !!selectedFeedback;
+
     const submitDisabled = useMemo(
         () => submitting || !rating || comments.trim().length === 0,
         [submitting, rating, comments]
     );
 
+    const displayedRating = hoverRating !== -1 ? hoverRating : rating;
+    const ratingLabel = displayedRating ? RATING_LABELS[displayedRating] : null;
+
+    const title = mode === 'pending' ? 'Pending Feedbacks' : 'All Feedbacks';
+    const subtitle =
+        feedbacks.length === 0
+            ? 'No interviews to review'
+            : `${feedbacks.length} ${feedbacks.length === 1 ? 'interview' : 'interviews'}`;
+
     return (
-        <Modal
+        <Dialog
             open={open}
             onClose={handleClose}
-            aria-labelledby="feedback-list-modal"
-            aria-describedby="feedback-submission-form"
-        >
-            <Box
-                sx={(theme) => ({
+            fullWidth
+            maxWidth="sm"
+            aria-labelledby="feedback-list-modal-title"
+            aria-describedby="feedback-list-modal-description"
+            PaperProps={{
+                sx: (theme) => ({
                     ...dialogStyles.paper(theme),
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: 560,
-                    maxWidth: "90vw",
-                    maxHeight: "88vh",
-                    p: 3,
-                    display: "flex",
-                    flexDirection: "column",
-                })}
+                    overflow: "hidden",
+                }),
+            }}
+        >
+            <DialogTitle
+                id="feedback-list-modal-title"
+                component="div"
+                sx={{ p: 3, pb: 2 }}
             >
-                <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1.5} sx={{ mb: 2 }}>
-                    <Box>
-                        <Typography id="feedback-list-modal" variant="h4" component="h2">
-                            {mode === 'pending' ? 'Pending Feedbacks' : 'All Feedbacks'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {feedbacks.length} {feedbacks.length === 1 ? "interview" : "interviews"}
-                        </Typography>
-                    </Box>
+                <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1.5}>
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                        {selectedFeedback && !isSinglePendingFlow && (
+                            <Tooltip title="Back to list">
+                                <IconButton
+                                    size="small"
+                                    onClick={handleBackToList}
+                                    aria-label="Back to feedback list"
+                                    sx={{ color: "text.secondary" }}
+                                >
+                                    <ArrowBackRoundedIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                        <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="h5" component="h2" fontWeight={700} sx={{ letterSpacing: "-0.01em" }}>
+                                {selectedFeedback
+                                    ? (isReadOnly ? 'Feedback Details' : 'Submit Feedback')
+                                    : title}
+                            </Typography>
+                            <Typography
+                                id="feedback-list-modal-description"
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                {selectedFeedback
+                                    ? (isReadOnly
+                                        ? 'Review your submitted feedback.'
+                                        : 'Share a rating and comments to help your coach improve.')
+                                    : subtitle}
+                            </Typography>
+                        </Box>
+                    </Stack>
+
                     {!hasPendingFeedbacks && (
-                        <IconButton
-                            size="small"
-                            onClick={() => handleClose()}
-                            aria-label="Close feedback modal"
-                            sx={{ color: "text.secondary" }}
-                        >
-                            <CloseRoundedIcon fontSize="small" />
-                        </IconButton>
+                        <Tooltip title="Close">
+                            <IconButton
+                                size="small"
+                                onClick={() => handleClose()}
+                                aria-label="Close feedback modal"
+                                sx={{ color: "text.secondary" }}
+                            >
+                                <CloseRoundedIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
                     )}
                 </Stack>
+            </DialogTitle>
 
+            <DialogContent dividers sx={{ p: 3, borderColor: "divider" }}>
                 {loading ? (
                     <Stack direction="row" spacing={1.25} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
-                        <CircularProgress size={20} />
+                        <CircularProgress size={22} />
                         <Typography color="text.secondary">Loading feedbacks...</Typography>
                     </Stack>
+                ) : feedbacks.length === 0 ? (
+                    <Stack
+                        alignItems="center"
+                        justifyContent="center"
+                        spacing={1.25}
+                        sx={(theme) => ({
+                            py: 6,
+                            px: 2,
+                            textAlign: "center",
+                            borderRadius: 2,
+                            border: `1px dashed ${theme.palette.divider}`,
+                            bgcolor: alpha(theme.palette.text.primary, 0.02),
+                        })}
+                    >
+                        <InboxRoundedIcon sx={{ fontSize: 40, color: "text.disabled" }} />
+                        <Typography variant="subtitle1" fontWeight={600}>
+                            {mode === 'pending' ? 'You are all caught up!' : 'No feedbacks yet'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {mode === 'pending'
+                                ? 'There are no pending feedbacks to submit right now.'
+                                : 'Once you complete interviews, your feedbacks will appear here.'}
+                        </Typography>
+                    </Stack>
                 ) : (
-                    <>
-                        {feedbacks.length === 0 ? (
-                            <Box
-                                sx={(theme) => ({
-                                    border: `1px dashed ${theme.palette.divider}`,
-                                    borderRadius: 2,
-                                    py: 4,
-                                    px: 2,
-                                    textAlign: "center",
-                                    bgcolor: "background.default",
-                                })}
-                            >
-                                <Typography color="text.secondary">
-                                    {mode === 'pending' ? 'No pending feedbacks.' : 'No feedbacks found.'}
-                                </Typography>
-                            </Box>
-                        ) : (
+                    <Stack spacing={2.5}>
+                        {!isSinglePendingFlow && !selectedFeedback && (
                             <Box
                                 sx={(theme) => ({
                                     border: `1px solid ${theme.palette.divider}`,
                                     borderRadius: 2,
                                     bgcolor: "background.default",
                                     overflowY: "auto",
-                                    maxHeight: 260,
+                                    maxHeight: 320,
                                 })}
                             >
-                            <List sx={{ py: 1 }}>
-                                {feedbacks.map((feedback) => {
-                                    const timeRangeLabel = formatFeedbackTimeRange(
-                                        feedback.scheduledTime,
-                                        feedback.durationMinutes
-                                    );
-                                    const isSelected = selectedFeedback?.feedbackId === feedback.feedbackId;
+                                <List sx={{ py: 0.5 }} disablePadding>
+                                    {feedbacks.map((feedback, index) => {
+                                        const timeRangeLabel = formatFeedbackTimeRange(
+                                            feedback.scheduledTime,
+                                            feedback.durationMinutes
+                                        );
+                                        const isSelected = selectedFeedback?.feedbackId === feedback.feedbackId;
+                                        const isCompleted = !!feedback.comments;
+                                        const isLast = index === feedbacks.length - 1;
 
-                                    return (
-                                    <ListItem
-                                        disablePadding
-                                        key={feedback.feedbackId}
-                                    >
-                                        <ListItemButton
-                                            onClick={() => handleFeedbackSelect(feedback, timeRangeLabel)}
-                                            selected={isSelected}
-                                            sx={(theme) => ({
-                                                mx: 1,
-                                                borderRadius: 1.5,
-                                                mb: 0.75,
-                                                alignItems: "flex-start",
-                                                border: "1px solid transparent",
-                                                ...(isSelected && {
-                                                    bgcolor: 'action.selected',
-                                                    borderColor: theme.palette.secondary.main,
-                                                }),
-                                                "&:hover": {
-                                                    bgcolor: isSelected ? "action.selected" : "action.hover",
-                                                },
-                                            })}
-                                        >
-                                            <ListItemIcon sx={{ minWidth: 36, mt: 0.25 }}>
-                                                <RateReviewOutlinedIcon color={isSelected ? "primary" : "action"} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                disableTypography
-                                                primary={
-                                                    <>
-                                                        <Typography component="span" display="block">
-                                                            {"Interview with: "}
-                                                            <Typography
-                                                                component="span"
-                                                                sx={{ fontWeight: 600 }}
+                                        return (
+                                            <ListItem
+                                                disablePadding
+                                                key={feedback.feedbackId}
+                                                sx={{
+                                                    borderBottom: isLast ? "none" : `1px solid ${theme.palette.divider}`,
+                                                }}
+                                            >
+                                                <ListItemButton
+                                                    onClick={() => handleFeedbackSelect(feedback, timeRangeLabel)}
+                                                    selected={isSelected}
+                                                    sx={(theme) => ({
+                                                        alignItems: "flex-start",
+                                                        py: 1.5,
+                                                        px: 2,
+                                                        gap: 1,
+                                                        transition: "background-color 0.15s ease",
+                                                        ...(isSelected && {
+                                                            bgcolor: alpha(theme.palette.primary.main, 0.06),
+                                                            "&:hover": {
+                                                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                                            },
+                                                        }),
+                                                    })}
+                                                >
+                                                    <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
+                                                        <Box
+                                                            sx={(theme) => ({
+                                                                width: 32,
+                                                                height: 32,
+                                                                borderRadius: "50%",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "center",
+                                                                bgcolor: isCompleted
+                                                                    ? alpha(theme.palette.success.main, 0.12)
+                                                                    : alpha(theme.palette.warning.main, 0.12),
+                                                                color: isCompleted
+                                                                    ? theme.palette.success.main
+                                                                    : theme.palette.warning.main,
+                                                            })}
+                                                        >
+                                                            {isCompleted ? (
+                                                                <CheckCircleRoundedIcon fontSize="small" />
+                                                            ) : (
+                                                                <PendingActionsRoundedIcon fontSize="small" />
+                                                            )}
+                                                        </Box>
+                                                    </ListItemIcon>
+
+                                                    <ListItemText
+                                                        disableTypography
+                                                        primary={
+                                                            <Stack
+                                                                direction="row"
+                                                                alignItems="center"
+                                                                spacing={0.75}
+                                                                sx={{ minWidth: 0 }}
                                                             >
-                                                                {feedback.coachName || "Unknown coach"}
-                                                            </Typography>
-                                                        </Typography>
-                                                        {timeRangeLabel && (
-                                                            <Typography
-                                                                component="span"
-                                                                variant="body2"
-                                                                color="text.secondary"
-                                                                display="block"
-                                                            >
-                                                                {timeRangeLabel}
-                                                            </Typography>
-                                                        )}
-                                                    </>
-                                                }
-                                                secondary={
-                                                    <Stack
-                                                        component="span"
-                                                        direction="row"
-                                                        alignItems="center"
-                                                        spacing={0.75}
-                                                        sx={{
-                                                            display: 'inline-flex',
-                                                        }}
-                                                    >
-                                                        {feedback.comments ? (
-                                                            <CheckCircleOutlineIcon sx={{ fontSize: '1rem', color: "success.main" }} />
-                                                        ) : (
-                                                            <PendingActionsOutlinedIcon sx={{ fontSize: '1rem', color: "warning.main" }} />
-                                                        )}
-                                                        <Chip
-                                                            label={feedback.comments ? "Completed" : "Pending"}
-                                                            size="small"
-                                                            color={feedback.comments ? "success" : "warning"}
-                                                            sx={{ height: 22 }}
-                                                        />
-                                                        {feedback.comments && (
-                                                            <Typography variant="body2" component="span" color="text.secondary">
-                                                                {feedback.rating || 0}/5
-                                                            </Typography>
-                                                        )}
-                                                    </Stack>
-                                                }
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
-                                    );
-                                })}
-                            </List>
+                                                                <PersonRoundedIcon
+                                                                    sx={{ fontSize: "1rem", color: "text.secondary", flexShrink: 0 }}
+                                                                />
+                                                                <Typography
+                                                                    variant="body1"
+                                                                    fontWeight={600}
+                                                                    noWrap
+                                                                    sx={{ color: "text.primary" }}
+                                                                >
+                                                                    {feedback.coachName || "Unknown coach"}
+                                                                </Typography>
+                                                            </Stack>
+                                                        }
+                                                        secondary={
+                                                            <Stack spacing={0.75} sx={{ mt: 0.75 }}>
+                                                                {timeRangeLabel && (
+                                                                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                                                                        <AccessTimeRoundedIcon
+                                                                            sx={{ fontSize: "0.9rem", color: "text.secondary" }}
+                                                                        />
+                                                                        <Typography variant="body2" color="text.secondary">
+                                                                            {timeRangeLabel}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                )}
+                                                                <Stack direction="row" alignItems="center" spacing={1}>
+                                                                    <StatusChip
+                                                                        label={isCompleted ? "Completed" : "Pending"}
+                                                                        color={isCompleted ? "success" : "warning"}
+                                                                    />
+                                                                    {isCompleted && (
+                                                                        <Stack direction="row" alignItems="center" spacing={0.25}>
+                                                                            <StarRoundedIcon
+                                                                                sx={{ fontSize: "1rem", color: "warning.main" }}
+                                                                            />
+                                                                            <Typography variant="body2" color="text.secondary">
+                                                                                {feedback.rating || 0}/5
+                                                                            </Typography>
+                                                                        </Stack>
+                                                                    )}
+                                                                </Stack>
+                                                            </Stack>
+                                                        }
+                                                    />
+                                                </ListItemButton>
+                                            </ListItem>
+                                        );
+                                    })}
+                                </List>
                             </Box>
                         )}
-                    </>
-                )}
 
-                {selectedFeedback && (
-                    <Box component="form" mt={2.5} noValidate autoComplete="off">
-                        <Divider sx={{ mb: 2 }} />
-                        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                        <Typography variant="subtitle1">
-                            {selectedFeedback.comments
-                                ? "View feedback for interview with: "
-                                : "Submit feedback for interview with: "}
-                            <Typography
-                                component="span"
-                                sx={{ fontWeight: 600 }}
-                            >
-                                {selectedFeedback.coachName}
-                            </Typography>
-                        </Typography>
-                        {feedbackTimeRange && (
-                            <Typography
-                                component="span"
-                                variant="body2"
-                                color="text.secondary"
-                                display="block"
-                            >
-                                {feedbackTimeRange}
-                            </Typography>
-                        )}
-                        <Stack spacing={2} sx={{ mt: 2 }}>
-                            <Rating
-                                name="feedback-rating"
-                                value={rating}
-                                onChange={handleRatingChange}
-                                readOnly={!!selectedFeedback.comments}
-                                size="large"
-                                sx={{
-                                    "& .MuiRating-iconFilled": {
-                                        color: theme.palette.warning.main,
-                                    },
-                                    "& .MuiRating-iconEmpty": {
-                                        color: "rgba(148, 163, 184, 0.35)",
-                                    },
-                                }}
-                            />
-                            {selectedFeedback.comments ? (
+                        {selectedFeedback && (
+                            <Stack spacing={2} component="form" noValidate autoComplete="off">
+                                {error && (
+                                    <Alert severity="error" onClose={() => setError('')}>
+                                        {error}
+                                    </Alert>
+                                )}
+
                                 <Box
                                     sx={(theme) => ({
-                                        mt: 0.5,
-                                        borderRadius: 1.5,
-                                        p: 1.5,
-                                        bgcolor: "background.default",
+                                        p: 2,
+                                        borderRadius: 2,
                                         border: `1px solid ${theme.palette.divider}`,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.04),
                                     })}
                                 >
-                                    <Typography
-                                        variant="body1"
-                                        sx={{
-                                            whiteSpace: "pre-wrap",
-                                            color: "text.primary",
-                                        }}
+                                    <Stack
+                                        direction="row"
+                                        alignItems="center"
+                                        spacing={0.75}
+                                        sx={{ minWidth: 0 }}
                                     >
-                                        {selectedFeedback.comments}
-                                    </Typography>
+                                        <PersonRoundedIcon sx={{ fontSize: "1.1rem", color: "primary.main" }} />
+                                        <Typography variant="subtitle1" fontWeight={600} noWrap>
+                                            {selectedFeedback.coachName || "Unknown coach"}
+                                        </Typography>
+                                    </Stack>
+                                    {feedbackTimeRange && (
+                                        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5 }}>
+                                            <AccessTimeRoundedIcon
+                                                sx={{ fontSize: "0.9rem", color: "text.secondary" }}
+                                            />
+                                            <Typography variant="body2" color="text.secondary">
+                                                {feedbackTimeRange}
+                                            </Typography>
+                                        </Stack>
+                                    )}
                                 </Box>
-                            ) : (
-                                <TextField
-                                    label="Comments"
-                                    multiline
-                                    fullWidth
-                                    value={comments}
-                                    onChange={handleCommentsChange}
-                                    margin="normal"
-                                    sx={(theme) => fieldStyles.outlinedFocus(theme)}
-                                    rows={4}
-                                    minRows={4}
-                                    maxRows={6}
-                                    helperText="Share specific strengths and one key improvement area."
-                                />
-                            )}
-                            {!selectedFeedback.comments && (
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={handleSubmit}
-                                    disabled={submitDisabled}
-                                    sx={(theme) => ({
-                                        ...buttonStyles.primaryCta(theme),
-                                        alignSelf: "flex-end",
-                                        minWidth: 160,
-                                    })}
-                                >
-                                    {submitting ? "Submitting..." : "Submit Feedback"}
-                                </Button>
-                            )}
-                        </Stack>
-                    </Box>
+
+                                <Box>
+                                    <Typography
+                                        variant="subtitle2"
+                                        color="text.secondary"
+                                        sx={{ mb: 0.75 }}
+                                    >
+                                        Overall rating
+                                    </Typography>
+                                    <Stack direction="row" alignItems="center" spacing={1.25}>
+                                        <Rating
+                                            name="feedback-rating"
+                                            value={rating}
+                                            onChange={handleRatingChange}
+                                            onChangeActive={(_, newHover) => setHoverRating(newHover)}
+                                            readOnly={isReadOnly}
+                                            size="large"
+                                            icon={<StarRoundedIcon fontSize="inherit" />}
+                                            emptyIcon={<StarBorderRoundedIcon fontSize="inherit" />}
+                                            sx={{
+                                                "& .MuiRating-iconFilled": {
+                                                    color: theme.palette.warning.main,
+                                                },
+                                                "& .MuiRating-iconHover": {
+                                                    color: theme.palette.warning.light,
+                                                },
+                                                "& .MuiRating-iconEmpty": {
+                                                    color: alpha(theme.palette.text.secondary, 0.3),
+                                                },
+                                            }}
+                                        />
+                                        {ratingLabel && (
+                                            <Typography variant="body2" color="text.secondary">
+                                                {ratingLabel}
+                                            </Typography>
+                                        )}
+                                    </Stack>
+                                </Box>
+
+                                <Box>
+                                    <Typography
+                                        variant="subtitle2"
+                                        color="text.secondary"
+                                        sx={{ mb: 0.75 }}
+                                    >
+                                        Comments
+                                    </Typography>
+                                    {isReadOnly ? (
+                                        <Box
+                                            sx={(theme) => ({
+                                                borderRadius: 1.5,
+                                                p: 2,
+                                                bgcolor: "background.default",
+                                                border: `1px solid ${theme.palette.divider}`,
+                                            })}
+                                        >
+                                            <Typography
+                                                variant="body1"
+                                                sx={{
+                                                    whiteSpace: "pre-wrap",
+                                                    color: "text.primary",
+                                                    lineHeight: 1.7,
+                                                }}
+                                            >
+                                                {selectedFeedback.comments}
+                                            </Typography>
+                                        </Box>
+                                    ) : (
+                                        <FormTextField
+                                            placeholder="Share specific strengths and one key improvement area..."
+                                            multiline
+                                            fullWidth
+                                            value={comments}
+                                            onChange={handleCommentsChange}
+                                            rows={5}
+                                            inputProps={{ maxLength: MAX_COMMENT_LENGTH }}
+                                            helperText={
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        width: "100%",
+                                                    }}
+                                                >
+                                                    <span>Share specific strengths and one key improvement area.</span>
+                                                    <span>{comments.length}/{MAX_COMMENT_LENGTH}</span>
+                                                </Box>
+                                            }
+                                            FormHelperTextProps={{ component: "div" }}
+                                        />
+                                    )}
+                                </Box>
+                            </Stack>
+                        )}
+
+                        {hasPendingFeedbacks && !selectedFeedback && (
+                            <Alert severity="info" variant="outlined" icon={<PendingActionsRoundedIcon fontSize="small" />}>
+                                Select an interview and submit feedback to continue.
+                            </Alert>
+                        )}
+                    </Stack>
                 )}
-                {!hasPendingFeedbacks && (
-                    <Button
-                        onClick={() => handleClose()}
-                        sx={(theme) => ({
-                            mt: 2.5,
-                            ...buttonStyles.secondaryCta(theme),
-                            width: "100%",
-                        })}
-                    >
-                        Close
-                    </Button>
+            </DialogContent>
+
+            <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+                {selectedFeedback && !isReadOnly ? (
+                    <>
+                        {!isSinglePendingFlow && (
+                            <SecondaryButton onClick={handleBackToList} disabled={submitting}>
+                                Back
+                            </SecondaryButton>
+                        )}
+                        <PrimaryButton
+                            onClick={handleSubmit}
+                            disabled={submitDisabled}
+                            loading={submitting}
+                            sx={{ minWidth: 160 }}
+                        >
+                            Submit Feedback
+                        </PrimaryButton>
+                    </>
+                ) : (
+                    !hasPendingFeedbacks && (
+                        <SecondaryButton onClick={() => handleClose()} sx={{ minWidth: 120 }}>
+                            Close
+                        </SecondaryButton>
+                    )
                 )}
-                {hasPendingFeedbacks && !selectedFeedback && !loading && (
-                    <Alert severity="info" sx={{ mt: 2.5 }}>
-                        Select an interview and submit feedback to continue.
-                    </Alert>
-                )}
-            </Box>
-        </Modal>
+            </DialogActions>
+        </Dialog>
     );
 }
 
