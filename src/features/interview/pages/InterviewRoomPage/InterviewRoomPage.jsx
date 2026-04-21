@@ -1210,8 +1210,16 @@ function InterviewRoomPage() {
                                 ))}
                             </Box>
 
-                            {/* Tab content */}
-                            {panelATab === "editor" && (
+                            {/* Tab content
+                                Keep both panels mounted and only toggle visibility via CSS.
+                                This preserves each tab's transient UI state when switching. */}
+                            <Box
+                                sx={{
+                                    display: panelATab === "editor" ? "flex" : "none",
+                                    flex: 1,
+                                    minHeight: 0,
+                                }}
+                            >
                                 <Suspense
                                     fallback={
                                         <Box
@@ -1247,8 +1255,14 @@ function InterviewRoomPage() {
                                         readOnly={isViewOnly}
                                     />
                                 </Suspense>
-                            )}
-                            {panelATab === "whiteboard" && (
+                            </Box>
+                            <Box
+                                sx={{
+                                    display: panelATab === "whiteboard" ? "flex" : "none",
+                                    flex: 1,
+                                    minHeight: 0,
+                                }}
+                            >
                                 <Suspense
                                     fallback={
                                         <Box
@@ -1270,7 +1284,7 @@ function InterviewRoomPage() {
                                         readOnly={isViewOnly}
                                     />
                                 </Suspense>
-                            )}
+                            </Box>
                         </>
                     )}
                     {/* CameraWidget — always mounted, visibility controlled by CSS */}
