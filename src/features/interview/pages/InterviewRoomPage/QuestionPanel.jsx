@@ -1,13 +1,11 @@
-import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
-import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button, Tooltip, IconButton, Chip } from "@mui/material";
+import { Box, Typography, Paper, TextField, Tabs, Tab, Stack, Button } from "@mui/material";
 import QuizIcon from "@mui/icons-material/Quiz";
 import { ROLES } from "../../../../common/constants/common.js";
+import RichDescriptionEditor from "../../components/shared/RichDescriptionEditor.jsx";
+import TestCasesEditor from "../../components/shared/TestCasesEditor.jsx";
 
 function QuestionPanel({
     user,
@@ -34,32 +32,45 @@ function QuestionPanel({
     removeTestCase,
     addExpectedOutput,
 }) {
-    const quillModules = {
-        toolbar: [
-            [{ header: [1, 2, 3, false] }],
-            ["bold", "italic", "underline", "strike"],
-            [{ script: "sub" }, { script: "super" }], // Superscript and Subscript
-            [{ list: "ordered" }, { list: "bullet" }],
-            ["link", "code-block"],
-            ["clean"],
-        ],
-    };
-
     const editButton = user?.role === ROLES.INTERVIEWER ? (
         <Button
             size="small"
+            variant={isEditingProblem ? "contained" : "outlined"}
             startIcon={isEditingProblem ? <VisibilityIcon sx={{ fontSize: 14 }} /> : <EditIcon sx={{ fontSize: 14 }} />}
             onClick={() => setIsEditingProblem(!isEditingProblem)}
-            sx={{
+            sx={(theme) => ({
                 ml: "auto",
                 mr: 1,
                 textTransform: "none",
-                fontWeight: 600,
-                fontSize: "0.75rem",
-                minHeight: 32,
-                px: 1.5,
+                fontWeight: 700,
+                fontSize: "0.74rem",
+                minHeight: 30,
+                px: 1.25,
                 flexShrink: 0,
-            }}
+                borderRadius: 1.25,
+                borderWidth: 1,
+                boxShadow: "none",
+                ...(isEditingProblem
+                    ? {
+                        bgcolor: "primary.main",
+                        borderColor: "primary.main",
+                        color: "primary.contrastText",
+                        "&:hover": {
+                            bgcolor: "primary.dark",
+                            borderColor: "primary.dark",
+                            boxShadow: "none",
+                        },
+                    }
+                    : {
+                        bgcolor: "background.paper",
+                        borderColor: "divider",
+                        color: "text.primary",
+                        "&:hover": {
+                            bgcolor: theme.palette.action.hover,
+                            borderColor: "text.disabled",
+                        },
+                    }),
+            })}
         >
             {isEditingProblem ? "Preview" : "Edit"}
         </Button>
@@ -95,138 +106,29 @@ function QuestionPanel({
                             variant="outlined"
                             sx={{ mb: 2 }}
                         />
-                        <Box sx={{ mb: 2, ".ql-container": { height: "200px" } }}>
-                            <ReactQuill
-                                theme="snow"
+                        <Box sx={{ mb: 2 }}>
+                            <RichDescriptionEditor
                                 value={problemDescription}
                                 onChange={setProblemDescription}
-                                modules={quillModules}
+                                height={200}
                             />
                         </Box>
                         <Typography variant="h6" sx={{ mb: 1 }}>
                             Test Cases
                         </Typography>
-                        <Box sx={{ display: "flex", alignItems: "center", borderBottom: 1, borderColor: "divider" }}>
-                            <Tabs
-                                value={activeTestCaseTab}
-                                onChange={(e, newValue) => setActiveTestCaseTab(newValue)}
-                                variant="scrollable"
-                                scrollButtons="auto"
-                            >
-                                {testCases?.map((_, index) => (
-                                    <Tab
-                                        key={index}
-                                        label={
-                                            <Stack direction="row" alignItems="center" spacing={1}>
-                                                <Typography variant="body2">Case {index + 1}</Typography>
-                                                {testCases.length > 1 && (
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            removeTestCase(index);
-                                                        }}
-                                                    >
-                                                        <CloseIcon fontSize="small" />
-                                                    </IconButton>
-                                                )}
-                                            </Stack>
-                                        }
-                                    />
-                                ))}
-                            </Tabs>
-                            <Tooltip title="Add Test Case">
-                                <IconButton onClick={addTestCase} size="small">
-                                    <AddIcon />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-                        <Box sx={{ pt: 2 }}>
-                            {testCases[activeTestCaseTab] && (
-                                <Stack spacing={2}>
-                                    <Typography variant="subtitle2">Inputs</Typography>
-                                    {testCases[activeTestCaseTab].inputs.map((input, inputIndex) => (
-                                        <Stack direction="row" spacing={1} key={inputIndex} alignItems="center">
-                                            <TextField
-                                                label="Name"
-                                                size="small"
-                                                value={input.name}
-                                                onChange={(e) =>
-                                                    handleTestCaseInputChange(
-                                                        activeTestCaseTab,
-                                                        inputIndex,
-                                                        "name",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <TextField
-                                                label="Value"
-                                                size="small"
-                                                fullWidth
-                                                value={input.value}
-                                                onChange={(e) =>
-                                                    handleTestCaseInputChange(
-                                                        activeTestCaseTab,
-                                                        inputIndex,
-                                                        "value",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => removeInputFromTestCase(activeTestCaseTab, inputIndex)}
-                                                disabled={testCases[activeTestCaseTab].inputs.length <= 1}
-                                            >
-                                                <CloseIcon fontSize="small" />
-                                            </IconButton>
-                                        </Stack>
-                                    ))}
-                                    <Button
-                                        size="small"
-                                        startIcon={<AddIcon />}
-                                        onClick={() => addInputToTestCase(activeTestCaseTab)}
-                                    >
-                                        Add Input
-                                    </Button>
-
-                                    <Typography variant="subtitle2" sx={{ mt: 2 }}>
-                                        Expected Outputs
-                                    </Typography>
-                                    {testCases[activeTestCaseTab].expectedOutputs.map((output, outputIndex) => (
-                                        <Stack direction="row" spacing={1} key={outputIndex} alignItems="center">
-                                            <TextField
-                                                label={`Valid Answer #${outputIndex + 1}`}
-                                                fullWidth
-                                                value={output}
-                                                onChange={(e) =>
-                                                    handleTestCaseOutputChange(
-                                                        activeTestCaseTab,
-                                                        outputIndex,
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => removeExpectedOutput(activeTestCaseTab, outputIndex)}
-                                                disabled={testCases[activeTestCaseTab].expectedOutputs.length <= 1}
-                                            >
-                                                <CloseIcon fontSize="small" />
-                                            </IconButton>
-                                        </Stack>
-                                    ))}
-                                    <Button
-                                        size="small"
-                                        startIcon={<AddIcon />}
-                                        onClick={() => addExpectedOutput(activeTestCaseTab)}
-                                    >
-                                        Add Valid Answer
-                                    </Button>
-                                </Stack>
-                            )}
-                        </Box>
+                        <TestCasesEditor
+                            testCases={testCases}
+                            activeTestCaseTab={activeTestCaseTab}
+                            setActiveTestCaseTab={setActiveTestCaseTab}
+                            addTestCase={addTestCase}
+                            removeTestCase={removeTestCase}
+                            handleTestCaseInputChange={handleTestCaseInputChange}
+                            addInputToTestCase={addInputToTestCase}
+                            removeInputFromTestCase={removeInputFromTestCase}
+                            handleTestCaseOutputChange={handleTestCaseOutputChange}
+                            addExpectedOutput={addExpectedOutput}
+                            removeExpectedOutput={removeExpectedOutput}
+                        />
                         <Button onClick={sendProblem} variant="contained" sx={{ mt: 2, mb: 1 }}>
                             Send Problem to Candidate
                         </Button>
@@ -309,46 +211,103 @@ function QuestionPanel({
                                     </Typography>
                                 </Stack>
                             ) : (
-                                <Stack spacing={2}>
-                                    {problemData.testCases.map((tc, index) => (
-                                        <Paper key={index} elevation={0} sx={{ p: 2, border: "1px solid #E5E7EB" }}>
-                                            <Typography variant="subtitle2" gutterBottom>
-                                                Test Case {index + 1}
-                                            </Typography>
-                                            {tc.inputs.map((input, inputIndex) => (
-                                                <Box key={inputIndex} sx={{ mb: 1 }}>
+                                <Stack spacing={1}>
+                                    {problemData.testCases.map((tc, index) => {
+                                        const inputs = Array.isArray(tc?.inputs)
+                                            ? tc.inputs.filter((input) => {
+                                                const hasName = typeof input?.name === "string" && input.name.trim() !== "";
+                                                const hasValue = typeof input?.value === "string" && input.value.trim() !== "";
+                                                return hasName || hasValue;
+                                            })
+                                            : [];
+                                        const expectedOutputs = Array.isArray(tc?.expectedOutputs)
+                                            ? tc.expectedOutputs
+                                            : [];
+
+                                        return (
+                                            <Paper key={index} elevation={0} sx={{ p: 1.25, border: 1, borderColor: "divider", borderRadius: 1.5 }}>
+                                                {/* Header */}
+                                                <Typography
+                                                    sx={{ fontSize: "0.7rem", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase", letterSpacing: 0.5 }}
+                                                >
+                                                    Case {index + 1}
+                                                </Typography>
+
+                                                {/* Inputs */}
+                                                {inputs.length > 0 && (
+                                                    <Stack spacing={0.5} sx={{ mb: 0.75 }}>
+                                                        {inputs.map((input, inputIndex) => (
+                                                            <Box key={inputIndex} sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
+                                                                <Typography
+                                                                    sx={{ fontSize: "0.7rem", fontWeight: 700, color: "text.primary", flexShrink: 0 }}
+                                                                >
+                                                                    {input?.name?.trim() || "input"}
+                                                                </Typography>
+                                                                <Typography
+                                                                    sx={{
+                                                                        fontSize: "0.72rem",
+                                                                        fontFamily: "monospace",
+                                                                        whiteSpace: "pre-wrap",
+                                                                        backgroundColor: "action.hover",
+                                                                        color: "text.primary",
+                                                                        px: 0.75,
+                                                                        py: 0.25,
+                                                                        borderRadius: 0.75,
+                                                                        border: 1,
+                                                                        borderColor: "divider",
+                                                                        wordBreak: "break-all",
+                                                                        flex: 1,
+                                                                        minWidth: 0,
+                                                                    }}
+                                                                >
+                                                                    {input?.value ?? ""}
+                                                                </Typography>
+                                                            </Box>
+                                                        ))}
+                                                    </Stack>
+                                                )}
+
+                                                {/* Divider */}
+                                                <Box sx={{ borderTop: 1, borderTopStyle: "dashed", borderColor: "divider", my: 0.5 }} />
+
+                                                {/* Expected output */}
+                                                <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
                                                     <Typography
-                                                        variant="caption"
-                                                        sx={{ color: "text.secondary", fontWeight: "bold" }}
+                                                        sx={{ fontSize: "0.7rem", fontWeight: 700, color: "info.dark", flexShrink: 0 }}
                                                     >
-                                                        {input.name}
+                                                        expected
                                                     </Typography>
-                                                    <Typography
-                                                        sx={{
-                                                            fontFamily: "monospace",
-                                                            whiteSpace: "pre-wrap",
-                                                            background: "#f5f5f5",
-                                                            p: 1,
-                                                            borderRadius: 1,
-                                                            border: "1px solid #E5E7EB",
-                                                            wordBreak: "break-all"
-                                                        }}
-                                                    >
-                                                        {input.value}
-                                                    </Typography>
+                                                    {expectedOutputs.length === 0 ? (
+                                                        <Typography sx={{ fontSize: "0.7rem", color: "text.disabled", fontStyle: "italic" }}>
+                                                            —
+                                                        </Typography>
+                                                    ) : (
+                                                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                                                            {expectedOutputs.map((out, outIdx) => (
+                                                                <Typography
+                                                                    key={outIdx}
+                                                                    sx={{
+                                                                        fontSize: "0.72rem",
+                                                                        fontFamily: "monospace",
+                                                                        backgroundColor: "info.light",
+                                                                        color: "info.dark",
+                                                                        px: 0.75,
+                                                                        py: 0.25,
+                                                                        borderRadius: 0.75,
+                                                                        border: 1,
+                                                                        borderColor: "info.main",
+                                                                        wordBreak: "break-all",
+                                                                    }}
+                                                                >
+                                                                    {String(out ?? "")}
+                                                                </Typography>
+                                                            ))}
+                                                        </Stack>
+                                                    )}
                                                 </Box>
-                                            ))}
-                                        </Paper>
-                                    ))}
-                                    <Paper elevation={0} sx={{ p: 2, mt: 2, background: "#EBF8FF", border: "1px solid #BEE3F8", borderRadius: 2 }}>
-                                        <Typography variant="subtitle2" gutterBottom sx={{ color: "#2C5282" }}>
-                                            Expected Outputs
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: "#2B6CB0" }}>
-                                            The candidate's code output must match one of the valid answers provided by the
-                                            interviewer.
-                                        </Typography>
-                                    </Paper>
+                                            </Paper>
+                                        );
+                                    })}
                                 </Stack>
                             )
                         )}

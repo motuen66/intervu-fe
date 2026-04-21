@@ -196,6 +196,14 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
         callbacks.current?.onReceiveTranscript?.(fromId, final, interim, role);
     });
 
+    // ── Prepared questions (coach roadmap sync) ───────────────────────────
+    // Broadcast by the server when the coach marks/unmarks a prepared question
+    // as asked or sends a coding question to the editor. Purely additive — has
+    // no effect on WebRTC, code sync, or any other existing channel.
+    conn.on("PreparedQuestionStatusChanged", (dto) => {
+      callbacks.current?.onPreparedQuestionStatusChanged?.(dto);
+    });
+
     // ── Start the connection ───────────────────────────────────────────────
     conn
       .start()
@@ -228,6 +236,7 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       conn.off("ReceiveMicState");
       conn.off("ReceiveWhiteboardState");
       conn.off("ReceiveTranscript");
+      conn.off("PreparedQuestionStatusChanged");
 
       conn.invoke("LeaveRoom", roomId, userId, safeRole, safeUserName).catch(() => {});
       conn.stop();
