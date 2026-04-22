@@ -7,6 +7,9 @@ import "./CollectQuestionProcessingTray.css";
 export default function CollectQuestionProcessingTray({
     progress = 0,
     status = "",
+    runningTitle = "Analyzing questions…",
+    completeTitle = "Analysis Complete!",
+    completeCtaLabel = "Review Now",
     isComplete = false,
     expanded = true,
     onToggle,
@@ -15,7 +18,7 @@ export default function CollectQuestionProcessingTray({
 }) {
     const headerBg = isComplete ? "success.main" : "secondary.main";
     const Icon = isComplete ? CheckCircle : Bot;
-    const title = isComplete ? "Analysis Complete!" : "Analyzing questions…";
+    const title = isComplete ? completeTitle : runningTitle;
 
     return (
         <Paper
@@ -85,10 +88,10 @@ export default function CollectQuestionProcessingTray({
                                 transition={{ duration: 0.25 }}
                             >
                                 <Typography variant="body2" sx={{ color: "text.secondary", mb: 1.5 }}>
-                                    Your questions have been analyzed and are ready to review.
+                                    {completeTitle}
                                 </Typography>
                                 <PrimaryButton fullWidth onClick={onReview}>
-                                    Review Now
+                                    {completeCtaLabel}
                                 </PrimaryButton>
                             </motion.div>
                         ) : (

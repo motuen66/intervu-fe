@@ -19,7 +19,7 @@ import Navbar from "../../common/components/Navbar/Navbar";
 import AdminSidebar from "../../features/admin/components/AdminSidebar";
 import usePageTracking from "../../hooks/usePageTracking";
 import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/helpers/assessmentHelper";
-import { CollectQuestionTrayProvider } from "../../common/context/CollectQuestionTrayContext";
+import { ProcessingTrayProvider } from "../../common/context/ProcessingTrayContext";
 
 const MainLayout = () => {
     // automatic SPA page tracking for routes rendered inside MainLayout
@@ -161,7 +161,7 @@ const MainLayout = () => {
     // ADMIN LAYOUT
     if (isAdmin) {
         return (
-            <CollectQuestionTrayProvider>
+            <ProcessingTrayProvider>
             <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
                 <AdminSidebar
                     userData={userData}
@@ -271,13 +271,13 @@ const MainLayout = () => {
                 </Box>
                 <SuspendedGate />
             </Box>
-            </CollectQuestionTrayProvider>
+            </ProcessingTrayProvider>
         );
     }
 
     // CANDIDATE / COACH LAYOUT
     return (
-        <CollectQuestionTrayProvider>
+        <ProcessingTrayProvider>
             <CandidateAssessmentGate />
             <div className="main-layout">
                 {isAssessmentLocked ? (
@@ -320,7 +320,7 @@ const MainLayout = () => {
                     </div>
                 </footer>
             </div>
-        </CollectQuestionTrayProvider>
+        </ProcessingTrayProvider>
     );
 };
 

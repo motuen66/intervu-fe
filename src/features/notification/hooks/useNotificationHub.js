@@ -29,11 +29,15 @@ export default function useNotificationHub(userId, token) {
 
         connection.on("ReceiveNotification", (notification) => {
             dispatch(addNotification(notification));
-            // The CollectQuestionProcessingTray handles the "questions collected"
-            // completion end-to-end (sound + Review Now button), so skip the
-            // redundant toast for this type. The notification is still added to
-            // the dropdown via Redux above.
-            if (notification?.type === "AiAnalysisCompleted") return;
+            // The ProcessingTray handles these completion/start events end-to-end
+            // (sound + CTA button), so skip the redundant toast. The notification
+            // is still added to the dropdown via Redux above.
+            const trayHandledTypes = new Set([
+                "AiAnalysisCompleted",
+                "RoadmapUpdateStarted",
+                "RoadmapUpdated",
+            ]);
+            if (trayHandledTypes.has(notification?.type)) return;
             showNotificationToast(notification);
         });
 
