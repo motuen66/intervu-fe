@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Box, TextField, Typography, Modal, Card, Stack, FormControl, MenuItem, Chip } from "@mui/material";
+import { Box, Typography, Modal, Card, Stack, FormControl, MenuItem } from "@mui/material";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
 import toast from "react-hot-toast";
 import StatusChip from "../../../../common/components/StatusChip";
 
 import FormSelect from "../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../common/components/form/FormTextField";
 
 const CreateAvailableSlotDialog = ({
     open,
@@ -67,7 +68,7 @@ const CreateAvailableSlotDialog = ({
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
                                 Date
                             </Typography>
-                            <TextField
+                            <FormTextField
                                 type="date"
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -81,8 +82,6 @@ const CreateAvailableSlotDialog = ({
                                     max: maxDate,
                                 }}
                                 fullWidth
-                                variant="outlined"
-                                size="small"
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                             />
                         </Box>
@@ -92,7 +91,7 @@ const CreateAvailableSlotDialog = ({
                                 Duplicate to other dates (Optional)
                             </Typography>
                             <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                                <TextField
+                                <FormTextField
                                     type="date"
                                     value={tempDate}
                                     onChange={(e) => setTempDate(e.target.value)}
@@ -106,11 +105,9 @@ const CreateAvailableSlotDialog = ({
                                         max: maxDate,
                                     }}
                                     fullWidth
-                                    variant="outlined"
-                                    size="small"
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 />
-                                <SecondaryButton onClick={handleAddDuplicateDate} sx={{ minWidth: "auto", px: 1 }}>
+                                <SecondaryButton size="sm" onClick={handleAddDuplicateDate}>
                                     <IoAdd size={20} />
                                 </SecondaryButton>
                             </Stack>

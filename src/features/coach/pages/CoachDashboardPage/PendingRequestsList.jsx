@@ -3,12 +3,12 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Divider from "@mui/material/Divider";
-import Button from "@mui/material/Button";
 import { Groups, CalendarToday, Check, Cancel } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
 import DangerButton from "../../../../common/components/buttons/DangerButton";
+import SuccessButton from "../../../../common/components/buttons/SuccessButton";
+import TextButton from "../../../../common/components/buttons/TextButton";
 import { respondToBookingRequest } from "../../services/coachDashboardApi";
 import { COACH_BOOKING_REQUESTS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
@@ -79,47 +79,30 @@ function RequestItem({ request, onResponded }) {
                         minWidth: 116,
                     }}
                 >
-                    <SecondaryButton
-                        size="small"
-                        startIcon={<Check />}
-                        loading={loading === "approve"}
-                        disabled={loading !== null}
-                        onClick={() => handleRespond(true)}
-                        sx={{
-                            textTransform: "none",
-                            minWidth: 110,
-                            px: 1.5,
-                            py: 0.625,
-                            lineHeight: 1.2,
-                            bgcolor: "secondary.main",
-                            color: "secondary.contrastText",
-                            borderColor: "secondary.main",
-                            "&:hover": {
-                                bgcolor: "secondary.dark",
-                                borderColor: "secondary.dark",
-                            },
-                            "& .MuiSvgIcon-root": { fontSize: 18 },
-                        }}
-                    >
-                        Approve
-                    </SecondaryButton>
-                    <DangerButton
-                        size="small"
-                        startIcon={<Cancel />}
-                        loading={loading === "reject"}
-                        disabled={loading !== null}
-                        onClick={() => handleRespond(false)}
-                        sx={{
-                            textTransform: "none",
-                            minWidth: 110,
-                            px: 1.5,
-                            py: 0.625,
-                            lineHeight: 1.2,
-                            "& .MuiSvgIcon-root": { fontSize: 18 },
-                        }}
-                    >
-                        Reject
-                    </DangerButton>
+                    <Box sx={{ minWidth: 110 }}>
+                        <SuccessButton
+                            size="sm"
+                            fullWidth
+                            startIcon={<Check fontSize="small" />}
+                            loading={loading === "approve"}
+                            disabled={loading !== null}
+                            onClick={() => handleRespond(true)}
+                        >
+                            Approve
+                        </SuccessButton>
+                    </Box>
+                    <Box sx={{ minWidth: 110 }}>
+                        <DangerButton
+                            size="sm"
+                            fullWidth
+                            startIcon={<Cancel fontSize="small" />}
+                            loading={loading === "reject"}
+                            disabled={loading !== null}
+                            onClick={() => handleRespond(false)}
+                        >
+                            Reject
+                        </DangerButton>
+                    </Box>
                 </Box>
             </Box>
         </Box>
@@ -167,24 +150,9 @@ export default function PendingRequestsList({ requests, onResponded }) {
                             {requests.length} New
                         </Typography>
                     )}
-                    <Button
-                        size="small"
-                        onClick={() => navigate(COACH_BOOKING_REQUESTS_ROUTE)}
-                        sx={{
-                            textTransform: "none",
-                            minWidth: 88,
-                            whiteSpace: "nowrap",
-                            px: "10%",
-                            py: 0.35,
-                            borderRadius: 1.5,
-                            bgcolor: "action.hover",
-                            "&:hover": { bgcolor: "action.selected" },
-                            fontWeight: 600,
-                            fontSize: "0.8125rem",
-                        }}
-                    >
+                    <TextButton size="sm" onClick={() => navigate(COACH_BOOKING_REQUESTS_ROUTE)}>
                         View all
-                    </Button>
+                    </TextButton>
                 </Box>
             </Box>
 

@@ -1,10 +1,11 @@
 import React, { useMemo } from "react";
-import { Box, TextField, Typography, Modal, Card, Stack, FormControl, MenuItem, Divider } from "@mui/material";
+import { Box, Typography, Modal, Card, Stack, FormControl, MenuItem, Divider } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../../../../common/components/buttons";
 import { IoTrash } from "react-icons/io5";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../common/components/form/FormTextField";
 
 const MINUTES_STEP = 30;
 const MINUTE_OPTIONS = Array.from({ length: 60 / MINUTES_STEP }, (_, i) => i * MINUTES_STEP);
@@ -82,8 +83,8 @@ const UpdateAvailableSlotDialog = ({
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
                                 Date
                             </Typography>
-                            <TextField
-                                type="date"         
+                            <FormTextField
+                                type="date"
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 inputProps={{
@@ -96,8 +97,6 @@ const UpdateAvailableSlotDialog = ({
                                     max: maxDate,
                                 }}
                                 fullWidth
-                                variant="outlined"
-                                size="small"
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                             />
                         </Box>

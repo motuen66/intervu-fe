@@ -3,12 +3,12 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Divider from "@mui/material/Divider";
-import Button from "@mui/material/Button";
 import { AccessTime } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import StatusChip from "../../../../common/components/StatusChip";
 import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
+import TextButton from "../../../../common/components/buttons/TextButton";
 import { COACH_INTERVIEWS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 const STATUS_COLOR_MAP = {
@@ -109,14 +109,16 @@ function SessionItem({ session }) {
                 </Typography>
             </Box>
 
-            <SecondaryButton
-                size="small"
-                disabled={!sessionState.canJoin}
-                onClick={() => navigate(`/interview/room/${session.interviewRoomId}`)}
-                sx={{ textTransform: "none", minWidth: 110 }}
-            >
-                {sessionState.joinButtonLabel}
-            </SecondaryButton>
+            <Box sx={{ minWidth: 110 }}>
+                <SecondaryButton
+                    size="sm"
+                    fullWidth
+                    disabled={!sessionState.canJoin}
+                    onClick={() => navigate(`/interview/room/${session.interviewRoomId}`)}
+                >
+                    {sessionState.joinButtonLabel}
+                </SecondaryButton>
+            </Box>
         </Box>
     );
 }
@@ -147,24 +149,9 @@ export default function UpcomingSessionsList({ sessions }) {
                     </Typography>
                 </Box>
 
-                <Button
-                    size="small"
-                    onClick={() => navigate(COACH_INTERVIEWS_ROUTE)}
-                    sx={{
-                        textTransform: "none",
-                        minWidth: "auto",
-                        px: "5%",
-                        py: 0.35,
-                        borderRadius: 1.5,
-                        bgcolor: "action.hover",
-                        "&:hover": { bgcolor: "action.selected" },
-                        fontWeight: 600,
-                        fontSize: "0.8125rem",
-                        flexShrink: 0,
-                    }}
-                >
+                <TextButton size="sm" onClick={() => navigate(COACH_INTERVIEWS_ROUTE)}>
                     View all
-                </Button>
+                </TextButton>
             </Box>
 
             {!displaySessions.length ? (

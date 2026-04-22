@@ -18,6 +18,7 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import KpiCard from "../../../../common/components/cards/KpiCard";
 import PaginationBar from "../../../../common/components/PaginationBar";
 import { PrimaryButton } from "../../../../common/components/buttons";
+import PageHeader from "../../../../common/components/PageHeader";
 import { formatCurrency, formattedDateTime } from "../../../../common/utils/dateFormatter";
 import { getWalletBalance, getWithdrawalHistory } from "../../services/walletApi";
 import WithdrawalRequestDialog from "./WithdrawalRequestDialog";
@@ -91,21 +92,22 @@ export default function CoachWalletPage() {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            {/* Header */}
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                <Typography variant="h5" fontWeight={700}>
-                    Wallet
-                </Typography>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                    <Tooltip title="Refresh">
-                        <IconButton onClick={fetchData} size="small">
-                            <RefreshRoundedIcon />
-                        </IconButton>
-                    </Tooltip>
-                    <PrimaryButton onClick={() => setDialogOpen(true)}>
-                        Request Withdrawal
-                    </PrimaryButton>
-                </Box>
+            <Box sx={{ mb: 3 }}>
+                <PageHeader
+                    title="Wallet"
+                    actions={
+                        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                            <Tooltip title="Refresh">
+                                <IconButton onClick={fetchData} size="small">
+                                    <RefreshRoundedIcon />
+                                </IconButton>
+                            </Tooltip>
+                            <PrimaryButton onClick={() => setDialogOpen(true)}>
+                                Request Withdrawal
+                            </PrimaryButton>
+                        </Box>
+                    }
+                />
             </Box>
 
             {/* Balance Card */}

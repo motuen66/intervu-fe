@@ -1,10 +1,10 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import { CalendarMonth } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import TextButton from "../../../../common/components/buttons/TextButton";
 import { COACH_SCHEDULE_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function AvailabilityWidget({ availability }) {
@@ -28,24 +28,9 @@ export default function AvailabilityWidget({ availability }) {
                         Availability
                     </Typography>
                 </Box>
-                <Button
-                    size="small"
-                    onClick={() => navigate(COACH_SCHEDULE_ROUTE)}
-                    sx={{
-                        textTransform: "none",
-                        minWidth: "auto",
-                        px: "10%",
-                        py: 0.35,
-                        borderRadius: 1.5,
-                        bgcolor: "action.hover",
-                        "&:hover": { bgcolor: "action.selected" },
-                        fontWeight: 600,
-                        fontSize: "0.8125rem",
-                        flexShrink: 0,
-                    }}
-                >
+                <TextButton size="sm" onClick={() => navigate(COACH_SCHEDULE_ROUTE)}>
                     Manage
-                </Button>
+                </TextButton>
             </Box>
 
             {!availability?.length ? (

@@ -2,10 +2,10 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Rating from "@mui/material/Rating";
 import Divider from "@mui/material/Divider";
-import Button from "@mui/material/Button";
 import { ChatBubbleOutline } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import TextButton from "../../../../common/components/buttons/TextButton";
 import { COACH_INTERVIEWS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 function getTimeAgo(dateStr) {
@@ -96,23 +96,11 @@ export default function FeedbackWall({ feedbacks }) {
                     ))}
 
                     <Divider sx={{ mt: 1 }} />
-                    <Button
-                        fullWidth
-                        onClick={() => navigate(COACH_INTERVIEWS_ROUTE)}
-                        sx={{
-                            mt: 1,
-                            textTransform: "none",
-                            color: "text.secondary",
-                            fontWeight: 600,
-                            fontSize: "0.8125rem",
-                            px: "10%",
-                            borderRadius: 1.5,
-                            bgcolor: "action.hover",
-                            "&:hover": { bgcolor: "action.selected" },
-                        }}
-                    >
-                        VIEW ALL FEEDBACK
-                    </Button>
+                    <Box sx={{ mt: 1 }}>
+                        <TextButton fullWidth size="sm" onClick={() => navigate(COACH_INTERVIEWS_ROUTE)}>
+                            VIEW ALL FEEDBACK
+                        </TextButton>
+                    </Box>
                 </>
             )}
         </BaseCard>
