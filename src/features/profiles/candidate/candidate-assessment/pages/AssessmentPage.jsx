@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { useAssessment } from "../context/AssessmentContext";
@@ -164,9 +164,25 @@ function AssessmentFlow() {
         userId,
     ]);
 
+    const handleStepNodeClick = useCallback(
+        (nextStep) => {
+            if (!Number.isInteger(nextStep)) {
+                return;
+            }
+
+            // Allow going back to visited steps only.
+            if (nextStep > currentStep) {
+                return;
+            }
+
+            setCurrentStep(Math.min(steps.length, Math.max(1, nextStep)));
+        },
+        [currentStep, setCurrentStep],
+    );
+
     return (
         <div className="space-y-8">
-            <StepperHeader currentStep={currentStep} steps={steps} />
+            <StepperHeader currentStep={currentStep} steps={steps} onStepClick={handleStepNodeClick} />
             {currentStep === 1 && <ChatSurvey />}
             {currentStep === 2 && <ProcessingState />}
             {currentStep === 3 && <ResultDashboard />}

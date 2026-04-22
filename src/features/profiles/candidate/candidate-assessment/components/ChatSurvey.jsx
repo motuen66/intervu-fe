@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import {
     Avatar,
@@ -6,9 +6,9 @@ import {
     Button,
     Chip,
     CircularProgress,
+    DialogActions,
     Dialog,
     DialogContent,
-    Divider,
     LinearProgress,
     Paper,
     Stack,
@@ -16,12 +16,11 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import { keyframes } from "@mui/system";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import AccountBalanceRoundedIcon from "@mui/icons-material/AccountBalanceRounded";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import HealthAndSafetyRoundedIcon from "@mui/icons-material/HealthAndSafetyRounded";
 import KeyboardBackspaceRoundedIcon from "@mui/icons-material/KeyboardBackspaceRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
@@ -56,7 +55,6 @@ const setupFields = [
         type: "single",
         options: ["Backend", "Frontend", "Fullstack", "Mobile", "DevOps", "Data Science"],
         placeholder: "Or type your target role",
-        helper: "Choose or type the role you want this assessment to optimize for right now.",
         hoverNote: "This should be the role you are targeting now, not every role you have tried before.",
         required: true,
     },
@@ -67,8 +65,7 @@ const setupFields = [
         type: "single",
         options: ["Entry", "Junior", "Mid-Level", "Senior", "Staff / Lead"],
         placeholder: "Or describe your current level",
-        helper: "Pick the level closest to your current working confidence.",
-        hoverNote: "Choose the level that matches your current performance today, not your ideal target yet.",
+        hoverNote: "Choose the level that matches your target role today, not your past experience.",
         required: true,
     },
     {
@@ -78,7 +75,6 @@ const setupFields = [
         type: "multi",
         options: ["React", "TypeScript", "Node.js", "Python", "Go", "GraphQL", "PostgreSQL", "AWS"],
         placeholder: "Example: TypeScript, React, Node.js",
-        helper: "Add the technologies you want the interview to focus on most.",
         hoverNote: "This is your current focus stack, not every technology you have ever touched or learned.",
         required: true,
     },
@@ -89,7 +85,6 @@ const setupFields = [
         type: "multi",
         options: ["FinTech", "E-commerce", "HealthTech", "Gaming", "AI/ML", "Other"],
         placeholder: "Example: FinTech, SaaS",
-        helper: "This helps the AI tailor scenario questions to the products you care about.",
         hoverNote: "Share the business area you want to move into most, even if your past projects were different.",
         required: false,
     },
@@ -99,9 +94,8 @@ const setupFields = [
         step: "5.",
         type: "freeText",
         placeholder: "Highlight specific projects or unique skills...",
-        helper: "You can mention interview goals, strengths, weak spots, or role expectations.",
         hoverNote: "Use this to guide the assessment design with context that chips alone cannot capture.",
-        required: true,
+        required: false,
     },
 ];
 
@@ -432,12 +426,14 @@ const ChatSurvey = () => {
         useAssessment();
     const currentUser = useSelector((state) => state.auth?.userData);
     const navigate = useNavigate();
+    const theme = useTheme();
     const listRef = useRef(null);
     const mountedRef = useRef(true);
     const sequenceRef = useRef(0);
     const generateTimerRef = useRef(null);
 
     const [stage, setStage] = useState("setup");
+    const [setupSubStep, setSetupSubStep] = useState(1);
     const [setupForm, setSetupForm] = useState({
         role: "Backend",
         level: "Junior Associate",
@@ -454,6 +450,7 @@ const ChatSurvey = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generateProgress, setGenerateProgress] = useState(0);
     const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+    const [showSkipConfirmDialog, setShowSkipConfirmDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isBotResponding, setIsBotResponding] = useState(false);
     const [isSkipping, setIsSkipping] = useState(false);
@@ -464,6 +461,14 @@ const ChatSurvey = () => {
     const answeredCount = Object.keys(answerMap).length;
     const progress = totalQuestions ? Math.round((answeredCount / totalQuestions) * 100) : 0;
     const hasResumableAssessment = totalQuestions > 0;
+    const activeQuestionNumber = Math.min(currentIndex + 1, Math.max(totalQuestions, 1));
+    const progressValue = Math.max(progress, answeredCount ? 6 : 2);
+    const isFinalQuestion = answeredCount === totalQuestions - 1;
+    const roleField = setupFields.find((field) => field.id === "role");
+    const levelField = setupFields.find((field) => field.id === "level");
+    const techstackField = setupFields.find((field) => field.id === "techstack");
+    const domainField = setupFields.find((field) => field.id === "domain");
+    const freeTextField = setupFields.find((field) => field.id === "freeText");
     const selectedTechstackValues = normalizeToArray(setupForm.techstack);
     const selectedDomainValues = normalizeToArray(setupForm.domain);
 
@@ -511,6 +516,10 @@ const ChatSurvey = () => {
             setSetupForm((prev) => ({ ...prev, ...cached.setupForm }));
         }
 
+        if (cached.setupSubStep === 2) {
+            setSetupSubStep(2);
+        }
+
         if (Array.isArray(cached.chatQuestions) && cached.chatQuestions.length > 0) {
             setChatQuestions(cached.chatQuestions);
             const maxIndex = cached.chatQuestions.length - 1;
@@ -536,6 +545,7 @@ const ChatSurvey = () => {
 
         const cachePayload = {
             stage,
+            setupSubStep,
             setupForm,
         };
 
@@ -549,7 +559,7 @@ const ChatSurvey = () => {
         }
 
         setProgressCache(assessmentUserId, cachePayload);
-    }, [answerMap, assessmentUserId, chatQuestions, currentIndex, setupForm, stage, messages]);
+    }, [answerMap, assessmentUserId, chatQuestions, currentIndex, setupForm, setupSubStep, stage, messages]);
 
     const responses = useMemo(
         () =>
@@ -896,6 +906,7 @@ const ChatSurvey = () => {
             return;
         }
 
+        setShowSkipConfirmDialog(false);
         setIsSkipping(true);
         const currentUserId = currentUser?.id;
 
@@ -921,6 +932,55 @@ const ChatSurvey = () => {
         clearProgressCache(currentUser?.id);
         navigate("/home");
     };
+
+    const handleOpenSkipConfirm = () => {
+        if (isGenerating || isSubmitting || isBotResponding || isSkipping) {
+            return;
+        }
+        setShowSkipConfirmDialog(true);
+    };
+
+    const handleCloseSkipConfirm = () => {
+        if (isSkipping) {
+            return;
+        }
+        setShowSkipConfirmDialog(false);
+    };
+
+    const skipConfirmDialog = (
+        <Dialog
+            open={showSkipConfirmDialog}
+            onClose={handleCloseSkipConfirm}
+            maxWidth="xs"
+            fullWidth
+            PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+            <DialogContent sx={{ p: 2.5, pb: 1.5 }}>
+                <Stack spacing={1}>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                        Skip Assessment?
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        This will stop the current assessment and return you to Home.
+                    </Typography>
+                </Stack>
+            </DialogContent>
+            <DialogActions sx={{ px: 2.5, pb: 2.25, pt: 0 }}>
+                <Button onClick={handleCloseSkipConfirm} disabled={isSkipping}>
+                    Continue Assessment
+                </Button>
+                <Button
+                    color="error"
+                    variant="contained"
+                    onClick={handleSkipAssessment}
+                    disabled={isSkipping}
+                    endIcon={isSkipping ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : null}
+                >
+                    {isSkipping ? "Skipping..." : "Skip"}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
 
     const handleSend = async () => {
         const value = chatDraft.trim();
@@ -951,6 +1011,7 @@ const ChatSurvey = () => {
         sequenceRef.current += 1;
         setIsBotResponding(false);
         setStage("setup");
+        setSetupSubStep(1);
         setChatDraft("");
     };
 
@@ -965,45 +1026,60 @@ const ChatSurvey = () => {
     };
 
     const renderSectionHeader = (field) => (
-        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 1.75 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5} sx={{ mb: 1.1 }}>
             <Tooltip title={field.hoverNote} arrow placement="top-start">
                 <Typography
-                    variant="overline"
-                    sx={{ color: "#3f4b54", fontWeight: 800, letterSpacing: "0.12em", cursor: "help" }}
+                    sx={{
+                        fontSize: "11px",
+                        color: "text.secondary",
+                        fontWeight: 800,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        cursor: "help",
+                    }}
                 >
                     {field.step} {field.label}
                 </Typography>
             </Tooltip>
-            {field.required ? (
-                <Chip
-                    label="Required"
-                    size="small"
-                    sx={{
-                        height: 22,
-                        borderRadius: 1,
-                        bgcolor: alpha("#b7ef4e", 0.95),
-                        color: "#456500",
-                        fontWeight: 800,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                    }}
-                />
-            ) : null}
+            <Chip
+                label={field.required ? "Required" : "Optional"}
+                size="small"
+                sx={{
+                    height: 18,
+                    borderRadius: 1,
+                    px: 0.2,
+                    bgcolor: field.required
+                        ? alpha(theme.palette.secondary.main, 0.75)
+                        : alpha(theme.palette.background.default, 1),
+                    color: field.required ? theme.palette.primary.main : "text.secondary",
+                    border: "1px solid",
+                    borderColor: field.required
+                        ? alpha(theme.palette.secondary.dark, 0.7)
+                        : alpha(theme.palette.primary.main, 0.12),
+                    fontSize: "9px",
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                }}
+            />
         </Stack>
     );
 
     const renderSelectableButtons = (field, selectedValues) => {
         const isStack = field.id === "techstack";
-        const columns = isStack
-            ? { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }
-            : { xs: "repeat(2, 1fr)", md: "repeat(3, 1fr)" };
+        const columns =
+            field.id === "role"
+                ? { xs: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }
+                : field.id === "level"
+                  ? { xs: "repeat(3, 1fr)", md: "repeat(5, 1fr)" }
+                  : { xs: "repeat(4, 1fr)", md: "repeat(8, 1fr)" };
 
         return (
             <Box
                 sx={{
                     display: "grid",
                     gridTemplateColumns: columns,
-                    gap: 1.25,
+                    gap: 1,
                 }}
             >
                 {field.options.map((option) => {
@@ -1022,30 +1098,31 @@ const ChatSurvey = () => {
                                         field.type === "multi" ? toggleHintValue(setupForm[field.id], option) : option,
                                     )
                                 }
-                                startIcon={
-                                    isStack && isActive ? (
-                                        <CheckCircleRoundedIcon sx={{ fontSize: 16, color: "#4d7c0f" }} />
-                                    ) : null
-                                }
                                 sx={{
                                     width: "100%",
-                                    minHeight: isStack ? 40 : 44,
+                                    minHeight: 36,
                                     justifyContent: "center",
-                                    borderRadius: 2,
-                                    px: isStack ? 1.5 : 2,
-                                    py: isStack ? 0.8 : 1.1,
+                                    borderRadius: 1.5,
+                                    px: isStack ? 0.8 : 1.25,
+                                    py: 0.6,
                                     textTransform: "none",
                                     fontWeight: isActive ? 800 : 700,
-                                    fontSize: isStack ? "0.78rem" : "0.88rem",
+                                    fontSize: isStack ? "10px" : "11px",
                                     whiteSpace: "normal",
                                     textAlign: "center",
                                     lineHeight: 1.3,
-                                    borderColor: isActive ? alpha("#84cc16", 0.55) : "transparent",
-                                    bgcolor: isActive ? "#b7ef4e" : "#e7eef3",
-                                    color: isActive ? "#456500" : "#64707b",
+                                    borderColor: isActive
+                                        ? alpha(theme.palette.secondary.dark, 0.95)
+                                        : alpha(theme.palette.primary.main, 0.08),
+                                    bgcolor: isActive
+                                        ? theme.palette.secondary.main
+                                        : alpha(theme.palette.background.default, 0.8),
+                                    color: isActive ? theme.palette.primary.main : "text.secondary",
                                     "&:hover": {
-                                        borderColor: alpha("#84cc16", 0.42),
-                                        bgcolor: isActive ? "#a6dd41" : "#dde6ed",
+                                        borderColor: alpha(theme.palette.primary.main, 0.28),
+                                        bgcolor: isActive
+                                            ? theme.palette.secondary.dark
+                                            : alpha(theme.palette.background.paper, 0.95),
                                     },
                                 }}
                             >
@@ -1062,7 +1139,7 @@ const ChatSurvey = () => {
         const selectedValues = selectedDomainValues;
 
         return (
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 1.2 }}>
                 {field.options.map((option) => {
                     const isActive = selectedValues.some((item) => item.toLowerCase() === option.toLowerCase());
                     const IconComponent = domainIconMap[option] || AddCircleOutlineRoundedIcon;
@@ -1075,24 +1152,30 @@ const ChatSurvey = () => {
                                     handleSetupChange(field.id, toggleHintValue(setupForm[field.id], option))
                                 }
                                 sx={{
-                                    minHeight: 86,
-                                    borderRadius: 2.5,
-                                    borderColor: isActive ? alpha("#84cc16", 0.85) : "transparent",
-                                    bgcolor: isActive ? "#bff365" : "#eaf0f4",
-                                    color: isActive ? "#456500" : "#44515a",
-                                    justifyContent: "flex-start",
-                                    alignItems: "flex-start",
-                                    p: 1.7,
+                                    minHeight: 72,
+                                    borderRadius: 1.5,
+                                    borderColor: isActive
+                                        ? alpha(theme.palette.secondary.dark, 0.95)
+                                        : alpha(theme.palette.primary.main, 0.08),
+                                    bgcolor: isActive
+                                        ? theme.palette.secondary.main
+                                        : alpha(theme.palette.background.default, 0.8),
+                                    color: isActive ? theme.palette.primary.main : "text.secondary",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    p: 1,
                                     textTransform: "none",
                                     "&:hover": {
-                                        borderColor: alpha("#84cc16", 0.55),
-                                        bgcolor: isActive ? "#b3ea57" : "#e2eaef",
+                                        borderColor: alpha(theme.palette.primary.main, 0.25),
+                                        bgcolor: isActive
+                                            ? theme.palette.secondary.dark
+                                            : alpha(theme.palette.background.paper, 0.95),
                                     },
                                 }}
                             >
-                                <Stack spacing={1.3} alignItems="flex-start">
-                                    <IconComponent sx={{ fontSize: 20 }} />
-                                    <Typography sx={{ fontSize: "0.82rem", fontWeight: 800 }}>{option}</Typography>
+                                <Stack spacing={0.7} alignItems="center">
+                                    <IconComponent sx={{ fontSize: 18 }} />
+                                    <Typography sx={{ fontSize: "10px", fontWeight: 800 }}>{option}</Typography>
                                 </Stack>
                             </Button>
                         </Tooltip>
@@ -1105,325 +1188,473 @@ const ChatSurvey = () => {
     if (stage === "setup") {
         return (
             <>
-                <Box sx={{ maxWidth: 1240, mx: "auto", px: { xs: 2, md: 3 }, py: { xs: 2.5, md: 4 } }}>
-                    <Paper
-                        elevation={0}
+                <Box sx={{ maxWidth: 1220, mx: "auto", px: { xs: 1.5, md: 2 }, py: { xs: 1, md: 1.25 } }}>
+                    <Box
                         sx={{
-                            overflow: "hidden",
-                            borderRadius: 6,
-                            border: "1px solid",
-                            borderColor: alpha("#cbd5e1", 0.8),
-                            background:
-                                "radial-gradient(circle at top left, rgba(189, 242, 100, 0.18), transparent 28%), linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%)",
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", lg: "6fr 6fr" },
+                            gap: 3,
+                            alignItems: "stretch",
+                            height: { lg: 620 },
                         }}
                     >
-                        <Box
+                        <Paper
+                            elevation={0}
                             sx={{
-                                display: "grid",
-                                gridTemplateColumns: { xs: "1fr", lg: "minmax(420px, 1fr) minmax(620px, 1.18fr)" },
-                                alignItems: "stretch",
+                                p: { xs: 3.5, md: 5 },
+                                borderRadius: 3,
+                                border: "1px solid",
+                                borderColor: alpha(theme.palette.primary.main, 0.1),
+                                background: `linear-gradient(160deg, ${alpha(theme.palette.secondary.main, 0.1)} 0%, ${alpha(theme.palette.background.paper, 0.98)} 64%)`,
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "space-between",
+                                height: "100%",
+                                position: "relative",
+                                overflow: "hidden",
+                                boxShadow: `inset 0 1px 0 ${alpha(theme.palette.background.paper, 0.8)}`,
+                                minWidth: 0,
+                                width: "100%",
                             }}
                         >
-                            <Box sx={{ p: { xs: 3, md: 5 }, position: "relative", minHeight: { lg: 760 } }}>
+                            <Stack spacing={3.2} sx={{ position: "relative", zIndex: 1, flex: 1 }}>
                                 <Chip
-                                    icon={<AutoAwesomeRoundedIcon sx={{ color: "#1f2937 !important" }} />}
-                                    label="ONBOARDING AI"
+                                    icon={<AutoAwesomeRoundedIcon sx={{ color: "primary.main !important" }} />}
+                                    label="Onboarding AI"
                                     sx={{
-                                        mb: 3,
-                                        px: 1,
-                                        height: 42,
+                                        alignSelf: "flex-start",
                                         borderRadius: 999,
-                                        bgcolor: "#b7ef4e",
-                                        color: "#1f2937",
+                                        bgcolor: theme.palette.secondary.main,
+                                        color: "primary.main",
                                         fontWeight: 800,
-                                        letterSpacing: "0.08em",
+                                        letterSpacing: "0.06em",
+                                        height: 28,
                                     }}
                                 />
                                 <Typography
                                     variant="h2"
                                     sx={{
-                                        maxWidth: 440,
-                                        fontSize: { xs: "2.5rem", md: "4rem" },
-                                        lineHeight: 0.98,
+                                        maxWidth: "100%",
+                                        fontSize: { xs: "2.55rem", md: "3.9rem" },
+                                        lineHeight: 0.95,
                                         fontWeight: 900,
-                                        letterSpacing: "-0.04em",
-                                        color: "#1f2937",
+                                        letterSpacing: "-0.035em",
+                                        color: "text.primary",
                                     }}
                                 >
                                     Let&apos;s get to know{" "}
-                                    <Box component="span" sx={{ color: "#5b8c09" }}>
+                                    <Box component="span" sx={{ color: "secondary.dark" }}>
                                         you.
                                     </Box>
                                 </Typography>
-                                <Typography
-                                    sx={{
-                                        mt: 2.5,
-                                        maxWidth: 420,
-                                        color: "#475569",
-                                        fontSize: "1.1rem",
-                                        lineHeight: 1.8,
-                                    }}
-                                >
+                                <Typography sx={{ maxWidth: "100%", color: "text.secondary", fontSize: 14, lineHeight: 1.75 }}>
                                     Give the AI the role, level, stack, and context you care about most. You can click
-                                    the quick choices, type your own answers, or mix both.
+                                    quick options, type your own answers, or mix both.
                                 </Typography>
+                            </Stack>
 
-                                <Paper
-                                    elevation={0}
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    mt: 4.5,
+                                    p: 1,
+                                    borderRadius: 3.5,
+                                    border: "1px solid",
+                                    borderColor: alpha(theme.palette.primary.main, 0.15),
+                                    background: alpha(theme.palette.background.paper, 0.82),
+                                    position: "relative",
+                                    zIndex: 1,
+                                    width: "100%",
+                                    maxWidth: "100%",
+                                }}
+                            >
+                                <Box
+                                    component="img"
+                                    src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=1000&auto=format&fit=crop"
+                                    alt="Workspace"
                                     sx={{
-                                        mt: 5,
-                                        p: 3,
-                                        borderRadius: 4,
-                                        maxWidth: 420,
-                                        minHeight: 250,
-                                        position: "relative",
-                                        overflow: "hidden",
-                                        background:
-                                            "linear-gradient(180deg, rgba(46, 125, 50, 0.16) 0%, rgba(15, 23, 42, 0.04) 100%)",
-                                        border: "1px solid",
-                                        borderColor: alpha("#94a3b8", 0.28),
-                                        boxShadow: "0 30px 60px rgba(15, 23, 42, 0.10)",
+                                        width: "100%",
+                                        maxWidth: { xs: 320, md: 420 },
+                                        mx: "auto",
+                                        display: "block",
+                                        aspectRatio: "4 / 3",
+                                        objectFit: "cover",
+                                        borderRadius: 3,
+                                        maxHeight: { xs: 200, md: 260 },
                                     }}
-                                >
-                                    <Stack spacing={2} alignItems="center">
-                                        <img
-                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-EKQhF8FcTmqCP0qOLEnNxbFYtQnBt3KtqMj0fB1Jlw_n9wcuPHgAseNQRjmRM-Weo0-wMH-O2X-eWhzaG8iX3pWAXEPRsAxQaTf0ixPqH5LtZtPdeI4XpKtucFuq_9gh9VHU5NopcAmWNhPAZsgWvevxo8hZ23jOYkXNvZhGpgqK5zBkpUR-OORLdq8ogJEIwDI5HU4bMgl7BYF5wP-1YYC8GD2KmLyUVHq6sdJiLqIaoU5tru4ufwQK96Mky_c6GeZJo5RPbzHc"
-                                            alt="Assessment"
-                                            style={{ maxWidth: "320px", borderRadius: "12px" }}
-                                        />
-                                        <Typography variant="h6" textAlign="center" fontWeight={600}>
-                                            Calibrated questions. Cleaner signal. Better assessment.
-                                        </Typography>
-                                    </Stack>
-                                </Paper>
-                            </Box>
+                                />
+                            </Paper>
 
                             <Box
                                 sx={{
-                                    p: { xs: 3, md: 4.5 },
-                                    bgcolor: "#ffffff",
-                                    borderLeft: { lg: "1px solid" },
-                                    borderColor: alpha("#d6e0e6", 0.95),
+                                    position: "absolute",
+                                    top: -40,
+                                    right: -50,
+                                    width: 190,
+                                    height: 190,
+                                    borderRadius: "50%",
+                                    bgcolor: alpha(theme.palette.secondary.main, 0.26),
+                                    filter: "blur(22px)",
+                                }}
+                            />
+                        </Paper>
+
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: { xs: 3, md: 4 },
+                                borderRadius: 3,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                bgcolor: "background.paper",
+                                display: "flex",
+                                flexDirection: "column",
+                                minWidth: 0,
+                                width: "100%",
+                            }}
+                        >
+                            <Stack direction="row" spacing={1} sx={{ mb: 1.6 }}>
+                                <Button
+                                    variant={setupSubStep === 1 ? "contained" : "outlined"}
+                                    onClick={() => setSetupSubStep(1)}
+                                    disabled={isGenerating || isSubmitting}
+                                    sx={{
+                                        flex: 1,
+                                        borderRadius: 2,
+                                        py: 0.8,
+                                        fontSize: 11,
+                                        fontWeight: 800,
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.08em",
+                                    }}
+                                >
+                                    Segment 1 - 1-3
+                                </Button>
+                                <Button
+                                    variant={setupSubStep === 2 ? "contained" : "outlined"}
+                                    onClick={() => setSetupSubStep(2)}
+                                    disabled={isGenerating || isSubmitting}
+                                    sx={{
+                                        flex: 1,
+                                        borderRadius: 2,
+                                        py: 0.8,
+                                        fontSize: 11,
+                                        fontWeight: 800,
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.08em",
+                                    }}
+                                >
+                                    Segment 2 - 4-5
+                                </Button>
+                            </Stack>
+
+                            <Box
+                                sx={{
+                                    flex: 1,
+                                    minHeight: 0,
+                                    overflow: "hidden",
+                                    pr: 0,
+                                    display: "flex",
+                                    width: "100%",
                                 }}
                             >
-                                <Stack spacing={4.5}>
-                                    {setupFields
-                                        .filter(
-                                            (field) =>
-                                                field.id === "role" || field.id === "level" || field.id === "techstack",
-                                        )
-                                        .map((field) => {
-                                            const selectedValues =
-                                                field.id === "techstack"
-                                                    ? selectedTechstackValues
-                                                    : selectedDomainValues;
-
-                                            return (
-                                                <Box key={field.id}>
-                                                    {renderSectionHeader(field)}
-                                                    <Typography variant="body2" sx={{ color: "#73808a", mb: 1.75 }}>
-                                                        {field.helper}
-                                                    </Typography>
-                                                    {renderSelectableButtons(field, selectedValues)}
-                                                    <TextField
-                                                        fullWidth
-                                                        value={setupForm[field.id]}
-                                                        onChange={(event) =>
-                                                            handleSetupChange(field.id, event.target.value)
-                                                        }
-                                                        error={Boolean(setupErrors[field.id])}
-                                                        helperText={setupErrors[field.id] || " "}
-                                                        placeholder={field.placeholder}
-                                                        inputProps={{
-                                                            maxLength:
-                                                                field.id === "role"
-                                                                    ? 40
-                                                                    : field.id === "level"
-                                                                      ? 30
-                                                                      : field.id === "techstack"
-                                                                        ? 100
-                                                                        : undefined,
-                                                        }}
-                                                        sx={{
-                                                            mt: 1.5,
-                                                            "& .MuiOutlinedInput-root": {
-                                                                borderRadius: 2,
-                                                                bgcolor: "#eef3f7",
-                                                                "& fieldset": { borderColor: alpha("#d8e0e6", 0.85) },
-                                                            },
-                                                        }}
-                                                    />
-                                                </Box>
-                                            );
-                                        })}
-
-                                    {setupFields
-                                        .filter((field) => field.id === "domain")
-                                        .map((field) => (
-                                            <Box key={field.id}>
-                                                {renderSectionHeader(field)}
-                                                <Typography variant="body2" sx={{ color: "#73808a", mb: 1.75 }}>
-                                                    {field.helper}
-                                                </Typography>
-                                                {renderDomainCards(field)}
+                                {setupSubStep === 1 ? (
+                                    <Stack
+                                        spacing={1.25}
+                                        sx={{
+                                            flex: 1,
+                                            height: "100%",
+                                            width: "100%",
+                                            p: 1.2,
+                                            borderRadius: 2,
+                                            border: "1px solid",
+                                            borderColor: alpha(theme.palette.primary.main, 0.08),
+                                            bgcolor: alpha(theme.palette.background.default, 0.36),
+                                            justifyContent: "space-between",
+                                        }}
+                                    >
+                                        {roleField ? (
+                                            <Stack spacing={0.85}>
+                                                {renderSectionHeader(roleField)}
+                                                {renderSelectableButtons(roleField, [])}
                                                 <TextField
                                                     fullWidth
-                                                    value={setupForm[field.id]}
-                                                    onChange={(event) =>
-                                                        handleSetupChange(field.id, event.target.value)
-                                                    }
-                                                    error={Boolean(setupErrors[field.id])}
-                                                    helperText={setupErrors[field.id] || "Optional custom domain input"}
-                                                    placeholder={field.placeholder}
+                                                    value={setupForm.role}
+                                                    onChange={(event) => handleSetupChange("role", event.target.value)}
+                                                    error={Boolean(setupErrors.role)}
+                                                    helperText={setupErrors.role || null}
+                                                    placeholder={roleField.placeholder}
+                                                    inputProps={{ maxLength: 40 }}
+                                                    sx={{
+                                                        mt: 0,
+                                                        "& .MuiOutlinedInput-root": {
+                                                            borderRadius: 1.5,
+                                                            bgcolor: alpha(theme.palette.background.default, 0.8),
+                                                        },
+                                                        "& .MuiInputBase-input": { fontSize: 12, py: 1 },
+                                                    }}
+                                                />
+                                            </Stack>
+                                        ) : null}
+
+                                        {levelField ? (
+                                            <Stack spacing={0.85}>
+                                                {renderSectionHeader(levelField)}
+                                                {renderSelectableButtons(levelField, [])}
+                                                <TextField
+                                                    fullWidth
+                                                    value={setupForm.level}
+                                                    onChange={(event) => handleSetupChange("level", event.target.value)}
+                                                    error={Boolean(setupErrors.level)}
+                                                    helperText={setupErrors.level || null}
+                                                    placeholder={levelField.placeholder}
+                                                    inputProps={{ maxLength: 30 }}
+                                                    sx={{
+                                                        mt: 0,
+                                                        "& .MuiOutlinedInput-root": {
+                                                            borderRadius: 1.5,
+                                                            bgcolor: alpha(theme.palette.background.default, 0.8),
+                                                        },
+                                                        "& .MuiInputBase-input": { fontSize: 12, py: 1 },
+                                                    }}
+                                                />
+                                            </Stack>
+                                        ) : null}
+
+                                        {techstackField ? (
+                                            <Stack spacing={0.85}>
+                                                {renderSectionHeader(techstackField)}
+                                                {renderSelectableButtons(techstackField, selectedTechstackValues)}
+                                                <TextField
+                                                    fullWidth
+                                                    value={setupForm.techstack}
+                                                    onChange={(event) => handleSetupChange("techstack", event.target.value)}
+                                                    error={Boolean(setupErrors.techstack)}
+                                                    helperText={setupErrors.techstack || null}
+                                                    placeholder={techstackField.placeholder}
+                                                    inputProps={{ maxLength: 100 }}
+                                                    sx={{
+                                                        mt: 0,
+                                                        "& .MuiOutlinedInput-root": {
+                                                            borderRadius: 1.5,
+                                                            bgcolor: alpha(theme.palette.background.default, 0.8),
+                                                        },
+                                                        "& .MuiInputBase-input": { fontSize: 12, py: 1 },
+                                                    }}
+                                                />
+                                            </Stack>
+                                        ) : null}
+                                    </Stack>
+                                ) : (
+                                    <Stack
+                                        spacing={1.25}
+                                        sx={{
+                                            flex: 1,
+                                            height: "100%",
+                                            width: "100%",
+                                            p: 1.2,
+                                            borderRadius: 2,
+                                            border: "1px solid",
+                                            borderColor: alpha(theme.palette.primary.main, 0.08),
+                                            bgcolor: alpha(theme.palette.background.default, 0.36),
+                                            justifyContent: "flex-start",
+                                            overflow: "hidden",
+                                        }}
+                                    >
+                                        {domainField ? (
+                                            <Stack spacing={0.85} sx={{ flexShrink: 0 }}>
+                                                {renderSectionHeader(domainField)}
+                                                {renderDomainCards(domainField)}
+                                                <TextField
+                                                    fullWidth
+                                                    value={setupForm.domain}
+                                                    onChange={(event) => handleSetupChange("domain", event.target.value)}
+                                                    error={Boolean(setupErrors.domain)}
+                                                    helperText={setupErrors.domain || null}
+                                                    placeholder={domainField.placeholder}
                                                     inputProps={{ maxLength: 60 }}
                                                     sx={{
-                                                        mt: 1.5,
+                                                        mt: 0,
                                                         "& .MuiOutlinedInput-root": {
-                                                            borderRadius: 2,
-                                                            bgcolor: "#eef3f7",
-                                                            "& fieldset": { borderColor: alpha("#d8e0e6", 0.85) },
+                                                            borderRadius: 1.5,
+                                                            bgcolor: alpha(theme.palette.background.default, 0.8),
+                                                        },
+                                                        "& .MuiInputBase-input": { fontSize: 12, py: 1 },
+                                                    }}
+                                                />
+                                            </Stack>
+                                        ) : null}
+
+                                        {freeTextField ? (
+                                            <Stack spacing={0.85} sx={{ flex: 1, minHeight: 0 }}>
+                                                {renderSectionHeader(freeTextField)}
+                                                <TextField
+                                                    fullWidth
+                                                    multiline
+                                                    minRows={6}
+                                                    value={setupForm.freeText}
+                                                    onChange={(event) => handleSetupChange("freeText", event.target.value)}
+                                                    error={Boolean(setupErrors.freeText)}
+                                                    helperText={setupErrors.freeText || null}
+                                                    placeholder={freeTextField.placeholder}
+                                                    inputProps={{ maxLength: 1000 }}
+                                                    sx={{
+                                                        flex: 1,
+                                                        "& .MuiOutlinedInput-root": {
+                                                            alignItems: "flex-start",
+                                                            borderRadius: 2.2,
+                                                            bgcolor: alpha(theme.palette.background.default, 0.8),
+                                                            minHeight: 150,
+                                                            height: "100%",
+                                                        },
+                                                        "& .MuiInputBase-input": {
+                                                            py: 1.4,
+                                                            px: 1.1,
+                                                            fontSize: 13,
+                                                        },
+                                                        "& .MuiInputBase-inputMultiline": {
+                                                            height: "100% !important",
+                                                            overflowY: "auto !important",
                                                         },
                                                     }}
                                                 />
-                                            </Box>
-                                        ))}
-
-                                    {setupFields
-                                        .filter((field) => field.id === "freeText")
-                                        .map((field) => (
-                                            <Box key={field.id}>
-                                                {renderSectionHeader(field)}
-                                                <Box sx={{ position: "relative" }}>
-                                                    <TextField
-                                                        fullWidth
-                                                        multiline
-                                                        minRows={10}
-                                                        maxRows={20}
-                                                        value={setupForm[field.id]}
-                                                        onChange={(event) =>
-                                                            handleSetupChange(field.id, event.target.value)
-                                                        }
-                                                        error={Boolean(setupErrors[field.id])}
-                                                        helperText={setupErrors[field.id] || " "}
-                                                        placeholder={field.placeholder}
-                                                        inputProps={{ maxLength: 1000 }}
-                                                        sx={{
-                                                            "& .MuiOutlinedInput-root": {
-                                                                alignItems: "flex-start",
-                                                                borderRadius: 2.25,
-                                                                bgcolor: "#eaf0f4",
-                                                                "& fieldset": { borderColor: alpha("#d8e0e6", 0.8) },
-                                                            },
-                                                            "& .MuiInputBase-input": {
-                                                                py: 1.7,
-                                                            },
-                                                        }}
-                                                    />
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{
-                                                            position: "absolute",
-                                                            right: 14,
-                                                            bottom: 18,
-                                                            color: "#a1acb5",
-                                                            fontWeight: 800,
-                                                            letterSpacing: "0.18em",
-                                                            textTransform: "uppercase",
-                                                            pointerEvents: "none",
-                                                        }}
-                                                    >
-                                                        {field.required ? "Required" : "Optional"}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        ))}
-
-                                    <Stack
-                                        direction={{ xs: "column", sm: "row" }}
-                                        justifyContent="space-between"
-                                        alignItems={{ xs: "stretch", sm: "center" }}
-                                        spacing={2}
-                                        sx={{ pt: 1 }}
-                                    >
-                                        <Button
-                                            variant="text"
-                                            color="inherit"
-                                            onClick={handleSkipAssessment}
-                                            disabled={isGenerating || isSubmitting || isSkipping}
-                                            sx={{ justifyContent: "flex-start", fontWeight: 700 }}
-                                        >
-                                            {isSkipping ? "Saving..." : "Skip for now"}
-                                        </Button>
-                                        <Button
-                                            variant="contained"
-                                            size="large"
-                                            onClick={
-                                                hasResumableAssessment
-                                                    ? handleContinueAssessment
-                                                    : requestGeneratedQuestions
-                                            }
-                                            disabled={isGenerating || isSubmitting}
-                                            sx={{
-                                                minWidth: 220,
-                                                borderRadius: 2.5,
-                                                py: 1.5,
-                                                bgcolor: "#b7ef4e",
-                                                color: "#1f2937",
-                                                fontWeight: 800,
-                                                textTransform: "none",
-                                                "&:hover": { bgcolor: "#a6dd41" },
-                                            }}
-                                        >
-                                            <Stack direction="row" spacing={1.2} alignItems="center">
-                                                {isGenerating ? (
-                                                    <CircularProgress size={18} sx={{ color: "#1f2937" }} />
-                                                ) : (
-                                                    <AutoAwesomeRoundedIcon fontSize="small" />
-                                                )}
-                                                <Box component="span">
-                                                    {isGenerating
-                                                        ? "Generating Questions..."
-                                                        : hasResumableAssessment
-                                                          ? `Continue Assessment (Q${Math.min(currentIndex + 1, totalQuestions)}/${totalQuestions})`
-                                                          : "Generate Assessment"}
-                                                </Box>
                                             </Stack>
-                                        </Button>
+                                        ) : null}
                                     </Stack>
-                                    {hasResumableAssessment ? (
-                                        <Typography variant="caption" color="text.secondary">
-                                            Unfinished assessment found. Continue from question{" "}
-                                            {Math.min(currentIndex + 1, totalQuestions)} with your previous answers.
-                                        </Typography>
-                                    ) : null}
-                                </Stack>
+                                )}
                             </Box>
-                        </Box>
-                    </Paper>
+
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                justifyContent="space-between"
+                                alignItems={{ xs: "stretch", sm: "center" }}
+                                spacing={1.5}
+                                sx={{ pt: 2.4, mt: 2.4, borderTop: "1px solid", borderColor: alpha(theme.palette.primary.main, 0.06) }}
+                            >
+                                {setupSubStep === 1 ? (
+                                    <Button
+                                        variant="text"
+                                        color="inherit"
+                                        onClick={handleOpenSkipConfirm}
+                                        disabled={isGenerating || isSubmitting || isSkipping}
+                                        sx={{ justifyContent: "flex-start", fontWeight: 700 }}
+                                    >
+                                        {isSkipping ? "Saving..." : "Skip for now"}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="text"
+                                        color="inherit"
+                                        startIcon={<KeyboardBackspaceRoundedIcon />}
+                                        onClick={() => setSetupSubStep(1)}
+                                        disabled={isGenerating || isSubmitting}
+                                        sx={{ justifyContent: "flex-start", fontWeight: 700 }}
+                                    >
+                                        Back to 1-3
+                                    </Button>
+                                )}
+
+                                {setupSubStep === 1 ? (
+                                    <Button
+                                        variant="contained"
+                                        onClick={() => setSetupSubStep(2)}
+                                        disabled={isGenerating || isSubmitting}
+                                        endIcon={<SkipNextRoundedIcon />}
+                                        sx={{
+                                            minWidth: 220,
+                                            borderRadius: 2.25,
+                                            py: 1.3,
+                                            fontWeight: 800,
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.08em",
+                                            fontSize: "11px",
+                                        }}
+                                    >
+                                        Next 4-5
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="contained"
+                                        size="large"
+                                        onClick={
+                                            hasResumableAssessment
+                                                ? handleContinueAssessment
+                                                : requestGeneratedQuestions
+                                        }
+                                        disabled={isGenerating || isSubmitting}
+                                        sx={{
+                                            minWidth: 260,
+                                            borderRadius: 2.25,
+                                            py: 1.45,
+                                            bgcolor: theme.palette.secondary.main,
+                                            color: theme.palette.primary.main,
+                                            fontWeight: 800,
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.08em",
+                                            fontSize: "11px",
+                                            "&:hover": { bgcolor: theme.palette.secondary.dark },
+                                        }}
+                                    >
+                                        <Stack direction="row" spacing={1.1} alignItems="center">
+                                            {isGenerating ? (
+                                                <CircularProgress size={18} sx={{ color: theme.palette.primary.main }} />
+                                            ) : (
+                                                <AutoAwesomeRoundedIcon fontSize="small" />
+                                            )}
+                                            <Box component="span">
+                                                {isGenerating
+                                                    ? "Generating Questions..."
+                                                    : hasResumableAssessment
+                                                      ? `Continue Assessment (Q${Math.min(currentIndex + 1, totalQuestions)}/${totalQuestions})`
+                                                      : "Generate Assessment"}
+                                            </Box>
+                                        </Stack>
+                                    </Button>
+                                )}
+                            </Stack>
+
+                            {hasResumableAssessment && setupSubStep === 2 ? (
+                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1.25 }}>
+                                    Unfinished assessment found. Continue from question{" "}
+                                    {Math.min(currentIndex + 1, totalQuestions)} with your previous answers.
+                                </Typography>
+                            ) : null}
+                        </Paper>
+                    </Box>
                 </Box>
 
-                <Dialog open={showGenerateDialog} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
-                    <DialogContent sx={{ p: 3.5 }}>
-                        <Stack spacing={3} alignItems="center">
+                <Dialog
+                    open={showGenerateDialog}
+                    maxWidth="xs"
+                    fullWidth
+                    PaperProps={{
+                        sx: {
+                            borderRadius: 3,
+                            maxWidth: 360,
+                        },
+                    }}
+                >
+                    <DialogContent sx={{ p: 2.5 }}>
+                        <Stack spacing={2.25} alignItems="center">
                             <Box sx={{ width: "100%", textAlign: "center" }}>
-                                <Typography variant="h6" fontWeight={800} gutterBottom>
+                                <Typography variant="subtitle1" fontWeight={800} gutterBottom>
                                     Generating your assessment
                                 </Typography>
-                                <Typography color="text.secondary">
+                                <Typography variant="body2" color="text.secondary">
                                     We&apos;re calibrating questions from your role, stack, and goals.
                                 </Typography>
                             </Box>
                             <Box sx={{ position: "relative", display: "inline-flex" }}>
                                 <CircularProgress
-                                    size={88}
-                                    thickness={4}
+                                    size={68}
+                                    thickness={3.5}
                                     value={100}
                                     variant="determinate"
                                     sx={{ color: alpha("#cbd5e1", 0.8) }}
                                 />
                                 <CircularProgress
-                                    size={88}
-                                    thickness={4}
+                                    size={68}
+                                    thickness={3.5}
                                     value={Math.min(generateProgress, 100)}
                                     variant="determinate"
                                     sx={{ position: "absolute", left: 0, color: "#84cc16" }}
@@ -1435,7 +1666,8 @@ const ChatSurvey = () => {
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        fontWeight: 900,
+                                        fontWeight: 800,
+                                        fontSize: "0.9rem",
                                         color: "#0f172a",
                                     }}
                                 >
@@ -1447,7 +1679,7 @@ const ChatSurvey = () => {
                                 value={Math.min(generateProgress, 100)}
                                 sx={{
                                     width: "100%",
-                                    height: 10,
+                                    height: 8,
                                     borderRadius: 999,
                                     bgcolor: alpha("#cbd5e1", 0.45),
                                     "& .MuiLinearProgress-bar": { borderRadius: 999, bgcolor: "#84cc16" },
@@ -1456,6 +1688,7 @@ const ChatSurvey = () => {
                         </Stack>
                     </DialogContent>
                 </Dialog>
+                {skipConfirmDialog}
             </>
         );
     }
@@ -1463,265 +1696,353 @@ const ChatSurvey = () => {
     return (
         <Box
             sx={{
-                maxWidth: 1100,
+                maxWidth: 1240,
                 mx: "auto",
                 px: { xs: 2, md: 3 },
-                py: { xs: 3, md: 4 },
-                background: "linear-gradient(135deg, #eef2ff 0%, #f8fafc 55%, #eef2ff 100%)",
+                py: { xs: 1.5, md: 2 },
                 borderRadius: 5,
+                background: `linear-gradient(150deg, ${alpha(theme.palette.secondary.main, 0.2)} 0%, ${theme.palette.background.default} 48%, ${alpha(theme.palette.primary.main, 0.06)} 100%)`,
             }}
         >
-            <Stack spacing={3.5}>
-                <Paper
-                    elevation={0}
+            <Stack spacing={2.5}>
+                <Box
                     sx={{
-                        p: { xs: 3, md: 3.5 },
-                        borderRadius: 4,
-                        border: "1px solid",
-                        borderColor: alpha("#cbd5e1", 0.9),
-                        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-                        boxShadow: "0 16px 36px rgba(15,23,42,0.08)",
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 2fr) minmax(320px, 1fr)" },
+                        gap: 2.5,
+                        alignItems: "stretch",
+                        height: { xs: "auto", lg: 680 },
                     }}
                 >
-                    <Stack
-                        direction={{ xs: "column", md: "row" }}
-                        spacing={2}
-                        justifyContent="space-between"
-                        alignItems={{ xs: "flex-start", md: "center" }}
-                    >
-                        <Box>
-                            <Typography
-                                variant="overline"
-                                sx={{ color: "#64748b", fontWeight: 800, letterSpacing: "0.08em" }}
-                            >
-                                AI Assessment Chat
-                            </Typography>
-                            <Typography variant="h5" fontWeight={800} sx={{ color: "#0f172a" }}>
-                                {setupForm.role || "Candidate"} interview simulation
-                            </Typography>
-                            <Typography color="text.secondary">
-                                {currentQuestion?.helper ||
-                                    "Stay natural. We'll move one question at a time with paced AI replies."}
-                            </Typography>
-                        </Box>
-                        <Chip
-                            label={
-                                isSubmitting
-                                    ? "Submitting Answers"
-                                    : isBotResponding
-                                      ? "AI Responding"
-                                      : `Question ${Math.min(currentIndex + 1, Math.max(totalQuestions, 1))} of ${Math.max(totalQuestions, 1)}`
-                            }
+                    <Stack spacing={2.5} sx={{ minWidth: 0, minHeight: 0, height: { lg: "100%" } }}>
+                        <Paper
+                            elevation={0}
                             sx={{
-                                borderRadius: 999,
-                                bgcolor: alpha("#b7ef4e", 0.18),
-                                color: "#365314",
-                                fontWeight: 800,
+                                borderRadius: 3,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                bgcolor: "background.paper",
+                                minHeight: { xs: 500, lg: 0 },
+                                height: { xs: "auto", lg: "100%" },
+                                display: "flex",
+                                flexDirection: "column",
+                                overflow: "hidden",
                             }}
-                        />
-                    </Stack>
-                    <LinearProgress
-                        variant="determinate"
-                        value={Math.max(progress, answeredCount ? 6 : 2)}
-                        sx={{
-                            mt: 2.5,
-                            height: 10,
-                            borderRadius: 999,
-                            bgcolor: alpha("#cbd5e1", 0.45),
-                            "& .MuiLinearProgress-bar": { borderRadius: 999, bgcolor: "#84cc16" },
-                        }}
-                    />
-                </Paper>
-
-                <Paper
-                    elevation={0}
-                    sx={{
-                        borderRadius: 4,
-                        border: "1px solid",
-                        borderColor: alpha("#cbd5e1", 0.85),
-                        overflow: "hidden",
-                    }}
-                >
-                    <Box sx={{ p: 3.5, bgcolor: alpha("#f8fafc", 0.82) }}>
-                        <Typography variant="h5" fontWeight={800}>
-                            Assessment Conversation
-                        </Typography>
-                        <Typography color="text.secondary">
-                            Your setup is locked in. If you need to adjust it, use Previous to go back to chapter 1.
-                        </Typography>
-                    </Box>
-                    <Divider />
-                    <Box ref={listRef} sx={{ p: 3, bgcolor: "#f8fafc", height: 400, overflowY: "auto" }}>
-                        <Stack spacing={2.5}>
-                            {messages.map((message) => {
-                                const isUser = message.sender === "user";
-                                const isProcessing = message.status === "processing";
-
-                                return (
-                                    <Stack
-                                        key={message.id}
-                                        direction="row"
-                                        justifyContent={isUser ? "flex-end" : "flex-start"}
-                                    >
-                                        <Stack
-                                            direction="row"
-                                            spacing={1.5}
-                                            sx={{
-                                                maxWidth: "86%",
-                                                alignItems: "flex-end",
-                                                animation: message.animateIn
-                                                    ? `${floatUp} 360ms ease-out both`
-                                                    : "none",
-                                            }}
-                                        >
-                                            {!isUser ? (
-                                                <Avatar
-                                                    sx={{ bgcolor: "#0f172a", color: "#fff", width: 36, height: 36 }}
-                                                >
-                                                    <SmartToyRoundedIcon fontSize="small" />
-                                                </Avatar>
-                                            ) : null}
-                                            <Paper
-                                                elevation={0}
-                                                sx={{
-                                                    p: 2,
-                                                    borderRadius: isUser ? "20px 20px 6px 20px" : "20px 20px 20px 6px",
-                                                    bgcolor: isUser ? "#b7ef4e" : "#ffffff",
-                                                    color: isUser ? "#365314" : "#0f172a",
-                                                    border: "1px solid",
-                                                    borderColor: isUser
-                                                        ? alpha("#84cc16", 0.48)
-                                                        : alpha("#cbd5e1", 0.9),
-                                                    boxShadow: `0 14px 34px ${alpha("#0f172a", isUser ? 0.16 : 0.08)}`,
-                                                    minWidth: isProcessing ? 150 : 0,
-                                                }}
-                                            >
-                                                {isProcessing ? (
-                                                    <TypingIndicator />
-                                                ) : (
-                                                    <Typography sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
-                                                        {message.text}
-                                                    </Typography>
-                                                )}
-                                            </Paper>
-                                            {isUser ? (
-                                                <Avatar
-                                                    sx={{ bgcolor: "#1f2937", color: "#fff", width: 36, height: 36 }}
-                                                >
-                                                    <PersonRoundedIcon fontSize="small" />
-                                                </Avatar>
-                                            ) : null}
-                                        </Stack>
-                                    </Stack>
-                                );
-                            })}
-                        </Stack>
-                    </Box>
-                    <Divider />
-                    <Box sx={{ p: 3.5 }}>
-                        {currentQuestion?.type === "single" && (currentQuestion.options || []).length > 0 ? (
-                            <Stack spacing={1.5}>
-                                <Typography color="text.secondary">
-                                    Pick a suggested answer or type your own response below.
-                                </Typography>
-                                <Stack spacing={1.25}>
-                                    {(currentQuestion.options || []).map((option) => (
-                                        <Button
-                                            key={option}
-                                            variant={chatDraft === option ? "contained" : "outlined"}
-                                            onClick={() => setChatDraft(option)}
-                                            disabled={isBotResponding || isSubmitting}
-                                            sx={{
-                                                width: "100%",
-                                                minHeight: 58,
-                                                borderRadius: 2.5,
-                                                px: 2,
-                                                py: 1.25,
-                                                textTransform: "none",
-                                                fontWeight: 700,
-                                                whiteSpace: "normal",
-                                                textAlign: "left",
-                                                justifyContent: "flex-start",
-                                                lineHeight: 1.35,
-                                            }}
-                                        >
-                                            {option}
-                                        </Button>
-                                    ))}
-                                </Stack>
-                            </Stack>
-                        ) : null}
-                        <TextField
-                            sx={{ mt: currentQuestion?.type === "single" ? 2.5 : 0 }}
-                            multiline={currentQuestion?.type !== "single"}
-                            minRows={currentQuestion?.type !== "single" ? 4 : 1}
-                            fullWidth
-                            value={chatDraft}
-                            onChange={(event) => setChatDraft(event.target.value)}
-                            placeholder={
-                                currentQuestion?.type === "single"
-                                    ? "Select a suggestion above or type your own answer"
-                                    : currentQuestion?.helper || "Type your answer here"
-                            }
-                            disabled={isBotResponding || isSubmitting}
-                        />
-                        <Stack
-                            direction={{ xs: "column", md: "row" }}
-                            justifyContent="space-between"
-                            alignItems={{ xs: "stretch", md: "center" }}
-                            spacing={2}
-                            sx={{ mt: 3 }}
                         >
-                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<KeyboardBackspaceRoundedIcon />}
-                                    onClick={handleBackToSetup}
-                                    disabled={isBotResponding || isSubmitting}
-                                    sx={{ borderRadius: 2.5, textTransform: "none", fontWeight: 700 }}
-                                >
-                                    Previous
-                                </Button>
-                                <Button
-                                    variant="text"
-                                    color="inherit"
-                                    endIcon={<SkipNextRoundedIcon />}
-                                    onClick={handleSkipAssessment}
-                                    disabled={isBotResponding || isSubmitting || isSkipping}
-                                >
-                                    {isSkipping ? "Saving..." : "Skip Assessment"}
-                                </Button>
-                            </Stack>
-                            <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
-                                <Typography color="text.secondary">
-                                    {responses.length} answer{responses.length === 1 ? "" : "s"} captured.
+                            <Box
+                                sx={{
+                                    px: { xs: 2, md: 2.5 },
+                                    py: 2,
+                                    borderBottom: "1px solid",
+                                    borderColor: "divider",
+                                    bgcolor: alpha(theme.palette.background.default, 0.85),
+                                }}
+                            >
+                                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                    Assessment Conversation
                                 </Typography>
-                                <Button
-                                    variant="contained"
-                                    size="large"
-                                    endIcon={!isSubmitting && !isBotResponding ? <SendRoundedIcon /> : null}
-                                    onClick={handleSend}
-                                    disabled={!chatDraft.trim() || isBotResponding || isSubmitting}
-                                    sx={{ minWidth: 180, borderRadius: 2.5, textTransform: "none", fontWeight: 800 }}
-                                >
-                                    {isSubmitting ? (
-                                        <Stack direction="row" spacing={1.2} alignItems="center">
-                                            <CircularProgress size={18} sx={{ color: "#fff" }} />
-                                            <Box component="span">Submitting...</Box>
-                                        </Stack>
-                                    ) : answeredCount === totalQuestions - 1 ? (
-                                        "Finish Assessment"
-                                    ) : (
-                                        "Send"
-                                    )}
-                                </Button>
+                                <Typography variant="body2" color="text.secondary">
+                                    Your setup is locked. Use Previous if you need to adjust chapter 1.
+                                </Typography>
+                            </Box>
+
+                            <Box
+                                ref={listRef}
+                                sx={{
+                                    flex: 1,
+                                    overflowY: "auto",
+                                    px: { xs: 2, md: 2.5 },
+                                    py: 2.25,
+                                    bgcolor: alpha(theme.palette.background.default, 0.6),
+                                }}
+                            >
+                                <Stack spacing={1.75}>
+                                    {messages.map((message) => {
+                                        const isUser = message.sender === "user";
+                                        const isProcessing = message.status === "processing";
+
+                                        return (
+                                            <Stack
+                                                key={message.id}
+                                                direction="row"
+                                                justifyContent={isUser ? "flex-end" : "flex-start"}
+                                            >
+                                                <Stack
+                                                    direction={isUser ? "row-reverse" : "row"}
+                                                    spacing={1.1}
+                                                    sx={{
+                                                        maxWidth: "90%",
+                                                        alignItems: "flex-end",
+                                                        animation: message.animateIn
+                                                            ? `${floatUp} 360ms ease-out both`
+                                                            : "none",
+                                                    }}
+                                                >
+                                                    <Avatar
+                                                        sx={{
+                                                            width: 30,
+                                                            height: 30,
+                                                            bgcolor: isUser
+                                                                ? alpha(theme.palette.primary.main, 0.18)
+                                                                : theme.palette.primary.main,
+                                                            color: isUser
+                                                                ? theme.palette.primary.main
+                                                                : theme.palette.primary.contrastText,
+                                                        }}
+                                                    >
+                                                        {isUser ? (
+                                                            <PersonRoundedIcon sx={{ fontSize: 18 }} />
+                                                        ) : (
+                                                            <SmartToyRoundedIcon sx={{ fontSize: 18 }} />
+                                                        )}
+                                                    </Avatar>
+                                                    <Paper
+                                                        elevation={0}
+                                                        sx={{
+                                                            px: 1.8,
+                                                            py: 1.35,
+                                                            borderRadius: isUser
+                                                                ? "16px 16px 4px 16px"
+                                                                : "16px 16px 16px 4px",
+                                                            border: "1px solid",
+                                                            borderColor: isUser
+                                                                ? alpha(theme.palette.secondary.dark, 0.55)
+                                                                : "divider",
+                                                            bgcolor: isUser
+                                                                ? alpha(theme.palette.secondary.main, 0.82)
+                                                                : "background.paper",
+                                                            color: "text.primary",
+                                                            boxShadow: `0 8px 22px ${alpha(theme.palette.primary.main, 0.08)}`,
+                                                            minWidth: isProcessing ? 150 : 0,
+                                                        }}
+                                                    >
+                                                        {isProcessing ? (
+                                                            <TypingIndicator />
+                                                        ) : (
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{ whiteSpace: "pre-wrap", lineHeight: 1.65 }}
+                                                            >
+                                                                {message.text}
+                                                            </Typography>
+                                                        )}
+                                                    </Paper>
+                                                </Stack>
+                                            </Stack>
+                                        );
+                                    })}
+                                </Stack>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    p: { xs: 2, md: 2.5 },
+                                    borderTop: "1px solid",
+                                    borderColor: "divider",
+                                    bgcolor: "background.paper",
+                                }}
+                            >
+                                <Stack direction="row" spacing={1.25} alignItems="flex-end">
+                                    <TextField
+                                        fullWidth
+                                        multiline={currentQuestion?.type !== "single"}
+                                        minRows={currentQuestion?.type !== "single" ? 3 : 1}
+                                        maxRows={currentQuestion?.type !== "single" ? 7 : 1}
+                                        value={chatDraft}
+                                        onChange={(event) => setChatDraft(event.target.value)}
+                                        placeholder={
+                                            currentQuestion?.type === "single"
+                                                ? "Select a suggested answer or type your own"
+                                                : currentQuestion?.helper || "Type your answer here"
+                                        }
+                                        disabled={isBotResponding || isSubmitting}
+                                    />
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleSend}
+                                        disabled={!chatDraft.trim() || isBotResponding || isSubmitting}
+                                        sx={{
+                                            minWidth: { xs: 110, sm: 140 },
+                                            minHeight: 54,
+                                            borderRadius: 2.25,
+                                            fontWeight: 800,
+                                        }}
+                                        endIcon={!isSubmitting ? <SendRoundedIcon /> : null}
+                                    >
+                                        {isSubmitting ? (
+                                            <CircularProgress size={18} sx={{ color: theme.palette.primary.contrastText }} />
+                                        ) : isFinalQuestion ? (
+                                            "Finish"
+                                        ) : (
+                                            "Send"
+                                        )}
+                                    </Button>
+                                </Stack>
+                            </Box>
+                        </Paper>
+                    </Stack>
+
+                    <Stack spacing={2.5} sx={{ minWidth: 0, minHeight: 0, height: { lg: "100%" } }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2.25,
+                                borderRadius: 3,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                bgcolor: "background.paper",
+                                minHeight: 0,
+                                flex: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                                overflow: "hidden",
+                            }}
+                        >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                Pick a suggested answer
+                            </Typography>
+                            <Box sx={{ mt: 1.5, flex: 1, overflowY: "auto", pr: 0.5 }}>
+                                {currentQuestion?.type === "single" && (currentQuestion.options || []).length > 0 ? (
+                                    <Stack spacing={1}>
+                                        {(currentQuestion.options || []).map((option) => {
+                                            const isSelected = chatDraft === option;
+                                            return (
+                                                <Button
+                                                    key={option}
+                                                    variant="outlined"
+                                                    onClick={() => setChatDraft(option)}
+                                                    disabled={isBotResponding || isSubmitting}
+                                                    sx={{
+                                                        width: "100%",
+                                                        justifyContent: "flex-start",
+                                                        textAlign: "left",
+                                                        borderRadius: 2,
+                                                        py: 1.2,
+                                                        px: 1.5,
+                                                        gap: 1.1,
+                                                        borderColor: isSelected
+                                                            ? alpha(theme.palette.primary.main, 0.48)
+                                                            : "divider",
+                                                        bgcolor: isSelected
+                                                            ? alpha(theme.palette.primary.main, 0.06)
+                                                            : alpha(theme.palette.background.default, 0.5),
+                                                        color: "text.primary",
+                                                        "&:hover": {
+                                                            borderColor: theme.palette.primary.main,
+                                                            bgcolor: alpha(theme.palette.primary.main, 0.09),
+                                                        },
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            width: 16,
+                                                            height: 16,
+                                                            borderRadius: "50%",
+                                                            border: "1px solid",
+                                                            borderColor: isSelected
+                                                                ? theme.palette.primary.main
+                                                                : alpha(theme.palette.primary.main, 0.28),
+                                                            bgcolor: isSelected
+                                                                ? theme.palette.primary.main
+                                                                : theme.palette.background.paper,
+                                                            boxShadow: isSelected
+                                                                ? `inset 0 0 0 3px ${theme.palette.background.paper}`
+                                                                : "none",
+                                                            flexShrink: 0,
+                                                        }}
+                                                    />
+                                                    <Typography variant="body2" sx={{ lineHeight: 1.45 }}>
+                                                        {option}
+                                                    </Typography>
+                                                </Button>
+                                            );
+                                        })}
+                                    </Stack>
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            p: 1.5,
+                                            borderRadius: 2,
+                                            bgcolor: alpha(theme.palette.info.main, 0.08),
+                                            color: "text.secondary",
+                                        }}
+                                    >
+                                        <Typography variant="body2">
+                                            No fixed suggestion for this question. Type your answer on the left.
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
+                        </Paper>
+
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2.25,
+                                borderRadius: 3,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                bgcolor: "background.paper",
+                            }}
+                        >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                Submit Control
+                            </Typography>
+                            <Stack spacing={1.5} sx={{ mt: 1.6 }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary" }}>
+                                        Question {activeQuestionNumber} of {Math.max(totalQuestions, 1)}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+                                        {progress}% Complete
+                                    </Typography>
+                                </Stack>
+
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={progressValue}
+                                    sx={{
+                                        height: 8,
+                                        borderRadius: 999,
+                                        bgcolor: alpha(theme.palette.secondary.main, 0.24),
+                                        "& .MuiLinearProgress-bar": {
+                                            borderRadius: 999,
+                                            bgcolor: theme.palette.secondary.dark,
+                                        },
+                                    }}
+                                />
+
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Button
+                                        size="small"
+                                        variant="text"
+                                        startIcon={<KeyboardBackspaceRoundedIcon />}
+                                        onClick={handleBackToSetup}
+                                        disabled={isBotResponding || isSubmitting}
+                                    >
+                                        Previous
+                                    </Button>
+
+                                    <Button
+                                        variant="outlined"
+                                        endIcon={<SkipNextRoundedIcon />}
+                                        onClick={handleOpenSkipConfirm}
+                                        disabled={isBotResponding || isSubmitting || isSkipping}
+                                        sx={{ borderRadius: 2 }}
+                                    >
+                                        {isSkipping ? "Saving..." : "Skip"}
+                                    </Button>
+                                </Stack>
+
                             </Stack>
-                        </Stack>
-                    </Box>
-                </Paper>
+                        </Paper>
+                    </Stack>
+                </Box>
             </Stack>
+            {skipConfirmDialog}
         </Box>
     );
 };
 
 export default ChatSurvey;
+
