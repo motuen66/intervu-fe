@@ -23,6 +23,7 @@ import {
     Grid,
     FormControl,
     InputLabel,
+    IconButton,
 } from "@mui/material";
 import FormSelect from "../../../../common/components/form/FormSelect";
 import FormTextField from "../../../../common/components/form/FormTextField";
@@ -33,7 +34,7 @@ import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { formatCurrency } from "../../../../common/utils/dateFormatter.js";
-import { PrimaryButton, SecondaryButton, TextButton } from "../../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
 const transactionStatusConfig = {
     PENDING: { label: "Pending", color: "#FFA500", bgColor: "#FFF3E0" },
@@ -216,18 +217,9 @@ Interview ID: ${transaction.interviewId}
                             View all your interview booking transactions
                         </Typography>
                     </Box>
-                    <TextButton
-                        onClick={onClose}
-                        sx={{
-                            minWidth: 40,
-                            width: 40,
-                            height: 40,
-                            p: 0,
-                            borderRadius: "50%",
-                        }}
-                    >
+                    <IconButton onClick={onClose} size="small">
                         <CloseIcon />
-                    </TextButton>
+                    </IconButton>
                 </Box>
 
                 {/* Content */}

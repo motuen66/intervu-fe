@@ -6,7 +6,7 @@ import { adminEndPoints } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import DataTable from '../../../common/components/table/DataTable';
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
-import SearchInput from '../../../common/components/admin/SearchInput';
+import SearchInput from '../../../common/components/inputs/SearchInput';
 import useTableState from '../../../hooks/useTableState';
 import './AdminDashboard.css';
 

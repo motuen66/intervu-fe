@@ -16,8 +16,8 @@ import ConfirmModal from '../../../common/components/ConfirmModal';
 import { PrimaryButton } from '../../../common/components/buttons';
 
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
-import SearchInput from '../../../common/components/admin/SearchInput';
-import FilterDropdown from '../../../common/components/admin/FilterDropdown';
+import SearchInput from '../../../common/components/inputs/SearchInput';
+import FilterDropdown from '../../../common/components/inputs/FilterDropdown';
 import TableActionsMenu from '../../../common/components/table/TableActionsMenu';
 import useTableState from '../../../hooks/useTableState';
 import './AdminDashboard.css';

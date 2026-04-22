@@ -20,8 +20,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import toast from "react-hot-toast";
 
 import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
-import SearchInput from "../../../common/components/admin/SearchInput";
-import FilterDropdown from "../../../common/components/admin/FilterDropdown";
+import SearchInput from "../../../common/components/inputs/SearchInput";
+import FilterDropdown from "../../../common/components/inputs/FilterDropdown";
 import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
 import DataTable from "../../../common/components/table/DataTable";
 import StatusChip from "../../../common/components/StatusChip";

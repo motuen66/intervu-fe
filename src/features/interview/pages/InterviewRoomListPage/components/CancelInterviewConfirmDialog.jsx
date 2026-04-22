@@ -264,13 +264,6 @@ function CancelInterviewConfirmDialog({
                     <DangerButton
                         onClick={onConfirm}
                         disabled={confirmLoading}
-                        sx={{
-                            color: "error.main",
-                            fontWeight: 800,
-                            textTransform: "none",
-                            minHeight: 44,
-                            px: 1.5,
-                        }}
                     >
                         {confirmLoading ? <CircularProgress size={16} color="inherit" /> : confirmText}
                     </DangerButton>

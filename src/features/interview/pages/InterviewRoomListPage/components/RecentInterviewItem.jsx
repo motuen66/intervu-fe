@@ -111,22 +111,6 @@ function RecentInterviewItem({ room, user, onClick }) {
                         <SecondaryButton
                             size="sm"
                             startIcon={<MessageSquare size={16} />}
-                            sx={{
-                                color: "primary.main",
-                                borderColor: "rgba(15, 23, 42, 0.12)",
-                                borderRadius: "10px",
-                                textTransform: "none",
-                                fontWeight: 700,
-                                px: 1.5,
-                                py: 0.6,
-                                fontSize: "0.85rem",
-                                whiteSpace: "nowrap",
-                                "&:hover": {
-                                    bgcolor: "primary.light",
-                                    color: "primary.contrastText",
-                                    borderColor: "primary.main",
-                                },
-                            }}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onClick) onClick(room);

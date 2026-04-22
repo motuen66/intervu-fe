@@ -1,10 +1,11 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import { callApi } from "../utils/apiConnector";
 import { METHOD } from "../constants/api";
 import { authEndPoints } from "../../features/auth/services/authApi";
 import { setUserData, setToken } from "../store/authSlice";
+import { DangerButton } from "./buttons";
 
 const SuspendedGate = ({ children }) => {
     const { userData } = useSelector((state) => state.auth || {});
@@ -74,25 +75,12 @@ const SuspendedGate = ({ children }) => {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2, pt: 1, justifyContent: 'center' }}>
-                    <Button 
-                        onClick={handleLogout} 
-                        variant="contained" 
-                        color="error"
+                    <DangerButton
+                        onClick={handleLogout}
                         fullWidth
-                        sx={{ 
-                            borderRadius: '10px', 
-                            textTransform: 'none', 
-                            fontWeight: 600,
-                            py: 1,
-                            fontSize: '1rem',
-                            backgroundColor: '#ef4444',
-                            '&:hover': {
-                                backgroundColor: '#dc2626'
-                            }
-                        }}
                     >
                         Log out
-                    </Button>
+                    </DangerButton>
                 </DialogActions>
             </Dialog>
         </>

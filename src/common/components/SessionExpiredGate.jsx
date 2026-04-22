@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Box, Typography } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Box, Typography } from "@mui/material";
 import { Clock, LogIn } from "lucide-react";
+import { PrimaryButton } from "./buttons";
 
 const SessionExpiredGate = () => {
     const [countdown, setCountdown] = useState(5);
@@ -76,25 +77,16 @@ const SessionExpiredGate = () => {
                 </DialogContentText>
             </DialogContent>
             <DialogActions sx={{ p: 3, pt: 1 }}>
-                <Button 
+                <PrimaryButton
                     onClick={() => {
                         localStorage.clear();
                         navigate("/login");
-                    }} 
-                    variant="contained" 
+                    }}
                     fullWidth
                     startIcon={<LogIn size={18} />}
-                    sx={{ 
-                        borderRadius: '10px', 
-                        textTransform: 'none', 
-                        fontWeight: 600,
-                        py: 1,
-                        backgroundColor: '#0F172A',
-                        '&:hover': { backgroundColor: '#1e293b' }
-                    }}
                 >
                     Back to Login Now
-                </Button>
+                </PrimaryButton>
             </DialogActions>
         </Dialog>
     );

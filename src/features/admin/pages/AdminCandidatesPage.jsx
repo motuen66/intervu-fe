@@ -13,7 +13,7 @@ import DataTable from '../../../common/components/table/DataTable';
 import ConfirmModal from '../../../common/components/ConfirmModal';
 import { PrimaryButton } from '../../../common/components/buttons';
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
-import SearchInput from '../../../common/components/admin/SearchInput';
+import SearchInput from '../../../common/components/inputs/SearchInput';
 import TableActionsMenu from '../../../common/components/table/TableActionsMenu';
 import useTableState from '../../../hooks/useTableState';
 import './AdminDashboard.css';
