@@ -527,7 +527,7 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                 </TabPanel>
 
                                 <Box sx={{ mt: "auto", pt: 4, display: "flex", justifyContent: "space-between" }}>
-                                    <SecondaryButton onClick={handleReset} sx={{ color: "text.secondary" }}>
+                                    <SecondaryButton onClick={handleReset}>
                                         Re-evaluate CV
                                     </SecondaryButton>
                                     <PrimaryButton onClick={onClose}>

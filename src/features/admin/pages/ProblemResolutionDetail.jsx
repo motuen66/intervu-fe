@@ -31,7 +31,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import toast from "react-hot-toast";
 import { axiosInstance, callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
-import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../common/components/buttons";
 import FormTextField from "../../../common/components/form/FormTextField";
 import FormSelect from "../../../common/components/form/FormSelect";
 import StatusChip from "../../../common/components/StatusChip";
@@ -378,13 +378,12 @@ function ProblemResolutionDetail() {
         <Container maxWidth="xl" sx={{ py: 4 }}>
             <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
                 <Box>
-                    <SecondaryButton
+                    <TextButton
                         startIcon={<ArrowBackIcon />}
                         onClick={() => navigate(-1)}
-                        variant="text"
                     >
                         Back
-                    </SecondaryButton>
+                    </TextButton>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: "text.primary" }}>
                         Problem Resolution Detail
                     </Typography>

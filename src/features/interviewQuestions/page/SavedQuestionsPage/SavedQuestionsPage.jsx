@@ -52,20 +52,11 @@ export default function SavedQuestionsPage() {
     return (
         <Box sx={{ maxWidth: 900, mx: "auto", px: 3, pt: 4, pb: 8 }}>
             {/* Header */}
-            <TextButton
-                startIcon={<ArrowBackIcon />}
-                onClick={() => navigate(-1)}
-                size="sm"
-                sx={{
-                    color: "text.secondary",
-                    fontSize: 13,
-                    p: 0,
-                    mb: 2.5,
-                    "&:hover": { color: "primary.main", background: "none" },
-                }}
-            >
-                Back
-            </TextButton>
+            <Box sx={{ mb: 2.5 }}>
+                <TextButton startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} size="sm">
+                    Back
+                </TextButton>
+            </Box>
 
             <Stack direction="row" alignItems="center" gap={1.25} mb={3}>
                 <BookmarkIcon color="primary" />

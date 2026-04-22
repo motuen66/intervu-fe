@@ -540,9 +540,8 @@ const PaymentHistoryPage = () => {
                                                 </TableCell>
                                                 <TableCell align="right" sx={{ borderTopRightRadius: 16, borderBottomRightRadius: 16 }}>
                                                     <SecondaryButton
-                                                        size="small"
+                                                        size="sm"
                                                         onClick={() => setSelectedTransaction(transaction)}
-                                                        sx={{ py: 0.5, px: 2 }}
                                                     >
                                                         View details
                                                     </SecondaryButton>

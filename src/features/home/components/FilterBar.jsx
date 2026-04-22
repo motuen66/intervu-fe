@@ -251,23 +251,16 @@ function FilterBar({ onOpenSmartMatch }) {
               </FormSelect>
             </FormControl>
 
-            <SecondaryButton
-              size="small"
-              onClick={() => setShowAdvanced((prev) => !prev)}
-              sx={{
-                height: 40,
-                width: FILTER_TOGGLE_WIDTH,
-                minWidth: FILTER_TOGGLE_WIDTH,
-                maxWidth: FILTER_TOGGLE_WIDTH,
-                gap: 1,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                justifyContent: 'center'
-              }}
-            >
-              {showAdvanced ? <ChevronUp size={16} /> : <Filter size={16} />}
-              {showAdvanced ? 'Hide Filters' : 'More Filters'}
-            </SecondaryButton>
+            <Box sx={{ width: FILTER_TOGGLE_WIDTH, minWidth: FILTER_TOGGLE_WIDTH, flexShrink: 0 }}>
+              <SecondaryButton
+                fullWidth
+                size="md"
+                startIcon={showAdvanced ? <ChevronUp size={16} /> : <Filter size={16} />}
+                onClick={() => setShowAdvanced((prev) => !prev)}
+              >
+                {showAdvanced ? 'Hide Filters' : 'More Filters'}
+              </SecondaryButton>
+            </Box>
 
             <Box sx={{ flexGrow: 1 }} />
 
@@ -288,25 +281,15 @@ function FilterBar({ onOpenSmartMatch }) {
                 sx={{ width: 280 }}
               />
 
-              <PrimaryButton size="small" onClick={applySearch} sx={{ height: 40 }}>
+              <PrimaryButton size="md" onClick={applySearch}>
                 Search
               </PrimaryButton>
 
               <DangerButton
-                size="small"
+                size="md"
+                iconOnly
                 onClick={handleClearFilters}
                 disabled={!hasActiveFilters}
-                sx={{
-                  width: 40,
-                  minWidth: 40,
-                  height: 40,
-                  p: 0,
-                  ...( !hasActiveFilters && {
-                    borderColor: 'divider',
-                    color: 'text.disabled',
-                    '&:hover': { backgroundColor: 'transparent', boxShadow: 'none' }
-                  })
-                }}
               >
                 <X size={18} />
               </DangerButton>

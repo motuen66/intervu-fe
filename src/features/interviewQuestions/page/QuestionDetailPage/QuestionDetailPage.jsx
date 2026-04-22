@@ -539,20 +539,15 @@ export default function QuestionDetailPage() {
         >
             {/* Main column */}
             <Box flex={1} minWidth={0}>
-                <TextButton
-                    startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate("/questions")}
-                    size="sm"
-                    sx={{
-                        color: "text.secondary",
-                        fontSize: 13,
-                        p: 0,
-                        mb: 2.25,
-                        "&:hover": { color: "primary.main", background: "none" },
-                    }}
-                >
-                    All Questions
-                </TextButton>
+                <Box sx={{ mb: 2.25 }}>
+                    <TextButton
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => navigate("/questions")}
+                        size="sm"
+                    >
+                        All Questions
+                    </TextButton>
+                </Box>
 
                 <Stack direction="row" alignItems="flex-start" gap={1} mb={0.75}>
                     {editing ? (
@@ -583,7 +578,6 @@ export default function QuestionDetailPage() {
                                     startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
                                     disabled={savingEdit}
                                     onClick={requestSaveEdit}
-                                    sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
                                     {savingEdit ? "Saving..." : "Save"}
                                 </PrimaryButton>
@@ -591,7 +585,6 @@ export default function QuestionDetailPage() {
                                     size="sm"
                                     startIcon={<CloseIcon sx={{ fontSize: 14 }} />}
                                     onClick={() => setEditing(false)}
-                                    sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
                                     Cancel
                                 </SecondaryButton>
@@ -686,36 +679,13 @@ export default function QuestionDetailPage() {
                                 )
                             }
                             onClick={handleLikeQuestion}
-                            variant="outlined"
-                            sx={{
-                                borderRadius: 999,
-                                textTransform: "none",
-                                fontSize: 13,
-                                color: questionLiked ? "primary.main" : "text.primary",
-                                borderColor: questionLiked ? "primary.main" : "divider",
-                                bgcolor: questionLiked ? "primary.50" : "transparent",
-                                "&:hover": { bgcolor: "action.hover" },
-                            }}
                         >
                             Like {` ${getQuestionLikeCount(data)}`}
                         </SecondaryButton>
                     </Tooltip>
-                    {actionBtns.map(({ icon, label, onClick, active, tooltip }) => (
+                    {actionBtns.map(({ icon, label, onClick, tooltip }) => (
                         <Tooltip key={label} title={tooltip} placement="top">
-                            <SecondaryButton
-                                size="sm"
-                                startIcon={icon}
-                                onClick={onClick}
-                                sx={{
-                                    borderRadius: 999,
-                                    textTransform: "none",
-                                    fontSize: 13,
-                                    color: active ? "primary.main" : "text.primary",
-                                    borderColor: active ? "primary.main" : "divider",
-                                    bgcolor: active ? "primary.50" : "transparent",
-                                    "&:hover": { bgcolor: "action.hover" },
-                                }}
-                            >
+                            <SecondaryButton size="sm" startIcon={icon} onClick={onClick}>
                                 {label}
                             </SecondaryButton>
                         </Tooltip>
@@ -792,7 +762,6 @@ export default function QuestionDetailPage() {
                                     endIcon={<SendIcon sx={{ fontSize: 14 }} />}
                                     disabled={!answerInput.trim() || submittingAnswer}
                                     onClick={handleAddComment}
-                                    sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
                                     {submittingAnswer ? "Posting..." : "Post Answer"}
                                 </PrimaryButton>

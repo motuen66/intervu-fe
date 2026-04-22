@@ -369,44 +369,24 @@ export default function ShareExperiencePage() {
                     />
                 ))}
 
-                <TextButton
-                    startIcon={<AddIcon />}
-                    onClick={addQuestion}
-                    size="sm"
-                    sx={{
-                        color: "primary.main",
-                        fontWeight: 600,
-                        fontSize: 13,
-                        p: 0,
-                        "&:hover": { textDecoration: "underline", background: "none" },
-                    }}
-                >
+                <TextButton startIcon={<AddIcon />} onClick={addQuestion} size="sm">
                     ADD ANOTHER QUESTION
                 </TextButton>
             </Box>
 
             {/* Footer */}
             <Stack alignItems="center" gap={1.5} mt={4.5}>
-                <PrimaryButton
-                    fullWidth
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    size="md"
-                    sx={{ maxWidth: 340, py: 1.5, fontSize: 15 }}
-                >
-                    {submitting ? "Submitting..." : "Submit Experience"}
-                </PrimaryButton>
-                <TextButton
-                    onClick={() => navigate("/questions")}
-                    size="sm"
-                    sx={{
-                        color: "text.secondary",
-                        letterSpacing: "0.05em",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        "&:hover": { color: "text.primary", background: "none" },
-                    }}
-                >
+                <Box sx={{ width: "100%", maxWidth: 340 }}>
+                    <PrimaryButton
+                        fullWidth
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        size="md"
+                    >
+                        {submitting ? "Submitting..." : "Submit Experience"}
+                    </PrimaryButton>
+                </Box>
+                <TextButton onClick={() => navigate("/questions")} size="sm">
                     Discard and go back
                 </TextButton>
             </Stack>

@@ -259,11 +259,7 @@ export default function AnswerCard({
 
                     {needsTruncate && (
                         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.25 }}>
-                            <TextButton
-                                size="sm"
-                                onClick={() => setExpandedPreview((v) => !v)}
-                                sx={{ textTransform: "none", p: 0, minWidth: 0 }}
-                            >
+                            <TextButton size="sm" onClick={() => setExpandedPreview((v) => !v)}>
                                 {expandedPreview ? "View less" : "View more"}
                             </TextButton>
                         </Box>
@@ -283,15 +279,6 @@ export default function AnswerCard({
                             )
                         }
                         onClick={handleVote}
-                        sx={{
-                            textTransform: "none",
-                            fontSize: 13,
-                            color: voted ? "primary.main" : "text.secondary",
-                            bgcolor: voted ? "primary.50" : "transparent",
-                            p: 0,
-                            minWidth: 0,
-                            "&:hover": { bgcolor: "action.hover" },
-                        }}
                     >
                         Like {voteCount != null ? ` ${voteCount}` : ""}
                     </TextButton>
@@ -300,14 +287,6 @@ export default function AnswerCard({
                     size="sm"
                     startIcon={<FlagOutlinedIcon sx={{ fontSize: 15 }} />}
                     onClick={onReport}
-                    sx={{
-                        color: "text.secondary",
-                        fontWeight: 400,
-                        fontSize: 13,
-                        p: 0,
-                        minWidth: 0,
-                        "&:hover": { color: "error.main", background: "none" },
-                    }}
                 >
                     Report
                 </TextButton>

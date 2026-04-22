@@ -39,7 +39,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import SessionResultSection from "./components/SessionResultSection";
 import FormTextField from "../../../../common/components/form/FormTextField";
-import { SecondaryButton, DangerButton } from "../../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, DangerButton } from "../../../../common/components/buttons";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { CvDialog } from "../../../../features/profiles/components/CvDialog";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -541,9 +541,11 @@ export default function BookingRequestDetailPage() {
                 <Typography variant="h5" color="text.secondary">
                     Booking request not found.
                 </Typography>
-                <SecondaryButton sx={{ mt: 4 }} onClick={() => navigate("/booking-requests")}>
-                    Back to list
-                </SecondaryButton>
+                <Box sx={{ mt: 4 }}>
+                    <SecondaryButton onClick={() => navigate("/booking-requests")}>
+                        Back to list
+                    </SecondaryButton>
+                </Box>
             </Box>
         );
     }
@@ -613,26 +615,14 @@ export default function BookingRequestDetailPage() {
                         {!isCoach && !hasCompletedInterview && (
                             <>
                                 {isPending && (
-                                    <SecondaryButton
-                                        onClick={handlePay}
-                                        loading={paying}
-                                        sx={{
-                                            borderRadius: "14px",
-                                            px: 4,
-                                            bgcolor: "#bef264",
-                                            color: "#111827",
-                                            border: "none",
-                                            "&:hover": { bgcolor: "#a3e635" },
-                                        }}
-                                    >
+                                    <PrimaryButton onClick={handlePay} loading={paying}>
                                         Pay {detail.totalAmount?.toLocaleString()} ₫
-                                    </SecondaryButton>
+                                    </PrimaryButton>
                                 )}
                                 {(isPending || isAccepted) && (
                                     <DangerButton
                                         onClick={handleOpenCancelRequestConfirm}
                                         loading={cancelling}
-                                        sx={{ borderRadius: "14px", px: 3 }}
                                     >
                                         Cancel Request
                                     </DangerButton>
@@ -997,7 +987,6 @@ export default function BookingRequestDetailPage() {
                                                             fullWidth
                                                             loading={cancellingRoundId === r.id}
                                                             onClick={() => handleOpenCancelRoundConfirm(r)}
-                                                            sx={{ borderRadius: "12px", py: 1 }}
                                                         >
                                                             Cancel Round
                                                         </DangerButton>

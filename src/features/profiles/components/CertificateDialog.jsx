@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Dialog, DialogActions, DialogContent, DialogTitle, Stack, Box, Typography } from "@mui/material";
-import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import { DangerButton, PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import FormTextField from "../../../common/components/form/FormTextField";
 import { CompanyLogo } from "../../../common/utils/logoImageGenerator";
 
@@ -136,16 +136,9 @@ function CertificateDialog({ open, onClose, onSave, onDelete, certificate }) {
             <DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
                 <Stack direction="row" spacing={1}>
                     {certificate?.id && (
-                        <SecondaryButton
-                            onClick={() => onDelete?.(certificate)}
-                            sx={{
-                                color: "error.main",
-                                borderColor: "error.main",
-                                "&:hover": { borderColor: "error.dark", color: "error.dark" },
-                            }}
-                        >
+                        <DangerButton onClick={() => onDelete?.(certificate)}>
                             Delete
-                        </SecondaryButton>
+                        </DangerButton>
                     )}
                 </Stack>
                 <Stack direction="row" spacing={1}>

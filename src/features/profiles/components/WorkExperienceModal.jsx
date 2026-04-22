@@ -15,7 +15,7 @@ import {
     FormHelperText,
     Avatar,
 } from "@mui/material";
-import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import { DangerButton, PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import { CompanyLogo } from "../../../common/utils/logoImageGenerator";
 import FormSelect from "../../../common/components/form/FormSelect";
 import FormTextField from "../../../common/components/form/FormTextField";
@@ -352,16 +352,9 @@ const WorkExperienceModal = ({
             <DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
                 <Box>
                     {experience?.id && (
-                        <SecondaryButton
-                            onClick={() => onDelete?.(experience)}
-                            sx={{
-                                color: "error.main",
-                                borderColor: "error.main",
-                                "&:hover": { borderColor: "error.dark", color: "error.dark" },
-                            }}
-                        >
+                        <DangerButton onClick={() => onDelete?.(experience)}>
                             Delete
-                        </SecondaryButton>
+                        </DangerButton>
                     )}
                 </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>

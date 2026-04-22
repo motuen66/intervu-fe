@@ -48,9 +48,11 @@ const DefaultLayout = () => {
                                 {userData?.fullName?.charAt(0).toUpperCase() || "U"}
                             </Avatar>
                         )}
-                        <SecondaryButton size="sm" sx={{ ml: 2 }} onClick={logout}>
-                            Sign In
-                        </SecondaryButton>
+                        <Box sx={{ ml: 2 }}>
+                            <SecondaryButton size="sm" onClick={logout}>
+                                Sign In
+                            </SecondaryButton>
+                        </Box>
                     </Toolbar>
                 </Container>
             </AppBar>

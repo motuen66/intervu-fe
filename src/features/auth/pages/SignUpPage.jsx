@@ -363,9 +363,6 @@ function SignUpPage() {
                                     disabled={isSubmitting}
                                     fullWidth
                                     size="md"
-                                    sx={{
-                                        borderRadius: "10px",
-                                    }}
                                 >
                                     Sign up
                                 </PrimaryButton>

@@ -263,15 +263,7 @@ export default function UserProfilePage() {
                             disabled
                             sx={{ mb: 2, background: "rgba(0,0,0,0.02)" }}
                         />
-                        <SecondaryButton
-                            disabled
-                            sx={{
-                                borderColor: "rgba(0,0,0,0.2)",
-                                color: "rgba(0,0,0,0.4)",
-                            }}
-                        >
-                            Update email
-                        </SecondaryButton>
+                        <SecondaryButton disabled>Update email</SecondaryButton>
                     </Box>
 
                     <Divider sx={{ my: 4 }} />
@@ -282,18 +274,11 @@ export default function UserProfilePage() {
                         <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
                             Click the button below to change your password.
                         </Typography>
-                        <PrimaryButton
-                            onClick={() => setShowPasswordForm(!showPasswordForm)}
-                            sx={{
-                                bgcolor: "primary.main",
-                                "&:hover": {
-                                    bgcolor: "primary.dark",
-                                },
-                                mb: showPasswordForm ? 3 : 0,
-                            }}
-                        >
-                            {showPasswordForm ? "Hide Password Form" : "Change Password"}
-                        </PrimaryButton>
+                        <Box sx={{ mb: showPasswordForm ? 3 : 0 }}>
+                            <PrimaryButton onClick={() => setShowPasswordForm(!showPasswordForm)}>
+                                {showPasswordForm ? "Hide Password Form" : "Change Password"}
+                            </PrimaryButton>
+                        </Box>
 
                         {/* Change Password Form */}
                         {showPasswordForm && (
@@ -341,12 +326,6 @@ export default function UserProfilePage() {
                                         !passwordData.newPassword ||
                                         !passwordData.confirmPassword
                                     }
-                                    sx={{
-                                        bgcolor: "primary.main",
-                                        "&:hover": {
-                                            bgcolor: "primary.dark",
-                                        },
-                                    }}
                                 >
                                     Update Password
                                 </PrimaryButton>

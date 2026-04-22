@@ -1635,7 +1635,7 @@ function InterviewerProfilePage() {
                                 Cancel
                             </SecondaryButton>
                             <PrimaryButton
-                                size="large"
+                                size="lg"
                                 startIcon={<SaveIcon size={18} strokeWidth={2} />}
                                 onClick={() => setShowConfirmSave(true)}
                                 loading={saving}

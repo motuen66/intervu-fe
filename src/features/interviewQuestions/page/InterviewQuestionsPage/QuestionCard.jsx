@@ -314,16 +314,10 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                                 )
                             }
                             onClick={handleLike}
-                            sx={{
-                                color: liked ? "primary.main" : "text.secondary",
-                                p: 0,
-                                minWidth: 0,
-                                "&:hover": { color: "primary.main", background: "none" },
-                            }}
                         >
                             {likeCount}
                         </TextButton>
-                        {actionBtns.map(({ icon, label, onClick, active }) => (
+                        {actionBtns.map(({ icon, label, onClick }) => (
                             <TextButton
                                 key={label}
                                 size="sm"
@@ -331,12 +325,6 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                                 onClick={(event) => {
                                     event.stopPropagation();
                                     onClick?.(event);
-                                }}
-                                sx={{
-                                    color: active ? "primary.main" : "text.secondary",
-                                    p: 0,
-                                    minWidth: 0,
-                                    "&:hover": { color: "primary.main", background: "none" },
                                 }}
                             >
                                 {label}
@@ -418,7 +406,6 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                                     e.stopPropagation();
                                     setExpandedPreview((v) => !v);
                                 }}
-                                sx={{ textTransform: "none", p: 0, minWidth: 0 }}
                             >
                                 {expandedPreview ? "View less" : "View more"}
                             </TextButton>

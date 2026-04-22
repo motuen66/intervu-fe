@@ -404,7 +404,6 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                     disabled={!isFormValid || isSubmitting || loading}
                     endIcon={<SendIcon />}
                     loading={isSubmitting}
-                    sx={{ boxShadow: "none" }}
                 >
                     {isSubmitting ? "Sending..." : "Send Request"}
                 </PrimaryButton>

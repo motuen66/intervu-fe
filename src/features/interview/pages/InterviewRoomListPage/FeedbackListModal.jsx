@@ -606,20 +606,24 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                                 Back
                             </SecondaryButton>
                         )}
-                        <PrimaryButton
-                            onClick={handleSubmit}
-                            disabled={submitDisabled}
-                            loading={submitting}
-                            sx={{ minWidth: 160 }}
-                        >
-                            Submit Feedback
-                        </PrimaryButton>
+                        <Box sx={{ minWidth: 160 }}>
+                            <PrimaryButton
+                                fullWidth
+                                onClick={handleSubmit}
+                                disabled={submitDisabled}
+                                loading={submitting}
+                            >
+                                Submit Feedback
+                            </PrimaryButton>
+                        </Box>
                     </>
                 ) : (
                     !hasPendingFeedbacks && (
-                        <SecondaryButton onClick={() => handleClose()} sx={{ minWidth: 120 }}>
-                            Close
-                        </SecondaryButton>
+                        <Box sx={{ minWidth: 120 }}>
+                            <SecondaryButton fullWidth onClick={() => handleClose()}>
+                                Close
+                            </SecondaryButton>
+                        </Box>
                     )
                 )}
             </DialogActions>

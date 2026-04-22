@@ -72,7 +72,6 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
                     fullWidth
                     onClick={() => navigate("/questions/share")}
                     size="sm"
-                    sx={{ fontWeight: 500, fontSize: 13 }}
                 >
                     + Share interview experience
                 </SecondaryButton>

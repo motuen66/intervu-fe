@@ -792,23 +792,15 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
 
                             {/* Actions */}
                             <Box sx={{ display: "flex", gap: 1.5 }}>
-                                <SecondaryButton
-                                    onClick={onClose}
-                                    sx={{
-                                        minWidth: 120,
-                                        borderRadius: "12px",
-                                    }}
-                                >
-                                    Discard
-                                </SecondaryButton>
+                                <Box sx={{ minWidth: 120 }}>
+                                    <SecondaryButton fullWidth onClick={onClose}>
+                                        Discard
+                                    </SecondaryButton>
+                                </Box>
                                 <PrimaryButton
                                     onClick={handleContribute}
                                     disabled={!hasValidQuestions || contributing}
                                     loading={contributing}
-                                    sx={{
-                                        minWidth: 210,
-                                        borderRadius: "12px",
-                                    }}
                                 >
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                                         Confirm & Contribute

@@ -1633,26 +1633,15 @@ function CandidateProfilePage() {
 
                                         {canEdit && profile && (
                                             <>
-                                                <PrimaryButton
-                                                    onClick={() => setOpenAiEval(true)}
-                                                    startIcon={<BrainCircuit size={18} />}
-                                                    fullWidth
-                                                    sx={{ 
-                                                        mt: -2,
-                                                        mb: 3,
-                                                        borderRadius: "12px",
-                                                        py: 1.5,
-                                                        background: "var(--ep-accent-dark)",
-                                                        boxShadow: "0 8px 20px -6px rgba(106, 170, 0, 0.4)",
-                                                        "&:hover": {
-                                                            background: "var(--ep-accent-dark)",
-                                                            transform: "translateY(-2px)",
-                                                            boxShadow: "0 10px 24px -6px rgba(106, 170, 0, 0.5)",
-                                                        }
-                                                    }}
-                                                >
-                                                    View AI CV evaluation
-                                                </PrimaryButton>
+                                                <Box sx={{ mt: -2, mb: 3 }}>
+                                                    <PrimaryButton
+                                                        onClick={() => setOpenAiEval(true)}
+                                                        startIcon={<BrainCircuit size={18} />}
+                                                        fullWidth
+                                                    >
+                                                        View AI CV evaluation
+                                                    </PrimaryButton>
+                                                </Box>
                                                 <AiCvEvaluationModal
                                                     open={openAiEval}
                                                     onClose={() => setOpenAiEval(false)}

@@ -661,8 +661,8 @@ function LandingPage() {
                             />
                             <PrimaryButton
                               type="submit"
+                              fullWidth
                               loading={formStatus === 'submitting'}
-                              sx={{ width: '100%', py: 1.4 }}
                             >
                               Submit application
                             </PrimaryButton>

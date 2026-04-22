@@ -816,9 +816,11 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
                         </Box>
                     </BaseCard>
                 ) : (
-                    <SecondaryButton onClick={() => setIsAdding(true)} sx={{ mt: 0.5, py: 1, borderStyle: 'dashed' }}>
-                        + Add {title.replace(/_/g, " ")}
-                    </SecondaryButton>
+                    <Box sx={{ mt: 0.5 }}>
+                        <SecondaryButton onClick={() => setIsAdding(true)}>
+                            + Add {title.replace(/_/g, " ")}
+                        </SecondaryButton>
+                    </Box>
                 )}
             </Box>
         </Box>
@@ -1032,9 +1034,11 @@ function StepVerification({ extractedJsonStr, setExtractedJsonStr, onConfirm, lo
             </Box>
 
             <Box sx={{ mt: "auto", display: "flex", justifyContent: "flex-end", pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-                <PrimaryButton disabled={isParseError || loading} loading={loading} onClick={onConfirm} sx={{ px: 4, py: 1.5, mt: 2 }}>
-                    Confirm & Find Coaches
-                </PrimaryButton>
+                <Box sx={{ mt: 2 }}>
+                    <PrimaryButton disabled={isParseError || loading} loading={loading} onClick={onConfirm}>
+                        Confirm & Find Coaches
+                    </PrimaryButton>
+                </Box>
             </Box>
         </motion.div>
     );
@@ -1249,9 +1253,11 @@ function StepResults({ results, onRefine }) {
                         AI has identified the top experts for your profile.
                     </Typography>
                 </Box>
-                <SecondaryButton onClick={onRefine} sx={{ gap: 0.75, flexShrink: 0 }}>
-                    <RefreshCw size={15} /> Refine
-                </SecondaryButton>
+                <Box sx={{ flexShrink: 0 }}>
+                    <SecondaryButton onClick={onRefine} startIcon={<RefreshCw size={15} />}>
+                        Refine
+                    </SecondaryButton>
+                </Box>
             </Box>
 
             <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: 0.5, pb: 0.5 }}>
@@ -1357,15 +1363,14 @@ function StepResults({ results, onRefine }) {
                                             </Box>
 
                                             {/* Book Now */}
-                                            <PrimaryButton
-                                                onClick={() => handleBookNow(slugProfileUrl)}
-                                                sx={{ 
-                                                    whiteSpace: "nowrap", gap: 0.75, flexShrink: 0,
-                                                    px: 3
-                                                }}
-                                            >
-                                                Book Now <ArrowRight size={16} />
-                                            </PrimaryButton>
+                                            <Box sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                                                <PrimaryButton
+                                                    onClick={() => handleBookNow(slugProfileUrl)}
+                                                    endIcon={<ArrowRight size={16} />}
+                                                >
+                                                    Book Now
+                                                </PrimaryButton>
+                                            </Box>
                                         </Box>
 
                                     {skills.length > 0 && (

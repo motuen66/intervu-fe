@@ -149,17 +149,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
             {/* Remove button */}
             {showRemove && (
                 <Box textAlign="right" mb={0.5}>
-                    <TextButton
-                        size="sm"
-                        onClick={() => onRemove(idx)}
-                        sx={{
-                            color: "text.disabled",
-                            fontSize: 12,
-                            p: 0,
-                            minWidth: 0,
-                            "&:hover": { color: "error.main" },
-                        }}
-                    >
+                    <TextButton size="sm" onClick={() => onRemove(idx)}>
                         Remove
                     </TextButton>
                 </Box>

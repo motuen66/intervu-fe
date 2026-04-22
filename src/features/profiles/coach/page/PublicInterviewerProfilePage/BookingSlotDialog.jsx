@@ -459,11 +459,11 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                         </Box>
                     )}
                     {activeStep === 0 ? (
-                        <PrimaryButton color="secondary" disabled={!selectedService} onClick={handleNextStep} sx={{ px: 5 }}>
+                        <PrimaryButton disabled={!selectedService} onClick={handleNextStep}>
                             Next Step
                         </PrimaryButton>
                     ) : (
-                        <PrimaryButton color="secondary" disabled={!canConfirm} onClick={handleConfirmBooking} sx={{ px: 5 }}>
+                        <PrimaryButton disabled={!canConfirm} onClick={handleConfirmBooking}>
                             Confirm & Pay
                         </PrimaryButton>
                     )}

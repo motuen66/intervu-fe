@@ -256,26 +256,10 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                 <Box sx={{ minWidth: 100 }}>
                     {isWaitingForMyResponse && (
                         <Stack direction="row" spacing={0.75}>
-                            <SuccessButton
-                                size="small"
-                                onClick={() => onApprove(request)}
-                                sx={{
-                                    px: 1.5,
-                                    py: 0.5,
-                                    fontSize: "0.75rem",
-                                }}
-                            >
+                            <SuccessButton size="sm" onClick={() => onApprove(request)}>
                                 Approve
                             </SuccessButton>
-                            <DangerButton
-                                size="small"
-                                onClick={() => onReject(request)}
-                                sx={{
-                                    px: 1.5,
-                                    py: 0.5,
-                                    fontSize: "0.75rem",
-                                }}
-                            >
+                            <DangerButton size="sm" onClick={() => onReject(request)}>
                                 Reject
                             </DangerButton>
                         </Stack>

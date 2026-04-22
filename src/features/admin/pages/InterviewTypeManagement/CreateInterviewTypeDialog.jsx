@@ -290,7 +290,6 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
                                     </Box>
                                 ))}
                                 <SecondaryButton
-                                    variant="outlined"
                                     startIcon={<AddCircleOutlineIcon />}
                                     onClick={handleAddEvaluation}
                                 >

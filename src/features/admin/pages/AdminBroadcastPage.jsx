@@ -473,7 +473,6 @@ export default function AdminBroadcastPage() {
                                             type="submit"
                                             loading={loading}
                                             startIcon={<Send size={18} />}
-                                            sx={{ px: 3 }}
                                         >
                                             Publish Notification
                                         </PrimaryButton>

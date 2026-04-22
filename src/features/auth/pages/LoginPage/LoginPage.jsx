@@ -361,14 +361,6 @@ function LoginPage() {
                                         disabled={isSubmitting || googleSubmitting}
                                         fullWidth
                                         size="md"
-                                        sx={{
-                                            borderRadius: "10px",
-                                            backgroundColor: theme.palette.secondary.main,
-                                            color: theme.palette.secondary.contrastText,
-                                            "&:hover": {
-                                                backgroundColor: theme.palette.secondary.dark,
-                                            },
-                                        }}
                                     >
                                         Login
                                     </PrimaryButton>

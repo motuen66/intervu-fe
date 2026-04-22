@@ -138,14 +138,15 @@ export default function InterviewQuestionsPage() {
                             : "Browse real interview questions shared by candidates and hiring managers."
                     }
                     actions={
-                        <PrimaryButton
-                            size="md"
-                            startIcon={<ShareIcon />}
-                            onClick={() => navigate("/questions/share")}
-                            sx={{ whiteSpace: "nowrap" }}
-                        >
-                            Share interview
-                        </PrimaryButton>
+                        <Box sx={{ whiteSpace: "nowrap" }}>
+                            <PrimaryButton
+                                size="md"
+                                startIcon={<ShareIcon />}
+                                onClick={() => navigate("/questions/share")}
+                            >
+                                Share interview
+                            </PrimaryButton>
+                        </Box>
                     }
                 />
             </Box>

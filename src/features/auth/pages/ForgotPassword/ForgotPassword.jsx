@@ -75,18 +75,17 @@ function ForgotPassword() {
                             sx={{ mb: 2.5 }}
                         />
 
-                        <PrimaryButton
-                            fullWidth
-                            type="submit"
-                            loading={false}
-                            disabled={submitting}
-                            size="md"
-                            sx={{
-                                marginBottom: '16px'
-                            }}
-                        >
-                            Send Reset Link
-                        </PrimaryButton>
+                        <div style={{ marginBottom: '16px' }}>
+                            <PrimaryButton
+                                fullWidth
+                                type="submit"
+                                loading={false}
+                                disabled={submitting}
+                                size="md"
+                            >
+                                Send Reset Link
+                            </PrimaryButton>
+                        </div>
 
                         <div style={{ textAlign: 'center' }}>
                             <Typography
@@ -119,8 +118,6 @@ function ForgotPassword() {
                             fullWidth
                             onClick={handleBackToLogin}
                             size="md"
-                            sx={{
-                            }}
                         >
                             Back to Login
                         </PrimaryButton>

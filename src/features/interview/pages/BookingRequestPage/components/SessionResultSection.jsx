@@ -17,7 +17,7 @@ import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { callApi } from '../../../../../common/utils/apiConnector';
 import { METHOD } from '../../../../../common/constants/api';
-import { SecondaryButton } from '../../../../../common/components/buttons';
+import { PrimaryButton } from '../../../../../common/components/buttons';
 
 // Thin dark progress bar matching design
 const SlimProgress = styled(LinearProgress)(({ theme }) => ({
@@ -300,21 +300,12 @@ const RoundResultItem = ({ round }) => {
                                         <Typography variant="body2" fontWeight={800} color="#0f172a" sx={{ mb: 0.5 }}>Coding Workspace Saved</Typography>
                                         <Typography variant="caption" color="#64748b">Review the problem statement, your code, and test results in read-only mode.</Typography>
                                     </Box>
-                                    <SecondaryButton
+                                    <PrimaryButton
+                                        size="sm"
                                         onClick={() => navigate(`/interview/room/${targetRoomId}?viewOnly=true`)}
-                                        sx={{
-                                            borderRadius: '12px',
-                                            px: 3,
-                                            bgcolor: '#0f172a',
-                                            color: 'white',
-                                            '&:hover': { bgcolor: '#1e293b' },
-                                            fontSize: '0.8rem',
-                                            fontWeight: 800,
-                                            gap: 1
-                                        }}
                                     >
                                         Review Workspace ↗
-                                    </SecondaryButton>
+                                    </PrimaryButton>
                                 </Stack>
                             </Box>
                         );
