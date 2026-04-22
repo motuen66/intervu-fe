@@ -23,7 +23,6 @@ import {
     TableHead,
     TableRow,
     Typography,
-    Button,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 // import ReplayIcon from "@mui/icons-material/Replay";
@@ -499,14 +498,13 @@ function ProblemResolutionDetail() {
                             <SectionCard title="Booking Context">
                                 <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 2 }}>
                                     {!audioUrl && (
-                                        <Button
-                                            variant="contained"
+                                        <PrimaryButton
                                             startIcon={<PlayArrowIcon />}
                                             onClick={handleLoadAudio}
                                             disabled={downloadingAudio || loading || !reportDetail}
                                         >
                                             {downloadingAudio ? "Loading..." : "Play Audio"}
-                                        </Button>
+                                        </PrimaryButton>
                                     )}
                                     {/* 
                                     <Button

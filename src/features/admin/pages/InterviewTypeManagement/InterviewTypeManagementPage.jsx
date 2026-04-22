@@ -5,7 +5,6 @@ import { METHOD } from "../../../../common/constants/api";
 import CreateInterviewTypeDialog from "./CreateInterviewTypeDialog";
 import UpdateInterviewTypeDialog from "./UpdateInterviewTypeDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";

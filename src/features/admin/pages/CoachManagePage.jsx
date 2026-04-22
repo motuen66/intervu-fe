@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CreateInterviewerProfileDialog from "../../profiles/coach/page/CreateInterviewerProfileDialog";
-import { Button, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
+import { PrimaryButton } from "../../../common/components/buttons";
 
 function InterviewerManagePage() {
     const [openDialog, setOpenDialog] = useState(false);
@@ -10,9 +11,9 @@ function InterviewerManagePage() {
             <Typography variant="h5" gutterBottom>
                 Interviewer Manage Page
             </Typography>
-            <Button variant="contained" onClick={() => setOpenDialog(true)}>
+            <PrimaryButton onClick={() => setOpenDialog(true)}>
                 Create Interviewer
-            </Button>
+            </PrimaryButton>
 
             <CreateInterviewerProfileDialog open={openDialog} onClose={() => setOpenDialog(false)} />
         </>
