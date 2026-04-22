@@ -4,7 +4,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Button,
     Typography,
     Box,
     Stack,
@@ -161,28 +160,25 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                             Choose how to provide your CV for the AI interview:
                         </Typography>
                         <Stack direction="row" spacing={2}>
-                            <Button
-                                variant="outlined"
+                            <SecondaryButton
                                 onClick={handleSelectCurrent}
                                 fullWidth
                             >
                                 Use Current CV from Profile
-                            </Button>
-                            <Button
-                                variant="outlined"
+                            </SecondaryButton>
+                            <SecondaryButton
                                 onClick={handleUploadNew}
                                 fullWidth
                             >
                                 Upload New CV
-                            </Button>
-                            <Button
-                                variant="outlined"
+                            </SecondaryButton>
+                            <SecondaryButton
                                 onClick={handleSelectLastCv}
                                 fullWidth
                                 disabled={!lastCvUrl || checkingLastCv}
                             >
                                 Use Previous CV
-                            </Button>
+                            </SecondaryButton>
                         </Stack>
                     </Stack>
                 )}
@@ -255,14 +251,13 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                         )}
 
                         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                            <Button
-                                variant="contained"
+                            <PrimaryButton
                                 onClick={processCV}
                                 disabled={!uploadedFile}
                                 sx={{ textTransform: "none" }}
                             >
                                 Process CV
-                            </Button>
+                            </PrimaryButton>
                         </Box>
                     </Box>
                 )}

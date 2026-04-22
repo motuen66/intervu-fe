@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Box,
-    Button,
     CircularProgress,
     FormControl,
     FormControlLabel,
@@ -19,6 +18,7 @@ import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { buttonStyles, dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import { PrimaryButton } from "../../../../common/components/buttons";
 
 function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     const [loading, setLoading] = useState(false);
@@ -381,14 +381,13 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                             </FormControl>
                         </Box>
                         <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ pt: 1 }}>
-                            <Button
-                                variant="contained"
+                            <PrimaryButton
                                 disabled={submitting || items.length === 0}
                                 onClick={handleSubmit}
                                 sx={(theme) => ({ ...buttonStyles.primaryCta(theme) })}
                             >
                                 {submitting ? "Submitting..." : "Submit"}
-                            </Button>
+                            </PrimaryButton>
                         </Stack>
                     </Stack>
                 )}

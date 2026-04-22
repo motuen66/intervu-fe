@@ -81,22 +81,6 @@ function InterviewFilterBar({
                     ))}
                 </FormSelect>
 
-                {/* <Button
-                    variant="outlined"
-                    startIcon={<FileDownloadOutlinedIcon />}
-                    onClick={onExport}
-                    sx={{
-                        borderRadius: 2,
-                        borderColor: "divider",
-                        color: "text.secondary",
-                        "&:hover": {
-                            borderColor: "text.secondary",
-                            bgcolor: "action.hover",
-                        },
-                    }}
-                >
-                    Export
-                </Button> */}
             </Stack>
         </Stack>
     );

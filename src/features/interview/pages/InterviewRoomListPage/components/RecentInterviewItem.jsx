@@ -1,7 +1,8 @@
-import { Box, Typography, Avatar, Stack, Button, Tooltip } from "@mui/material";
+import { Box, Typography, Avatar, Stack, Tooltip } from "@mui/material";
 import { MessageSquare } from "lucide-react";
 import { ROLES } from "../../../../../common/constants/common";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
+import { SecondaryButton } from "../../../../../common/components/buttons";
 
 function RecentInterviewItem({ room, user, onClick }) {
 
@@ -107,9 +108,8 @@ function RecentInterviewItem({ room, user, onClick }) {
             <Box sx={{ width: { xs: "100%", md: "15%" }, display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
                 {isCompleted && (
                     <Tooltip title="View Feedback" arrow>
-                        <Button
-                            variant="outlined"
-                            size="small"
+                        <SecondaryButton
+                            size="sm"
                             startIcon={<MessageSquare size={16} />}
                             sx={{
                                 color: "primary.main",
@@ -133,7 +133,7 @@ function RecentInterviewItem({ room, user, onClick }) {
                             }}
                         >
                             Feedback
-                        </Button>
+                        </SecondaryButton>
                     </Tooltip>
                 )}
             </Box>

@@ -1,7 +1,6 @@
 import {
     Alert,
     Box,
-    Button,
     CircularProgress,
     Dialog,
     DialogActions,
@@ -16,7 +15,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
-import { PrimaryButton } from "../../../../../common/components/buttons";
+import { PrimaryButton, DangerButton } from "../../../../../common/components/buttons";
 import StatusChip from "../../../../../common/components/StatusChip";
 
 function CancelInterviewConfirmDialog({
@@ -262,7 +261,7 @@ function CancelInterviewConfirmDialog({
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5, pt: 1.5 }}>
                 <Box sx={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Button
+                    <DangerButton
                         onClick={onConfirm}
                         disabled={confirmLoading}
                         sx={{
@@ -274,17 +273,13 @@ function CancelInterviewConfirmDialog({
                         }}
                     >
                         {confirmLoading ? <CircularProgress size={16} color="inherit" /> : confirmText}
-                    </Button>
+                    </DangerButton>
                     <Box sx={{ minWidth: 150 }}>
                         <PrimaryButton fullWidth onClick={onClose}>
                             {cancelText}
                         </PrimaryButton>
                     </Box>
                 </Box>
-                {/* Hidden action for keyboard submit compatibility */}
-                <Button onClick={onConfirm} sx={{ display: "none" }}>
-                    {confirmText}
-                </Button>
             </DialogActions>
         </Dialog>
     );

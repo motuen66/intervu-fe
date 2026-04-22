@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Dialog from "@mui/material/Dialog";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
 import Avatar from "@mui/material/Avatar";
 import Paper from "@mui/material/Paper";
 import LinearProgress from "@mui/material/LinearProgress";
@@ -16,6 +15,7 @@ import Badge from "@mui/material/Badge";
 import Divider from "@mui/material/Divider";
 import BaseCard from "../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import FormTextField from "../../../common/components/form/FormTextField";
 import {
     BrainCircuit,
     X,
@@ -376,7 +376,7 @@ function StepInput({ query, setQuery, cvFile, setCvFile, jdFile, setJdFile, onSu
             <Typography variant="overline" sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
                 <Sparkles size={14} color="var(--mui-palette-secondary-dark)" /> What's your primary goal?
             </Typography>
-            <TextField
+            <FormTextField
                 multiline
                 minRows={3}
                 maxRows={4}
@@ -757,7 +757,7 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
                             if (v === null || v === undefined || v === "null" || v === "undefined") return null;
                             const isDesc = k.toLowerCase().includes("description") || k.toLowerCase().includes("summary") || k.toLowerCase().includes("responsibilities");
                             return (
-                                <TextField
+                                <FormTextField
                                     key={k}
                                     fullWidth
                                     size="small"
@@ -793,7 +793,7 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
 
                                 return (
                                     <Box key={k} sx={{ gridColumn: 'span 12' }}>
-                                        <TextField
+                                        <FormTextField
                                             fullWidth
                                             size="small"
                                             label={k.replace(/_/g, " ").toUpperCase()}
@@ -887,7 +887,7 @@ function DynamicSection({ data, onUpdate }) {
                                     params.inputProps.maxLength = 50; 
                                 }
                                 return (
-                                    <TextField 
+                                    <FormTextField 
                                         {...params} 
                                         variant="outlined" 
                                         label={key.replace(/_/g, " ").toUpperCase()} 
@@ -911,7 +911,7 @@ function DynamicSection({ data, onUpdate }) {
                 if (typeof val === 'string' || typeof val === 'number') {
                     const isLongText = typeof val === 'string' && val.length > 60;
                     return (
-                        <TextField
+                        <FormTextField
                             key={key}
                             label={key.replace(/_/g, " ").toUpperCase()}
                             placeholder={getMeaningfulPlaceholder(key, isLongText)}

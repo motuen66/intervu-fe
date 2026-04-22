@@ -11,7 +11,6 @@ import {
     TableRow,
     Paper,
     CircularProgress,
-    Button,
     Stack,
     MenuItem,
     Dialog,
@@ -34,6 +33,7 @@ import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { formatCurrency } from "../../../../common/utils/dateFormatter.js";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../../common/components/buttons";
 
 const transactionStatusConfig = {
     PENDING: { label: "Pending", color: "#FFA500", bgColor: "#FFF3E0" },
@@ -216,7 +216,7 @@ Interview ID: ${transaction.interviewId}
                             View all your interview booking transactions
                         </Typography>
                     </Box>
-                    <Button
+                    <TextButton
                         onClick={onClose}
                         sx={{
                             minWidth: 40,
@@ -227,7 +227,7 @@ Interview ID: ${transaction.interviewId}
                         }}
                     >
                         <CloseIcon />
-                    </Button>
+                    </TextButton>
                 </Box>
 
                 {/* Content */}
@@ -422,25 +422,23 @@ Interview ID: ${transaction.interviewId}
                                                     </TableCell>
                                                     <TableCell align="center">
                                                         <Stack direction="row" spacing={1} justifyContent="center">
-                                                            <Button
-                                                                size="small"
-                                                                variant="outlined"
+                                                            <SecondaryButton
+                                                                size="sm"
                                                                 startIcon={<VisibilityOutlinedIcon />}
                                                                 onClick={() => handleViewDetails(transaction)}
                                                                 sx={{ textTransform: "none" }}
                                                             >
                                                                 View
-                                                            </Button>
+                                                            </SecondaryButton>
                                                             {transaction.status === "COMPLETED" && (
-                                                                <Button
-                                                                    size="small"
-                                                                    variant="outlined"
+                                                                <SecondaryButton
+                                                                    size="sm"
                                                                     startIcon={<FileDownloadIcon />}
                                                                     onClick={() => handleDownloadReceipt(transaction)}
                                                                     sx={{ textTransform: "none" }}
                                                                 >
                                                                     Receipt
-                                                                </Button>
+                                                                </SecondaryButton>
                                                             )}
                                                         </Stack>
                                                     </TableCell>
@@ -550,7 +548,7 @@ Interview ID: ${transaction.interviewId}
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDetailsDialog}>Close</Button>
+                    <PrimaryButton onClick={handleCloseDetailsDialog}>Close</PrimaryButton>
                 </DialogActions>
             </Dialog>
         </>

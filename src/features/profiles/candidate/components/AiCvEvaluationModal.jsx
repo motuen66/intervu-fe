@@ -12,7 +12,6 @@ import {
     ListItemText,
     Chip,
     IconButton,
-    Button,
     alpha,
     Tabs,
     Tab,
@@ -321,8 +320,7 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                 </Typography>
 
                                 <Stack spacing={2} sx={{ maxWidth: 450 }}>
-                                    <Button
-                                        variant="outlined"
+                                    <SecondaryButton
                                         onClick={() => handleEvaluate()}
                                         fullWidth
                                         startIcon={<FileText size={20} />}
@@ -338,9 +336,8 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                         }}
                                     >
                                         Use Current Profile CV
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
+                                    </SecondaryButton>
+                                    <SecondaryButton
                                         onClick={() => setStep("upload")}
                                         fullWidth
                                         startIcon={<CloudUpload size={20} />}
@@ -356,7 +353,7 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                         }}
                                     >
                                         Try with Another CV (Upload PDF)
-                                    </Button>
+                                    </SecondaryButton>
                                 </Stack>
                             </motion.div>
                         )}

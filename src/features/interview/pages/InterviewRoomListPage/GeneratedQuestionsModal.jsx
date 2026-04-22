@@ -5,7 +5,6 @@ import {
     Typography,
     IconButton,
     CircularProgress,
-    Button,
     Alert,
     Chip,
     Autocomplete,
@@ -657,7 +656,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                         )}
 
                                         {/* Add custom question button */}
-                                        <Button
+                                        <SecondaryButton
                                             onClick={handleAddCustom}
                                             startIcon={<Plus size={16} />}
                                             sx={{
@@ -677,7 +676,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                             }}
                                         >
                                             Add custom question
-                                        </Button>
+                                        </SecondaryButton>
                                     </motion.div>
                                 )}
 
