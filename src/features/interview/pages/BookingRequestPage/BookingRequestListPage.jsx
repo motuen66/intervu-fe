@@ -11,7 +11,6 @@ import useUser from "../../../../common/hooks/useUser";
 import { ROLES } from "../../../../common/constants/common";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import CircularProgress from "@mui/material/CircularProgress";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -20,17 +19,16 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import MenuItem from "@mui/material/MenuItem";
 import Pagination from "@mui/material/Pagination";
-import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import MapIcon from "@mui/icons-material/Map";
 import Tooltip from "@mui/material/Tooltip";
-import Toolbar from "@mui/material/Toolbar";
 import toast from "react-hot-toast";
 import "./BookingRequestPage.css";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import StatusChip from "../../../../common/components/StatusChip";
+import PageHeader from "../../../../common/components/PageHeader";
 
 const STATUS_COLOR_MAP = {
     [BOOKING_REQUEST_STATUS.PENDING]: "warning",
@@ -97,14 +95,10 @@ export default function BookingRequestListPage() {
 
     return (
         <Box className="booking-list-page">
-            <Box className="page-header">
-                <Typography variant="h5" fontWeight={700}>
-                    Your Bookings
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {isCoach ? "Manage incoming bookings from candidates." : "Track your bookings to coaches."}
-                </Typography>
-            </Box>
+            <PageHeader
+                title="Your Bookings"
+                subtitle={isCoach ? "Manage incoming bookings from candidates." : "Track your bookings to coaches."}
+            />
 
             {/* Filters */}
             <Box className="booking-list-filters">

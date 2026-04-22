@@ -20,13 +20,13 @@ import {
     Divider,
     Link,
     IconButton,
-    TextField,
     Tab,
     Tabs,
     Paper,
 } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import FormTextField from "../../../../common/components/form/FormTextField";
 import {
     Edit3 as EditIcon,
     Trash2 as DeleteIcon,
@@ -727,7 +727,7 @@ function CandidateProfilePage() {
 
                             <Box sx={{ flex: 1, pt: { xs: 0, md: 1 } }}>
                                 {editMode ? (
-                                    <TextField
+                                    <FormTextField
                                         label="Full Name"
                                         fullWidth
                                         value={profile?.user?.fullName || profile?.fullName || ""}
@@ -804,7 +804,7 @@ function CandidateProfilePage() {
                             <Box sx={{ mt: 3 }}>
                                 <Typography className="ep-about-title">About</Typography>
                                 {editMode ? (
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         multiline
                                         minRows={5}
@@ -882,7 +882,7 @@ function CandidateProfilePage() {
                                                         setProfile((prev) => ({ ...prev, skills: newValue }))
                                                     }
                                                     renderInput={(params) => (
-                                                        <TextField
+                                                        <FormTextField
                                                             {...params}
                                                             placeholder="Add skills"
                                                             size="small"
@@ -1249,7 +1249,7 @@ function CandidateProfilePage() {
                                                                 })
                                                             }
                                                             renderInput={(params) => (
-                                                                <TextField
+                                                                <FormTextField
                                                                     {...params}
                                                                     placeholder="Select industries"
                                                                 />
@@ -1530,7 +1530,7 @@ function CandidateProfilePage() {
                                                     Portfolio
                                                 </Typography>
                                                 {editMode ? (
-                                                    <TextField
+                                                    <FormTextField
                                                         fullWidth
                                                         size="small"
                                                         placeholder="https://yourportfolio.com"
@@ -1872,3 +1872,4 @@ function CandidateProfilePage() {
 }
 
 export default CandidateProfilePage;
+
