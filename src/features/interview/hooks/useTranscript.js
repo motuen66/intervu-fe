@@ -1,9 +1,11 @@
 import { useDeepgramTranscript } from "./useDeepgramTranscript";
 import { useSpeechmaticsTranscript } from "./useSpeechmaticsTranscript";
+import { useElevenLabsTranscript } from "./useElevenLabsTranscript";
 
 const TRANSCRIPT_PROVIDERS = {
     DEEPGRAM: "deepgram",
     SPEECHMATICS: "speechmatics",
+    ELEVENLABS: "elevenlabs",
 };
 
 /**
@@ -14,6 +16,8 @@ export function useTranscript(options) {
 
     if (provider === TRANSCRIPT_PROVIDERS.SPEECHMATICS) {
         return useSpeechmaticsTranscript(options);
+    } else if (provider === TRANSCRIPT_PROVIDERS.ELEVENLABS) {
+        return useElevenLabsTranscript(options);
     } else {
         return useDeepgramTranscript(options);
     }

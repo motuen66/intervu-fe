@@ -668,7 +668,14 @@ function InterviewRoomPage() {
 
     // ── Transcript window ────────────────────────────────────────────────────
     const [transcriptPos, setTranscriptPos] = useState({ x: window.innerWidth / 2 - 300, y: window.innerHeight - 350 });
+    const transcriptPosRef = useRef(transcriptPos);
+    const transcriptWindowRef = useRef(null);
+    const transcriptDragRafRef = useRef(null);
     const transcriptEndRef = useRef(null);
+
+    useEffect(() => {
+        transcriptPosRef.current = transcriptPos;
+    }, [transcriptPos]);
 
     useEffect(() => {
         if (transcriptEndRef.current) {
@@ -841,33 +848,81 @@ function InterviewRoomPage() {
     // ── Transcript drag ──────────────────────────────────────────────────────
     const transcriptDragRef = useRef(null);
 
-    const startTranscriptDrag = useCallback(
-        (e) => {
-            e.preventDefault();
-            transcriptDragRef.current = {
-                startX: e.clientX,
-                startY: e.clientY,
-                posX: transcriptPos.x,
-                posY: transcriptPos.y,
-            };
+    const startTranscriptDrag = useCallback((e) => {
+        e.preventDefault();
+        const origin = transcriptPosRef.current;
+        transcriptDragRef.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            originX: origin.x,
+            originY: origin.y,
+            nextX: origin.x,
+            nextY: origin.y,
+        };
 
-            const onMove = (me) => {
-                if (!transcriptDragRef.current) return;
-                setTranscriptPos({
-                    x: transcriptDragRef.current.posX + (me.clientX - transcriptDragRef.current.startX),
-                    y: transcriptDragRef.current.posY + (me.clientY - transcriptDragRef.current.startY),
-                });
-            };
-            const onUp = () => {
-                transcriptDragRef.current = null;
-                document.removeEventListener("mousemove", onMove);
-                document.removeEventListener("mouseup", onUp);
-            };
-            document.addEventListener("mousemove", onMove);
-            document.addEventListener("mouseup", onUp);
-        },
-        [transcriptPos],
-    );
+        const windowEl = transcriptWindowRef.current;
+        if (windowEl) {
+            windowEl.style.willChange = "transform";
+        }
+
+        const flushDragFrame = () => {
+            transcriptDragRafRef.current = null;
+            const drag = transcriptDragRef.current;
+            const el = transcriptWindowRef.current;
+            if (!drag || !el) return;
+
+            const dx = drag.nextX - drag.originX;
+            const dy = drag.nextY - drag.originY;
+            el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        };
+
+        const onMove = (me) => {
+            const drag = transcriptDragRef.current;
+            if (!drag) return;
+
+            drag.nextX = drag.originX + (me.clientX - drag.startX);
+            drag.nextY = drag.originY + (me.clientY - drag.startY);
+
+            if (transcriptDragRafRef.current === null) {
+                transcriptDragRafRef.current = requestAnimationFrame(flushDragFrame);
+            }
+        };
+
+        const onUp = () => {
+            const drag = transcriptDragRef.current;
+            transcriptDragRef.current = null;
+
+            if (transcriptDragRafRef.current !== null) {
+                cancelAnimationFrame(transcriptDragRafRef.current);
+                transcriptDragRafRef.current = null;
+            }
+
+            const el = transcriptWindowRef.current;
+            if (el) {
+                el.style.transform = "";
+                el.style.willChange = "";
+            }
+
+            if (drag) {
+                setTranscriptPos({ x: drag.nextX, y: drag.nextY });
+            }
+
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+        };
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (transcriptDragRafRef.current !== null) {
+                cancelAnimationFrame(transcriptDragRafRef.current);
+                transcriptDragRafRef.current = null;
+            }
+        };
+    }, []);
 
     // ── Compute effective widths for panels ──────────────────────────────────
     const panelAVisible = showPanelA;
@@ -1608,6 +1663,7 @@ function InterviewRoomPage() {
             {isTranscriptionEnabled && (
                 <Box
                     id="transcript-window"
+                    ref={transcriptWindowRef}
                     sx={{
                         position: "fixed",
                         top: transcriptPos.y,

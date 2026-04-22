@@ -59,6 +59,39 @@ function getPreferredMediaRecorderOptions() {
     return null;
 }
 
+function stopMediaRecorder(recorder, timeoutMs = 2000) {
+    if (!recorder || recorder.state === "inactive") {
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+        let settled = false;
+        let timeoutId = null;
+
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            recorder.removeEventListener("stop", handleStop);
+            recorder.removeEventListener("error", handleError);
+            if (timeoutId) clearTimeout(timeoutId);
+            resolve();
+        };
+
+        const handleStop = () => finish();
+        const handleError = () => finish();
+
+        recorder.addEventListener("stop", handleStop);
+        recorder.addEventListener("error", handleError);
+        timeoutId = setTimeout(finish, timeoutMs);
+
+        try {
+            recorder.stop();
+        } catch (_) {
+            finish();
+        }
+    });
+}
+
 export function useSpeechmaticsTranscript({
     roomId,
     isEnabled = false,
@@ -255,11 +288,18 @@ export function useSpeechmaticsTranscript({
     const stopRecording = useCallback(async () => {
         recorderSessionIdRef.current += 1;
         isStartingRecorderRef.current = false;
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-            mediaRecorderRef.current.stop();
-            if (Number(user?.role) === ROLES.INTERVIEWER) flushAndUpload();
-        }
+
+        const recorder = mediaRecorderRef.current;
         mediaRecorderRef.current = null;
+        if (recorder && recorder.state !== "inactive") {
+            await stopMediaRecorder(recorder);
+        }
+
+        // Flush after recorder stop so the final dataavailable chunk is included.
+        if (Number(user?.role) === ROLES.INTERVIEWER) {
+            await flushAndUpload();
+        }
+
         if (audioSourceRef.current) audioSourceRef.current.disconnect();
         if (workletNodeRef.current) workletNodeRef.current.disconnect();
         if (audioContextRef.current) {
@@ -307,7 +347,7 @@ export function useSpeechmaticsTranscript({
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data && event.data.size > 0 && Number(user?.role) === ROLES.INTERVIEWER) {
                     accumulatedBlobs.current.push(event.data);
-                    if (Date.now() - lastUploadTime.current >= 15000) flushAndUpload();
+                    if (Date.now() - lastUploadTime.current >= 15000) void flushAndUpload();
                 }
             };
 
@@ -316,7 +356,7 @@ export function useSpeechmaticsTranscript({
                 if (isTranscriptionEnabled) await startSpeechmatics();
             }
         } catch (error) {
-            stopRecording();
+            await stopRecording();
         } finally {
             isStartingRecorderRef.current = false;
         }
@@ -334,9 +374,18 @@ export function useSpeechmaticsTranscript({
     ]);
 
     useEffect(() => {
-        if (isEnabled && roomId && audioStream && transcriptionStream && isMicOn) startRecording();
-        else stopRecording();
+        if (isEnabled && roomId && audioStream && transcriptionStream && isMicOn) {
+            void startRecording();
+        } else {
+            void stopRecording();
+        }
     }, [isEnabled, roomId, audioStream, transcriptionStream, isMicOn, startRecording, stopRecording]);
+
+    useEffect(() => {
+        return () => {
+            void stopRecording();
+        };
+    }, [stopRecording]);
 
     return {
         transcriptHistory,
