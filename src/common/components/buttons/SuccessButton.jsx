@@ -1,19 +1,27 @@
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import { alpha } from "@mui/material/styles";
+import { buttonStyles } from "../../constants/uiStyles";
 
-export default function SuccessButton({ loading = false, disabled, children, sx, ...props }) {
+export default function SuccessButton({
+    loading = false,
+    disabled,
+    children,
+    size = "md",
+    iconOnly = false,
+    sx,
+    ...props
+}) {
     return (
         <Button
             variant="contained"
             color="success"
             disabled={disabled || loading}
             sx={(theme) => ({
+                ...buttonStyles.accentCta(theme, size),
+                ...(iconOnly ? buttonStyles.iconOnly(size) : {}),
                 textTransform: "none",
-                fontWeight: 700,
-                px: 3,
-                py: 1.125,
-                borderRadius: "8px",
+                fontWeight: 600,
                 backgroundColor: theme.palette.success.main,
                 color: theme.palette.success.contrastText,
                 transition: "all 0.2s ease",
@@ -26,7 +34,7 @@ export default function SuccessButton({ loading = false, disabled, children, sx,
             })}
             {...props}
         >
-            {loading ? <CircularProgress size={18} color="inherit" /> : children}
+            {loading ? <CircularProgress size={buttonStyles.getSpinnerSize(size)} color="inherit" /> : children}
         </Button>
     );
 }

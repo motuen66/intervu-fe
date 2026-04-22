@@ -1,11 +1,17 @@
 import Chip from "@mui/material/Chip";
 import { alpha } from "@mui/material/styles";
 
-export default function StatusChip({ label, color = "default", icon, variant = "default", sx, ...props }) {
+const sizeConfig = {
+    sm: { height: 22, fontSize: "0.6875rem", iconSize: "0.8125rem", borderRadius: 1.25 },
+    md: { height: 26, fontSize: "0.75rem", iconSize: "0.9375rem", borderRadius: 1.5 },
+};
+
+export default function StatusChip({ label, color = "default", icon, variant = "default", size = "md", sx, ...props }) {
+    const sizeStyle = sizeConfig[size] || sizeConfig.md;
     return (
         <Chip
             label={label}
-            size="small"
+            size={size === "sm" ? "small" : "medium"}
             icon={icon}
             sx={(theme) => {
                 const main =
@@ -24,12 +30,12 @@ export default function StatusChip({ label, color = "default", icon, variant = "
                     bgcolor: isFilled ? main : alpha(main, 0.12),
                     color: isFilled ? contrastText : main,
                     fontWeight: 600,
-                    fontSize: "0.7rem",
-                    height: 24,
-                    borderRadius: 1.5,
+                    fontSize: sizeStyle.fontSize,
+                    height: sizeStyle.height,
+                    borderRadius: sizeStyle.borderRadius,
                     "& .MuiChip-icon": {
                         color: isFilled ? contrastText : main,
-                        fontSize: "0.875rem",
+                        fontSize: sizeStyle.iconSize,
                     },
                     ...(typeof sx === "function" ? sx(theme) : sx),
                 };

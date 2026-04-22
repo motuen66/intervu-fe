@@ -5,8 +5,9 @@ import { authEndPoints } from "../services/authApi";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import SplitText from "./LoginPage/SplitText";
-import { TextField, Typography, InputAdornment, IconButton } from "@mui/material";
+import { Typography, InputAdornment, IconButton } from "@mui/material";
 import { PrimaryButton } from "../../../common/components/buttons";
+import { FormTextField } from "../../../common/components";
 import toast from "react-hot-toast";
 import { trackRegister } from "../../../utils/analytics";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -292,22 +293,11 @@ function SignUpPage() {
 
                         <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ position: "relative", zIndex: 1 }}>
                             <div style={{ marginBottom: "14px" }}>
-                                <TextField
+                                <FormTextField
                                     label="Full Name"
                                     type="text"
-                                    variant="outlined"
+                                    sizeVariant="md"
                                     fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-                                            "&:hover fieldset": { borderColor: "#4F46E5" },
-                                            "&.Mui-focused fieldset": { borderColor: "#4F46E5" },
-                                        },
-                                        "& .MuiInputAdornment-root": { opacity: 1, visibility: "visible" },
-                                        "& .MuiInputLabel-root": { color: "rgba(0,0,0,0.6)" },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: "#4F46E5" },
-                                    }}
                                     {...register("fullName", {
                                         required: "Full name is required",
                                         minLength: { value: 2, message: "Name is too short" },
@@ -318,21 +308,11 @@ function SignUpPage() {
                             </div>
 
                             <div style={{ marginBottom: "14px" }}>
-                                <TextField
+                                <FormTextField
                                     label="Email"
                                     type="email"
-                                    variant="outlined"
+                                    sizeVariant="md"
                                     fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-                                            "&:hover fieldset": { borderColor: "#4F46E5" },
-                                            "&.Mui-focused fieldset": { borderColor: "#4F46E5" },
-                                        },
-                                        "& .MuiInputLabel-root": { color: "rgba(0,0,0,0.6)" },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: "#4F46E5" },
-                                    }}
                                     {...register("email", {
                                         required: "Email is required",
                                         pattern: {
@@ -346,21 +326,11 @@ function SignUpPage() {
                             </div>
 
                             <div style={{ marginBottom: "20px" }}>
-                                <TextField
+                                <FormTextField
                                     label="Password"
                                     type={showPassword ? "text" : "password"}
-                                    variant="outlined"
+                                    sizeVariant="md"
                                     fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-                                            "&:hover fieldset": { borderColor: "#4F46E5" },
-                                            "&.Mui-focused fieldset": { borderColor: "#4F46E5" },
-                                        },
-                                        "& .MuiInputLabel-root": { color: "rgba(0,0,0,0.6)" },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: "#4F46E5" },
-                                    }}
                                     {...register("password", {
                                         required: "Password is required",
                                         minLength: { value: 8, message: "Password must be at least 8 characters" },
@@ -392,10 +362,9 @@ function SignUpPage() {
                                     loading={false}
                                     disabled={isSubmitting}
                                     fullWidth
+                                    size="md"
                                     sx={{
-                                        padding: "14px 28px",
                                         borderRadius: "10px",
-                                        fontSize: "17px",
                                     }}
                                 >
                                     Sign up

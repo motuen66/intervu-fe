@@ -2,7 +2,7 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import { buttonStyles } from "../../constants/uiStyles";
 
-export default function TextButton({
+export default function GhostButton({
     loading = false,
     disabled,
     children,
@@ -26,4 +26,3 @@ export default function TextButton({
         </Button>
     );
 }
-

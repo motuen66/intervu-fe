@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Alert, Box, Typography } from "@mui/material";
 import { callApi } from '../../../../common/utils/apiConnector';
 import { METHOD } from '../../../../common/constants/api';
 import { authEndPoints } from '../../services/authApi';
+import { FormTextField } from "../../../../common/components";
+import { PrimaryButton } from "../../../../common/components/buttons";
 import styles from './ResetPassword.module.css';
 
 const ResetPassword = () => {
@@ -97,7 +100,7 @@ const ResetPassword = () => {
     if (tokenValid === null) {
         return (
             <div className={styles.container}>
-                <h2>Validating reset link...</h2>
+                <Typography variant="h5">Validating reset link...</Typography>
             </div>
         );
     }
@@ -106,11 +109,11 @@ const ResetPassword = () => {
     if (tokenValid === false) {
         return (
             <div className={styles.container}>
-                <h2>Reset Link Invalid</h2>
+                <Typography variant="h5">Reset Link Invalid</Typography>
                 <p className={styles.errorMessage}>{message}</p>
-                <button className={styles.button} onClick={() => navigate('/forgot-password')}>
+                <PrimaryButton className={styles.button} onClick={() => navigate('/forgot-password')}>
                     Request New Link
-                </button>
+                </PrimaryButton>
             </div>
         );
     }
@@ -118,44 +121,46 @@ const ResetPassword = () => {
     // Show reset password form
     return (
         <div className={styles.container}>
-            <h2>Reset Your Password</h2>
+            <Typography variant="h5" sx={{ mb: 2 }}>Reset Your Password</Typography>
             
             {message && (
-                <div className={`${styles.message} ${message.includes('successfully') ? styles.success : styles.error}`}>
+                <Alert severity={message.includes('successfully') ? "success" : "error"} sx={{ mb: 2 }}>
                     {message}
-                </div>
+                </Alert>
             )}
 
             <form onSubmit={handleSubmit}>
-                <div className={styles.formGroup}>
-                    <label>New Password:</label>
-                    <input
+                <Box sx={{ mb: 2 }}>
+                    <FormTextField
+                        fullWidth
+                        label="New Password"
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         required
-                        minLength={6}
-                        placeholder="Enter new password"
                         disabled={submitting}
+                        inputProps={{ minLength: 6 }}
+                        placeholder="Enter new password"
                     />
-                </div>
+                </Box>
 
-                <div className={styles.formGroup}>
-                    <label>Confirm Password:</label>
-                    <input
+                <Box sx={{ mb: 2 }}>
+                    <FormTextField
+                        fullWidth
+                        label="Confirm Password"
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        minLength={6}
-                        placeholder="Confirm new password"
                         disabled={submitting}
+                        inputProps={{ minLength: 6 }}
+                        placeholder="Confirm new password"
                     />
-                </div>
+                </Box>
 
-                <button type="submit" disabled={submitting} className={styles.button}>
+                <PrimaryButton type="submit" disabled={submitting} className={styles.button}>
                     {submitting ? 'Resetting...' : 'Reset Password'}
-                </button>
+                </PrimaryButton>
             </form>
         </div>
     );

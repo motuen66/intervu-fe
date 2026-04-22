@@ -42,6 +42,7 @@ const SavedQuestionsPage = lazy(
     () => import("../../features/interviewQuestions/page/SavedQuestionsPage/SavedQuestionsPage.jsx"),
 );
 const PublicProfilePage = lazy(() => import("../../features/profiles/page/PublicProfilePage.jsx"));
+const UIKitPage = lazy(() => import("../../features/test/pages/UIKitPage.jsx"));
 
 const renderLazy = (LazyComponent, props = {}) => (
     <Suspense fallback={null}>
@@ -130,6 +131,9 @@ export const routes = [
         element: <MainLayout />,
         children: [{ path: "/profile/:slugProfileUrl", element: renderLazy(PublicProfilePage) }],
     },
+    ...(import.meta.env.DEV
+        ? [{ element: <MainLayout />, children: [{ path: "/ui-kit", element: renderLazy(UIKitPage) }] }]
+        : []),
 
     // Candidate specific routes
     {

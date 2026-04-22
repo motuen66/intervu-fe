@@ -164,6 +164,16 @@ function FilterBar({ onOpenSmartMatch }) {
     localFilters.searchTerm
   );
 
+  const hasActiveTagFilters = Boolean(
+    localFilters.company ||
+    localFilters.industry ||
+    (localFilters.skillIds && localFilters.skillIds.length) ||
+    localFilters.minExperienceYears ||
+    localFilters.maxExperienceYears ||
+    localFilters.minPrice ||
+    localFilters.maxPrice
+  );
+
   const addSkillId = (id) => {
     if (!id) return;
     if (selectedSkillIds.includes(id)) return;
@@ -381,7 +391,7 @@ function FilterBar({ onOpenSmartMatch }) {
             </Box>
           </Collapse>
 
-          <Collapse in={hasActiveFilters}>
+          <Collapse in={hasActiveTagFilters}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
               <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>ACTIVE:</Typography>
               {localFilters.company && <div className="summary-pill-simple">Company</div>}

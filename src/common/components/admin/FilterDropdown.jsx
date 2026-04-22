@@ -7,11 +7,13 @@ export default function FilterDropdown({ options = [], value, onChange, placehol
             value={value}
             onChange={(e) => onChange(e.target.value)}
             displayEmpty
-            size="small"
+            sizeVariant="sm"
             sx={{
-                width: 140, height: 32, backgroundColor: '#F8FAFC',
-                borderRadius: '6px', fontSize: '13px',
-                '.MuiSelect-select': { padding: '4px 12px', display: 'flex', alignItems: 'center' },
+                width: 140,
+                borderRadius: '6px',
+                fontSize: '13px',
+                '.MuiOutlinedInput-root': { minHeight: 34 },
+                '.MuiSelect-select': { display: 'flex', alignItems: 'center' },
                 '.MuiSelect-icon': { fontSize: '16px', color: '#94A3B8', right: '4px' }
             }}
         >
