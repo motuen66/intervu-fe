@@ -811,8 +811,8 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
                             })}
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                            <SecondaryButton size="small" onClick={() => setIsAdding(false)}>Cancel</SecondaryButton>
-                            <PrimaryButton size="small" onClick={handleSaveNew}>Save</PrimaryButton>
+                            <SecondaryButton size="sm" onClick={() => setIsAdding(false)}>Cancel</SecondaryButton>
+                            <PrimaryButton size="sm" onClick={handleSaveNew}>Save</PrimaryButton>
                         </Box>
                     </BaseCard>
                 ) : (

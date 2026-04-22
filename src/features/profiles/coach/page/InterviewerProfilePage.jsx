@@ -16,7 +16,6 @@ import {
     Stack,
     Avatar,
     IconButton,
-    TextField,
     Paper,
     Link,
     Divider,
@@ -40,6 +39,7 @@ import {
 import { Autocomplete } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import FormTextField from "../../../../common/components/form/FormTextField";
 import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPage/QuestionCard";
 import WorkExperienceModal from "../../components/WorkExperienceModal.jsx";
 import CertificateDialog from "../../components/CertificateDialog.jsx";
@@ -709,7 +709,7 @@ function InterviewerProfilePage() {
                             <Box sx={{ flex: 1, pt: { xs: 0, md: 1 } }}>
                                 {editMode ? (
                                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
-                                        <TextField
+                                        <FormTextField
                                             label="Full Name"
                                             fullWidth
                                             value={profile?.user?.fullName || ""}
@@ -722,7 +722,7 @@ function InterviewerProfilePage() {
                                             }
                                             sx={{ maxWidth: 520, bgcolor: "background.paper" }}
                                         />
-                                        <TextField
+                                        <FormTextField
                                             label="Years of Experience"
                                             type="number"
                                             value={profile?.experienceYears ?? ""}
@@ -841,7 +841,7 @@ function InterviewerProfilePage() {
                                     About
                                 </Typography>
                                 {editMode ? (
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         multiline
                                         minRows={5}
@@ -921,7 +921,7 @@ function InterviewerProfilePage() {
                                                     setProfile((prev) => ({ ...prev, skills: newValue }))
                                                 }
                                                 renderInput={(params) => (
-                                                    <TextField
+                                                    <FormTextField
                                                         {...params}
                                                         placeholder="Add skills"
                                                         size="small"
@@ -1216,7 +1216,7 @@ function InterviewerProfilePage() {
                                                     setProfile({ ...profile, industryIds: newValue.map((i) => i.id) })
                                                 }
                                                 renderInput={(params) => (
-                                                    <TextField
+                                                    <FormTextField
                                                         {...params}
                                                         placeholder="Select industries"
                                                         size="small"
@@ -1473,7 +1473,7 @@ function InterviewerProfilePage() {
                                                 Portfolio
                                             </Typography>
                                             {editMode ? (
-                                                <TextField
+                                                <FormTextField
                                                     fullWidth
                                                     size="small"
                                                     placeholder="https://yourportfolio.com"

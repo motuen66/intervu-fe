@@ -17,7 +17,6 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import Divider from "@mui/material/Divider";
-import TextField from "@mui/material/TextField";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -52,6 +51,7 @@ import { useTheme } from "@mui/material/styles";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import CalendlyCalendar from "../../../../../common/components/CalendlyCalendar";
 import FormSelect from "../../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../../common/components/form/FormTextField";
 import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
 import "./JDBookingDialog.css";
 
@@ -760,7 +760,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             <Typography className="jd-label-mini">Job url</Typography>
                                             <Box className="jd-input-stitch">
                                                 <Link size={18} color="#94a3b8" aria-hidden />
-                                                <TextField
+                                                <FormTextField
                                                     fullWidth
                                                     variant="standard"
                                                     placeholder={uploadingJd ? `Uploading: ${jdUploadingName}...` : "https://company.com/role"}
@@ -824,7 +824,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             <Typography className="jd-label-mini">CV url</Typography>
                                             <Box className="jd-input-stitch">
                                                 <FileUser size={18} color="#94a3b8" aria-hidden />
-                                                <TextField
+                                                <FormTextField
                                                     fullWidth
                                                     variant="standard"
                                                     placeholder={uploadingCv ? `Uploading: ${cvUploadingName}...` : "https://drive.google.com/cv.pdf"}
