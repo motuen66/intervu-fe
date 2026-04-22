@@ -656,27 +656,15 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                         )}
 
                                         {/* Add custom question button */}
-                                        <SecondaryButton
-                                            onClick={handleAddCustom}
-                                            startIcon={<Plus size={16} />}
-                                            sx={{
-                                                width: "100%",
-                                                mt: questions.length > 0 ? 2 : 0,
-                                                py: 1.5,
-                                                border: "2px dashed #D1D5DB",
-                                                borderRadius: "14px",
-                                                color: "text.secondary",
-                                                textTransform: "none",
-                                                fontWeight: 700,
-                                                "&:hover": {
-                                                    border: "2px dashed var(--mui-palette-secondary-main)",
-                                                    color: "primary.main",
-                                                    bgcolor: "rgba(163,230,53,0.04)",
-                                                },
-                                            }}
-                                        >
-                                            Add custom question
-                                        </SecondaryButton>
+                                        <Box sx={{ mt: questions.length > 0 ? 2 : 0 }}>
+                                            <SecondaryButton
+                                                onClick={handleAddCustom}
+                                                startIcon={<Plus size={16} />}
+                                                fullWidth
+                                            >
+                                                Add custom question
+                                            </SecondaryButton>
+                                        </Box>
                                     </motion.div>
                                 )}
 

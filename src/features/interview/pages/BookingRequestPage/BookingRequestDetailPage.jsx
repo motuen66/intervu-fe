@@ -589,29 +589,6 @@ export default function BookingRequestDetailPage() {
 
                     {/* Primary Action Context Dependent */}
                     <Stack direction="row" spacing={2}>
-                        {/* Legacy: coach accept/reject booking request */}
-                        {/* {isCoach && isPaid && !hasCompletedInterview && (
-                            <>
-                                <SecondaryButton
-                                    onClick={handleAccept}
-                                    loading={responding}
-                                    sx={{
-                                        borderRadius: "14px",
-                                        px: 4,
-                                        bgcolor: "#bef264",
-                                        color: "#111827",
-                                        border: "none",
-                                        "&:hover": { bgcolor: "#a3e635" },
-                                    }}
-                                >
-                                    Accept Request
-                                </SecondaryButton>
-                                <DangerButton onClick={() => setRejectOpen(true)} sx={{ borderRadius: "14px", px: 3 }}>
-                                    Reject
-                                </DangerButton>
-                            </>
-                        )} */}
-
                         {!isCoach && !hasCompletedInterview && (
                             <>
                                 {isPending && (
@@ -629,21 +606,6 @@ export default function BookingRequestDetailPage() {
                                 )}
                             </>
                         )}
-
-                        {/* {isAccepted && (
-                            <SecondaryButton
-                                onClick={() => navigate("/home")}
-                                sx={{
-                                    borderRadius: "28px",
-                                    px: 4,
-                                    py: 1.1,
-                                    fontWeight: 900,
-                                    border: "none",
-                                }}
-                            >
-                                Schedule Follow-up
-                            </SecondaryButton>
-                        )} */}
                     </Stack>
                 </Stack>
 

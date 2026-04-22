@@ -82,7 +82,6 @@ const CreateAvailableSlotDialog = ({
                                     max: maxDate,
                                 }}
                                 fullWidth
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                             />
                         </Box>
 
@@ -134,7 +133,6 @@ const CreateAvailableSlotDialog = ({
                                         onChange={(e) =>
                                             setFormData({ ...formData, startHour: Number(e.target.value) })
                                         }
-                                        sx={{ borderRadius: "8px" }}
                                     >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
@@ -148,7 +146,6 @@ const CreateAvailableSlotDialog = ({
                                     <FormSelect
                                         value={formData.startMinute}
                                         onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
-                                        sx={{ borderRadius: "8px" }}
                                     >
                                         {[0, 30].map((minute) => (
                                             <MenuItem key={minute} value={minute}>
@@ -169,7 +166,6 @@ const CreateAvailableSlotDialog = ({
                                     <FormSelect
                                         value={formData.endHour}
                                         onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
-                                        sx={{ borderRadius: "8px" }}
                                     >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
@@ -183,7 +179,6 @@ const CreateAvailableSlotDialog = ({
                                     <FormSelect
                                         value={formData.endMinute}
                                         onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
-                                        sx={{ borderRadius: "8px" }}
                                     >
                                         {[0, 30].map((minute) => (
                                             <MenuItem key={minute} value={minute}>
