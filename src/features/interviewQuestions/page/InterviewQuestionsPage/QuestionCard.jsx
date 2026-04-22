@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { Avatar, Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import { Avatar, Box, Paper, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
@@ -19,6 +19,8 @@ import { commentEndPoints } from "../../service/commentApi";
 import { interactionEndPoints } from "../../service/interactionApi";
 import { ROLES, QUESTION_TYPES, LEVELS, ROUNDS } from "../../../../common/constants/types";
 import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
+import { TextButton } from "../../../../common/components/buttons";
+import { Tag } from "../../../../common/components";
 
 export default function QuestionCard({ item, isHot: isHotProp }) {
     const [expanded, setExpanded] = useState(false);
@@ -288,10 +290,10 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                     {metaChips.length > 0 && (
                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6, mb: 1.5 }}>
                             {metaChips.map(({ label, color }) => (
-                                <Chip
+                                <Tag
                                     key={label}
                                     label={label}
-                                    size="small"
+                                    size="sm"
                                     color={color}
                                     variant="outlined"
                                     sx={{ fontSize: 11, height: 22 }}
@@ -302,8 +304,8 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
 
                     {/* Vote + Actions */}
                     <Stack direction="row" spacing={2} alignItems="center">
-                        <Button
-                            size="small"
+                        <TextButton
+                            size="sm"
                             startIcon={
                                 liked ? (
                                     <ThumbUpIcon sx={{ fontSize: 16, color: "primary.main" }} />
@@ -320,11 +322,11 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                             }}
                         >
                             {likeCount}
-                        </Button>
+                        </TextButton>
                         {actionBtns.map(({ icon, label, onClick, active }) => (
-                            <Button
+                            <TextButton
                                 key={label}
-                                size="small"
+                                size="sm"
                                 startIcon={icon}
                                 onClick={(event) => {
                                     event.stopPropagation();
@@ -338,7 +340,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                                 }}
                             >
                                 {label}
-                            </Button>
+                            </TextButton>
                         ))}
                     </Stack>
                 </Box>
@@ -410,8 +412,8 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
 
                     {needsTruncate && (
                         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5 }}>
-                            <Button
-                                size="small"
+                            <TextButton
+                                size="sm"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setExpandedPreview((v) => !v);
@@ -419,7 +421,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                                 sx={{ textTransform: "none", p: 0, minWidth: 0 }}
                             >
                                 {expandedPreview ? "View less" : "View more"}
-                            </Button>
+                            </TextButton>
                         </Box>
                     )}
                 </Box>

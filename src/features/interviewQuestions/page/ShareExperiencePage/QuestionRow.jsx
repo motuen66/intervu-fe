@@ -1,8 +1,6 @@
 import { useRef, useState } from "react";
 import {
     Box,
-    Button,
-    Chip,
     CircularProgress,
     IconButton,
     MenuItem,
@@ -22,6 +20,8 @@ import { METHOD } from "../../../../common/constants/api";
 import { interviewQuestionEndPoints } from "../../service/interviewQuestionApi";
 import { QUESTION_TYPES, ROLES } from "../../../../common/constants/types";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import { FormTextField, Tag } from "../../../../common/components";
+import { TextButton } from "../../../../common/components/buttons";
 
 const labelSx = {
     fontSize: 11,
@@ -149,12 +149,11 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
             {/* Remove button */}
             {showRemove && (
                 <Box textAlign="right" mb={0.5}>
-                    <Button
-                        size="small"
+                    <TextButton
+                        size="sm"
                         onClick={() => onRemove(idx)}
                         sx={{
                             color: "text.disabled",
-                            textTransform: "none",
                             fontSize: 12,
                             p: 0,
                             minWidth: 0,
@@ -162,7 +161,7 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                         }}
                     >
                         Remove
-                    </Button>
+                    </TextButton>
                 </Box>
             )}
 
@@ -202,9 +201,9 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                 {/* Search input — hidden when question is pre-linked from navigation */}
                 {!isPreLinked && (
                     <Box sx={{ position: "relative" }}>
-                        <TextField
+                        <FormTextField
                             fullWidth
-                            size="small"
+                            sizeVariant="sm"
                             placeholder="What were you asked? (type to search existing questions)"
                             value={q.question}
                             onChange={handleInputChange}
@@ -348,22 +347,22 @@ export default function QuestionRow({ idx, q, onUpdateField, onRemove, showRemov
                             </Typography>
                             <Stack direction="row" gap={0.75} mt={0.75} flexWrap="wrap">
                                 {(q.linkedQuestion.companyNames?.[0] ?? q.linkedQuestion.companyName) && (
-                                    <Chip
+                                    <Tag
                                         label={q.linkedQuestion.companyNames?.[0] ?? q.linkedQuestion.companyName}
-                                        size="small"
+                                        size="sm"
                                         sx={{ fontSize: 11, bgcolor: "grey.100" }}
                                     />
                                 )}
                                 {qtLabel && (
-                                    <Chip label={qtLabel} size="small" sx={{ fontSize: 11, bgcolor: "grey.100" }} />
+                                    <Tag label={qtLabel} size="sm" sx={{ fontSize: 11, bgcolor: "grey.100" }} />
                                 )}
                                 {roleLabel && (
-                                    <Chip label={roleLabel} size="small" sx={{ fontSize: 11, bgcolor: "grey.100" }} />
+                                    <Tag label={roleLabel} size="sm" sx={{ fontSize: 11, bgcolor: "grey.100" }} />
                                 )}
                                 {q.linkedQuestion.commentCount != null && (
-                                    <Chip
+                                    <Tag
                                         label={`${q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount} answer${(q.linkedQuestion.answerCount ?? q.linkedQuestion.commentCount) !== 1 ? "s" : ""}`}
-                                        size="small"
+                                        size="sm"
                                         sx={{ fontSize: 11, bgcolor: "grey.100" }}
                                     />
                                 )}

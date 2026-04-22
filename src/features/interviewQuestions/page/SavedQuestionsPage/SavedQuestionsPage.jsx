@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Box, Button, CircularProgress, Pagination, Stack, Typography } from "@mui/material";
+import { Box, CircularProgress, Pagination, Stack, Typography } from "@mui/material";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interactionEndPoints } from "../../service/interactionApi";
 import QuestionCard from "../InterviewQuestionsPage/QuestionCard";
+import { PrimaryButton, TextButton } from "../../../../common/components/buttons";
 
 const PAGE_SIZE = 10;
 
@@ -51,12 +52,12 @@ export default function SavedQuestionsPage() {
     return (
         <Box sx={{ maxWidth: 900, mx: "auto", px: 3, pt: 4, pb: 8 }}>
             {/* Header */}
-            <Button
+            <TextButton
                 startIcon={<ArrowBackIcon />}
                 onClick={() => navigate(-1)}
+                size="sm"
                 sx={{
                     color: "text.secondary",
-                    textTransform: "none",
                     fontSize: 13,
                     p: 0,
                     mb: 2.5,
@@ -64,7 +65,7 @@ export default function SavedQuestionsPage() {
                 }}
             >
                 Back
-            </Button>
+            </TextButton>
 
             <Stack direction="row" alignItems="center" gap={1.25} mb={3}>
                 <BookmarkIcon color="primary" />
@@ -100,9 +101,9 @@ export default function SavedQuestionsPage() {
                     <Typography variant="body2" color="text.disabled" mb={2.5}>
                         Save questions while browsing and they will appear here.
                     </Typography>
-                    <Button variant="contained" onClick={() => navigate("/questions")} sx={{ textTransform: "none" }}>
+                    <PrimaryButton onClick={() => navigate("/questions")} size="md">
                         Browse Questions
-                    </Button>
+                    </PrimaryButton>
                 </Box>
             ) : (
                 <>

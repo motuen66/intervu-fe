@@ -8,7 +8,6 @@ import {
     Card,
     CardContent,
     Stack,
-    TextField,
     MenuItem,
     Paper,
     Table,
@@ -17,7 +16,6 @@ import {
     TableCell,
     TableBody,
     CircularProgress,
-    Button,
     IconButton,
     Tooltip,
     Dialog,
@@ -44,6 +42,8 @@ import { formatCurrency } from "../../../common/utils/dateFormatter";
 import { ROLES } from "../../../common/constants/common";
 import { trackPaymentSuccess } from "../../../utils/analytics";
 import { useSearchParams } from "react-router-dom";
+import { FormTextField, PageHeader } from "../../../common/components";
+import { SecondaryButton, TextButton } from "../../../common/components/buttons";
 
 const transactionStatusConfig = {
     PENDING: { label: "Pending", color: "#FFA500", bgColor: "#FFF3E0" },
@@ -372,14 +372,10 @@ const PaymentHistoryPage = () => {
         <Box sx={{ bgcolor: "#f8f9fb", minHeight: "100vh", py: 4 }}>
             <Container maxWidth="lg">
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                    <Box>
-                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
-                            Payment History
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            View all your interview booking transactions
-                        </Typography>
-                    </Box>
+                    <PageHeader
+                        title="Payment History"
+                        subtitle="View all your interview booking transactions"
+                    />
                     <Tooltip title="Refresh">
                         <IconButton onClick={fetchPaymentHistory} aria-label="refresh payment history" sx={{ border: "1px solid #d6d9e0", bgcolor: 'white' }}>
                             <RefreshRoundedIcon />
@@ -465,13 +461,12 @@ const PaymentHistoryPage = () => {
 
                         {/* Filters */}
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
-                            <TextField
+                            <FormTextField
                                 placeholder="Search by coach, interview ID, or candidate..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                size="small"
+                                sizeVariant="sm"
                                 sx={{ flex: 1, bgcolor: 'white', borderRadius: 2 }}
-                                variant="outlined"
                             />
                             <FormControl size="small" sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2 }}>
                                 <InputLabel id="history-page-status-label">Status</InputLabel>
@@ -588,7 +583,7 @@ const PaymentHistoryPage = () => {
                                 </Stack>
                             </DialogContent>
                             <DialogActions>
-                                <Button onClick={() => setSelectedTransaction(null)}>Close</Button>
+                                <TextButton onClick={() => setSelectedTransaction(null)} size="sm">Close</TextButton>
                             </DialogActions>
                         </Dialog>
                     </>

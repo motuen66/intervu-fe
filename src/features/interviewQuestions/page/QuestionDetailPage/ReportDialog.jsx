@@ -1,14 +1,12 @@
 import { useState } from "react";
 import {
     Box,
-    Chip,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     IconButton,
     Stack,
-    TextField,
     Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
@@ -17,8 +15,9 @@ import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interactionEndPoints } from "../../service/interactionApi";
-import { dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
+import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { FormTextField, Tag } from "../../../../common/components";
 
 export default function ReportDialog({ open, onClose, questionId, questionTitle, questionAuthor, currentUserName }) {
     const MAX_REASON_LENGTH = 500;
@@ -95,8 +94,8 @@ export default function ReportDialog({ open, onClose, questionId, questionTitle,
             <DialogContent dividers>
                 <Stack gap={2}>
                     <Stack direction="row" flexWrap="wrap" useFlexGap gap={1}>
-                        <Chip label={`Author: ${questionAuthor ?? "Unknown"}`} size="small" variant="outlined" />
-                        <Chip label={`Reported by: ${currentUserName ?? "Unknown"}`} size="small" variant="outlined" />
+                        <Tag label={`Author: ${questionAuthor ?? "Unknown"}`} size="sm" variant="outlined" />
+                        <Tag label={`Reported by: ${currentUserName ?? "Unknown"}`} size="sm" variant="outlined" />
                     </Stack>
 
                     <Box
@@ -117,7 +116,7 @@ export default function ReportDialog({ open, onClose, questionId, questionTitle,
                         </Typography>
                     </Box>
 
-                    <TextField
+                    <FormTextField
                         label="Reason *"
                         value={reason}
                         onChange={(e) => {
@@ -127,14 +126,13 @@ export default function ReportDialog({ open, onClose, questionId, questionTitle,
                                 setReasonError("");
                             }
                         }}
-                        size="small"
+                        sizeVariant="md"
                         fullWidth
                         multiline
                         minRows={4}
                         placeholder="Describe why this question should be reviewed..."
                         error={!!reasonError}
                         helperText={reasonError || `${reason.length}/${MAX_REASON_LENGTH}`}
-                        sx={fieldStyles.outlinedFocus}
                     />
                 </Stack>
             </DialogContent>

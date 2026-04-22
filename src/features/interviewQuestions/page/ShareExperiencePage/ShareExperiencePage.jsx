@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Box, Button, Checkbox, FormControlLabel, MenuItem, Stack, Typography } from "@mui/material";
+import { Box, Checkbox, FormControlLabel, MenuItem, Stack, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -16,6 +16,8 @@ import "./ShareExperiencePage.css";
 import { LEVELS, ROLES, ROUNDS } from "../../../../common/constants/types";
 import QuestionRow from "./QuestionRow";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import { PageHeader } from "../../../../common/components";
+import { PrimaryButton, TextButton } from "../../../../common/components/buttons";
 
 const emptyQuestion = () => ({ type: "", question: "", answer: "", linkedQuestion: null });
 
@@ -180,9 +182,7 @@ export default function ShareExperiencePage() {
         <Box sx={{ maxWidth: 680, mx: "auto", px: 3, py: 6 }}>
             {/* Header */}
             <Box textAlign="center" mb={4.5}>
-                <Typography variant="h4" mb={1}>
-                    Share your interview experience
-                </Typography>
+                <PageHeader title="Share your interview experience" />
                 <Typography variant="body2" color="text.secondary" lineHeight={1.6}>
                     Help improve the Intervu community by sharing your recent interview experience! Interview questions
                     that are detailed and clearly written will be added to the question database.{" "}
@@ -369,12 +369,12 @@ export default function ShareExperiencePage() {
                     />
                 ))}
 
-                <Button
+                <TextButton
                     startIcon={<AddIcon />}
                     onClick={addQuestion}
+                    size="sm"
                     sx={{
                         color: "primary.main",
-                        textTransform: "none",
                         fontWeight: 600,
                         fontSize: 13,
                         p: 0,
@@ -382,26 +382,25 @@ export default function ShareExperiencePage() {
                     }}
                 >
                     ADD ANOTHER QUESTION
-                </Button>
+                </TextButton>
             </Box>
 
             {/* Footer */}
             <Stack alignItems="center" gap={1.5} mt={4.5}>
-                <Button
-                    variant="contained"
+                <PrimaryButton
                     fullWidth
                     onClick={handleSubmit}
                     disabled={submitting}
+                    size="md"
                     sx={{ maxWidth: 340, py: 1.5, fontSize: 15 }}
                 >
                     {submitting ? "Submitting..." : "Submit Experience"}
-                </Button>
-                <Button
-                    variant="text"
+                </PrimaryButton>
+                <TextButton
                     onClick={() => navigate("/questions")}
+                    size="sm"
                     sx={{
                         color: "text.secondary",
-                        textTransform: "uppercase",
                         letterSpacing: "0.05em",
                         fontSize: 13,
                         fontWeight: 600,
@@ -409,7 +408,7 @@ export default function ShareExperiencePage() {
                     }}
                 >
                     Discard and go back
-                </Button>
+                </TextButton>
             </Stack>
         </Box>
     );

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Avatar, Box, Button, Chip, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { Avatar, Box, IconButton, Paper, Stack, Tooltip, Typography } from "@mui/material";
 import { keyframes } from "@mui/system";
 import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
@@ -8,9 +8,12 @@ import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import StarIcon from "@mui/icons-material/Star";
 import WhatshotIcon from "@mui/icons-material/Whatshot";
 import { formattedDateTime } from "../../../../common/utils/dateFormatter";
+import { FormTextField, Tag } from "../../../../common/components";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../../common/components/buttons";
 
 const glowPulse = keyframes`
     0%, 100% { box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.25); }
@@ -126,7 +129,7 @@ export default function AnswerCard({
                 </Stack>
             )}
             {/* Author header */}
-            <Stack direction="row" alignItems="center" gap={1.5} mb={1.5}>
+            <Stack direction="row" alignItems="flex-start" gap={1.5} mb={1.5}>
                 <Avatar src={avatarSrc} sx={{ width: 40, height: 40, bgcolor: "primary.main" }}>
                     {comment.authorName?.[0]?.toUpperCase() ?? "?"}
                 </Avatar>
@@ -136,10 +139,10 @@ export default function AnswerCard({
                             {comment.authorName ?? "User"}
                         </Typography>
                         {isQuestionAuthor && (
-                            <Chip
+                            <Tag
                                 icon={<StarIcon sx={{ fontSize: 13, color: "#7c3aed !important" }} />}
                                 label="Author"
-                                size="small"
+                                size="sm"
                                 variant="outlined"
                                 sx={{
                                     height: 20,
@@ -155,7 +158,7 @@ export default function AnswerCard({
                         {formattedDateTime(comment.createdAt)}
                     </Typography>
                 </Box>
-                <Stack direction="row" alignItems="center" gap={0.5}>
+                <Stack direction="row" alignItems="center" gap={0.25} sx={{ mt: 0.25 }}>
                     {isAuthor && onEdit && !editing && (
                         <Tooltip title="Edit" placement="top">
                             <IconButton
@@ -170,31 +173,26 @@ export default function AnswerCard({
                             </IconButton>
                         </Tooltip>
                     )}
-                    {onDelete && (
-                        <Button
-                            size="small"
-                            onClick={onDelete}
-                            sx={{
-                                color: "text.disabled",
-                                textTransform: "none",
-                                fontSize: 12,
-                                p: 0,
-                                minWidth: 0,
-                                "&:hover": { color: "error.main", background: "none" },
-                            }}
-                        >
-                            Delete
-                        </Button>
+                    {onDelete && !editing && (
+                        <Tooltip title="Delete" placement="top">
+                            <IconButton
+                                size="small"
+                                onClick={onDelete}
+                                sx={{ color: "text.disabled", "&:hover": { color: "error.main" } }}
+                            >
+                                <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        </Tooltip>
                     )}
                 </Stack>
             </Stack>
             {/* Body */}
             {editing ? (
                 <Box mb={1.75}>
-                    <TextField
+                    <FormTextField
                         fullWidth
                         multiline
-                        size="small"
+                        sizeVariant="sm"
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
                         autoFocus
@@ -202,25 +200,23 @@ export default function AnswerCard({
                         sx={{ mb: 1 }}
                     />
                     <Stack direction="row" gap={1}>
-                        <Button
-                            size="small"
-                            variant="contained"
+                        <PrimaryButton
+                            size="sm"
                             startIcon={<CheckIcon sx={{ fontSize: 13 }} />}
                             disabled={saving}
                             onClick={handleSave}
                             sx={{ textTransform: "none", borderRadius: 999 }}
                         >
                             {saving ? "Saving..." : "Save"}
-                        </Button>
-                        <Button
-                            size="small"
-                            variant="outlined"
+                        </PrimaryButton>
+                        <SecondaryButton
+                            size="sm"
                             startIcon={<CloseIcon sx={{ fontSize: 13 }} />}
                             onClick={() => setEditing(false)}
                             sx={{ textTransform: "none", borderRadius: 999 }}
                         >
                             Cancel
-                        </Button>
+                        </SecondaryButton>
                     </Stack>
                 </Box>
             ) : (
@@ -263,13 +259,13 @@ export default function AnswerCard({
 
                     {needsTruncate && (
                         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.25 }}>
-                            <Button
-                                size="small"
+                            <TextButton
+                                size="sm"
                                 onClick={() => setExpandedPreview((v) => !v)}
                                 sx={{ textTransform: "none", p: 0, minWidth: 0 }}
                             >
                                 {expandedPreview ? "View less" : "View more"}
-                            </Button>
+                            </TextButton>
                         </Box>
                     )}
                 </>
@@ -277,8 +273,8 @@ export default function AnswerCard({
             {/* Actions */}
             <Stack direction="row" gap={2}>
                 <Tooltip title={voted ? "Unlike" : "Like"} placement="top">
-                    <Button
-                        size="small"
+                    <TextButton
+                        size="sm"
                         startIcon={
                             voted ? (
                                 <ThumbUpIcon sx={{ fontSize: 15, color: "primary.main" }} />
@@ -298,15 +294,14 @@ export default function AnswerCard({
                         }}
                     >
                         Like {voteCount != null ? ` ${voteCount}` : ""}
-                    </Button>
+                    </TextButton>
                 </Tooltip>
-                <Button
-                    size="small"
+                <TextButton
+                    size="sm"
                     startIcon={<FlagOutlinedIcon sx={{ fontSize: 15 }} />}
                     onClick={onReport}
                     sx={{
                         color: "text.secondary",
-                        textTransform: "none",
                         fontWeight: 400,
                         fontSize: 13,
                         p: 0,
@@ -315,7 +310,7 @@ export default function AnswerCard({
                     }}
                 >
                     Report
-                </Button>
+                </TextButton>
             </Stack>
         </Paper>
     );

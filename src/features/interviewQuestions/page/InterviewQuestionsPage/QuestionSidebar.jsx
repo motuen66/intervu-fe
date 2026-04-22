@@ -1,7 +1,9 @@
 ﻿import { useNavigate } from "react-router-dom";
-import { Box, Button, Chip, InputAdornment, OutlinedInput, Paper, Typography } from "@mui/material";
+import { Box, InputAdornment, Paper, Typography } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { POPULAR_ROLES } from "../../../../common/constants/types";
+import { FormTextField, Tag } from "../../../../common/components";
+import { SecondaryButton } from "../../../../common/components/buttons";
 
 export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChange, searchValue }) {
     const navigate = useNavigate();
@@ -20,18 +22,20 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
         >
             {/* Search */}
             <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <OutlinedInput
+                <FormTextField
                     fullWidth
-                    size="small"
                     placeholder="Search for questions, companies..."
                     value={searchValue}
                     onChange={(e) => onSearchChange?.(e.target.value)}
-                    startAdornment={
-                        <InputAdornment position="start">
-                            <SearchIcon sx={{ fontSize: 18, color: "text.disabled" }} />
-                        </InputAdornment>
-                    }
-                    sx={{ fontSize: 14 }}
+                    sizeVariant="sm"
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon sx={{ fontSize: 18, color: "text.disabled" }} />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{ "& .MuiInputBase-input": { fontSize: 14 } }}
                 />
             </Paper>
 
@@ -42,15 +46,15 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {POPULAR_ROLES.map((role) => (
-                        <Chip
+                        <Tag
                             key={role.value}
                             label={role.label}
-                            size="small"
+                            size="sm"
                             clickable
                             onClick={() => onRoleClick?.(role.value)}
-                            variant={activeRole === role.value ? "filled" : "outlined"}
+                            variant={activeRole === role.value ? "solid" : "outlined"}
                             color={activeRole === role.value ? "primary" : "default"}
-                            sx={{ fontSize: 12 }}
+                            sx={{ fontSize: 12, cursor: "pointer" }}
                         />
                     ))}
                 </Box>
@@ -64,14 +68,14 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
                 <Typography variant="body2" color="text.secondary" mb={1.5} lineHeight={1.5}>
                     Help improve our question database (and earn karma) by telling us about your experience
                 </Typography>
-                <Button
-                    variant="outlined"
+                <SecondaryButton
                     fullWidth
                     onClick={() => navigate("/questions/share")}
-                    sx={{ textTransform: "none", fontWeight: 500, fontSize: 13 }}
+                    size="sm"
+                    sx={{ fontWeight: 500, fontSize: 13 }}
                 >
                     + Share interview experience
-                </Button>
+                </SecondaryButton>
             </Paper>
         </Box>
     );
