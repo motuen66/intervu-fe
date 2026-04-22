@@ -16,7 +16,7 @@ import {
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
-import { buttonStyles, dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
+import { dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { PrimaryButton } from "../../../../common/components/buttons";
 
@@ -384,7 +384,6 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                             <PrimaryButton
                                 disabled={submitting || items.length === 0}
                                 onClick={handleSubmit}
-                                sx={(theme) => ({ ...buttonStyles.primaryCta(theme) })}
                             >
                                 {submitting ? "Submitting..." : "Submit"}
                             </PrimaryButton>

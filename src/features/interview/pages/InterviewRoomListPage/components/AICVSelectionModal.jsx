@@ -254,7 +254,6 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
                             <PrimaryButton
                                 onClick={processCV}
                                 disabled={!uploadedFile}
-                                sx={{ textTransform: "none" }}
                             >
                                 Process CV
                             </PrimaryButton>

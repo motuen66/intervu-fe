@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
     Box,
-    Button,
     MenuItem,
     Stack,
-    TextField,
     Typography,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -13,6 +11,8 @@ import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
 import RichDescriptionEditor from "../shared/RichDescriptionEditor";
 import TestCasesEditor from "../shared/TestCasesEditor";
 import { PREPARED_QUESTION_INTERACTION_TYPE } from "../../services/preparedQuestionApi";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
 const DEFAULT_TEST_CASE = () => ({
     inputs: [{ name: "", value: "" }],
@@ -213,7 +213,7 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
                 <Stack spacing={2}>
-                    <TextField
+                    <FormTextField
                         select
                         label="Question type"
                         size="small"
@@ -228,9 +228,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                                 {c.label}
                             </MenuItem>
                         ))}
-                    </TextField>
+                    </FormTextField>
 
-                    <TextField
+                    <FormTextField
                         label="Display category label (optional)"
                         size="small"
                         value={form.displayCategoryLabel}
@@ -239,7 +239,7 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                         fullWidth
                     />
 
-                    <TextField
+                    <FormTextField
                         label="Title"
                         size="small"
                         value={form.title}
@@ -273,7 +273,7 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
 
                     {isCoding && (
                         <>
-                            <TextField
+                            <FormTextField
                                 label="Function name"
                                 size="small"
                                 value={form.functionName}
@@ -327,23 +327,20 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                 })}
             >
                 {isEditMode && (
-                    <Button
+                    <SecondaryButton
                         onClick={onCancelEdit}
                         startIcon={<CancelRoundedIcon />}
-                        sx={{ textTransform: "none" }}
                     >
                         Cancel edit
-                    </Button>
+                    </SecondaryButton>
                 )}
-                <Button
-                    variant="contained"
+                <PrimaryButton
                     onClick={handleSubmit}
                     disabled={isSubmitting}
                     startIcon={isEditMode ? <SaveRoundedIcon /> : <AddRoundedIcon />}
-                    sx={{ textTransform: "none" }}
                 >
-                    {isEditMode ? "Save changes" : "Add to roadmap"}
-                </Button>
+                    {isEditMode ? "Save changes" : "Add to list"}
+                </PrimaryButton>
             </Stack>
         </Box>
     );

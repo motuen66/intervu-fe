@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useImperativeHandle, forwardRef, useState } from "react";
 import {
     Box,
-    Button,
     Chip,
     CircularProgress,
     Divider,
@@ -24,6 +23,7 @@ import {
     PREPARED_QUESTION_INTERACTION_TYPE,
     PREPARED_QUESTION_STATUS,
 } from "../../services/preparedQuestionApi";
+import { PrimaryButton, SecondaryButton, SuccessButton } from "../../../../common/components/buttons";
 
 function extractErrorMessage(error, fallback) {
     return (
@@ -99,39 +99,32 @@ function QuestionCard({ item, busyAction, onMark, onUnmark, onSend }) {
 
             <Stack direction="row" spacing={1} flexWrap="wrap">
                 {isCoding ? (
-                    <Button
-                        variant="contained"
-                        size="small"
+                    <PrimaryButton
+                        size="sm"
                         startIcon={<SendRoundedIcon />}
                         disabled={isIncomplete || busyAction === "send"}
                         onClick={() => onSend(item)}
-                        sx={{ textTransform: "none" }}
                     >
                         {isAsked ? "Resend to editor" : "Send to editor"}
-                    </Button>
+                    </PrimaryButton>
                 ) : isAsked ? (
-                    <Button
-                        variant="outlined"
-                        size="small"
+                    <SecondaryButton
+                        size="sm"
                         startIcon={<RadioButtonUncheckedIcon />}
                         disabled={busyAction === "unmark"}
                         onClick={() => onUnmark(item)}
-                        sx={{ textTransform: "none" }}
                     >
                         Unmark
-                    </Button>
+                    </SecondaryButton>
                 ) : (
-                    <Button
-                        variant="contained"
-                        size="small"
-                        color="success"
+                    <SuccessButton
+                        size="sm"
                         startIcon={<CheckCircleOutlineIcon />}
                         disabled={busyAction === "mark"}
                         onClick={() => onMark(item)}
-                        sx={{ textTransform: "none" }}
                     >
                         Mark as asked
-                    </Button>
+                    </SuccessButton>
                 )}
             </Stack>
         </Box>
