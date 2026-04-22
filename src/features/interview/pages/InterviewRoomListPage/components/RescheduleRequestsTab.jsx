@@ -11,7 +11,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField,
     Badge,
     useTheme,
 } from "@mui/material";
@@ -20,6 +19,7 @@ import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import ConfirmModal from "../../../../../common/components/ConfirmModal";
 import StatusChip from "../../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
+import FormTextField from "../../../../../common/components/form/FormTextField";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import { getRescheduleRequestStatusConfig } from "../../../../../common/constants/statusConfig";
 import { alpha } from "@mui/material/styles";
@@ -491,7 +491,7 @@ function RescheduleRequestsTab({
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                             Please provide a reason for rejecting this reschedule request. The requester will see this message.
                         </Typography>
-                        <TextField
+                        <FormTextField
                             autoFocus
                             fullWidth
                             multiline

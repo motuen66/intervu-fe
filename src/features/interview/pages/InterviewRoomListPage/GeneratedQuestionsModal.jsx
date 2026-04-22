@@ -9,7 +9,6 @@ import {
     Alert,
     Chip,
     Autocomplete,
-    TextField,
 } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -28,6 +27,7 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import FormTextField from "../../../../common/components/form/FormTextField";
 import toast from "react-hot-toast";
 
 const springTransition = { type: "spring", damping: 25, stiffness: 200 };
@@ -383,7 +383,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             </Box>
 
             {/* Title Input */}
-            <TextField
+            <FormTextField
                 fullWidth
                 size="small"
                 value={question.localTitle}
@@ -451,7 +451,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                     ))
                 }
                 renderInput={(params) => (
-                    <TextField
+                    <FormTextField
                         {...params}
                         variant="outlined"
                         size="small"

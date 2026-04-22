@@ -12,13 +12,13 @@ import {
     RadioGroup,
     Slider,
     Stack,
-    TextField,
     Typography,
 } from "@mui/material";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { buttonStyles, dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
+import FormTextField from "../../../../common/components/form/FormTextField";
 
 function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     const [loading, setLoading] = useState(false);
@@ -320,7 +320,7 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                             </Typography>
                                         </Box>
                                     </Stack>
-                                    <TextField
+                                    <FormTextField
                                         label="Feedback"
                                         value={item.answer || ""}
                                         onChange={(e) => handleItemChange(index, "answer", e.target.value)}
@@ -344,7 +344,7 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                             <Typography variant="subtitle2" sx={{ mb: 1 }}>
                                 Others
                             </Typography>
-                            <TextField
+                            <FormTextField
                                 label="Additional notes"
                                 value={others}
                                 onChange={handleOthersChange}

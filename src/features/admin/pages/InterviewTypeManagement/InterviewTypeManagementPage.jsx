@@ -98,12 +98,6 @@ export default function InterviewTypeManagementPage() {
         }
     };
 
-    // const handleSearchChange = (e) => {
-    //     setSearch(e.target.value);
-    //     // reset to first page when searching
-    //     setPage(0);
-    // };
-
     const getEvaluationItems = (item) => {
         if (Array.isArray(item?.evaluationStructure)) return item.evaluationStructure;
         if (typeof item?.evaluationStructureJson === "string") {
@@ -128,19 +122,6 @@ export default function InterviewTypeManagementPage() {
                 <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <Typography variant="h6">Interview Types</Typography>
-                        {/* <TextField
-                            size="small"
-                            placeholder="Search by name..."
-                            value={search}
-                            onChange={handleSearchChange}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                            }}
-                        /> */}
                     </Box>
 
                     <Box>

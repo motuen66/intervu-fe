@@ -6,7 +6,6 @@ import {
     Box,
     Typography,
     IconButton,
-    TextField,
     Stack,
     CircularProgress,
     Alert,
@@ -14,6 +13,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import SendIcon from "@mui/icons-material/Send";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import FormTextField from "../../../../common/components/form/FormTextField";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { formattedDateTime } from "../../../../common/utils/dateFormatter";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -369,7 +369,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                     *
                                 </Typography>
                             </Typography>
-                            <TextField
+                            <FormTextField
                                 fullWidth
                                 multiline
                                 rows={3}

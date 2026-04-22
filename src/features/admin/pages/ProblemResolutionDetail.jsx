@@ -506,16 +506,6 @@ function ProblemResolutionDetail() {
                                             {downloadingAudio ? "Loading..." : "Play Audio"}
                                         </PrimaryButton>
                                     )}
-                                    {/* 
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<ReplayIcon />}
-                                        onClick={handleDownloadAudio}
-                                        disabled={downloadingAudio || loading || !reportDetail}
-                                    >
-                                        {downloadingAudio && !audioUrl ? "Downloading..." : "Download"}
-                                    </Button>
-                                    */}
                                 </Box>
 
                                 {audioUrl && (

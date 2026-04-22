@@ -13,7 +13,6 @@ import {
     CircularProgress,
     Button,
     Stack,
-    TextField,
     MenuItem,
     Dialog,
     DialogTitle,
@@ -27,6 +26,7 @@ import {
     InputLabel,
 } from "@mui/material";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../common/components/form/FormTextField";
 import CloseIcon from "@mui/icons-material/Close";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -326,7 +326,7 @@ Interview ID: ${transaction.interviewId}
 
                             {/* Filters */}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
-                                <TextField
+                                <FormTextField
                                     placeholder="Search by coach, interview ID, or candidate..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}

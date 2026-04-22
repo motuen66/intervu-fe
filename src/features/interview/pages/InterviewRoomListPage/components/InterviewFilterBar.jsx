@@ -1,5 +1,4 @@
 import {
-    TextField,
     Typography,
     InputAdornment,
     MenuItem,
@@ -8,6 +7,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../common/components/form/FormTextField";
 
 function InterviewFilterBar({ 
     searchQuery, 
@@ -26,7 +26,7 @@ function InterviewFilterBar({
             sx={{ mb: 2 }}
         >
             {/* Search Input */}
-            <TextField
+            <FormTextField
                 placeholder="Search for interviews..."
                 size="small"
                 value={searchQuery}
