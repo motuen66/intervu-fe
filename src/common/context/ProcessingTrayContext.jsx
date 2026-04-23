@@ -260,7 +260,7 @@ export function ProcessingTrayProvider({ children }) {
             statusBuckets: ROADMAP_STATUS_BUCKETS,
             completeNotificationType: "RoadmapUpdated",
             referenceId: n.referenceId ?? extractRoomIdFromActionUrl(n.actionUrl),
-            completeCtaAction: () => navigate(n.actionUrl ?? "/assessment?step=roadmap"),
+            completeCtaAction: () => navigate(n.actionUrl ?? "/roadmap"),
         });
         autoFactoriesRef.current.set("RoadmapUpdateStarted", roadmapFactory);
         return () => {
