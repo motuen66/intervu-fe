@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Box, CircularProgress, MenuItem, Pagination, Stack, Typography } from "@mui/material";
+import { Box, CircularProgress, MenuItem, Pagination, Stack } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -11,7 +11,7 @@ import QuestionFilters from "./QuestionFilters";
 import QuestionSidebar from "./QuestionSidebar";
 import FormSelect from "../../../../common/components/form/FormSelect";
 import { PrimaryButton } from "../../../../common/components/buttons";
-import { PageHeader } from "../../../../common/components";
+import { AppText, PageHeader } from "../../../../common/components";
 
 export default function InterviewQuestionsPage() {
     const navigate = useNavigate();
@@ -162,9 +162,9 @@ export default function InterviewQuestionsPage() {
                             <CircularProgress size={30} />
                         </Box>
                     ) : questions.length === 0 ? (
-                        <Typography align="center" color="text.secondary" py={7.5}>
+                        <AppText variant="muted" align="center" sx={{ py: 7.5 }}>
                             No questions found. Try changing filters.
-                        </Typography>
+                        </AppText>
                     ) : (
                         <>
                             {(() => {
@@ -192,9 +192,9 @@ export default function InterviewQuestionsPage() {
                                     shape="rounded"
                                 />
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Typography variant="body2" color="text.secondary" noWrap>
+                                    <AppText variant="muted" noWrap>
                                         Per page:
-                                    </Typography>
+                                    </AppText>
                                     <FormSelect
                                         size="small"
                                         value={pageSize}

@@ -1,8 +1,8 @@
 ﻿import { useNavigate } from "react-router-dom";
-import { Box, InputAdornment, Paper, Typography } from "@mui/material";
+import { Box, InputAdornment, Paper } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { POPULAR_ROLES } from "../../../../common/constants/types";
-import { FormTextField, Tag } from "../../../../common/components";
+import { AppText, FormTextField, SectionHeading, Tag } from "../../../../common/components";
 import { SecondaryButton } from "../../../../common/components/buttons";
 
 export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChange, searchValue }) {
@@ -41,9 +41,7 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
 
             {/* Popular Roles */}
             <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="h6" mb={1.5}>
-                    Popular roles
-                </Typography>
+                <SectionHeading title="Popular roles" size="sm" />
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {POPULAR_ROLES.map((role) => (
                         <Tag
@@ -62,12 +60,10 @@ export default function QuestionSidebar({ activeRole, onRoleClick, onSearchChang
 
             {/* CTA */}
             <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="h6" mb={1}>
-                    Interviewed recently?
-                </Typography>
-                <Typography variant="body2" color="text.secondary" mb={1.5} lineHeight={1.5}>
+                <SectionHeading title="Interviewed recently?" size="sm" />
+                <AppText variant="muted" sx={{ mb: 1.5, lineHeight: 1.5 }}>
                     Help improve our question database (and earn karma) by telling us about your experience
-                </Typography>
+                </AppText>
                 <SecondaryButton
                     fullWidth
                     onClick={() => navigate("/questions/share")}
