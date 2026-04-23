@@ -44,7 +44,8 @@ import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
 
 // Analytics
 import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
-import { useCollectQuestionTray } from "../../../../common/context/CollectQuestionTrayContext";
+import { useProcessingTray } from "../../../../common/context/ProcessingTrayContext";
+import { QUESTION_STATUS_BUCKETS } from "../../../../common/constants/processingTrayJobs";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -616,7 +617,7 @@ function InterviewRoomPage() {
         sendSignal("SendMicState", roomId, isMicOn).catch?.(() => { });
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
-    const { startCollecting } = useCollectQuestionTray();
+    const { startJob } = useProcessingTray();
 
     // ── Leave room ──────────────────────────────────────────────────────────
     const handleLeaveRoom = useCallback(() => {
@@ -629,10 +630,20 @@ function InterviewRoomPage() {
         // Only the coach receives the AiAnalysisCompleted notification, so only
         // start the collection tray for interviewers leaving a transcript-bearing room.
         if (roomId && Number(user?.role) === ROLES.INTERVIEWER) {
-            startCollecting({ roomId });
+            startJob({
+                kind: "collect-questions",
+                runningTitle: "Analyzing questions…",
+                completeTitle: "Analysis Complete!",
+                completeCtaLabel: "Review Now",
+                statusBuckets: QUESTION_STATUS_BUCKETS,
+                completeNotificationType: "AiAnalysisCompleted",
+                referenceId: roomId,
+                completeCtaAction: () =>
+                    navigate(`/interview?roomId=${roomId}&action=review-questions`),
+            });
         }
         navigate("/interview");
-    }, [leaveRoom, navigate, roomId, user?.role, startCollecting]);
+    }, [leaveRoom, navigate, roomId, user?.role, startJob]);
 
     // Ensure we emit leave event on unmount/navigation
     useEffect(() => {
