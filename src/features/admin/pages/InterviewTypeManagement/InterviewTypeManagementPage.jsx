@@ -11,9 +11,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
 import "./InterviewTypeManagementPage.css";
 import { PrimaryButton } from "../../../../common/components/buttons";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 export default function InterviewTypeManagementPage() {
     const [items, setItems] = useState([]);
@@ -119,9 +119,9 @@ export default function InterviewTypeManagementPage() {
     return (
         <Box className="interview-type-management" p={2}>
             <div className="interview-type-panel">
-                <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Typography variant="h6">Interview Types</Typography>
+                        <SectionHeading title="Interview Types" />
                     </Box>
 
                     <Box>

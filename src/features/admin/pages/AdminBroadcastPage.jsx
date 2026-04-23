@@ -24,6 +24,7 @@ import FormSelect from "../../../common/components/form/FormSelect";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import ConfirmModal from "../../../common/components/ConfirmModal";
 import DataTable from "../../../common/components/table/DataTable";
+import SectionHeading from "../../../common/components/SectionHeading";
 
 const TARGET_OPTIONS = [
     { label: "All Users", value: "ALL", icon: Users },
@@ -609,9 +610,7 @@ export default function AdminBroadcastPage() {
 
             <BaseCard sx={{ mt: 3, p: 0, borderRadius: "16px", overflow: "hidden" }}>
                 <Box sx={{ px: 2.5, py: 1.75, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                        Broadcast Logs
-                    </Typography>
+                    <SectionHeading title="Broadcast Logs" size="sm" />
                     <SecondaryButton startIcon={<RefreshIcon />} onClick={fetchBroadcastLogs} disabled={logsLoading}>
                         Refresh
                     </SecondaryButton>

@@ -10,14 +10,15 @@ import Divider from "@mui/material/Divider";
 import Skeleton from "@mui/material/Skeleton";
 import { Star } from "@mui/icons-material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 export default function TopCoachesLeaderboard({ data, loading }) {
     if (loading && (!data || data.length === 0)) {
         return (
             <BaseCard sx={{ p: 3 }}>
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                    Top Coaches
-                </Typography>
+                <Box sx={{ mb: 2 }}>
+                    <SectionHeading title="Top Coaches" size="sm" />
+                </Box>
                 {[1, 2, 3].map((i) => (
                     <Box key={i} sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                         <Skeleton variant="circular" width={40} height={40} sx={{ mr: 2 }} />
@@ -34,9 +35,7 @@ export default function TopCoachesLeaderboard({ data, loading }) {
     return (
         <BaseCard sx={{ p: 0, display: "flex", flexDirection: "column" }}>
             <Box sx={{ p: 3, borderBottom: 1, borderColor: "divider" }}>
-                <Typography variant="h6" fontWeight={700}>
-                    Top Coaches
-                </Typography>
+                <SectionHeading title="Top Coaches" size="sm" />
             </Box>
             {!data || data.length === 0 ? (
                 <Box

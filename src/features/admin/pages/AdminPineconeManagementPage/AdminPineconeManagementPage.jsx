@@ -10,6 +10,7 @@ import KpiCard from "../../../../common/components/cards/KpiCard";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import PrimaryButton from "../../../../common/components/buttons/PrimaryButton";
 import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 export default function AdminPineconeManagementPage() {
     const [stats, setStats] = useState(null);
@@ -108,9 +109,7 @@ export default function AdminPineconeManagementPage() {
                 {/* Namespace Breakdown */}
                 <Grid size={{ xs: 12, md: 7 }}>
                     <BaseCard sx={{ p: 3 }}>
-                        <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-                            Namespace Breakdown
-                        </Typography>
+                        <SectionHeading title="Namespace Breakdown" size="sm" />
                         {loading ? (
                             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
                                 <CircularProgress size={32} />
@@ -181,13 +180,12 @@ export default function AdminPineconeManagementPage() {
                 {/* Re-sync Controls */}
                 <Grid size={{ xs: 12, md: 5 }}>
                     <BaseCard sx={{ p: 3 }}>
-                        <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-                            Re-sync Vectors
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                            Enqueue a background job to rebuild the vector index for a namespace. The main
-                            thread returns immediately — sync runs via Hangfire.
-                        </Typography>
+                        <SectionHeading
+                            title="Re-sync Vectors"
+                            description="Enqueue a background job to rebuild the vector index for a namespace. The main thread returns immediately — sync runs via Hangfire."
+                            size="sm"
+                        />
+                        <Box sx={{ mb: 1.5 }} />
 
                         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                             <Box

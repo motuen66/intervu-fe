@@ -12,6 +12,8 @@ import { SecondaryButton } from "../../../../common/components/buttons";
 import Skeleton from "@mui/material/Skeleton";
 import { Warning, Report, Payment, ArrowForward, CheckCircleOutline as CheckCircleOutlineIcon } from "@mui/icons-material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import SectionHeading from "../../../../common/components/SectionHeading";
+import AppText from "../../../../common/components/AppText";
 import { Link } from "react-router-dom";
 
 export default function NeedsAttentionTable({ data, loading }) {
@@ -40,9 +42,7 @@ export default function NeedsAttentionTable({ data, loading }) {
     return (
         <BaseCard sx={{ p: 0 }}>
             <Box sx={{ p: 3, borderBottom: 1, borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="h6" fontWeight={700}>
-                    Needs Attention
-                </Typography>
+                <SectionHeading title="Needs Attention" size="sm" />
                 <Chip label={`${data?.length || 0} Issues`} size="small" variant="outlined" />
             </Box>
             <TableContainer>
@@ -71,12 +71,12 @@ export default function NeedsAttentionTable({ data, loading }) {
                                         }}>
                                             <CheckCircleOutlineIcon sx={{ fontSize: 32, color: 'success.main' }} />
                                         </Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                        <AppText variant="bodyStrong" sx={{ color: 'text.primary' }}>
                                             All clear!
-                                        </Typography>
-                                        <Typography variant="caption">
+                                        </AppText>
+                                        <AppText variant="caption">
                                             No items currently need your attention.
-                                        </Typography>
+                                        </AppText>
                                     </Box>
                                 </TableCell>
                             </TableRow>

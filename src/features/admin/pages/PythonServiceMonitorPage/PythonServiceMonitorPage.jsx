@@ -37,6 +37,7 @@ import SecondaryButton from "../../../../common/components/buttons/SecondaryButt
 import FormSelect from "../../../../common/components/form/FormSelect";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import DataTable from "../../../../common/components/table/DataTable";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 const TIMEFRAME_OPTIONS = [
     { value: "24h", label: "Last 24 Hours" },
@@ -121,12 +122,11 @@ function UsagePieChart({ series, useCases }) {
 
     return (
         <BaseCard sx={{ p: 3, height: "100%" }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
-                Distribution by Feature
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
-                AI call ratio by use case
-            </Typography>
+            <SectionHeading
+                title="Distribution by Feature"
+                description="AI call ratio by use case"
+                size="sm"
+            />
 
             {grandTotal > 0 ? (
                 <Box sx={{ width: "100%", height: 320 }}>
@@ -209,12 +209,11 @@ function UsageLineChart({ series, useCases, bucketUnit }) {
 
     return (
         <BaseCard sx={{ p: 3, height: "100%" }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
-                Traffic Over Time
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
-                AI calls by use case ({bucketUnit === "day" ? "daily" : "hourly"})
-            </Typography>
+            <SectionHeading
+                title="Traffic Over Time"
+                description={`AI calls by use case (${bucketUnit === "day" ? "daily" : "hourly"})`}
+                size="sm"
+            />
 
             {hasData ? (
                 <Box sx={{ width: "100%", height: 320 }}>
@@ -480,9 +479,7 @@ export default function PythonServiceMonitorPage() {
                     spacing={0.5}
                     sx={{ mb: 2, alignItems: "center" }}
                 >
-                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">
-                        Filters
-                    </Typography>
+                    <SectionHeading title="Filters" size="sm" />
                     {customRangeActive && (
                         <Chip
                             label="Custom range"
@@ -657,9 +654,9 @@ export default function PythonServiceMonitorPage() {
                         </Grid>
                     </Grid>
 
-                    <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-                        Request logs
-                    </Typography>
+                    <Box sx={{ mb: 1 }}>
+                        <SectionHeading title="Request logs" size="sm" />
+                    </Box>
                     <BaseCard sx={{ overflow: "hidden" }}>
                         <DataTable
                             columns={tableColumns}

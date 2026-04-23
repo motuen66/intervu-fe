@@ -9,6 +9,7 @@ import AdminPageHeader from "../../../../common/components/admin/AdminPageHeader
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
 import StatusChip from "../../../../common/components/StatusChip";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 const STATUS_COLOR = {
     Healthy: "success",
@@ -130,9 +131,7 @@ export default function AdminAiServicesPage() {
             {/* Health Status Section */}
             <Box sx={{ mb: 4 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                        Health Status
-                    </Typography>
+                    <SectionHeading title="Health Status" size="sm" />
                     <SecondaryButton
                         onClick={handleRefreshHealth}
                         disabled={healthLoading}
@@ -166,9 +165,7 @@ export default function AdminAiServicesPage() {
 
             {/* Configuration Section */}
             <Box>
-                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-                    Configuration (Read-only)
-                </Typography>
+                <SectionHeading title="Configuration (Read-only)" size="sm" />
 
                 {configLoading ? (
                     <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
