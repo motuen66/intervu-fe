@@ -505,43 +505,8 @@ const ResultDashboard = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 1120, mx: "auto", px: 3, pb: 8 }}>
+        <Box sx={{ maxWidth: 1120, mx: "auto", px: 3, p: 8 }}>
             <Stack spacing={4}>
-                <Paper
-                    elevation={0}
-                    sx={{
-                        p: { xs: 3, md: 4 },
-                        borderRadius: 4,
-                        border: "1px solid",
-                        borderColor: alpha("#cbd5e1", 0.9),
-                        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-                    }}
-                >
-                    <Stack spacing={2}>
-                        <Typography
-                            variant="overline"
-                            sx={{ color: "#64748b", fontWeight: 800, letterSpacing: "0.08em" }}
-                        >
-                            Assessment Summary
-                        </Typography>
-                        <Typography variant="h4" fontWeight={800}>
-                            {resolvedProfile.role || "Candidate"} readiness snapshot
-                        </Typography>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                            {resolvedProfile.level ? <Chip label={resolvedProfile.level} /> : null}
-                            {(resolvedProfile.techstack || []).map((item) => (
-                                <Chip key={item} label={item} variant="outlined" />
-                            ))}
-                            {(resolvedProfile.domain || []).map((item) => (
-                                <Chip key={item} label={item} variant="outlined" color="secondary" />
-                            ))}
-                        </Stack>
-                        {resolvedProfile.freeText ? (
-                            <Typography color="text.secondary">Goal: {resolvedProfile.freeText}</Typography>
-                        ) : null}
-                    </Stack>
-                </Paper>
-
                 <Box
                     sx={{
                         display: "grid",
@@ -713,54 +678,7 @@ const ResultDashboard = () => {
                                 );
                             })}
                         </Stack>
-                    </Paper>
-                </Box>
-
-                <Paper
-                    elevation={0}
-                    sx={{
-                        p: { xs: 3, md: 5 },
-                        borderRadius: 4,
-                        color: "common.white",
-                        background: "linear-gradient(135deg, #111827 0%, #1d4ed8 100%)",
-                    }}
-                >
-                    <Stack
-                        direction={{ xs: "column", md: "row" }}
-                        justifyContent="space-between"
-                        alignItems={{ xs: "flex-start", md: "center" }}
-                        spacing={3}
-                    >
-                        <Box>
-                            <Typography variant="h4" fontWeight={800} gutterBottom>
-                                {readinessHeadline}
-                            </Typography>
-                            <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>
-                                {readinessBody} Strongest areas:{" "}
-                                {strongestSkills.length
-                                    ? strongestSkills.map((skill) => skill.skillKey).join(", ")
-                                    : "Assessment ready."}
-                            </Typography>
-                        </Box>
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-                            <PrimaryButton
-                                size="small"
-                                onClick={handleGoHome}
-                                sx={{
-                                    minWidth: 120,
-                                    minHeight: 38,
-                                    py: 0.55,
-                                    textTransform: "none",
-                                    fontWeight: 800,
-                                    bgcolor: alpha("#ffffff", 0.12),
-                                    color: "#ffffff",
-                                    border: "1px solid",
-                                    borderColor: alpha("#ffffff", 0.32),
-                                    "&:hover": { bgcolor: alpha("#ffffff", 0.2) },
-                                }}
-                            >
-                                Go Home
-                            </PrimaryButton>
+                        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="flex-end" spacing={1.25} sx={{ mt: 3 }}>
                             <PrimaryButton
                                 size="small"
                                 loading={isSaving}
@@ -779,8 +697,8 @@ const ResultDashboard = () => {
                                 {hasRoadmap ? "View Roadmap" : "Generate Roadmap"}
                             </PrimaryButton>
                         </Stack>
-                    </Stack>
-                </Paper>
+                    </Paper>
+                </Box>
             </Stack>
         </Box>
     );
