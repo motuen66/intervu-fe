@@ -619,7 +619,7 @@ function CandidateProfilePage() {
     const email = profile?.user?.email ?? profile?.email ?? (viewingBySlug ? "-" : user?.email || "-");
 
     return (
-        <Box className="elite-profile-container" sx={{ minHeight: "90vh" }}>
+        <Box className="elite-profile-container">
             <Box className="ep-shell" sx={{ pb: 0 }}>
                 {/* ── Hero card ── */}
                 <BaseCard

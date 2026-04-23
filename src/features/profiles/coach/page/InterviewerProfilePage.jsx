@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { Autocomplete } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../../common/components/buttons";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import AppText from "../../../../common/components/AppText";
 import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPage/QuestionCard";
@@ -619,7 +619,7 @@ function InterviewerProfilePage() {
     }
 
     return (
-        <Box className="elite-profile-container" sx={{ minHeight: "90vh" }}>
+        <Box className="elite-profile-container">
             <Box className="ep-shell" sx={{ pb: 0 }}>
                 <BaseCard
                     elevation={0}
@@ -872,12 +872,12 @@ function InterviewerProfilePage() {
                                                     : `${bio.slice(0, bioLimit)}${bio.length > bioLimit ? "..." : ""}`
                                                 : "No bio provided yet."}
                                             {bio && bio.length > bioLimit && (
-                                                <button
+                                                <TextButton
                                                     onClick={() => setExpandedBio(!expandedBio)}
-                                                    className="ep-view-more-btn"
+                                                    sx={{ ml: 1, p: 0, fontSize: '0.75rem' }}
                                                 >
                                                     {expandedBio ? "View Less" : "View More"}
-                                                </button>
+                                                </TextButton>
                                             )}
                                         </Typography>
                                     </Box>
@@ -1567,33 +1567,6 @@ function InterviewerProfilePage() {
                                         )}
                                     </SidebarCard>
 
-                                    <Box className="ep-side-card ep-match-card">
-                                        <Typography
-                                            variant="overline"
-                                            sx={{ fontWeight: 800, color: "text.secondary" }}
-                                        >
-                                            Checklist
-                                        </Typography>
-                                        <Box className="ep-progress-bg">
-                                            <Box
-                                                className="ep-progress-bar"
-                                                sx={{
-                                                    width: `${(profile?.skills?.length ? 33 : 0) + (profile?.companies?.length ? 33 : 0) + (profile?.portfolioUrl ? 34 : 0)}%`,
-                                                }}
-                                            />
-                                        </Box>
-                                        <Typography sx={{ fontSize: "0.9rem", color: "text.secondary", mb: 2 }}>
-                                            Complete the essentials so your profile feels finished.
-                                        </Typography>
-                                        <Box component="ul" className="ep-benefit-list" sx={{ mb: 0 }}>
-                                            {["Skills added", "Companies added", "Portfolio linked"].map((item, i) => (
-                                                <Box key={item} component="li" className="ep-benefit-item">
-                                                    <Box className="ep-benefit-check">{i + 1}</Box>
-                                                    {item}
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    </Box>
                                 </Box>
                             </Box>
                         )}

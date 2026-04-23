@@ -14,6 +14,7 @@ import "./EliteCoachProfile.css";
 import { useSelector } from "react-redux";
 import { ROLES } from "../../../../../common/constants/common";
 import { CompanyLogo } from "../../../../../common/utils/logoImageGenerator";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
 
 const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
     const navigate = useNavigate();
@@ -328,9 +329,9 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                                         : `${profile.bio.slice(0, bioLimit)}${profile.bio.length > bioLimit ? "..." : ""}`
                                     : "No bio provided yet."}
                                 {profile.bio && profile.bio.length > bioLimit && (
-                                    <button onClick={() => setExpandedBio(!expandedBio)} className="ep-view-more-btn">
+                                    <TextButton onClick={() => setExpandedBio(!expandedBio)} sx={{ ml: 1, p: 0, fontSize: '0.75rem' }}>
                                         {expandedBio ? "View Less" : "View More"}
-                                    </button>
+                                    </TextButton>
                                 )}
                             </p>
                         </div>
@@ -720,25 +721,26 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                             </ul>
 
                             {userData?.role === ROLES.CANDIDATE && (
-                                <>
-                                    <button
-                                        className="ep-btn-inquire"
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1 }}>
+                                    <PrimaryButton
+                                        fullWidth
                                         onClick={() => {
                                             setSelectedService(null);
                                             setBookingDialogOpen(true);
                                         }}
+                                        endIcon={<ArrowRight size={16} />}
                                     >
-                                        Book Available Slot <ArrowRight size={18} />
-                                    </button>
+                                        Book Available Slot
+                                    </PrimaryButton>
 
-                                    <button
-                                        className="ep-btn-secondary"
+                                    <SecondaryButton
+                                        fullWidth
                                         onClick={() => setJdBookingOpen(true)}
-                                        style={{ marginTop: "0.75rem" }}
+                                        startIcon={<FileText size={16} />}
                                     >
-                                        <FileText size={18} /> JD Multi-Round Booking
-                                    </button>
-                                </>
+                                        JD Multi-Round Booking
+                                    </SecondaryButton>
+                                </Box>
                             )}
 
                             <p
