@@ -31,7 +31,7 @@ function buildCtaAction(kind, referenceId, navigate) {
         return () => navigate(`/interview?roomId=${referenceId}&action=review-questions`);
     }
     if (kind === "roadmap") {
-        return () => navigate("/assessment?step=roadmap");
+        return () => navigate("/roadmap");
     }
     return null;
 }
