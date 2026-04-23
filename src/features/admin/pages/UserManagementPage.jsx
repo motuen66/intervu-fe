@@ -289,6 +289,7 @@ export default function UserManagementPage() {
                 subtitle="Manage user accounts and details."
                 actionButton={
                     <PrimaryButton
+                        size="md"
                         startIcon={<AddIcon />}
                         onClick={handleCreateUser}
                     >

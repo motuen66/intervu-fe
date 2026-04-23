@@ -133,6 +133,7 @@ export default function AdminAiServicesPage() {
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                     <SectionHeading title="Health Status" size="sm" />
                     <SecondaryButton
+                        size="md"
                         onClick={handleRefreshHealth}
                         disabled={healthLoading}
                         startIcon={<RefreshCw size={16} />}

@@ -281,7 +281,7 @@ export default function AdminQuestionBankPage() {
                 title="Question Bank"
                 subtitle="Moderate incoming contributions and manage published questions."
                 actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchQuestions}>
+                    <PrimaryButton size="md" startIcon={<RefreshIcon />} onClick={fetchQuestions}>
                         Refresh
                     </PrimaryButton>
                 }

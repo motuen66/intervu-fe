@@ -611,7 +611,7 @@ export default function AdminBroadcastPage() {
             <BaseCard sx={{ mt: 3, p: 0, borderRadius: "16px", overflow: "hidden" }}>
                 <Box sx={{ px: 2.5, py: 1.75, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
                     <SectionHeading title="Broadcast Logs" size="sm" />
-                    <SecondaryButton startIcon={<RefreshIcon />} onClick={fetchBroadcastLogs} disabled={logsLoading}>
+                    <SecondaryButton size="md" startIcon={<RefreshIcon />} onClick={fetchBroadcastLogs} disabled={logsLoading}>
                         Refresh
                     </SecondaryButton>
                 </Box>

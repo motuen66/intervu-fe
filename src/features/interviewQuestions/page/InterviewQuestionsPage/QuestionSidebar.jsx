@@ -1,4 +1,4 @@
-﻿import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Box, InputAdornment, Paper } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { POPULAR_ROLES } from "../../../../common/constants/types";

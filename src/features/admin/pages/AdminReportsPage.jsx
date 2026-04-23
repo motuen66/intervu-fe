@@ -332,7 +332,7 @@ export default function AdminReportsPage() {
                 title="Question Reports"
                 subtitle="Monitor and resolve reports submitted for interview questions."
                 actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports}>
+                    <PrimaryButton size="md" startIcon={<RefreshIcon />} onClick={fetchReports}>
                         Refresh
                     </PrimaryButton>
                 }

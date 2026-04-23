@@ -291,7 +291,7 @@ export const AdminRoomReportsPage = () => {
                 title="Room Reports"  // AdminPageHeader styling
                 subtitle="Monitor and investigate environmental audit logs for reported interview rooms."
                 actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchReports}>
+                    <PrimaryButton size="md" startIcon={<RefreshIcon />} onClick={fetchReports}>
                         Refresh
                     </PrimaryButton>
                 }

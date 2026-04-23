@@ -260,7 +260,7 @@ export default function AdminCandidatesPage() {
                 title="Candidates"
                 subtitle="Manage candidate accounts on the platform."
                 actionButton={
-                    <PrimaryButton startIcon={<AddIcon />} onClick={handleCreateUser}>
+                    <PrimaryButton size="md" startIcon={<AddIcon />} onClick={handleCreateUser}>
                         Add Candidate
                     </PrimaryButton>
                 }

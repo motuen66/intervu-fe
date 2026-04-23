@@ -68,6 +68,7 @@ export default function AdminPineconeManagementPage() {
                 subtitle="Monitor vector index health and trigger manual re-sync operations."
                 actionButton={
                     <SecondaryButton
+                        size="md"
                         onClick={fetchStats}
                         disabled={loading}
                         startIcon={<RefreshCw size={16} />}

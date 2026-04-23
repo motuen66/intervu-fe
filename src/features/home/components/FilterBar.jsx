@@ -13,7 +13,7 @@ import {
   Collapse
 } from '@mui/material';
 import { fetchIndustries, setFilters, clearFilters } from '../store/homeSlice';
-import { PrimaryButton, SecondaryButton, DangerButton } from '../../../common/components/buttons';
+import { PrimaryButton, SecondaryButton, GhostButton } from '../../../common/components/buttons';
 import FormTextField from '../../../common/components/form/FormTextField';
 import FormSelect from '../../../common/components/form/FormSelect';
 import { buttonStyles, fieldStyles } from '../../../common/constants/uiStyles';
@@ -208,7 +208,7 @@ function FilterBar({ onOpenSmartMatch }) {
         }}
       >
         <Stack spacing={2}>
-          <Stack direction="row" spacing={2} alignItems="center" flexWrap={{ xs: 'wrap', md: 'nowrap' }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap={{ xs: 'wrap', md: 'nowrap' }}>
             <FormControl size="small" sx={{ width: 190, minWidth: 190, ...fieldStyles.outlinedFocus }}>
               <InputLabel>Company</InputLabel>
               <FormSelect
@@ -278,25 +278,31 @@ function FilterBar({ onOpenSmartMatch }) {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ width: 280 }}
+                sx={{ width: 220 }}
               />
 
               <PrimaryButton size="md" onClick={applySearch}>
                 Search
               </PrimaryButton>
 
-              <DangerButton
+              <GhostButton
                 size="md"
                 iconOnly
                 onClick={handleClearFilters}
                 disabled={!hasActiveFilters}
+                sx={(theme) => ({
+                  "&:hover": {
+                    color: theme.palette.error.main,
+                    backgroundColor: "rgba(239, 68, 68, 0.06)",
+                  },
+                })}
               >
                 <X size={18} />
-              </DangerButton>
+              </GhostButton>
             </Stack>
           </Stack>
 
-          <Collapse in={showAdvanced}>
+          <Collapse in={showAdvanced} unmountOnExit>
             <Box sx={{ pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={4}>
                 <Box sx={{ flex: 1 }}>
@@ -374,7 +380,7 @@ function FilterBar({ onOpenSmartMatch }) {
             </Box>
           </Collapse>
 
-          <Collapse in={hasActiveTagFilters}>
+          <Collapse in={hasActiveTagFilters} unmountOnExit>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
               <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>ACTIVE:</Typography>
               {localFilters.company && <div className="summary-pill-simple">Company</div>}
@@ -387,15 +393,20 @@ function FilterBar({ onOpenSmartMatch }) {
         </Stack>
       </Paper>
 
-      <Box className="ai-glow-container">
+      <Box
+        className="ai-glow-container"
+        sx={{
+          flexShrink: 0,
+          width: { xs: '100%', md: 'auto' },
+          height: { xs: 'auto', md: COMPACT_BAR_HEIGHT },
+        }}
+      >
         <PrimaryButton
           onClick={onOpenSmartMatch}
           onMouseMove={handleMouseMove}
           className="ai-glow-button"
           sx={(theme) => ({
-            height: 96,
-            width: 256,
-            minWidth: 256,
+            height: '100%',
             borderRadius: '12px',
             px: 1.6,
             py: 1.2,

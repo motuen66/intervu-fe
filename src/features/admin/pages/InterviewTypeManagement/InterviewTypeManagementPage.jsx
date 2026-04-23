@@ -125,7 +125,7 @@ export default function InterviewTypeManagementPage() {
                     </Box>
 
                     <Box>
-                        <PrimaryButton onClick={() => setOpenCreate(true)}>
+                        <PrimaryButton size="md" onClick={() => setOpenCreate(true)}>
                             Create New
                         </PrimaryButton>
                     </Box>
@@ -141,7 +141,7 @@ export default function InterviewTypeManagementPage() {
                         <div className="interview-type-empty-subtitle">
                             Create your first interview type to get started.
                         </div>
-                        <PrimaryButton onClick={() => setOpenCreate(true)}>
+                        <PrimaryButton size="md" onClick={() => setOpenCreate(true)}>
                             Create New
                         </PrimaryButton>
                     </Box>

@@ -11,7 +11,7 @@ function InterviewerManagePage() {
             <PageHeader
                 title="Interviewer Manage Page"
                 actions={
-                    <PrimaryButton onClick={() => setOpenDialog(true)}>
+                    <PrimaryButton size="md" onClick={() => setOpenDialog(true)}>
                         Create Interviewer
                     </PrimaryButton>
                 }

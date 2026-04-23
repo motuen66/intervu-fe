@@ -1,4 +1,4 @@
-﻿import { Box, Paper } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { AppText } from "../../../../common/components";
 
