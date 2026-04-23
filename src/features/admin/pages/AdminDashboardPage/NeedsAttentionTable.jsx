@@ -41,8 +41,8 @@ export default function NeedsAttentionTable({ data, loading }) {
 
     return (
         <BaseCard sx={{ p: 0 }}>
-            <Box sx={{ p: 3, borderBottom: 1, borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <SectionHeading title="Needs Attention" size="sm" />
+            <Box sx={{ px: 2.5, py: 1.5, borderBottom: 1, borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <SectionHeading title="Needs Attention" size="sm" disableGutters />
                 <Chip label={`${data?.length || 0} Issues`} size="small" variant="outlined" />
             </Box>
             <TableContainer>

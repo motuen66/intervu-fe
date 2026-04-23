@@ -34,8 +34,8 @@ export default function TopCoachesLeaderboard({ data, loading }) {
 
     return (
         <BaseCard sx={{ p: 0, display: "flex", flexDirection: "column" }}>
-            <Box sx={{ p: 3, borderBottom: 1, borderColor: "divider" }}>
-                <SectionHeading title="Top Coaches" size="sm" />
+            <Box sx={{ px: 2.5, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
+                <SectionHeading title="Top Coaches" size="sm" disableGutters />
             </Box>
             {!data || data.length === 0 ? (
                 <Box
