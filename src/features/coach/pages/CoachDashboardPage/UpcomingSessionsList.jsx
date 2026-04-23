@@ -9,6 +9,7 @@ import BaseCard from "../../../../common/components/cards/BaseCard";
 import StatusChip from "../../../../common/components/StatusChip";
 import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
 import TextButton from "../../../../common/components/buttons/TextButton";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { COACH_INTERVIEWS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 const STATUS_COLOR_MAP = {
@@ -132,26 +133,18 @@ export default function UpcomingSessionsList({ sessions }) {
 
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    rowGap: 0.75,
-                    mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
-                }}
-            >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-                    <AccessTime sx={{ color: "success.main", fontSize: 20 }} />
-                    <Typography variant="h6" fontWeight={700}>
-                        Upcoming Sessions
-                    </Typography>
-                </Box>
-
-                <TextButton size="sm" onClick={() => navigate(COACH_INTERVIEWS_ROUTE)}>
-                    View all
-                </TextButton>
+            <Box sx={{ mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom }}>
+                <SectionHeading
+                    title="Upcoming Sessions"
+                    size="sm"
+                    icon={<AccessTime sx={{ color: "success.main", fontSize: 20 }} />}
+                    action={
+                        <TextButton size="sm" onClick={() => navigate(COACH_INTERVIEWS_ROUTE)}>
+                            View all
+                        </TextButton>
+                    }
+                    disableGutters
+                />
             </Box>
 
             {!displaySessions.length ? (

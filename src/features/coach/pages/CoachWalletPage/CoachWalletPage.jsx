@@ -19,6 +19,7 @@ import KpiCard from "../../../../common/components/cards/KpiCard";
 import PaginationBar from "../../../../common/components/PaginationBar";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import PageHeader from "../../../../common/components/PageHeader";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { formatCurrency, formattedDateTime } from "../../../../common/utils/dateFormatter";
 import { getWalletBalance, getWithdrawalHistory } from "../../services/walletApi";
 import WithdrawalRequestDialog from "./WithdrawalRequestDialog";
@@ -141,9 +142,7 @@ export default function CoachWalletPage() {
                 }}
             >
                 <Box sx={{ px: 3, py: 2, borderBottom: "1px solid", borderColor: "divider" }}>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                        Withdrawal History
-                    </Typography>
+                    <SectionHeading title="Withdrawal History" size="sm" disableGutters />
                 </Box>
 
                 {loading ? (

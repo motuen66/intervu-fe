@@ -5,6 +5,7 @@ import { CalendarMonth } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import TextButton from "../../../../common/components/buttons/TextButton";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { COACH_SCHEDULE_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function AvailabilityWidget({ availability }) {
@@ -12,25 +13,18 @@ export default function AvailabilityWidget({ availability }) {
 
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    rowGap: 0.75,
-                    mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
-                }}
-            >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <CalendarMonth sx={{ color: "info.main", fontSize: 20 }} />
-                    <Typography variant="h6" fontWeight={700}>
-                        Availability
-                    </Typography>
-                </Box>
-                <TextButton size="sm" onClick={() => navigate(COACH_SCHEDULE_ROUTE)}>
-                    Manage
-                </TextButton>
+            <Box sx={{ mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom }}>
+                <SectionHeading
+                    title="Availability"
+                    size="sm"
+                    icon={<CalendarMonth sx={{ color: "info.main", fontSize: 20 }} />}
+                    action={
+                        <TextButton size="sm" onClick={() => navigate(COACH_SCHEDULE_ROUTE)}>
+                            Manage
+                        </TextButton>
+                    }
+                    disableGutters
+                />
             </Box>
 
             {!availability?.length ? (

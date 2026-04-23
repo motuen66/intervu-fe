@@ -1,10 +1,11 @@
-import { Box, Dialog, Stack, Typography } from "@mui/material";
+import { Box, Dialog, Stack } from "@mui/material";
 import { useMemo, useState } from "react";
 import { interviewerProfileEndPoints } from "../service/coachProfileApi";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { PrimaryButton } from "../../../../common/components/buttons";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 function CreateInterviewerProfileDialog({ open, onClose }) {
     const [form, setForm] = useState({
@@ -60,9 +61,7 @@ function CreateInterviewerProfileDialog({ open, onClose }) {
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    Create New Interviewer
-                </Typography>
+                <SectionHeading title="Create New Interviewer" as="h2" />
 
                 <Stack spacing={2}>
                     <FormTextField label="Full Name" name="fullName" value={form.fullName} onChange={handleChange} fullWidth />

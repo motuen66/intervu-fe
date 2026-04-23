@@ -4,6 +4,7 @@ import { useTheme, alpha } from "@mui/material/styles";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, Equalizer } from "@mui/icons-material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function EarningsChart({ data, growthPercent }) {
@@ -12,36 +13,30 @@ export default function EarningsChart({ data, growthPercent }) {
 
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
-                }}
-            >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Equalizer sx={{ color: "success.main", fontSize: 20 }} />
-                    <Typography variant="h6" fontWeight={700}>
-                        Earnings Trend
-                    </Typography>
-                </Box>
-
-                {growthPercent !== undefined && growthPercent !== 0 && (
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            color: "success.main",
-                        }}
-                    >
-                        <TrendingUp sx={{ fontSize: 16 }} />
-                        <Typography variant="body2" fontWeight={600} color="success.main">
-                            +{growthPercent}% from last week
-                        </Typography>
-                    </Box>
-                )}
+            <Box sx={{ mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom }}>
+                <SectionHeading
+                    title="Earnings Trend"
+                    size="sm"
+                    icon={<Equalizer sx={{ color: "success.main", fontSize: 20 }} />}
+                    action={
+                        growthPercent !== undefined && growthPercent !== 0 ? (
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    color: "success.main",
+                                }}
+                            >
+                                <TrendingUp sx={{ fontSize: 16 }} />
+                                <Typography variant="body2" fontWeight={600} color="success.main">
+                                    +{growthPercent}% from last week
+                                </Typography>
+                            </Box>
+                        ) : null
+                    }
+                    disableGutters
+                />
             </Box>
 
             <ResponsiveContainer width="100%" height={280}>

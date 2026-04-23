@@ -6,6 +6,7 @@ import { BarChart as BarChartIcon } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import TextButton from "../../../../common/components/buttons/TextButton";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import {
     COACH_SERVICES_ROUTE,
     DASHBOARD_LAYOUT,
@@ -28,26 +29,18 @@ export default function ServiceDistributionChart({ services }) {
 
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    rowGap: 0.75,
-                    mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
-                }}
-            >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-                    <BarChartIcon sx={{ color: "primary.main", fontSize: 20 }} />
-                    <Typography variant="h6" fontWeight={700}>
-                        Common Services
-                    </Typography>
-                </Box>
-
-                <TextButton size="sm" onClick={() => navigate(COACH_SERVICES_ROUTE)}>
-                    Manage
-                </TextButton>
+            <Box sx={{ mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom }}>
+                <SectionHeading
+                    title="Common Services"
+                    size="sm"
+                    icon={<BarChartIcon sx={{ color: "primary.main", fontSize: 20 }} />}
+                    action={
+                        <TextButton size="sm" onClick={() => navigate(COACH_SERVICES_ROUTE)}>
+                            Manage
+                        </TextButton>
+                    }
+                    disableGutters
+                />
             </Box>
 
             {!chartData.length ? (

@@ -7,6 +7,7 @@ import StatusChip from "../../../../common/components/StatusChip";
 
 import FormSelect from "../../../../common/components/form/FormSelect";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 const CreateAvailableSlotDialog = ({
     open,
@@ -59,9 +60,9 @@ const CreateAvailableSlotDialog = ({
         >
             <Card sx={{ width: "90%", maxWidth: "500px", borderRadius: "12px", maxHeight: "90vh", overflowY: "auto" }}>
                 <Box sx={{ p: 3 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
-                        Set Availability Time
-                    </Typography>
+                    <Box sx={{ mb: 3 }}>
+                        <SectionHeading title="Set Availability Time" as="h2" disableGutters />
+                    </Box>
 
                     <Stack spacing={2.5}>
                         <Box>

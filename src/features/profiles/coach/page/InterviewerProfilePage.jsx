@@ -40,6 +40,7 @@ import { Autocomplete } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import AppText from "../../../../common/components/AppText";
 import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPage/QuestionCard";
 import WorkExperienceModal from "../../components/WorkExperienceModal.jsx";
 import CertificateDialog from "../../components/CertificateDialog.jsx";
@@ -372,9 +373,7 @@ function InterviewerProfilePage() {
     if (!user) {
         return (
             <Box sx={{ p: 4, textAlign: "center" }}>
-                <Typography variant="h6" color="text.secondary">
-                    Please login to view your profile.
-                </Typography>
+                <AppText variant="muted">Please login to view your profile.</AppText>
             </Box>
         );
     }

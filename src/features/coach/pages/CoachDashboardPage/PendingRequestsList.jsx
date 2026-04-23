@@ -9,6 +9,7 @@ import BaseCard from "../../../../common/components/cards/BaseCard";
 import DangerButton from "../../../../common/components/buttons/DangerButton";
 import SuccessButton from "../../../../common/components/buttons/SuccessButton";
 import TextButton from "../../../../common/components/buttons/TextButton";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { respondToBookingRequest } from "../../services/coachDashboardApi";
 import { COACH_BOOKING_REQUESTS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardTokens";
 
@@ -118,42 +119,31 @@ export default function PendingRequestsList({ requests, onResponded }) {
 
     return (
         <BaseCard sx={{ p: DASHBOARD_LAYOUT.cardPadding }}>
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    rowGap: 0.75,
-                    mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom,
-                }}
-            >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Groups sx={{ color: "primary.main", fontSize: 20 }} />
-                    <Typography variant="h6" fontWeight={700}>
-                        Pending Requests
-                    </Typography>
-                </Box>
-
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: { xs: 1.5, sm: 3 },
-                        flexShrink: 0,
-                        flexWrap: "nowrap",
-                        ml: "auto",
-                    }}
-                >
-                    {requests?.length > 0 && (
-                        <Typography variant="body2" fontWeight={700} color="info.main">
-                            {requests.length} New
-                        </Typography>
-                    )}
-                    <TextButton size="sm" onClick={() => navigate(COACH_BOOKING_REQUESTS_ROUTE)}>
-                        View all
-                    </TextButton>
-                </Box>
+            <Box sx={{ mb: DASHBOARD_LAYOUT.cardHeaderMarginBottom }}>
+                <SectionHeading
+                    title="Pending Requests"
+                    size="sm"
+                    icon={<Groups sx={{ color: "primary.main", fontSize: 20 }} />}
+                    action={
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: { xs: 1.5, sm: 3 },
+                            }}
+                        >
+                            {requests?.length > 0 && (
+                                <Typography variant="body2" fontWeight={700} color="info.main">
+                                    {requests.length} New
+                                </Typography>
+                            )}
+                            <TextButton size="sm" onClick={() => navigate(COACH_BOOKING_REQUESTS_ROUTE)}>
+                                View all
+                            </TextButton>
+                        </Box>
+                    }
+                    disableGutters
+                />
             </Box>
 
             {!displayRequests.length ? (

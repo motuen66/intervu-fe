@@ -2,6 +2,7 @@ import React from "react";
 import { Box, CardContent, Typography, Stack, CircularProgress, Avatar } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import StatusChip from "../../../../common/components/StatusChip";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { CheckCircle } from "lucide-react";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
 
@@ -27,10 +28,9 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
             }}
         >
             <CardContent sx={{ p: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "text.primary" }}>
-                    Upcoming Interview Times
-                    {/* ({upcomingSlots.length}) */}
-                </Typography>
+                <Box sx={{ mb: 1.5 }}>
+                    <SectionHeading title="Upcoming Interview Times" size="sm" disableGutters />
+                </Box>
 
                 <Stack spacing={1.5}>
                     {loading ? (

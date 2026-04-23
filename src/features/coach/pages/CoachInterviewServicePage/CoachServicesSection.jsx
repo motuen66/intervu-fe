@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Box, CardContent, CircularProgress, Stack, Typography } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import StatusChip from "../../../../common/components/StatusChip";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CodeIcon from "@mui/icons-material/Code";
 import { getCoachInterviewServices } from "../../services/coachInterviewServiceApi";
@@ -50,9 +51,7 @@ export default function CoachServicesSection({ coachId }) {
 
     return (
         <BaseCard variant="outlined" sx={{ p: 3 }}>
-            <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                Interview Services
-            </Typography>
+            <SectionHeading title="Interview Services" size="sm" />
             <Stack spacing={1.5}>
                 {services.map((svc) => (
                     <BaseCard
