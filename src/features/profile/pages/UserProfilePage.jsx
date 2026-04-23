@@ -5,7 +5,6 @@ import {
     Container,
     Paper,
     Avatar,
-    Typography,
     IconButton,
     Grid,
     Divider,
@@ -18,7 +17,7 @@ import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { profileEndPoints } from '../services/profileApi';
 import toast from 'react-hot-toast';
-import { FormTextField, PageHeader, SectionHeading } from '../../../common/components';
+import { AppText, FormTextField, PageHeader, SectionHeading } from '../../../common/components';
 import { PrimaryButton, SecondaryButton } from '../../../common/components/buttons';
 // import UploadCv from "../components/UploadCv.jsx";
 
@@ -253,10 +252,10 @@ export default function UserProfilePage() {
                     {/* Email Section */}
                     <Box sx={{ mb: 4 }}>
                         <SectionHeading title="Email" />
-                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
+                        <AppText variant="muted" sx={{ mb: 2 }}>
                             Your account is connected through Google. Please create a password with Exponent
                             before making email changes.
-                        </Typography>
+                        </AppText>
                         <FormTextField
                             fullWidth
                             value={email}
@@ -271,9 +270,9 @@ export default function UserProfilePage() {
                     {/* Password Settings */}
                     <Box sx={{ mb: 4 }}>
                         <SectionHeading title="Password Settings" />
-                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
+                        <AppText variant="muted" sx={{ mb: 2 }}>
                             Click the button below to change your password.
-                        </Typography>
+                        </AppText>
                         <Box sx={{ mb: showPasswordForm ? 3 : 0 }}>
                             <PrimaryButton onClick={() => setShowPasswordForm(!showPasswordForm)}>
                                 {showPasswordForm ? "Hide Password Form" : "Change Password"}
@@ -338,9 +337,9 @@ export default function UserProfilePage() {
                     {/* Notification Settings */}
                     <Box>
                         <SectionHeading title="Notification Settings" />
-                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)" }}>
+                        <AppText variant="muted">
                             When would you like to receive an email?
-                        </Typography>
+                        </AppText>
                     </Box>
                 </Paper>
             </Container>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { interviewerProfileEndPoints } from "../coach/service/coachProfileApi";
@@ -8,6 +8,7 @@ import { candidateProfileEndPoints } from "../candidate/service/candidateProfile
 import PublicInterviewerProfilePage from "../coach/page/PublicInterviewerProfilePage/PublicInterviewerProfilePage";
 import PublicCandidateProfilePage from "../candidate/page/PublicCandidateProfilePage";
 import CommonLoader from "../../../common/components/loaders/CommonLoader";
+import { AppText } from "../../../common/components";
 
 function PublicProfilePage() {
     const { slugProfileUrl } = useParams();
@@ -88,9 +89,9 @@ function PublicProfilePage() {
     if (error || !profileType) {
         return (
             <Box sx={{ p: 4, textAlign: "center" }}>
-                <Typography variant="h6" color="text.secondary">
+                <AppText variant="muted">
                     {error || "Profile not found."}
-                </Typography>
+                </AppText>
             </Box>
         );
     }

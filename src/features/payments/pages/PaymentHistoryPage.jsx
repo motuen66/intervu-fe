@@ -35,14 +35,13 @@ import HourglassEmptyRoundedIcon from "@mui/icons-material/HourglassEmptyRounded
 import AttachMoneyRoundedIcon from "@mui/icons-material/AttachMoneyRounded";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
-import SecondaryButton from "../../../common/components/buttons/SecondaryButton";
 import { interviewEndPoints } from "../../interview/services/interviewRoomApi";
 import { profileEndPoints } from "../../profile/services/profileApi";
 import { formatCurrency } from "../../../common/utils/dateFormatter";
 import { ROLES } from "../../../common/constants/common";
 import { trackPaymentSuccess } from "../../../utils/analytics";
 import { useSearchParams } from "react-router-dom";
-import { FormTextField, PageHeader } from "../../../common/components";
+import { AppText, FormTextField, PageHeader } from "../../../common/components";
 import { SecondaryButton, TextButton } from "../../../common/components/buttons";
 
 const transactionStatusConfig = {
@@ -398,9 +397,9 @@ const PaymentHistoryPage = () => {
                                             <ReceiptLongRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            <AppText variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
                                                 Total Transactions
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="h5" fontWeight={700}>{stats.transactionCount}</Typography>
                                         </Box>
                                     </Stack>
@@ -413,9 +412,9 @@ const PaymentHistoryPage = () => {
                                             <CheckCircleRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            <AppText variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
                                                 Completed Amount
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="h5" fontWeight={700} sx={{ color: '#2e7d32' }}>
                                                 {formatCurrency(stats.totalSpent)}
                                             </Typography>
@@ -430,9 +429,9 @@ const PaymentHistoryPage = () => {
                                             <HourglassEmptyRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            <AppText variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
                                                 Pending Amount
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="h5" fontWeight={700} sx={{ color: '#ed6c02' }}>
                                                 {formatCurrency(stats.totalPending)}
                                             </Typography>
@@ -447,9 +446,9 @@ const PaymentHistoryPage = () => {
                                             <AttachMoneyRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            <AppText variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
                                                 Average Amount
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="h5" fontWeight={700} sx={{ color: '#7b1fa2' }}>
                                                 {formatCurrency(stats.average)}
                                             </Typography>
@@ -554,7 +553,7 @@ const PaymentHistoryPage = () => {
 
                             {(!filteredTransactions || filteredTransactions.length === 0) && (
                                 <Box sx={{ textAlign: "center", py: 5 }}>
-                                    <Typography color="text.secondary">No transactions found</Typography>
+                                    <AppText variant="muted">No transactions found</AppText>
                                 </Box>
                             )}
                         </Box>
@@ -570,9 +569,9 @@ const PaymentHistoryPage = () => {
                                 <Stack spacing={1.25}>
                                     {getInterviewDetails(selectedTransaction).map((item) => (
                                         <Box key={item.label}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                                            <AppText variant="caption" sx={{ display: "block" }}>
                                                 {item.label}
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="body2" fontWeight={600}>
                                                 {item.value}
                                             </Typography>
