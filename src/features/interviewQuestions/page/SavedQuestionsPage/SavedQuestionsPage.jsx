@@ -3,14 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Box, CircularProgress, Pagination, Stack } from "@mui/material";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PageHeader from "../../../../common/components/PageHeader";
 import AppText from "../../../../common/components/AppText";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interactionEndPoints } from "../../service/interactionApi";
 import QuestionCard from "../InterviewQuestionsPage/QuestionCard";
-import { PrimaryButton, TextButton } from "../../../../common/components/buttons";
+import { PrimaryButton } from "../../../../common/components/buttons";
 
 const PAGE_SIZE = 10;
 
@@ -52,16 +51,10 @@ export default function SavedQuestionsPage() {
     }, [page, currentUser]);
 
     return (
-        <Box sx={{ maxWidth: 900, mx: "auto", px: 3, pt: 4, pb: 8 }}>
-            {/* Header */}
-            <Box sx={{ mb: 2.5 }}>
-                <TextButton startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} size="sm">
-                    Back
-                </TextButton>
-            </Box>
-
+        <>
             <PageHeader
                 title="Saved Questions"
+                subtitle="Review and manage the questions you've bookmarked for later practice."
                 actions={
                     totalCount != null ? (
                         <AppText variant="muted">({totalCount} questions)</AppText>
@@ -116,6 +109,6 @@ export default function SavedQuestionsPage() {
                     )}
                 </>
             )}
-        </Box>
+        </>
     );
 }

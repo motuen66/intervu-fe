@@ -1,15 +1,5 @@
 /* Booking Request pages styles */
 
-.booking-list-page {
-    padding: 24px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.booking-list-page .page-header {
-    margin-bottom: 24px;
-}
-
 .booking-list-filters {
     display: flex;
     gap: 12px;
@@ -24,12 +14,6 @@
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-}
-
-.booking-detail-page {
-    padding: 32px;
-    max-width: 1200px;
-    margin: 0 auto;
 }
 
 .booking-detail-card {

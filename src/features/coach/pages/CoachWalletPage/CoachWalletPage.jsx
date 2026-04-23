@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import Box from "@mui/material/Box";
-import Container from "@mui/material/Container";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Table from "@mui/material/Table";
@@ -92,24 +91,23 @@ export default function CoachWalletPage() {
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Box sx={{ mb: 3 }}>
-                <PageHeader
-                    title="Wallet"
-                    actions={
-                        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                            <Tooltip title="Refresh">
-                                <IconButton onClick={fetchData} size="small">
-                                    <RefreshRoundedIcon />
-                                </IconButton>
-                            </Tooltip>
-                            <PrimaryButton onClick={() => setDialogOpen(true)}>
-                                Request Withdrawal
-                            </PrimaryButton>
-                        </Box>
-                    }
-                />
-            </Box>
+        <>
+            <PageHeader
+                title="Wallet"
+                subtitle="Track your earnings and request withdrawals."
+                actions={
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                        <Tooltip title="Refresh">
+                            <IconButton onClick={fetchData} size="small">
+                                <RefreshRoundedIcon />
+                            </IconButton>
+                        </Tooltip>
+                        <PrimaryButton onClick={() => setDialogOpen(true)}>
+                            Request Withdrawal
+                        </PrimaryButton>
+                    </Box>
+                }
+            />
 
             {/* Balance Card */}
             <Grid container spacing={2.5} sx={{ mb: 3 }}>
@@ -229,6 +227,6 @@ export default function CoachWalletPage() {
                 onSuccess={handleWithdrawalSuccess}
                 balance={balance}
             />
-        </Container>
+        </>
     );
 }

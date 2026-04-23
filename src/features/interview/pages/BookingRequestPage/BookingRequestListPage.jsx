@@ -94,7 +94,7 @@ export default function BookingRequestListPage() {
     const fieldSx = { minWidth: 160 };
 
     return (
-        <Box className="booking-list-page">
+        <>
             <PageHeader
                 title="Your Bookings"
                 subtitle={isCoach ? "Manage incoming bookings from candidates." : "Track your bookings to coaches."}
@@ -269,6 +269,6 @@ export default function BookingRequestListPage() {
                     )}
                 </>
             )}
-        </Box>
+        </>
     );
 }

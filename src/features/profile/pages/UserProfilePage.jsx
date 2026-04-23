@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import {
     Box,
-    Container,
     Paper,
     Avatar,
     IconButton,
@@ -243,8 +242,7 @@ export default function UserProfilePage() {
     }
 
     return (
-        <Box sx={{ minHeight: "100vh", background: "#ffffff", py: 4 }}>
-            <Container maxWidth="md">
+        <>
 
                 <Paper sx={{ p: 4, borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}></Box>
@@ -342,7 +340,6 @@ export default function UserProfilePage() {
                         </AppText>
                     </Box>
                 </Paper>
-            </Container>
-        </Box>
+        </>
     );
 }

@@ -1,4 +1,4 @@
-import { Box, Typography, Stack, Tabs, Tab, Container, CircularProgress } from "@mui/material";
+import { Box, Typography, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
 import PageHeader from "../../../../common/components/PageHeader";
 import { interviewEndPoints, getSessions } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
@@ -635,8 +635,7 @@ function InterviewRoomListPage() {
     );
 
     return (
-        <Box sx={{ minHeight: "100vh", py: 4 }}>
-            <Container maxWidth="lg">
+        <>
                 <PageHeader
                     title="My Interviews"
                     subtitle="Track your upcoming practice sessions and review past performance feedback."
@@ -776,8 +775,6 @@ function InterviewRoomListPage() {
                         />
                     )}
                 </Suspense>
-            </Container>
-
             <Suspense fallback={null}>
                 {genQuestionsModalState.open && (
                     <GeneratedQuestionsModal
@@ -795,7 +792,7 @@ function InterviewRoomListPage() {
                     />
                 )}
             </Suspense>
-        </Box>
+        </>
     );
 }
 

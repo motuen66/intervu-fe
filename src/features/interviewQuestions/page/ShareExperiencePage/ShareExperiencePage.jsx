@@ -179,7 +179,7 @@ export default function ShareExperiencePage() {
     };
 
     return (
-        <Box sx={{ maxWidth: 680, mx: "auto", px: 3, py: 6 }}>
+        <Box sx={{ maxWidth: 680, mx: "auto" }}>
             {/* Header */}
             <Box textAlign="center" mb={4.5}>
                 <PageHeader title="Share your interview experience" />

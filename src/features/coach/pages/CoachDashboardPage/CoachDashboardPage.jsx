@@ -65,7 +65,7 @@ export default function CoachDashboardPage() {
     };
 
     return (
-        <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: "transparent", minHeight: "100vh" }}>
+        <>
             <DashboardHeader period={period} onPeriodChange={setPeriod} />
 
             <Box sx={{ mt: DASHBOARD_LAYOUT.kpiSectionMarginTop }}>
@@ -116,6 +116,6 @@ export default function CoachDashboardPage() {
                     </Box>
                 </Grid>
             </Grid>
-        </Box>
+        </>
     );
 }

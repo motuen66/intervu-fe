@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import {
     Box,
     Typography,
-    Container,
     Grid,
     Card,
     CardContent,
@@ -368,8 +367,7 @@ const PaymentHistoryPage = () => {
     };
 
     return (
-        <Box sx={{ bgcolor: "#f8f9fb", minHeight: "100vh", py: 4 }}>
-            <Container maxWidth="lg">
+        <>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
                     <PageHeader
                         title="Payment History"
@@ -586,8 +584,7 @@ const PaymentHistoryPage = () => {
                         </Dialog>
                     </>
                 )}
-            </Container>
-        </Box>
+        </>
     );
 };
 

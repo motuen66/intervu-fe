@@ -93,15 +93,13 @@ export default function CoachInterviewServicePage() {
     };
 
     return (
-        <Box className="coach-service-management" p={2}>
+        <Box className="coach-service-management">
             <div className="coach-service-panel">
-                <Box sx={{ px: 2, py: 1.5 }}>
                     <PageHeader
                         title="My Interview Services"
                         subtitle="Manage the interview types you offer and set your own pricing."
                         actions={<PrimaryButton onClick={() => setOpenCreate(true)}>Add Service</PrimaryButton>}
                     />
-                </Box>
 
                 {loading ? (
                     <Box display="flex" justifyContent="center" mt={6} mb={6}>

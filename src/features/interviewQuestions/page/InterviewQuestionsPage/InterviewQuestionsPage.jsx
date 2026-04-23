@@ -127,10 +127,8 @@ export default function InterviewQuestionsPage() {
     // };
 
     return (
-        <Box sx={{ maxWidth: 1200, mx: "auto", px: 3, pt: 4, pb: 8 }}>
-            {/* Header */}
-            <Box sx={{ mb: 3.5 }}>
-                <PageHeader
+        <>
+            <PageHeader
                     title="Interview Questions"
                     subtitle={
                         totalCount != null
@@ -149,7 +147,6 @@ export default function InterviewQuestionsPage() {
                         </Box>
                     }
                 />
-            </Box>
 
             <QuestionFilters filters={filters} onChange={handleFilterChange} companies={companies} />
 
@@ -220,6 +217,6 @@ export default function InterviewQuestionsPage() {
                     onSearchChange={setSidebarSearch}
                 />
             </Box>
-        </Box>
+        </>
     );
 }

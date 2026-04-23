@@ -28,7 +28,6 @@ import {
     DialogContent,
     DialogActions,
 } from "@mui/material";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LinkIcon from "@mui/icons-material/Link";
 import CloseIcon from "@mui/icons-material/Close";
@@ -40,6 +39,7 @@ import axios from "axios";
 import SessionResultSection from "./components/SessionResultSection";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../../../../common/components/buttons";
+import PageHeader from "../../../../common/components/PageHeader";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { CvDialog } from "../../../../features/profiles/components/CvDialog";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -559,82 +559,27 @@ export default function BookingRequestDetailPage() {
     const isPendingApproval = detail.status === BOOKING_REQUEST_STATUS.PendingForApprovalAfterPayment;
 
     return (
-        <Box sx={{ minHeight: "100vh", pt: 3, pb: 6, px: { xs: 3, md: 4 } }}>
-            <Box className="booking-detail-page" sx={{ maxWidth: 1200, mx: "auto", width: "100%" }}>
-                {/* NAVIGATION & TOP ACTIONS */}
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
-                    <Stack direction="row" alignItems="center" spacing={1.5}>
-                        <IconButton
-                            onClick={() => navigate("/booking-requests")}
-                            sx={{
-                                bgcolor: "white",
-                                border: "1px solid #f1f5f9",
-                                "&:hover": { bgcolor: "#f1f5f9" },
-                                p: 1,
-                            }}
-                        >
-                            <ArrowBackIosNewIcon sx={{ fontSize: 14, color: "#111827" }} />
-                        </IconButton>
-                        <Box>
-                            <Typography
-                                variant="caption"
-                                color="#94a3b8"
-                                fontWeight={700}
-                                sx={{ letterSpacing: "0.05em" }}
-                            >
-                                RETURN TO LIST
-                            </Typography>
-                        </Box>
-                    </Stack>
-
-                    {/* Primary Action Context Dependent */}
-                    <Stack direction="row" spacing={2}>
-                        {!isCoach && !hasCompletedInterview && (
-                            <>
+        <>
+            <PageHeader
+                    title={isAccepted ? "Interview Details" : "Booking Details"}
+                    subtitle={`Session: ${detail.interviewTypeName || (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? "External Session" : "JD Interview")}`}
+                    actions={
+                        !isCoach && !hasCompletedInterview ? (
+                            <Stack direction="row" spacing={1.5}>
                                 {isPending && (
                                     <PrimaryButton onClick={handlePay} loading={paying}>
                                         Pay {detail.totalAmount?.toLocaleString()} ₫
                                     </PrimaryButton>
                                 )}
                                 {(isPending || isAccepted) && (
-                                    <DangerButton
-                                        onClick={handleOpenCancelRequestConfirm}
-                                        loading={cancelling}
-                                    >
+                                    <DangerButton onClick={handleOpenCancelRequestConfirm} loading={cancelling}>
                                         Cancel Request
                                     </DangerButton>
                                 )}
-                            </>
-                        )}
-                    </Stack>
-                </Stack>
-
-                {/* PAGE TITLE */}
-                <Box sx={{ mb: 3 }}>
-                    <Typography
-                        fontWeight={900}
-                        color="#0f172a"
-                        sx={{
-                            letterSpacing: "-0.03em",
-                            fontSize: { xs: "2.2rem", md: "3rem" },
-                            lineHeight: 1.1,
-                            mb: 1,
-                            fontFamily: '"Outfit", "Plus Jakarta Sans", sans-serif',
-                        }}
-                    >
-                        {isAccepted ? "Interview Results" : "Booking Details"}
-                    </Typography>
-                    <Typography
-                        variant="h6"
-                        color="#475569"
-                        fontWeight={700}
-                        sx={{ fontSize: "1.15rem", opacity: 0.9 }}
-                    >
-                        {"Session: "}
-                        {detail.interviewTypeName ||
-                            (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? "External Session" : "JD Interview")}
-                    </Typography>
-                </Box>
+                            </Stack>
+                        ) : null
+                    }
+                />
 
                 {/* CONTENT STACK — vertical alignment of all major blocks */}
                 <Stack spacing={1.5}>
@@ -983,7 +928,6 @@ export default function BookingRequestDetailPage() {
                         </SectionCard>
                     )}
                 </Stack>
-            </Box>
 
             <CancelInterviewConfirmDialog
                 open={cancelRoundConfirmState.open}
@@ -1048,6 +992,6 @@ export default function BookingRequestDetailPage() {
                 url={documentDialog.url}
                 title={documentDialog.title || "Document Viewer"}
             />
-        </Box>
+        </>
     );
 }

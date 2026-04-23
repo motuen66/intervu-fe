@@ -545,21 +545,17 @@ const ScheduleManagement = () => {
 
     return (
         <>
-            <Box sx={{ minHeight: "100vh", py: 4 }}>
-                <Box sx={{ maxWidth: "1400px", mx: "auto" }}>
-                    <Box sx={{ mb: 4 }}>
-                        <PageHeader
-                            title="Interview Schedule"
-                            subtitle="Manage your available time slots for interviews"
-                            actions={
-                                <PrimaryButton startIcon={<IoAdd size={18} />} onClick={handleAddClick}>
-                                    Add Slot
-                                </PrimaryButton>
-                            }
-                        />
-                    </Box>
+            <PageHeader
+                title="Interview Schedule"
+                subtitle="Manage your available time slots for interviews"
+                actions={
+                    <PrimaryButton startIcon={<IoAdd size={18} />} onClick={handleAddClick}>
+                        Add Slot
+                    </PrimaryButton>
+                }
+            />
 
-                    {/* Main Content */}
+            {/* Main Content */}
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
                         {/* Calendar Section */}
                         <BaseCard
@@ -705,9 +701,8 @@ const ScheduleManagement = () => {
                             />
                         </Stack>
                     </Box>
-                </Box>
 
-                {/* Modal Add/Edit */}
+            {/* Modal Add/Edit */}
                 {openModal &&
                     (editingId ? (
                         <UpdateAvailableSlotDialog
@@ -742,7 +737,6 @@ const ScheduleManagement = () => {
                             maxDate={maxDateStr}
                         />
                     ))}
-            </Box>
 
             {/* Confirm Delete */}
             <ConfirmModal
