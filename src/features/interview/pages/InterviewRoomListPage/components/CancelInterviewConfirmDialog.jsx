@@ -17,6 +17,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 import { PrimaryButton, DangerButton } from "../../../../../common/components/buttons";
 import StatusChip from "../../../../../common/components/StatusChip";
+import AppText from "../../../../../common/components/AppText";
 
 function CancelInterviewConfirmDialog({
     open,
@@ -87,12 +88,12 @@ function CancelInterviewConfirmDialog({
                             <ErrorOutlineRoundedIcon sx={{ fontSize: 18 }} />
                         </Box>
                         <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
+                            <AppText variant="bodyStrong" sx={{ fontSize: "1.125rem", fontWeight: 800, lineHeight: 1.2 }}>
                                 {title}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                            </AppText>
+                            <AppText variant="muted" sx={{ mt: 0.5 }}>
                                 {displaySubtitle}
-                            </Typography>
+                            </AppText>
                         </Box>
                     </Box>
                     <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>

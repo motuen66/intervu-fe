@@ -1,11 +1,11 @@
 import {
     Box,
-    Typography,
     Stack,
     Pagination,
     CircularProgress,
 } from "@mui/material";
 import RecentInterviewItem from "./RecentInterviewItem";
+import AppText from "../../../../../common/components/AppText";
 
 function PastHistoryTab({
     rooms,
@@ -49,12 +49,12 @@ function PastHistoryTab({
                         borderColor: "divider",
                     }}
                 >
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                    <AppText variant="bodyStrong" sx={{ color: "text.secondary", mb: 0.5 }}>
                         No past interviews
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    </AppText>
+                    <AppText variant="muted">
                         Completed interviews will appear here
-                    </Typography>
+                    </AppText>
                 </Box>
             ) : (
                 <Stack spacing={2} sx={{ width: "100%" }}>
@@ -77,9 +77,9 @@ function PastHistoryTab({
                     alignItems="center"
                     sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}
                 >
-                    <Typography variant="body2" color="text.secondary">
+                    <AppText variant="muted">
                         Showing {startIdx} to {endIdx} of {totalItems} results
-                    </Typography>
+                    </AppText>
                     <Pagination
                         count={totalPages}
                         page={page}

@@ -22,6 +22,8 @@ import { METHOD } from "../../../../../common/constants/api";
 import { interviewEndPoints } from "../../../services/interviewRoomApi.js";
 import useUser from "../../../../../common/hooks/useUser.jsx";
 import { SecondaryButton, PrimaryButton } from "../../../../../common/components/buttons";
+import AppText from "../../../../../common/components/AppText";
+import SectionHeading from "../../../../../common/components/SectionHeading";
 
 function AICVSelectionModal({ open, onClose, onJoin, room }) {
     const [step, setStep] = useState("selection"); // selection, processing, confirm
@@ -152,13 +154,15 @@ function AICVSelectionModal({ open, onClose, onJoin, room }) {
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle>Select CV for AI Interview</DialogTitle>
+            <DialogTitle component="div">
+                <SectionHeading title="Select CV for AI Interview" disableGutters />
+            </DialogTitle>
             <DialogContent>
                 {step === "selection" && (
                     <Stack spacing={2}>
-                        <Typography variant="body1">
+                        <AppText variant="body">
                             Choose how to provide your CV for the AI interview:
-                        </Typography>
+                        </AppText>
                         <Stack direction="row" spacing={2}>
                             <SecondaryButton
                                 onClick={handleSelectCurrent}

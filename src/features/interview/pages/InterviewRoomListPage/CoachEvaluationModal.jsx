@@ -19,6 +19,8 @@ import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { PrimaryButton } from "../../../../common/components/buttons";
+import SectionHeading from "../../../../common/components/SectionHeading";
+import AppText from "../../../../common/components/AppText";
 
 function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     const [loading, setLoading] = useState(false);
@@ -251,18 +253,20 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                     p: 3,
                 })}
             >
-                <Typography id="coach-evaluation-modal" variant="h5" component="h2" sx={{ mb: 1 }}>
-                    Incomplete Mock Interview Evaluation
-                </Typography>
+                <SectionHeading
+                    title="Incomplete Mock Interview Evaluation"
+                    as="h2"
+                    disableGutters
+                />
                 {room?.candidateName && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    <AppText variant="muted" sx={{ mb: 0.5 }}>
                         Candidate: <strong>{room.candidateName}</strong>
-                    </Typography>
+                    </AppText>
                 )}
                 {interviewLabel && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    <AppText variant="muted" sx={{ mb: 2 }}>
                         {interviewLabel}
-                    </Typography>
+                    </AppText>
                 )}
                 {error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
@@ -272,14 +276,14 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                 {loading ? (
                     <Stack alignItems="center" sx={{ py: 4 }}>
                         <CircularProgress size={28} />
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        <AppText variant="muted" sx={{ mt: 1 }}>
                             Loading evaluation form...
-                        </Typography>
+                        </AppText>
                     </Stack>
                 ) : (
                     <Stack spacing={2} sx={{ maxHeight: "60vh", overflowY: "auto", pr: 1 }}>
                         {items.length === 0 ? (
-                            <Typography color="text.secondary">No evaluation items configured.</Typography>
+                            <AppText variant="muted">No evaluation items configured.</AppText>
                         ) : (
                             items.map((item, index) => (
                                 <Box
@@ -291,9 +295,9 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                         p: 2,
                                     }}
                                 >
-                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                    <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
                                         {item.question}
-                                    </Typography>
+                                    </AppText>
                                     <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 0.5 }}>
                                         <Box sx={{ flex: 1 }}>
                                             <Slider
@@ -306,18 +310,18 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                                 onChange={(_, val) => handleItemChange(index, "score", val)}
                                             />
                                             <Stack direction="row" justifyContent="space-between" sx={{ mt: -1 }}>
-                                                <Typography variant="caption" color="text.secondary">Very Bad</Typography>
-                                                <Typography variant="caption" color="text.secondary">Average</Typography>
-                                                <Typography variant="caption" color="text.secondary">Very Good</Typography>
+                                                <AppText variant="caption">Very Bad</AppText>
+                                                <AppText variant="caption">Average</AppText>
+                                                <AppText variant="caption">Very Good</AppText>
                                             </Stack>
                                         </Box>
                                         <Box sx={{ width: 80, textAlign: "right" }}>
                                             <Typography variant="h6" color={getScoreColor(item.score)} sx={{ fontWeight: 700, lineHeight: 1 }}>
                                                 {item.score}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
+                                            <AppText variant="caption">
                                                 {getScoreLabel(item.score)}
-                                            </Typography>
+                                            </AppText>
                                         </Box>
                                     </Stack>
                                     <FormTextField
@@ -341,9 +345,9 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                                 p: 2,
                             }}
                         >
-                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            <AppText variant="bodyStrong" sx={{ mb: 1 }}>
                                 Others
-                            </Typography>
+                            </AppText>
                             <FormTextField
                                 label="Additional notes"
                                 value={others}

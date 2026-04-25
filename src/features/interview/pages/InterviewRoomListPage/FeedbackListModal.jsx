@@ -35,6 +35,8 @@ import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import StatusChip from "../../../../common/components/StatusChip";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import SectionHeading from "../../../../common/components/SectionHeading";
+import AppText from "../../../../common/components/AppText";
 
 const MAX_COMMENT_LENGTH = 1000;
 
@@ -258,22 +260,18 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                             </Tooltip>
                         )}
                         <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="h5" component="h2" fontWeight={700} sx={{ letterSpacing: "-0.01em" }}>
-                                {selectedFeedback
-                                    ? (isReadOnly ? 'Feedback Details' : 'Submit Feedback')
-                                    : title}
-                            </Typography>
-                            <Typography
-                                id="feedback-list-modal-description"
-                                variant="body2"
-                                color="text.secondary"
-                            >
-                                {selectedFeedback
-                                    ? (isReadOnly
-                                        ? 'Review your submitted feedback.'
-                                        : 'Share a rating and comments to help your coach improve.')
-                                    : subtitle}
-                            </Typography>
+                            <SectionHeading
+                                title={selectedFeedback ? (isReadOnly ? "Feedback Details" : "Submit Feedback") : title}
+                                description={
+                                    selectedFeedback
+                                        ? isReadOnly
+                                            ? "Review your submitted feedback."
+                                            : "Share a rating and comments to help your coach improve."
+                                        : subtitle
+                                }
+                                as="h2"
+                                disableGutters
+                            />
                         </Box>
                     </Stack>
 
@@ -296,7 +294,7 @@ function FeedbackListModal({ open, onClose, onFeedbackSubmitted, mode = 'pending
                 {loading ? (
                     <Stack direction="row" spacing={1.25} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
                         <CircularProgress size={22} />
-                        <Typography color="text.secondary">Loading feedbacks...</Typography>
+                        <AppText variant="muted">Loading feedbacks...</AppText>
                     </Stack>
                 ) : feedbacks.length === 0 ? (
                     <Stack

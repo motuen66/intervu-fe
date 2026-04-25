@@ -1,8 +1,9 @@
-import { Box, Typography, Avatar, Stack, Tooltip } from "@mui/material";
+import { Box, Avatar, Stack, Tooltip } from "@mui/material";
 import { MessageSquare } from "lucide-react";
 import { ROLES } from "../../../../../common/constants/common";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { SecondaryButton } from "../../../../../common/components/buttons";
+import AppText from "../../../../../common/components/AppText";
 
 function RecentInterviewItem({ room, user, onClick }) {
 
@@ -57,7 +58,7 @@ function RecentInterviewItem({ room, user, onClick }) {
                 flexDirection: { xs: "column", md: "row" },
                 alignItems: { xs: "flex-start", md: "center" },
                 justifyContent: "space-between",
-                p: { xs: 2.5, md: 2 },
+                p: { xs: 2.5, md: 2.25 },
                 mb: 1.5,
                 borderRadius: "16px",
                 bgcolor: "background.paper",
@@ -71,38 +72,40 @@ function RecentInterviewItem({ room, user, onClick }) {
                 },
             }}
         >
-            <Stack direction="row" spacing={2.5} alignItems="center" sx={{ width: { xs: "100%", md: "25%" } }}>
+            <Stack direction="row" spacing={2} alignItems="center" sx={{ width: { xs: "100%", md: "25%" } }}>
                 <Avatar
                     src={avatar || ""}
-                    sx={{
-                        width: 44,
-                        height: 44,
-                        fontWeight: 600,
+                    variant="rounded"
+                    sx={(theme) => ({
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        fontWeight: 700,
                         fontSize: "0.95rem",
-                        bgcolor: avatar ? "transparent" : "secondary.main",
-                        color: avatar ? "inherit" : "primary.main",
-                    }}
+                        bgcolor: avatar ? "transparent" : theme.palette.primary.secondary,
+                        color: avatar ? "inherit" : theme.palette.primary.main,
+                    })}
                 >
                     {!avatar ? getInitials(name) : null}
                 </Avatar>
-                <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: "0.95rem" }}>
+                <AppText variant="bodyStrong" sx={{ fontSize: "0.95rem" }}>
                     {name}
-                </Typography>
+                </AppText>
             </Stack>
 
-            <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ width: { xs: "100%", md: "25%" } }}>
+            <AppText variant="label" sx={{ width: { xs: "100%", md: "25%" } }}>
                 {getTopic()}
-            </Typography>
+            </AppText>
 
-            <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ width: { xs: "100%", md: "20%" } }}>
+            <AppText variant="label" sx={{ width: { xs: "100%", md: "20%" } }}>
                 {getDisplayDate(room.scheduledTime)}
-            </Typography>
+            </AppText>
 
             <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: "100%", md: "15%" } }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: statusColor }} />
-                <Typography variant="body2" fontWeight={700} sx={{ color: statusColor }}>
+                <AppText variant="bodyStrong" sx={{ color: statusColor }}>
                     {statusText}
-                </Typography>
+                </AppText>
             </Stack>
 
             <Box sx={{ width: { xs: "100%", md: "15%" }, display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>

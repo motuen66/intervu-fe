@@ -1,5 +1,4 @@
 import {
-    Typography,
     InputAdornment,
     MenuItem,
     Stack,
@@ -8,6 +7,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FormSelect from "../../../../common/components/form/FormSelect";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import AppText from "../../../../common/components/AppText";
 
 function InterviewFilterBar({ 
     searchQuery, 
@@ -72,7 +72,7 @@ function InterviewFilterBar({
                     }
                 >
                     <MenuItem value="">
-                        <Typography variant="body2">Filter</Typography>
+                        <AppText variant="label">Filter</AppText>
                     </MenuItem>
                     {filterOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>

@@ -19,6 +19,7 @@ import { formattedDateTime } from "../../../../common/utils/dateFormatter";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import CalendlyCalendar from "../../../../common/components/CalendlyCalendar";
+import AppText from "../../../../common/components/AppText";
 import { addMonths, format, isSameDay } from "date-fns";
 import "../../../../features/profiles/coach/page/PublicInterviewerProfilePage/BookingSlotDialog.css";
 
@@ -157,15 +158,15 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
         return [...uniqueSlots.values()].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
     }, [selectedDate, freeSlots]);
 
-    // Block IDs consumed by the current selection (for multi-block highlight)
-    const selectedBlockIds = useMemo(() => {
-        if (!selectedSlotData) return new Set();
-        return new Set(selectedSlotData.blocks.map((b) => String(b.id)));
-    }, [selectedSlotData]);
-
     const handleDateSelect = (date) => {
         setSelectedDate(date);
         setSelectedSlotData(null);
+        setError(null);
+    };
+
+    const isSlotSelected = (slot) => {
+        if (!selectedSlotData?.blocks?.length) return false;
+        return selectedSlotData.blocks.some((block) => block.startTime === slot.startTime);
     };
 
     const handleTimeSelect = (slotBlock) => {
@@ -232,13 +233,13 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
             }}
         >
             {/* Header */}
-            <Box sx={{ px: 5, pt: 4, pb: 1, position: "relative" }}>
+            <Box sx={{ px: { xs: 3, md: 4 }, pt: 3, pb: 1, position: "relative" }}>
                 <IconButton
                     onClick={handleClose}
                     sx={{
                         position: "absolute",
-                        right: 24,
-                        top: 24,
+                        right: 20,
+                        top: 20,
                         color: "text.secondary",
                         bgcolor: "action.hover",
                         "&:hover": { bgcolor: "action.selected" },
@@ -247,29 +248,20 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                     <CloseIcon />
                 </IconButton>
 
-                <Typography
-                    sx={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "1.5px",
-                        color: "primary.main",
-                        mb: 1,
-                    }}
-                >
+                <AppText variant="overline" sx={{ color: "primary.main", mb: 0.75, letterSpacing: "1.2px" }}>
                     Request Reschedule
-                </Typography>
-                <Typography sx={{ fontSize: "28px", fontWeight: 800, color: "text.primary", letterSpacing: "-0.5px" }}>
+                </AppText>
+                <AppText variant="bodyStrong" sx={{ fontSize: "1.35rem", fontWeight: 700, letterSpacing: "-0.01em" }}>
                     Select a New Time
-                </Typography>
-                <Typography sx={{ color: "text.secondary", fontSize: "14px", mt: 1, mb: 2 }}>
+                </AppText>
+                <AppText variant="muted" sx={{ fontSize: "0.875rem", mt: 0.75, mb: 1 }}>
                     Current: {formattedDateTime(currentSession?.scheduledTime)} — {durationMinutes} min session
-                </Typography>
+                </AppText>
             </Box>
 
             <DialogContent sx={{ overflowY: "auto", px: 0, pb: 0 }}>
                 {error && (
-                    <Box sx={{ px: 5, mb: 2 }}>
+                    <Box sx={{ px: { xs: 3, md: 4 }, mb: 2 }}>
                         <Alert severity="error" onClose={() => setError(null)}>
                             {error}
                         </Alert>
@@ -281,13 +273,13 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                         <CircularProgress />
                     </Box>
                 ) : (
-                    <Box sx={{ px: 5, pb: 3 }}>
-                        <Stack direction={{ xs: "column", md: "row" }} spacing={0} sx={{ minHeight: 380 }}>
+                    <Box sx={{ px: { xs: 3, md: 4 }, pb: 2.5 }}>
+                        <Stack direction={{ xs: "column", md: "row" }} spacing={0} sx={{ minHeight: 310 }}>
                             {/* Left: Calendar */}
                             <Box
                                 sx={{
                                     flex: "0 0 auto",
-                                    width: { xs: "100%", md: 380 },
+                                    width: { xs: "100%", md: 340 },
                                     pr: { md: 4 },
                                     pb: { xs: 3, md: 0 },
                                     borderRight: { md: "1px solid" },
@@ -313,44 +305,40 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                             alignItems: "center",
                                             justifyContent: "center",
                                             height: "100%",
-                                            minHeight: 300,
+                                            minHeight: 240,
                                         }}
                                     >
-                                        <Typography
-                                            sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.95rem" }}
-                                        >
+                                        <AppText variant="muted" sx={{ fontSize: "0.95rem" }}>
                                             Select a date to see available times
-                                        </Typography>
+                                        </AppText>
                                     </Box>
                                 ) : (
                                     <>
-                                        <Typography
-                                            sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary", mb: 2.5 }}
-                                        >
+                                        <AppText variant="bodyStrong" sx={{ fontSize: "1rem", mb: 2.5 }}>
                                             {format(selectedDate, "EEEE, MMMM d")}
-                                        </Typography>
+                                        </AppText>
                                         {dayTimeBlocks.length === 0 ? (
                                             <Box sx={{ textAlign: "center", py: 6 }}>
-                                                <Typography color="text.secondary" fontSize="0.9rem">
+                                                <AppText variant="muted" sx={{ fontSize: "0.9rem" }}>
                                                     No available 30-minute slots on this date.
-                                                </Typography>
+                                                </AppText>
                                             </Box>
                                         ) : (
                                             <Box className="calendly-timeslot-list">
                                                 {dayTimeBlocks.map((slot) => {
-                                                    const isSelected = selectedBlockIds.has(String(slot.id));
                                                     const startTime = new Date(slot.startTime);
                                                     const endTime = new Date(slot.endTime);
+                                                    const isSelected = isSlotSelected(slot);
                                                     return (
                                                         <Box
-                                                            key={slot.id}
+                                                            key={`${format(startTime, "yyyy-MM-dd-HH-mm")}-${slot.id || ""}`}
                                                             className={`calendly-timeslot ${isSelected ? "selected" : ""}`}
                                                             onClick={() => handleTimeSelect(slot)}
                                                         >
-                                                            <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>
+                                                            <AppText variant="bodyStrong" sx={{ fontSize: "0.95rem" }}>
                                                                 {format(startTime, "HH:mm")} —{" "}
                                                                 {format(endTime, "HH:mm")}
-                                                            </Typography>
+                                                            </AppText>
                                                         </Box>
                                                     );
                                                 })}
@@ -362,17 +350,17 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                         </Stack>
 
                         {/* Reason Section */}
-                        <Box sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>
-                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
+                        <Box sx={{ mt: 2.5, pt: 2.5, borderTop: "1px solid", borderColor: "divider" }}>
+                            <AppText variant="bodyStrong" sx={{ mb: 1.5 }}>
                                 Reason for Rescheduling{" "}
                                 <Typography component="span" color="error.main">
                                     *
                                 </Typography>
-                            </Typography>
+                            </AppText>
                             <FormTextField
                                 fullWidth
                                 multiline
-                                rows={3}
+                                rows={2}
                                 placeholder="Why do you want to reschedule? Enter your reason here..."
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
@@ -385,11 +373,6 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
                                           : `${trimmedReason.length}/${MAX_REASON_LENGTH}`
                                 }
                                 inputProps={{ maxLength: MAX_REASON_LENGTH }}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        borderRadius: "8px",
-                                    },
-                                }}
                             />
                         </Box>
                     </Box>
@@ -397,7 +380,7 @@ function RescheduleRequestModal({ open, onClose, onSubmit, currentSession }) {
             </DialogContent>
 
             {/* Actions */}
-            <DialogActions sx={{ px: 5, pb: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
+            <DialogActions sx={{ px: { xs: 3, md: 4 }, pb: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
                 <SecondaryButton onClick={handleClose}>Cancel</SecondaryButton>
                 <PrimaryButton
                     onClick={handleSubmit}

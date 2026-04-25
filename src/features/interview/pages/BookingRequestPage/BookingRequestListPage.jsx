@@ -10,7 +10,6 @@ import {
 import useUser from "../../../../common/hooks/useUser";
 import { ROLES } from "../../../../common/constants/common";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -29,6 +28,7 @@ import "./BookingRequestPage.css";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import StatusChip from "../../../../common/components/StatusChip";
 import PageHeader from "../../../../common/components/PageHeader";
+import AppText from "../../../../common/components/AppText";
 
 const STATUS_COLOR_MAP = {
     [BOOKING_REQUEST_STATUS.PENDING]: "warning",
@@ -148,16 +148,16 @@ export default function BookingRequestListPage() {
                 </Box>
             ) : items.length === 0 ? (
                 <Box textAlign="center" py={6}>
-                    <Typography variant="h6" color="text.secondary">
+                    <AppText variant="bodyStrong" sx={{ color: "text.secondary" }}>
                         No booking found
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    </AppText>
+                    <AppText variant="muted" sx={{ mt: 1 }}>
                         {typeFilter || statusFilter
                             ? "Try adjusting your filters."
                             : isCoach
                               ? "You have no incoming bookings yet."
                               : "You haven't submitted any bookings yet."}
-                    </Typography>
+                    </AppText>
                 </Box>
             ) : (
                 <>
@@ -190,23 +190,23 @@ export default function BookingRequestListPage() {
                                         onClick={() => navigate(`/booking-requests/${req.id}`)}
                                     >
                                         <TableCell>
-                                            <Typography fontWeight={600} fontSize={14}>
+                                            <AppText variant="bodyStrong" sx={{ fontSize: 14 }}>
                                                 {isCoach ? req.candidateName || "—" : req.coachName || "—"}
-                                            </Typography>
+                                            </AppText>
                                         </TableCell>
                                         <TableCell>
                                             <StatusChip label={BOOKING_REQUEST_TYPE_LABELS[req.type]} color="default" />
                                         </TableCell>
                                         <TableCell>
-                                            <Typography fontSize={13}>
+                                            <AppText variant="body" sx={{ fontSize: 13 }}>
                                                 {req.interviewTypeName ||
                                                     (req.rounds?.length ? `${req.rounds.length} rounds` : "—")}
-                                            </Typography>
+                                            </AppText>
                                         </TableCell>
                                         <TableCell>
-                                            <Typography fontWeight={600} fontSize={14} color="#4F46E5">
+                                            <AppText variant="bodyStrong" sx={{ fontSize: 14, color: "#4F46E5" }}>
                                                 {req.totalAmount?.toLocaleString()} ₫
-                                            </Typography>
+                                            </AppText>
                                         </TableCell>
                                         <TableCell>
                                             <StatusChip
@@ -215,9 +215,9 @@ export default function BookingRequestListPage() {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Typography fontSize={13} color="text.secondary">
+                                            <AppText variant="muted" sx={{ fontSize: 13 }}>
                                                 {formatDate(req.createdAt)}
-                                            </Typography>
+                                            </AppText>
                                         </TableCell>
                                         <TableCell align="center">
                                             <Stack direction="row" spacing={0.5} justifyContent="center">

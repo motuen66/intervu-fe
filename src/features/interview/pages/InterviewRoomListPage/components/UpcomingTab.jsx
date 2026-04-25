@@ -1,7 +1,8 @@
-import { Box, Typography, Stack, Pagination, CircularProgress } from "@mui/material";
+import { Box, Stack, Pagination, CircularProgress } from "@mui/material";
 import toast from "react-hot-toast";
 import SessionCard from "./SessionCard";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
+import AppText from "../../../../../common/components/AppText";
 
 function UpcomingTab({
     rooms,
@@ -80,12 +81,12 @@ function UpcomingTab({
                         borderColor: "divider",
                     }}
                 >
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                    <AppText variant="bodyStrong" sx={{ color: "text.secondary", mb: 0.5 }}>
                         No upcoming interviews
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    </AppText>
+                    <AppText variant="muted">
                         Your scheduled interviews will appear here
-                    </Typography>
+                    </AppText>
                 </Box>
             ) : (
                 <Stack spacing={1.75} sx={{ width: "100%" }}>
@@ -121,9 +122,9 @@ function UpcomingTab({
                     alignItems="center"
                     sx={{ mt: 2.25, pt: 2, borderTop: "1px solid", borderColor: "divider" }}
                 >
-                    <Typography variant="body2" color="text.secondary">
+                    <AppText variant="muted">
                         Showing {startIdx} to {endIdx} of {totalItems} results
-                    </Typography>
+                    </AppText>
                     <Pagination
                         count={totalPages}
                         page={page}

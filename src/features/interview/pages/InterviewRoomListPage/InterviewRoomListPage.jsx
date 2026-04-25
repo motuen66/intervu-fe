@@ -1,4 +1,4 @@
-import { Box, Typography, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
+import { Box, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
 import PageHeader from "../../../../common/components/PageHeader";
 import { interviewEndPoints, getSessions } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";

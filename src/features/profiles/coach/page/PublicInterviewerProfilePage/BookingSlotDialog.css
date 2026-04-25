@@ -207,8 +207,8 @@
 .calendly-timeslot-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: 380px;
+  gap: 6px;
+  max-height: 300px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -223,24 +223,24 @@
 }
 
 .calendly-timeslot {
-  padding: 14px 20px;
-  border: 1.5px solid #3b82f6;
+  padding: 10px 16px;
+  border: 1.5px solid var(--booking-border);
   border-radius: 8px;
   text-align: center;
   cursor: pointer;
   transition: all 0.15s ease;
-  color: #3b82f6;
+  color: var(--booking-text-main);
   background: #fff;
 }
 
 .calendly-timeslot:hover {
-  background: rgba(59, 130, 246, 0.06);
-  border-color: #2563eb;
+  background: var(--booking-card-hover);
+  border-color: #94a3b8;
 }
 
 .calendly-timeslot.selected {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: var(--booking-text-main);
+  border-color: var(--booking-text-main);
   color: #fff;
 }
 

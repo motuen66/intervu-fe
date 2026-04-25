@@ -33,6 +33,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { formatCurrency } from "../../../../common/utils/dateFormatter.js";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
@@ -209,14 +210,11 @@ Interview ID: ${transaction.interviewId}
                             backgroundColor: "#f5f5f5",
                         }}
                     >
-                    <Box>
-                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
-                            Payment History
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            View all your interview booking transactions
-                        </Typography>
-                    </Box>
+                    <SectionHeading
+                        title="Payment History"
+                        description="View all your interview booking transactions"
+                        disableGutters
+                    />
                     <IconButton onClick={onClose} size="small">
                         <CloseIcon />
                     </IconButton>
