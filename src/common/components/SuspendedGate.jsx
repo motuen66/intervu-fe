@@ -1,11 +1,13 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { callApi } from "../utils/apiConnector";
 import { METHOD } from "../constants/api";
 import { authEndPoints } from "../../features/auth/services/authApi";
 import { setUserData, setToken } from "../store/authSlice";
 import { DangerButton } from "./buttons";
+import AppText from "./AppText";
+import SectionHeading from "./SectionHeading";
 
 const SuspendedGate = ({ children }) => {
     const { userData } = useSelector((state) => state.auth || {});
@@ -65,14 +67,14 @@ const SuspendedGate = ({ children }) => {
                 }}
                 sx={{ zIndex: 2147483645 }}
             >
-                <DialogTitle id="suspended-dialog-title" sx={{ fontWeight: 700, pb: 1, color: '#ef4444' }}>
-                    Account Suspended
+                <DialogTitle id="suspended-dialog-title" component="div" sx={{ color: '#ef4444' }}>
+                    <SectionHeading title="Account Suspended" disableGutters as="h2" />
                 </DialogTitle>
                 <DialogContent>
-                    <DialogContentText id="suspended-dialog-description" sx={{ color: '#1e293b', fontSize: '1rem', lineHeight: 1.6 }}>
+                    <AppText id="suspended-dialog-description" variant="body" sx={{ color: '#1e293b', fontSize: '1rem', lineHeight: 1.6 }}>
                         Your account has been suspended by the administrator. You are currently restricted from performing any actions on the platform. 
                         Please contact us at <strong>admin@intervu.com</strong> for assistance.
-                    </DialogContentText>
+                    </AppText>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2, pt: 1, justifyContent: 'center' }}>
                     <DangerButton

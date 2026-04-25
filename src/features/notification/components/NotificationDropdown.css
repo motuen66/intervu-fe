@@ -83,7 +83,7 @@
     padding: 16px 20px 8px;
 }
 
-.noti-header h3 {
+.noti-header-title {
     margin: 0;
     font-size: 20px;
     font-weight: 700;
@@ -149,7 +149,7 @@
     gap: 10px;
 }
 
-.noti-empty p {
+.noti-empty-text {
     margin: 0;
     font-size: 14px;
     font-weight: 500;

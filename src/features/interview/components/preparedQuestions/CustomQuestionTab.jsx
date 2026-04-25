@@ -3,7 +3,6 @@ import {
     Box,
     MenuItem,
     Stack,
-    Typography,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
@@ -13,6 +12,7 @@ import TestCasesEditor from "../shared/TestCasesEditor";
 import { PREPARED_QUESTION_INTERACTION_TYPE } from "../../services/preparedQuestionApi";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import AppText from "../../../../common/components/AppText";
 
 const DEFAULT_TEST_CASE = () => ({
     inputs: [{ name: "", value: "" }],
@@ -251,9 +251,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                     />
 
                     <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
                             Description <span style={{ color: "#d32f2f" }}>*</span>
-                        </Typography>
+                        </AppText>
                         <RichDescriptionEditor
                             value={form.description}
                             onChange={(html) => updateField("description", html)}
@@ -265,9 +265,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                             }
                         />
                         {errors.description && (
-                            <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                            <AppText variant="caption" sx={{ mt: 0.5, display: "block", color: "error.main" }}>
                                 {errors.description}
-                            </Typography>
+                            </AppText>
                         )}
                     </Box>
 
@@ -289,9 +289,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                             />
 
                             <Box>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                <AppText variant="bodyStrong" sx={{ mb: 1 }}>
                                     Test cases
-                                </Typography>
+                                </AppText>
                                 <TestCasesEditor
                                     testCases={form.testCases}
                                     activeTestCaseTab={activeTestCaseTab}
@@ -306,9 +306,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                                     removeExpectedOutput={removeExpectedOutput}
                                 />
                                 {errors.testCases && (
-                                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                                    <AppText variant="caption" sx={{ mt: 0.5, display: "block", color: "error.main" }}>
                                         {errors.testCases}
-                                    </Typography>
+                                    </AppText>
                                 )}
                             </Box>
                         </>

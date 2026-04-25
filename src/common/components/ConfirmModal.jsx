@@ -2,18 +2,19 @@ import React from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import { PrimaryButton, SecondaryButton } from "./buttons";
 import { dialogStyles } from "../constants/uiStyles";
+import AppText from "./AppText";
+import SectionHeading from "./SectionHeading";
 
 function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText = "Confirm", cancelText = "Cancel" }) {
     return (
         <Dialog open={show} onClose={onCancel} PaperProps={{ sx: dialogStyles.paper }}>
             <DialogTitle
+                component="div"
                 sx={{
                     display: "flex",
                     alignItems: "center",
@@ -21,7 +22,7 @@ function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText =
                     borderColor: "divider",
                 }}
             >
-                <span>{title}</span>
+                <SectionHeading title={title} disableGutters as="h2" />
                 <IconButton
                     aria-label="close"
                     onClick={onCancel}
@@ -34,7 +35,9 @@ function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText =
                 </IconButton>
             </DialogTitle>
             <DialogContent dividers>
-                <DialogContentText sx={{ whiteSpace: "pre-line" }}>{message}</DialogContentText>
+                <AppText variant="body" sx={{ whiteSpace: "pre-line" }}>
+                    {message}
+                </AppText>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
                 <SecondaryButton onClick={onCancel}>

@@ -5,7 +5,6 @@ import {
     IconButton,
     Stack,
     Tooltip,
-    Typography,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -15,14 +14,15 @@ import {
     PREPARED_QUESTION_INTERACTION_TYPE,
     PREPARED_QUESTION_STATUS,
 } from "../../services/preparedQuestionApi";
+import AppText from "../../../../common/components/AppText";
 
 function PlainPreview({ html, maxLength = 160 }) {
     const stripped = (html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     const shortened = stripped.length > maxLength ? `${stripped.slice(0, maxLength)}…` : stripped;
     return (
-        <Typography variant="body2" sx={{ color: "text.secondary", whiteSpace: "pre-wrap" }}>
+        <AppText variant="body" sx={{ color: "text.secondary", whiteSpace: "pre-wrap" }}>
             {shortened || "—"}
-        </Typography>
+        </AppText>
     );
 }
 
@@ -103,9 +103,9 @@ function SelectedRow({ item, onEdit, onRemove, onReorder, index, total }) {
                         </Tooltip>
                     )}
                 </Stack>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
                     {item.title}
-                </Typography>
+                </AppText>
                 <PlainPreview html={item.description} />
             </Box>
 
@@ -149,12 +149,10 @@ function SelectedQuestionsPanel({ items, loading, onEdit, onRemove, onReorder })
                 spacing={1}
                 sx={{ height: "100%", textAlign: "center", px: 3, color: "text.secondary" }}
             >
-                <Typography variant="subtitle2" fontWeight={700}>
-                    No questions added yet
-                </Typography>
-                <Typography variant="caption">
+                <AppText variant="bodyStrong">No questions added yet</AppText>
+                <AppText variant="caption">
                     Pick from the Question Bank or write your own on the Custom Question tab.
-                </Typography>
+                </AppText>
             </Stack>
         );
     }

@@ -7,7 +7,6 @@ import {
     Link as MuiLink,
     MenuItem,
     Stack,
-    Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -19,6 +18,7 @@ import { CATEGORIES } from "../../../../common/constants/types";
 import { QUESTION_CATEGORY } from "../../services/preparedQuestionApi";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import { PrimaryButton, SuccessButton } from "../../../../common/components/buttons";
+import AppText from "../../../../common/components/AppText";
 
 const PAGE_SIZE = 20;
 const PREVIEW_MAX_LENGTH = 180;
@@ -91,9 +91,9 @@ function BankRow({ question, isImported, isAdding, onAdd }) {
                         }}
                     />
                 </Stack>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
                     {question.title}
-                </Typography>
+                </AppText>
 
                 {expanded ? (
                     <Box
@@ -118,11 +118,11 @@ function BankRow({ question, isImported, isAdding, onAdd }) {
                         />
                     </Box>
                 ) : (
-                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    <AppText variant="body" sx={{ color: "text.secondary" }}>
                         {canExpand
                             ? `${plainText.slice(0, PREVIEW_MAX_LENGTH)}…`
                             : plainText}
-                    </Typography>
+                    </AppText>
                 )}
 
                 {canExpand && (
@@ -254,10 +254,8 @@ function QuestionBankTab({ importedBankIds, onAddBankQuestion, addingBankId }) {
                     </Box>
                 ) : items.length === 0 ? (
                     <Stack alignItems="center" spacing={1} sx={{ py: 4, color: "text.secondary", textAlign: "center" }}>
-                        <Typography variant="subtitle2" fontWeight={700}>
-                            No questions match your filters
-                        </Typography>
-                        <Typography variant="caption">Try different keywords or clear the category filter.</Typography>
+                        <AppText variant="bodyStrong">No questions match your filters</AppText>
+                        <AppText variant="caption">Try different keywords or clear the category filter.</AppText>
                     </Stack>
                 ) : (
                     <Stack spacing={1.25}>
