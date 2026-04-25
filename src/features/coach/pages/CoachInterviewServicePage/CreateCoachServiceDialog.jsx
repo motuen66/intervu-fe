@@ -21,7 +21,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
     if (!interviewTypes) interviewTypes = [];
     const [form, setForm] = useState({
         interviewTypeId: "",
-        price: 0,
+        price: "",
         durationMinutes: 30,
     });
     const [saving, setSaving] = useState(false);
@@ -31,31 +31,34 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
 
     const handleSubmit = async () => {
         setError("");
+        const price = Number(form.price || 0);
+        const durationMinutes = Number(form.durationMinutes || 0);
         if (!form.interviewTypeId) {
             setError("Please select an interview type.");
             return;
         }
-        if (selectedType && (form.price < selectedType.minPrice || form.price > selectedType.maxPrice)) {
+        if (selectedType && (price < selectedType.minPrice || price > selectedType.maxPrice)) {
             setError(`Price must be between ${selectedType.minPrice} and ${selectedType.maxPrice}.`);
             return;
         }
-        if (form.durationMinutes < 15 || form.durationMinutes > 300) {
+        if (durationMinutes < 15 || durationMinutes > 300) {
             setError("Duration must be between 15 and 300 minutes.");
             return;
         }
-        if (form.durationMinutes % 30 !== 0) {
+        if (durationMinutes % 30 !== 0) {
             setError("Duration must be a multiple of 30 minutes.");
             return;
         }
 
         setSaving(true);
         try {
-            const res = await createCoachInterviewService(form);
+            const payload = { ...form, price, durationMinutes };
+            const res = await createCoachInterviewService(payload);
             try {
-                trackCreateService(res?.id ?? null, form.interviewTypeId, form.price, form.durationMinutes);
+                trackCreateService(res?.id ?? null, form.interviewTypeId, price, durationMinutes);
             } catch (e) {}
             onCreated && onCreated();
-            setForm({ interviewTypeId: "", price: 0, durationMinutes: 30 });
+            setForm({ interviewTypeId: "", price: "", durationMinutes: 30 });
         } catch (err) {
             // callApi with alertErrorMessage: true already shows the toast.
             // We just catch it here to stop the saving flow and avoid crashing.
@@ -65,7 +68,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
     };
 
     const handleClose = () => {
-        setForm({ interviewTypeId: "", price: 0, durationMinutes: 30 });
+        setForm({ interviewTypeId: "", price: "", durationMinutes: 30 });
         setError("");
         onClose();
     };
@@ -118,7 +121,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                                         ...s,
                                         interviewTypeId: typeId,
                                         durationMinutes: type?.suggestedDurationMinutes || s.durationMinutes,
-                                        price: type?.minPrice || s.price,
+                                        price: type?.minPrice ?? s.price,
                                     }));
                                 }}
                                 required
@@ -157,7 +160,7 @@ export default function CreateCoachServiceDialog({ open, onClose, onCreated, int
                                 onChange={(e) => {
                                     const val = e.target.value;
                                     if (val.length <= 9) {
-                                        setForm({ ...form, price: Number(val) });
+                                        setForm({ ...form, price: val });
                                     }
                                 }}
                                 inputProps={{ min: 0 }}

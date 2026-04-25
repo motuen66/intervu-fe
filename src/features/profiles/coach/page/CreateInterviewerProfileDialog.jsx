@@ -16,7 +16,7 @@ function CreateInterviewerProfileDialog({ open, onClose }) {
         profilePicture: "",
         status: 0, //Active
         currentAmount: 0, //Interviewer update later
-        experienceYears: 0,
+        experienceYears: "",
         statusProfile: 0, //Enable
         companyIds: [],
         skillIds: [],
@@ -42,7 +42,10 @@ function CreateInterviewerProfileDialog({ open, onClose }) {
             let { success, data, message } = await callApi({
                 method: METHOD.POST,
                 endpoint,
-                arg: form,
+                arg: {
+                    ...form,
+                    experienceYears: Number(form.experienceYears || 0),
+                },
             });
 
             if (!success) {

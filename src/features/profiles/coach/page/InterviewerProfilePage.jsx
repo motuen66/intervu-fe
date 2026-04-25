@@ -728,7 +728,7 @@ function InterviewerProfilePage() {
                                             onChange={(e) =>
                                                 setProfile((prev) => ({
                                                     ...prev,
-                                                    experienceYears: parseInt(e.target.value) || 0,
+                                                    experienceYears: e.target.value,
                                                 }))
                                             }
                                             sx={{ width: 160, bgcolor: "background.paper" }}

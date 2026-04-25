@@ -18,7 +18,7 @@ const DURATION_OPTIONS = Array.from({ length: 10 }, (_, i) => (i + 1) * 30);
 
 export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdated }) {
     const [form, setForm] = useState({
-        price: 0,
+        price: "",
         durationMinutes: 30,
     });
     const [saving, setSaving] = useState(false);
@@ -27,7 +27,7 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
     useEffect(() => {
         if (item) {
             setForm({
-                price: item.price || 0,
+                price: item.price ?? "",
                 durationMinutes: item.durationMinutes || 30,
             });
         }
@@ -36,18 +36,20 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
     const handleSubmit = async () => {
         if (!item) return;
         setError("");
-        if (form.durationMinutes < 15 || form.durationMinutes > 300) {
+        const price = Number(form.price || 0);
+        const durationMinutes = Number(form.durationMinutes || 0);
+        if (durationMinutes < 15 || durationMinutes > 300) {
             setError("Duration must be between 15 and 300 minutes.");
             return;
         }
-        if (form.durationMinutes % 30 !== 0) {
+        if (durationMinutes % 30 !== 0) {
             setError("Duration must be a multiple of 30 minutes.");
             return;
         }
 
         setSaving(true);
         try {
-            await updateCoachInterviewService(item.id, form);
+            await updateCoachInterviewService(item.id, { ...form, price, durationMinutes });
             onUpdated && onUpdated();
         } catch (err) {
             // callApi alertErrorMessage: true already handles the toast.
@@ -117,7 +119,7 @@ export default function UpdateCoachServiceDialog({ open, onClose, item, onUpdate
                                 onChange={(e) => {
                                     const val = e.target.value;
                                     if (val.length <= 9) {
-                                        setForm({ ...form, price: Number(val) });
+                                        setForm({ ...form, price: val });
                                     }
                                 }}
                                 inputProps={{ min: 0 }}
