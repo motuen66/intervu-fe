@@ -12,7 +12,6 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
-    FormHelperText,
     Avatar,
 } from "@mui/material";
 import { DangerButton, PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
@@ -299,22 +298,20 @@ const WorkExperienceModal = ({
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     />
 
-                    <FormControl fullWidth>
-                        <InputLabel>Location type</InputLabel>
-                        <FormSelect
-                            value={formData.locationType}
-                            label="Location type"
-                            onChange={(e) => setFormData({ ...formData, locationType: e.target.value })}
-                        >
-                            <MenuItem value="">Please select</MenuItem>
-                            {LOCATION_TYPES.map((type) => (
-                                <MenuItem key={type} value={type}>
-                                    {type}
-                                </MenuItem>
-                            ))}
-                        </FormSelect>
-                        <FormHelperText>Select the location type (e.g. Remote)</FormHelperText>
-                    </FormControl>
+                    <FormTextField
+                        select
+                        label="Location type"
+                        fullWidth
+                        value={formData.locationType}
+                        onChange={(e) => setFormData({ ...formData, locationType: e.target.value })}
+                    >
+                        <MenuItem value="">Please select</MenuItem>
+                        {LOCATION_TYPES.map((type) => (
+                            <MenuItem key={type} value={type}>
+                                {type}
+                            </MenuItem>
+                        ))}
+                    </FormTextField>
 
                     <Autocomplete
                         multiple

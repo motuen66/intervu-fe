@@ -14,7 +14,6 @@ import {
     CircularProgress,
     Grid,
     Stack,
-    Typography,
     Autocomplete,
     Fade,
     Divider,
@@ -26,6 +25,8 @@ import {
 } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import AppText from "../../../../common/components/AppText";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import FormTextField from "../../../../common/components/form/FormTextField";
 import {
     Edit3 as EditIcon,
@@ -164,9 +165,9 @@ function SidebarCard({ icon, title, badge, badgeActive, children, sx = {} }) {
                 >
                     {React.cloneElement(icon, { size: 15, strokeWidth: 2, color: "#6aaa00" })}
                 </Box>
-                <Typography variant="subtitle2" fontWeight={700} letterSpacing={0.1}>
+                <AppText variant="label" sx={{ fontWeight: 700, letterSpacing: 0.1 }}>
                     {title}
-                </Typography>
+                </AppText>
                 {badge !== undefined && (
                     <Box
                         sx={{
@@ -591,9 +592,9 @@ function CandidateProfilePage() {
     if (!user) {
         return (
             <Box sx={{ p: 4, textAlign: "center" }}>
-                <Typography variant="h6" color="text.secondary">
+                <AppText variant="bodyStrong" sx={{ color: "text.secondary" }}>
                     Please login to view your profile.
-                </Typography>
+                </AppText>
             </Box>
         );
     }
@@ -601,9 +602,9 @@ function CandidateProfilePage() {
     if (!canView) {
         return (
             <Box sx={{ p: 4, textAlign: "center" }}>
-                <Typography variant="h6" color="text.secondary">
+                <AppText variant="bodyStrong" sx={{ color: "text.secondary" }}>
                     You do not have permission to view this profile.
-                </Typography>
+                </AppText>
             </Box>
         );
     }
@@ -742,8 +743,10 @@ function CandidateProfilePage() {
                                         sx={{ mb: 2, maxWidth: 520, bgcolor: "background.paper" }}
                                     />
                                 ) : (
-                                    <Typography
-                                        component="h1"
+                                    <SectionHeading
+                                        title={fullName}
+                                        disableGutters
+                                        as="h1"
                                         sx={{
                                             fontSize: { xs: "2rem", md: "3.5rem" },
                                             fontWeight: 800,
@@ -751,13 +754,11 @@ function CandidateProfilePage() {
                                             mb: 1,
                                             letterSpacing: "-0.04em",
                                         }}
-                                    >
-                                        {fullName}
-                                    </Typography>
+                                    />
                                 )}
 
-                                <Typography
-                                    component="p"
+                                <AppText
+                                    variant="body"
                                     sx={{
                                         fontSize: { xs: "1rem", md: "1.25rem" },
                                         color: "text.secondary",
@@ -766,14 +767,15 @@ function CandidateProfilePage() {
                                     }}
                                 >
                                     Candidate profile
-                                </Typography>
+                                </AppText>
 
                                 <Box
                                     sx={{ display: "flex", gap: { xs: 2, md: 3 }, mb: 3, flexWrap: "wrap", rowGap: 2 }}
                                 >
 
                                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                                        <Typography
+                                        <AppText
+                                            variant="bodyStrong"
                                             sx={{
                                                 fontSize: { xs: "1.25rem", md: "1.75rem" },
                                                 fontWeight: 800,
@@ -781,8 +783,9 @@ function CandidateProfilePage() {
                                             }}
                                         >
                                             {(profile?.skills || []).length}
-                                        </Typography>
-                                        <Typography
+                                        </AppText>
+                                        <AppText
+                                            variant="overline"
                                             sx={{
                                                 fontSize: "0.65rem",
                                                 fontWeight: 700,
@@ -793,7 +796,7 @@ function CandidateProfilePage() {
                                             }}
                                         >
                                             Core Skills
-                                        </Typography>
+                                        </AppText>
                                     </Box>
                                 </Box>
                             </Box>
@@ -802,7 +805,9 @@ function CandidateProfilePage() {
                         {/* Bio */}
                         {profile && (
                             <Box sx={{ mt: 3 }}>
-                                <Typography className="ep-about-title">About</Typography>
+                                <AppText className="ep-about-title" variant="bodyStrong">
+                                    About
+                                </AppText>
                                 {editMode ? (
                                     <FormTextField
                                         fullWidth
@@ -819,7 +824,7 @@ function CandidateProfilePage() {
                                         }}
                                     />
                                 ) : (
-                                    <Typography className="ep-about-text" sx={{ whiteSpace: "pre-wrap" }}>
+                                    <AppText className="ep-about-text" variant="body" sx={{ whiteSpace: "pre-wrap" }}>
                                         {profile.bio
                                             ? expandedBio
                                                 ? profile.bio
@@ -833,7 +838,7 @@ function CandidateProfilePage() {
                                                 {expandedBio ? "View Less" : "View More"}
                                             </button>
                                         )}
-                                    </Typography>
+                                    </AppText>
                                 )}
                             </Box>
                         )}
@@ -860,7 +865,8 @@ function CandidateProfilePage() {
                                     <Box className="ep-content-left">
                                         {/* Core Skills - chỉ editable khi editMode */}
                                         <Box component="section" className="ep-expertise" sx={{ mb: 5 }}>
-                                            <Typography
+                                            <AppText
+                                                variant="overline"
                                                 sx={{
                                                     fontSize: "0.75rem",
                                                     fontWeight: 800,
@@ -871,7 +877,7 @@ function CandidateProfilePage() {
                                                 }}
                                             >
                                                 Core Skills
-                                            </Typography>
+                                            </AppText>
                                             {editMode ? (
                                                 <Autocomplete
                                                     multiple
@@ -921,9 +927,9 @@ function CandidateProfilePage() {
                                                         </Box>
                                                     ))}
                                                     {(profile?.skills || []).length === 0 && (
-                                                        <Typography color="text.secondary">
+                                                        <AppText variant="body" sx={{ color: "text.secondary" }}>
                                                             No skills listed.
-                                                        </Typography>
+                                                        </AppText>
                                                     )}
                                                 </Box>
                                             )}
@@ -945,18 +951,13 @@ function CandidateProfilePage() {
                                                             mb: 2,
                                                         }}
                                                     >
-                                                        <Typography
-                                                            variant="h6"
-                                                            fontWeight={700}
-                                                            sx={{
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: 1,
-                                                                color: "var(--ep-accent-dark)",
-                                                            }}
-                                                        >
-                                                            <BriefcaseIcon size={20} /> Work Experience
-                                                        </Typography>
+                                                        <SectionHeading
+                                                            title="Work Experience"
+                                                            icon={<BriefcaseIcon size={20} />}
+                                                            disableGutters
+                                                            as="h2"
+                                                            sx={{ color: "var(--ep-accent-dark)" }}
+                                                        />
                                                         {/* Ẩn khi editMode đang bật (đang edit profile fields) */}
                                                         {canEdit && !editMode && (
                                                             <Stack direction="row" spacing={0.75}>
@@ -1015,8 +1016,8 @@ function CandidateProfilePage() {
                                                                                     pr: canEdit && !editMode ? 8 : 0,
                                                                                 }}
                                                                             >
-                                                                                <Typography
-                                                                                    variant="h6"
+                                                                                <AppText
+                                                                                    variant="bodyStrong"
                                                                                     sx={{
                                                                                         fontSize: "1.1rem",
                                                                                         fontWeight: 700,
@@ -1025,7 +1026,7 @@ function CandidateProfilePage() {
                                                                                     {exp.positionTitle ||
                                                                                         exp.jobTitle ||
                                                                                         "Role not specified"}
-                                                                                </Typography>
+                                                                                </AppText>
                                                                                 <Box
                                                                                     sx={{
                                                                                         display: "flex",
@@ -1042,8 +1043,8 @@ function CandidateProfilePage() {
                                                                                         }
                                                                                         size={24}
                                                                                     />
-                                                                                    <Typography
-                                                                                        variant="subtitle1"
+                                                                                    <AppText
+                                                                                        variant="bodyStrong"
                                                                                         sx={{
                                                                                             fontWeight: 600,
                                                                                             color: "text.primary",
@@ -1055,12 +1056,11 @@ function CandidateProfilePage() {
                                                                                         {exp.employmentType
                                                                                             ? ` · ${exp.employmentType}`
                                                                                             : ""}
-                                                                                    </Typography>
+                                                                                    </AppText>
                                                                                 </Box>
-                                                                                <Typography
-                                                                                    variant="body2"
-                                                                                    color="text.secondary"
-                                                                                    sx={{ mt: 0.5 }}
+                                                                                <AppText
+                                                                                    variant="body"
+                                                                                    sx={{ mt: 0.5, color: "text.secondary" }}
                                                                                 >
                                                                                     {formatMonthYear(exp.startDate)} -{" "}
                                                                                     {exp.isCurrentWorking
@@ -1068,11 +1068,11 @@ function CandidateProfilePage() {
                                                                                         : exp.endDate
                                                                                           ? formatMonthYear(exp.endDate)
                                                                                           : "Present"}
-                                                                                </Typography>
+                                                                                </AppText>
                                                                                 {(exp.location || exp.locationType) && (
-                                                                                    <Typography
-                                                                                        variant="body2"
-                                                                                        color="text.secondary"
+                                                                                    <AppText
+                                                                                        variant="body"
+                                                                                        sx={{ color: "text.secondary" }}
                                                                                     >
                                                                                         {[
                                                                                             exp.location,
@@ -1080,7 +1080,7 @@ function CandidateProfilePage() {
                                                                                         ]
                                                                                             .filter(Boolean)
                                                                                             .join(" · ")}
-                                                                                    </Typography>
+                                                                                    </AppText>
                                                                                 )}
                                                                             </Box>
                                                                             {/* Nút edit/delete trên item: ẩn khi editMode */}
@@ -1132,17 +1132,17 @@ function CandidateProfilePage() {
                                                                         </Box>
                                                                         {description && (
                                                                             <Box sx={{ mt: 1.5 }}>
-                                                                                <Typography
-                                                                                    variant="body2"
+                                                                                <AppText
+                                                                                    variant="body"
                                                                                     sx={{
                                                                                         whiteSpace: "pre-wrap",
                                                                                         color: "text.secondary",
                                                                                     }}
                                                                                 >
                                                                                     {displayDescription}
-                                                                                </Typography>
+                                                                                </AppText>
                                                                                 {shouldShowMore && (
-                                                                                    <Typography
+                                                                                    <AppText
                                                                                         variant="caption"
                                                                                         onClick={() => {
                                                                                             setExpandedWorkExp(
@@ -1170,7 +1170,7 @@ function CandidateProfilePage() {
                                                                                         {isExpanded
                                                                                             ? "View Less"
                                                                                             : "View More"}
-                                                                                    </Typography>
+                                                                                    </AppText>
                                                                                 )}
                                                                             </Box>
                                                                         )}
@@ -1208,32 +1208,25 @@ function CandidateProfilePage() {
                                                                 );
                                                             })
                                                         ) : (
-                                                            <Typography
-                                                                variant="body2"
-                                                                color="text.secondary"
-                                                                fontStyle="italic"
+                                                            <AppText
+                                                                variant="body"
+                                                                sx={{ color: "text.secondary", fontStyle: "italic" }}
                                                             >
                                                                 No work experience added.
-                                                            </Typography>
+                                                            </AppText>
                                                         )}
                                                     </Stack>
                                                 </Box>
 
                                                 {/* ── Industries Section - chỉ editable khi editMode ── */}
                                                 <Box component="section" sx={{ mb: 2, mt: 2 }}>
-                                                    <Typography
-                                                        variant="h6"
-                                                        fontWeight={700}
-                                                        sx={{
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            gap: 1,
-                                                            mb: 2,
-                                                            color: "var(--ep-accent-dark)",
-                                                        }}
-                                                    >
-                                                        <GlobeIcon size={20} /> Domain (Industries)
-                                                    </Typography>
+                                                    <SectionHeading
+                                                        title="Domain (Industries)"
+                                                        icon={<GlobeIcon size={20} />}
+                                                        disableGutters
+                                                        as="h2"
+                                                        sx={{ mb: 2, color: "var(--ep-accent-dark)" }}
+                                                    />
                                                     {editMode ? (
                                                         <Autocomplete
                                                             multiple
@@ -1278,9 +1271,9 @@ function CandidateProfilePage() {
                                                                     </Box>
                                                                 ))
                                                             ) : (
-                                                                <Typography variant="body2" color="text.secondary">
+                                                                <AppText variant="body" sx={{ color: "text.secondary" }}>
                                                                     No industries selected.
-                                                                </Typography>
+                                                                </AppText>
                                                             )}
                                                         </Stack>
                                                     )}
@@ -1295,18 +1288,13 @@ function CandidateProfilePage() {
                                                             mb: 2,
                                                         }}
                                                     >
-                                                        <Typography
-                                                            variant="h6"
-                                                            fontWeight={700}
-                                                            sx={{
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: 1,
-                                                                color: "var(--ep-accent-dark)",
-                                                            }}
-                                                        >
-                                                            <AwardIcon size={20} /> Certifications
-                                                        </Typography>
+                                                        <SectionHeading
+                                                            title="Certifications"
+                                                            icon={<AwardIcon size={20} />}
+                                                            disableGutters
+                                                            as="h2"
+                                                            sx={{ color: "var(--ep-accent-dark)" }}
+                                                        />
                                                         {/* Ẩn khi editMode đang bật */}
                                                         {canEdit && !editMode && (
                                                             <Stack direction="row" spacing={0.75}>
@@ -1412,7 +1400,8 @@ function CandidateProfilePage() {
                                                                                         />
                                                                                     </Link>
                                                                                 ) : (
-                                                                                    <Typography
+                                                                                    <AppText
+                                                                                        variant="bodyStrong"
                                                                                         sx={{
                                                                                             fontSize: "1rem",
                                                                                             fontWeight: 700,
@@ -1420,11 +1409,11 @@ function CandidateProfilePage() {
                                                                                         }}
                                                                                     >
                                                                                         {label}
-                                                                                    </Typography>
+                                                                                    </AppText>
                                                                                 )}
                                                                                 {issuer && (
-                                                                                    <Typography
-                                                                                        variant="body2"
+                                                                                    <AppText
+                                                                                        variant="body"
                                                                                         sx={{
                                                                                             fontWeight: 600,
                                                                                             color: "text.primary",
@@ -1432,19 +1421,18 @@ function CandidateProfilePage() {
                                                                                         }}
                                                                                     >
                                                                                         {issuer}
-                                                                                    </Typography>
+                                                                                    </AppText>
                                                                                 )}
                                                                                 {(issuedAt || expiryAt) && (
-                                                                                    <Typography
+                                                                                    <AppText
                                                                                         variant="caption"
-                                                                                        color="text.secondary"
-                                                                                        sx={{ display: "block" }}
+                                                                                        sx={{ display: "block", color: "text.secondary" }}
                                                                                     >
                                                                                         Issued {issuedAt}{" "}
                                                                                         {expiryAt
                                                                                             ? `· Expires ${expiryAt}`
                                                                                             : "· No expiration"}
-                                                                                    </Typography>
+                                                                                    </AppText>
                                                                                 )}
                                                                             </Box>
                                                                         </Box>
@@ -1490,9 +1478,9 @@ function CandidateProfilePage() {
                                                                 );
                                                             })
                                                         ) : (
-                                                            <Typography variant="body2" color="text.secondary">
+                                                            <AppText variant="body" sx={{ color: "text.secondary" }}>
                                                                 No certificates added.
-                                                            </Typography>
+                                                            </AppText>
                                                         )}
                                                     </Stack>
                                                 </Box>
@@ -1516,11 +1504,11 @@ function CandidateProfilePage() {
                                             sx={{ mb: 3 }}
                                         >
                                             <Box sx={{ mb: 2 }}>
-                                                <Typography
+                                                <AppText
                                                     variant="caption"
-                                                    color="text.disabled"
-                                                    fontWeight={700}
                                                     sx={{
+                                                        color: "text.disabled",
+                                                        fontWeight: 700,
                                                         textTransform: "uppercase",
                                                         letterSpacing: "0.07em",
                                                         display: "block",
@@ -1528,7 +1516,7 @@ function CandidateProfilePage() {
                                                     }}
                                                 >
                                                     Portfolio
-                                                </Typography>
+                                                </AppText>
                                                 {editMode ? (
                                                     <FormTextField
                                                         fullWidth
@@ -1569,24 +1557,23 @@ function CandidateProfilePage() {
                                                         />
                                                     </Link>
                                                 ) : (
-                                                    <Typography
-                                                        color="text.disabled"
-                                                        fontStyle="italic"
-                                                        fontSize="0.85rem"
+                                                    <AppText
+                                                        variant="body"
+                                                        sx={{ color: "text.disabled", fontStyle: "italic", fontSize: "0.85rem" }}
                                                     >
                                                         No portfolio URL provided yet.
-                                                    </Typography>
+                                                    </AppText>
                                                 )}
                                             </Box>
 
                                             <Divider sx={{ my: 1.5, opacity: 0.5 }} />
 
                                             <Box>
-                                                <Typography
+                                                <AppText
                                                     variant="caption"
-                                                    color="text.disabled"
-                                                    fontWeight={700}
                                                     sx={{
+                                                        color: "text.disabled",
+                                                        fontWeight: 700,
                                                         textTransform: "uppercase",
                                                         letterSpacing: "0.07em",
                                                         display: "block",
@@ -1594,10 +1581,10 @@ function CandidateProfilePage() {
                                                     }}
                                                 >
                                                     Contact
-                                                </Typography>
-                                                <Typography fontSize="0.9rem" fontWeight={500}>
+                                                </AppText>
+                                                <AppText variant="body" sx={{ fontSize: "0.9rem", fontWeight: 500 }}>
                                                     {email}
-                                                </Typography>
+                                                </AppText>
                                             </Box>
 
                                             {editMode && canManageBank && (
@@ -1609,13 +1596,12 @@ function CandidateProfilePage() {
                                                         borderColor: "divider",
                                                     }}
                                                 >
-                                                    <Typography
-                                                        variant="subtitle2"
-                                                        fontWeight={700}
-                                                        sx={{ mb: 1.5, color: "primary.main" }}
+                                                    <AppText
+                                                        variant="bodyStrong"
+                                                        sx={{ mb: 1.5, color: "primary.main", fontWeight: 700 }}
                                                     >
                                                         Payment Settings
-                                                    </Typography>
+                                                    </AppText>
                                                     <BankSelection
                                                         selectedBin={profile?.bankBinNumber}
                                                         accountNumber={profile?.bankAccountNumber}
@@ -1653,12 +1639,12 @@ function CandidateProfilePage() {
 
                                         {isSelf && (
                                             <Box className="ep-side-card ep-match-card">
-                                                <Typography
+                                                <AppText
                                                     variant="overline"
                                                     sx={{ fontWeight: 800, color: "text.secondary" }}
                                                 >
                                                     Checklist
-                                                </Typography>
+                                                </AppText>
                                                 <Box className="ep-progress-bg">
                                                     <Box
                                                         className="ep-progress-bar"
@@ -1667,9 +1653,9 @@ function CandidateProfilePage() {
                                                         }}
                                                     />
                                                 </Box>
-                                                <Typography sx={{ fontSize: "0.9rem", color: "text.secondary", mb: 2 }}>
+                                                <AppText variant="body" sx={{ fontSize: "0.9rem", color: "text.secondary", mb: 2 }}>
                                                     Complete the essentials so your candidate profile feels finished.
-                                                </Typography>
+                                                </AppText>
                                                 <Box component="ul" className="ep-benefit-list" sx={{ mb: 0 }}>
                                                     {["Skills added", "CV uploaded", "Portfolio linked"].map(
                                                         (item, i) => (
@@ -1728,9 +1714,9 @@ function CandidateProfilePage() {
                                         {/* <CircularProgress /> */}
                                     </Box>
                                 ) : savedQuestions.length === 0 ? (
-                                    <Typography align="center" color="text.secondary" py={4}>
+                                    <AppText variant="body" sx={{ textAlign: "center", color: "text.secondary", py: 4 }}>
                                         No saved questions yet.
-                                    </Typography>
+                                    </AppText>
                                 ) : (
                                     <Stack spacing={1}>
                                         {savedQuestions.map((q) => (
