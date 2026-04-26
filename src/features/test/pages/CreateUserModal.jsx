@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, CircularProgress } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { METHOD } from "../../../common/constants/api";
 import { testEndPoints } from "../services/testApi";
 import { callApi } from "../../../common/utils/apiConnector";
+import FormTextField from "../../../common/components/form/FormTextField";
+import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 
 function CreateUserModal({ open, onClose, onSuccess }) {
     const [fullname, setFullname] = useState("");
@@ -28,7 +30,7 @@ function CreateUserModal({ open, onClose, onSuccess }) {
         <Dialog open={open} onClose={onClose}>
             <DialogTitle>Create User</DialogTitle>
             <DialogContent>
-                <TextField
+                <FormTextField
                     autoFocus
                     margin="dense"
                     label="Full Name"
@@ -37,7 +39,7 @@ function CreateUserModal({ open, onClose, onSuccess }) {
                     value={fullname}
                     onChange={(e) => setFullname(e.target.value)}
                 />
-                <TextField
+                <FormTextField
                     margin="dense"
                     label="Email"
                     type="email"
@@ -46,7 +48,7 @@ function CreateUserModal({ open, onClose, onSuccess }) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
-                <TextField
+                <FormTextField
                     margin="dense"
                     label="Password"
                     type="password"
@@ -58,8 +60,8 @@ function CreateUserModal({ open, onClose, onSuccess }) {
                 {/* {error && <p style={{ color: "red" }}>Error: {error.message}</p>} */}
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
-                <Button onClick={createUser}>{false ? <CircularProgress size={20} /> : "Create"}</Button>
+                <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+                <PrimaryButton onClick={createUser}>Create</PrimaryButton>
             </DialogActions>
         </Dialog>
     );

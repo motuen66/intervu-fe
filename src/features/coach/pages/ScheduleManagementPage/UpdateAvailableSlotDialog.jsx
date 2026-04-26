@@ -1,10 +1,12 @@
 import React, { useMemo } from "react";
-import { Box, TextField, Typography, Modal, Card, Stack, FormControl, MenuItem, Divider } from "@mui/material";
+import { Box, Typography, Modal, Card, Stack, FormControl, MenuItem, Divider } from "@mui/material";
 import StatusChip from "../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../../../../common/components/buttons";
 import { IoTrash } from "react-icons/io5";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 const MINUTES_STEP = 30;
 const MINUTE_OPTIONS = Array.from({ length: 60 / MINUTES_STEP }, (_, i) => i * MINUTES_STEP);
@@ -73,17 +75,17 @@ const UpdateAvailableSlotDialog = ({
         >
             <Card sx={{ width: "90%", maxWidth: "500px", borderRadius: "12px", maxHeight: "90vh", overflowY: "auto" }}>
                 <Box sx={{ p: 3 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
-                        Edit Availability Slot
-                    </Typography>
+                    <Box sx={{ mb: 3 }}>
+                        <SectionHeading title="Edit Availability Slot" as="h2" disableGutters />
+                    </Box>
 
                     <Stack spacing={2.5}>
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
                                 Date
                             </Typography>
-                            <TextField
-                                type="date"         
+                            <FormTextField
+                                type="date"
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 inputProps={{
@@ -96,8 +98,6 @@ const UpdateAvailableSlotDialog = ({
                                     max: maxDate,
                                 }}
                                 fullWidth
-                                variant="outlined"
-                                size="small"
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                             />
                         </Box>

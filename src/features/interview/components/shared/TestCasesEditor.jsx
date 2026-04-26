@@ -2,15 +2,15 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import {
     Box,
-    Button,
     IconButton,
     Stack,
     Tab,
     Tabs,
-    TextField,
     Tooltip,
     Typography,
 } from "@mui/material";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import { SecondaryButton, SuccessButton } from "../../../../common/components/buttons";
 
 /**
  * Shared, fully-controlled test-cases editor. The shape of a test case is:
@@ -93,7 +93,7 @@ function TestCasesEditor({
                         <Typography variant="subtitle2">Inputs</Typography>
                         {activeCase.inputs.map((input, inputIndex) => (
                             <Stack direction="row" spacing={1} key={inputIndex} alignItems="center">
-                                <TextField
+                                <FormTextField
                                     label="Name"
                                     size="small"
                                     value={input.name}
@@ -106,7 +106,7 @@ function TestCasesEditor({
                                         )
                                     }
                                 />
-                                <TextField
+                                <FormTextField
                                     label="Value"
                                     size="small"
                                     fullWidth
@@ -129,9 +129,8 @@ function TestCasesEditor({
                                 </IconButton>
                             </Stack>
                         ))}
-                        <Button
-                            size="small"
-                            variant="outlined"
+                        <SecondaryButton
+                            size="sm"
                             startIcon={<AddIcon sx={{ fontSize: "0.85rem !important" }} />}
                             onClick={() => addInputToTestCase(activeTestCaseTab)}
                             sx={{
@@ -144,14 +143,14 @@ function TestCasesEditor({
                             }}
                         >
                             Add input
-                        </Button>
+                        </SecondaryButton>
 
                         <Typography variant="subtitle2" sx={{ mt: 1 }}>
                             Expected Outputs
                         </Typography>
                         {activeCase.expectedOutputs.map((output, outputIndex) => (
                             <Stack direction="row" spacing={1} key={outputIndex} alignItems="center">
-                                <TextField
+                                <FormTextField
                                     label={`Valid Answer #${outputIndex + 1}`}
                                     size="small"
                                     fullWidth
@@ -173,10 +172,9 @@ function TestCasesEditor({
                                 </IconButton>
                             </Stack>
                         ))}
-                        <Button
-                            size="small"
+                        <SuccessButton
+                            size="sm"
                             variant="outlined"
-                            color="success"
                             startIcon={<AddIcon sx={{ fontSize: "0.85rem !important" }} />}
                             onClick={() => addExpectedOutput(activeTestCaseTab)}
                             sx={{
@@ -189,7 +187,7 @@ function TestCasesEditor({
                             }}
                         >
                             Add valid answer
-                        </Button>
+                        </SuccessButton>
                     </Stack>
                 )}
             </Box>

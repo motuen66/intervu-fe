@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Box,
-    Button,
     Chip,
     CircularProgress,
     InputAdornment,
     Link as MuiLink,
     MenuItem,
     Stack,
-    TextField,
-    Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -19,6 +16,9 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { CATEGORIES } from "../../../../common/constants/types";
 import { QUESTION_CATEGORY } from "../../services/preparedQuestionApi";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import { PrimaryButton, SuccessButton } from "../../../../common/components/buttons";
+import AppText from "../../../../common/components/AppText";
 
 const PAGE_SIZE = 20;
 const PREVIEW_MAX_LENGTH = 180;
@@ -91,9 +91,9 @@ function BankRow({ question, isImported, isAdding, onAdd }) {
                         }}
                     />
                 </Stack>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
                     {question.title}
-                </Typography>
+                </AppText>
 
                 {expanded ? (
                     <Box
@@ -118,11 +118,11 @@ function BankRow({ question, isImported, isAdding, onAdd }) {
                         />
                     </Box>
                 ) : (
-                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    <AppText variant="body" sx={{ color: "text.secondary" }}>
                         {canExpand
                             ? `${plainText.slice(0, PREVIEW_MAX_LENGTH)}…`
                             : plainText}
-                    </Typography>
+                    </AppText>
                 )}
 
                 {canExpand && (
@@ -143,21 +143,29 @@ function BankRow({ question, isImported, isAdding, onAdd }) {
                     </MuiLink>
                 )}
             </Box>
-            <Button
-                size="small"
-                variant={isImported ? "outlined" : "contained"}
-                color={isImported ? "success" : "primary"}
+            {isImported ? (
+                <SuccessButton
+                    size="sm"
+                    variant="outlined"
+                    startIcon={<CheckRoundedIcon sx={{ fontSize: "1rem !important" }} />}
+                    disabled
+                    sx={{ textTransform: "none", flexShrink: 0, minWidth: 92 }}
+                >
+                    Added
+                </SuccessButton>
+            ) : (
+                <PrimaryButton
+                    size="sm"
                 startIcon={
-                    isImported
-                        ? <CheckRoundedIcon sx={{ fontSize: "1rem !important" }} />
-                        : <AddRoundedIcon sx={{ fontSize: "1rem !important" }} />
-                }
-                disabled={isImported || isAdding}
-                onClick={() => onAdd(question)}
-                sx={{ textTransform: "none", flexShrink: 0, minWidth: 92 }}
-            >
-                {isImported ? "Added" : "Add"}
-            </Button>
+                        <AddRoundedIcon sx={{ fontSize: "1rem !important" }} />
+                    }
+                    disabled={isAdding}
+                    onClick={() => onAdd(question)}
+                    sx={{ textTransform: "none", flexShrink: 0, minWidth: 92 }}
+                >
+                    Add
+                </PrimaryButton>
+            )}
         </Box>
     );
 }
@@ -209,7 +217,7 @@ function QuestionBankTab({ importedBankIds, onAddBankQuestion, addingBankId }) {
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <Stack direction="row" spacing={1} sx={{ p: 1.5, flexShrink: 0 }}>
-                <TextField
+                <FormTextField
                     size="small"
                     fullWidth
                     placeholder="Search bank questions"
@@ -223,7 +231,7 @@ function QuestionBankTab({ importedBankIds, onAddBankQuestion, addingBankId }) {
                         ),
                     }}
                 />
-                <TextField
+                <FormTextField
                     select
                     size="small"
                     value={category}
@@ -236,7 +244,7 @@ function QuestionBankTab({ importedBankIds, onAddBankQuestion, addingBankId }) {
                             {c.label}
                         </MenuItem>
                     ))}
-                </TextField>
+                </FormTextField>
             </Stack>
 
             <Box sx={{ flex: 1, overflow: "auto", px: 1.5, pb: 1.5 }}>
@@ -246,10 +254,8 @@ function QuestionBankTab({ importedBankIds, onAddBankQuestion, addingBankId }) {
                     </Box>
                 ) : items.length === 0 ? (
                     <Stack alignItems="center" spacing={1} sx={{ py: 4, color: "text.secondary", textAlign: "center" }}>
-                        <Typography variant="subtitle2" fontWeight={700}>
-                            No questions match your filters
-                        </Typography>
-                        <Typography variant="caption">Try different keywords or clear the category filter.</Typography>
+                        <AppText variant="bodyStrong">No questions match your filters</AppText>
+                        <AppText variant="caption">Try different keywords or clear the category filter.</AppText>
                     </Stack>
                 ) : (
                     <Stack spacing={1.25}>

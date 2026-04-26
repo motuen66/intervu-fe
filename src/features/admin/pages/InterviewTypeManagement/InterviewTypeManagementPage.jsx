@@ -5,16 +5,15 @@ import { METHOD } from "../../../../common/constants/api";
 import CreateInterviewTypeDialog from "./CreateInterviewTypeDialog";
 import UpdateInterviewTypeDialog from "./UpdateInterviewTypeDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
 import "./InterviewTypeManagementPage.css";
 import { PrimaryButton } from "../../../../common/components/buttons";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 export default function InterviewTypeManagementPage() {
     const [items, setItems] = useState([]);
@@ -99,12 +98,6 @@ export default function InterviewTypeManagementPage() {
         }
     };
 
-    // const handleSearchChange = (e) => {
-    //     setSearch(e.target.value);
-    //     // reset to first page when searching
-    //     setPage(0);
-    // };
-
     const getEvaluationItems = (item) => {
         if (Array.isArray(item?.evaluationStructure)) return item.evaluationStructure;
         if (typeof item?.evaluationStructureJson === "string") {
@@ -126,26 +119,13 @@ export default function InterviewTypeManagementPage() {
     return (
         <Box className="interview-type-management" p={2}>
             <div className="interview-type-panel">
-                <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Typography variant="h6">Interview Types</Typography>
-                        {/* <TextField
-                            size="small"
-                            placeholder="Search by name..."
-                            value={search}
-                            onChange={handleSearchChange}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                            }}
-                        /> */}
+                        <SectionHeading title="Interview Types" />
                     </Box>
 
                     <Box>
-                        <PrimaryButton onClick={() => setOpenCreate(true)}>
+                        <PrimaryButton size="md" onClick={() => setOpenCreate(true)}>
                             Create New
                         </PrimaryButton>
                     </Box>
@@ -161,7 +141,7 @@ export default function InterviewTypeManagementPage() {
                         <div className="interview-type-empty-subtitle">
                             Create your first interview type to get started.
                         </div>
-                        <PrimaryButton onClick={() => setOpenCreate(true)}>
+                        <PrimaryButton size="md" onClick={() => setOpenCreate(true)}>
                             Create New
                         </PrimaryButton>
                     </Box>

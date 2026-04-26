@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import {
     Box,
-    Typography,
     Dialog,
     Paper,
     Stack,
@@ -12,7 +11,6 @@ import {
     ListItemText,
     Chip,
     IconButton,
-    Button,
     alpha,
     Tabs,
     Tab,
@@ -39,6 +37,8 @@ import { useTheme } from "@mui/material/styles";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { candidateProfileEndPoints } from "../service/candidateProfileApi";
+import AppText from "../../../../common/components/AppText";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 const springTransition = { type: "spring", damping: 25, stiffness: 200 };
 
@@ -110,16 +110,20 @@ function StepSidebar({ activeIndex }) {
             <Box>
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                     <Sparkles size={16} color="#bef264" />
-                    <Typography
-                        variant="overline"
-                        sx={{ color: "#bef264", fontWeight: 800, letterSpacing: "0.1em" }}
-                    >
+                        <AppText variant="overline" sx={{ color: "#bef264", fontWeight: 800, letterSpacing: "0.1em" }}>
                         NEURAL CAREER ENGINE
-                    </Typography>
+                        </AppText>
                 </Stack>
-                <Typography variant="h5" sx={{ color: "white", fontWeight: 800, lineHeight: 1.2 }}>
-                    AI Coaching <span style={{ color: "#bef264" }}>Assessment</span>
-                </Typography>
+                <SectionHeading
+                    title={(
+                        <>
+                            AI Coaching <span style={{ color: "#bef264" }}>Assessment</span>
+                        </>
+                    )}
+                    disableGutters
+                    as="h2"
+                    sx={{ color: "white", fontWeight: 800, lineHeight: 1.2 }}
+                />
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 4 }}>
@@ -158,7 +162,7 @@ function StepSidebar({ activeIndex }) {
                                 <Icon size={18} />
                             </Box>
                             <Box>
-                                <Typography
+                                <AppText
                                     variant="caption"
                                     sx={{
                                         color: isActive ? "#bef264" : "rgba(255,255,255,0.3)",
@@ -168,16 +172,16 @@ function StepSidebar({ activeIndex }) {
                                     }}
                                 >
                                     STEP 0{i + 1}
-                                </Typography>
-                                <Typography
-                                    variant="body2"
+                                </AppText>
+                                <AppText
+                                    variant="body"
                                     sx={{
                                         color: isActive || isCompleted ? "white" : "rgba(255,255,255,0.4)",
                                         fontWeight: 700,
                                     }}
                                 >
                                     {step.label}
-                                </Typography>
+                                </AppText>
                             </Box>
                         </Box>
                     );
@@ -313,16 +317,13 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={springTransition}
                             >
-                                <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
-                                    Neural Content Source
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
+                                <SectionHeading title="Neural Content Source" disableGutters as="h2" sx={{ mb: 1 }} />
+                                <AppText variant="body" sx={{ color: "text.secondary", mb: 4 }}>
                                     Select the CV source for your professional coaching analysis.
-                                </Typography>
+                                </AppText>
 
                                 <Stack spacing={2} sx={{ maxWidth: 450 }}>
-                                    <Button
-                                        variant="outlined"
+                                    <SecondaryButton
                                         onClick={() => handleEvaluate()}
                                         fullWidth
                                         startIcon={<FileText size={20} />}
@@ -338,9 +339,8 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                         }}
                                     >
                                         Use Current Profile CV
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
+                                    </SecondaryButton>
+                                    <SecondaryButton
                                         onClick={() => setStep("upload")}
                                         fullWidth
                                         startIcon={<CloudUpload size={20} />}
@@ -356,7 +356,7 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                         }}
                                     >
                                         Try with Another CV (Upload PDF)
-                                    </Button>
+                                    </SecondaryButton>
                                 </Stack>
                             </motion.div>
                         )}
@@ -369,12 +369,10 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={springTransition}
                             >
-                                <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
-                                    Verify Documentation
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
+                                <SectionHeading title="Verify Documentation" disableGutters as="h2" sx={{ mb: 1 }} />
+                                <AppText variant="body" sx={{ color: "text.secondary", mb: 4 }}>
                                     Upload a new PDF to run a specialized session assessment.
-                                </Typography>
+                                </AppText>
 
                                 {!uploadedFile ? (
                                     <Box
@@ -393,18 +391,18 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                     >
                                         <input {...getInputProps()} />
                                         <CloudUpload size={48} color={theme.palette.text.disabled} style={{ marginBottom: "16px" }} />
-                                        <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                                        <AppText variant="bodyStrong">
                                             <span style={{ color: theme.palette.primary.main }}>Click to upload</span> or drag and drop
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                        </AppText>
+                                        <AppText variant="caption" sx={{ color: "text.secondary" }}>
                                             PDF file only, up to 10MB
-                                        </Typography>
+                                        </AppText>
                                     </Box>
                                 ) : (
                                     <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "rgba(106, 170, 0, 0.05)", borderColor: "primary.main" }}>
                                         <Stack direction="row" spacing={2} alignItems="center">
                                             <FileText size={24} color={theme.palette.primary.main} />
-                                            <Typography fontWeight={700}>{uploadedFile.name}</Typography>
+                                            <AppText variant="bodyStrong">{uploadedFile.name}</AppText>
                                         </Stack>
                                         <IconButton onClick={() => setUploadedFile(null)} color="error" size="small">
                                             <X size={18} />
@@ -436,12 +434,10 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                     <ScanningEffect />
                                     <FileText size={64} color={theme.palette.primary.main} strokeWidth={1} style={{ opacity: 0.8 }} />
                                 </Box>
-                                <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
-                                    Neural Processing Active...
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: "text.secondary", mb: 4, textAlign: "center" }}>
+                                <SectionHeading title="Neural Processing Active..." disableGutters as="h2" sx={{ mb: 1 }} />
+                                <AppText variant="body" sx={{ color: "text.secondary", mb: 4, textAlign: "center" }}>
                                     Our AI is scanning your career trajectory and matching market data.
-                                </Typography>
+                                </AppText>
                                 <CircularProgress size={24} sx={{ color: "#bef264" }} />
                             </motion.div>
                         )}
@@ -455,9 +451,7 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                 style={{ display: "flex", flexDirection: "column", height: "100%" }}
                             >
                                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-                                    <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                                        Career Matching Insights
-                                    </Typography>
+                                    <SectionHeading title="Career Matching Insights" disableGutters as="h2" />
                                     {evalData.final_verdict && (
                                         <Chip
                                             label={`Verdict: ${evalData.final_verdict}`}
@@ -491,9 +485,9 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
                                 </Tabs>
 
                                 <TabPanel value={tabValue} index={0}>
-                                    <Typography variant="body1" sx={{ lineHeight: 1.8, color: "text.primary" }}>
+                                    <AppText variant="body" sx={{ lineHeight: 1.8, color: "text.primary" }}>
                                         {evalData.summary}
-                                    </Typography>
+                                    </AppText>
                                 </TabPanel>
 
                                 <TabPanel value={tabValue} index={1}>
@@ -520,14 +514,14 @@ const AiCvEvaluationModal = ({ open, onClose, profile, onRefresh }) => {
 
                                 <TabPanel value={tabValue} index={3}>
                                     <Box sx={{ bgcolor: alpha(theme.palette.primary.main, 0.03), p: 3, borderRadius: "16px", border: "1px solid", borderColor: "divider" }}>
-                                        <Typography variant="body2" sx={{ lineHeight: 1.8, color: "text.secondary", whiteSpace: "pre-wrap", fontStyle: "italic" }}>
+                                        <AppText variant="body" sx={{ lineHeight: 1.8, color: "text.secondary", whiteSpace: "pre-wrap", fontStyle: "italic" }}>
                                             &ldquo;{evalData.reasoning}&rdquo;
-                                        </Typography>
+                                        </AppText>
                                     </Box>
                                 </TabPanel>
 
                                 <Box sx={{ mt: "auto", pt: 4, display: "flex", justifyContent: "space-between" }}>
-                                    <SecondaryButton onClick={handleReset} sx={{ color: "text.secondary" }}>
+                                    <SecondaryButton onClick={handleReset}>
                                         Re-evaluate CV
                                     </SecondaryButton>
                                     <PrimaryButton onClick={onClose}>

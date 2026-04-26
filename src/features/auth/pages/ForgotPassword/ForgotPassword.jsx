@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Typography, Alert } from '@mui/material';
+import { Typography, Alert } from '@mui/material';
 import { PrimaryButton } from "../../../../common/components/buttons";
+import { FormTextField } from "../../../../common/components";
 import { callApi } from '../../../../common/utils/apiConnector';
 import { METHOD } from '../../../../common/constants/api';
 import { authEndPoints } from '../../services/authApi';
@@ -64,35 +65,27 @@ function ForgotPassword() {
                             </Alert>
                         )}
 
-                        <TextField
+                        <FormTextField
                             fullWidth
                             label="Email Address"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            variant="outlined"
-                            style={{ marginBottom: '20px' }}
-                            InputProps={{
-                                style: {
-                                    borderRadius: '8px'
-                                }
-                            }}
+                            sx={{ mb: 2.5 }}
                         />
 
-                        <PrimaryButton
-                            fullWidth
-                            type="submit"
-                            loading={false}
-                            disabled={submitting}
-                            sx={{
-                                padding: '12px',
-                                fontSize: '15px',
-                                marginBottom: '16px'
-                            }}
-                        >
-                            Send Reset Link
-                        </PrimaryButton>
+                        <div style={{ marginBottom: '16px' }}>
+                            <PrimaryButton
+                                fullWidth
+                                type="submit"
+                                loading={false}
+                                disabled={submitting}
+                                size="md"
+                            >
+                                Send Reset Link
+                            </PrimaryButton>
+                        </div>
 
                         <div style={{ textAlign: 'center' }}>
                             <Typography
@@ -124,10 +117,7 @@ function ForgotPassword() {
                         <PrimaryButton
                             fullWidth
                             onClick={handleBackToLogin}
-                            sx={{
-                                padding: '12px',
-                                fontSize: '15px',
-                            }}
+                            size="md"
                         >
                             Back to Login
                         </PrimaryButton>

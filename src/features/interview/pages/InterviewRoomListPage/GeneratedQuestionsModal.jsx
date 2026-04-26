@@ -5,11 +5,9 @@ import {
     Typography,
     IconButton,
     CircularProgress,
-    Button,
     Alert,
     Chip,
     Autocomplete,
-    TextField,
 } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -28,6 +26,7 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import FormTextField from "../../../../common/components/form/FormTextField";
 import toast from "react-hot-toast";
 
 const springTransition = { type: "spring", damping: 25, stiffness: 200 };
@@ -383,7 +382,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             </Box>
 
             {/* Title Input */}
-            <TextField
+            <FormTextField
                 fullWidth
                 size="small"
                 value={question.localTitle}
@@ -451,7 +450,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                     ))
                 }
                 renderInput={(params) => (
-                    <TextField
+                    <FormTextField
                         {...params}
                         variant="outlined"
                         size="small"
@@ -657,27 +656,15 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                         )}
 
                                         {/* Add custom question button */}
-                                        <Button
-                                            onClick={handleAddCustom}
-                                            startIcon={<Plus size={16} />}
-                                            sx={{
-                                                width: "100%",
-                                                mt: questions.length > 0 ? 2 : 0,
-                                                py: 1.5,
-                                                border: "2px dashed #D1D5DB",
-                                                borderRadius: "14px",
-                                                color: "text.secondary",
-                                                textTransform: "none",
-                                                fontWeight: 700,
-                                                "&:hover": {
-                                                    border: "2px dashed var(--mui-palette-secondary-main)",
-                                                    color: "primary.main",
-                                                    bgcolor: "rgba(163,230,53,0.04)",
-                                                },
-                                            }}
-                                        >
-                                            Add custom question
-                                        </Button>
+                                        <Box sx={{ mt: questions.length > 0 ? 2 : 0 }}>
+                                            <SecondaryButton
+                                                onClick={handleAddCustom}
+                                                startIcon={<Plus size={16} />}
+                                                fullWidth
+                                            >
+                                                Add custom question
+                                            </SecondaryButton>
+                                        </Box>
                                     </motion.div>
                                 )}
 
@@ -792,23 +779,15 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
 
                             {/* Actions */}
                             <Box sx={{ display: "flex", gap: 1.5 }}>
-                                <SecondaryButton
-                                    onClick={onClose}
-                                    sx={{
-                                        minWidth: 120,
-                                        borderRadius: "12px",
-                                    }}
-                                >
-                                    Discard
-                                </SecondaryButton>
+                                <Box sx={{ minWidth: 120 }}>
+                                    <SecondaryButton fullWidth onClick={onClose}>
+                                        Discard
+                                    </SecondaryButton>
+                                </Box>
                                 <PrimaryButton
                                     onClick={handleContribute}
                                     disabled={!hasValidQuestions || contributing}
                                     loading={contributing}
-                                    sx={{
-                                        minWidth: 210,
-                                        borderRadius: "12px",
-                                    }}
                                 >
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                                         Confirm & Contribute

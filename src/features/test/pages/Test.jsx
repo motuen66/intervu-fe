@@ -1,10 +1,10 @@
 import { testEndPoints } from "../services/testApi";
 import { useParams } from "react-router-dom";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Button } from "@mui/material";
 import CreateUserModal from "./CreateUserModal";
 import { useState } from "react";
 import useQueryApi from "../../../common/hooks/useQueryApi";
+import { PrimaryButton } from "../../../common/components/buttons";
 
 function Test() {
     const { id } = useParams();
@@ -30,9 +30,9 @@ function Test() {
     // return minimal UI so this is a valid React component
     return profileData ? (
         <div>
-            <Button variant="contained" color="primary" onClick={() => setOpenModal(true)}>
+            <PrimaryButton onClick={() => setOpenModal(true)}>
                 Create user
-            </Button>
+            </PrimaryButton>
             <CreateUserModal open={openModal} onClose={() => setOpenModal(false)} onSuccess={() => {}} />
             <h1>Profile ID: {id}</h1>
             {profileData && <pre>{JSON.stringify(profileData, null, 2)}</pre>}

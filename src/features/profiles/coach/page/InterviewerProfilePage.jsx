@@ -16,7 +16,6 @@ import {
     Stack,
     Avatar,
     IconButton,
-    TextField,
     Paper,
     Link,
     Divider,
@@ -39,7 +38,9 @@ import {
 } from "lucide-react";
 import { Autocomplete } from "@mui/material";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../../common/components/buttons";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import AppText from "../../../../common/components/AppText";
 import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPage/QuestionCard";
 import WorkExperienceModal from "../../components/WorkExperienceModal.jsx";
 import CertificateDialog from "../../components/CertificateDialog.jsx";
@@ -372,9 +373,7 @@ function InterviewerProfilePage() {
     if (!user) {
         return (
             <Box sx={{ p: 4, textAlign: "center" }}>
-                <Typography variant="h6" color="text.secondary">
-                    Please login to view your profile.
-                </Typography>
+                <AppText variant="muted">Please login to view your profile.</AppText>
             </Box>
         );
     }
@@ -620,7 +619,7 @@ function InterviewerProfilePage() {
     }
 
     return (
-        <Box className="elite-profile-container" sx={{ minHeight: "90vh" }}>
+        <Box className="elite-profile-container">
             <Box className="ep-shell" sx={{ pb: 0 }}>
                 <BaseCard
                     elevation={0}
@@ -709,7 +708,7 @@ function InterviewerProfilePage() {
                             <Box sx={{ flex: 1, pt: { xs: 0, md: 1 } }}>
                                 {editMode ? (
                                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
-                                        <TextField
+                                        <FormTextField
                                             label="Full Name"
                                             fullWidth
                                             value={profile?.user?.fullName || ""}
@@ -722,14 +721,14 @@ function InterviewerProfilePage() {
                                             }
                                             sx={{ maxWidth: 520, bgcolor: "background.paper" }}
                                         />
-                                        <TextField
+                                        <FormTextField
                                             label="Years of Experience"
                                             type="number"
                                             value={profile?.experienceYears ?? ""}
                                             onChange={(e) =>
                                                 setProfile((prev) => ({
                                                     ...prev,
-                                                    experienceYears: parseInt(e.target.value) || 0,
+                                                    experienceYears: e.target.value,
                                                 }))
                                             }
                                             sx={{ width: 160, bgcolor: "background.paper" }}
@@ -841,7 +840,7 @@ function InterviewerProfilePage() {
                                     About
                                 </Typography>
                                 {editMode ? (
-                                    <TextField
+                                    <FormTextField
                                         fullWidth
                                         multiline
                                         minRows={5}
@@ -873,12 +872,12 @@ function InterviewerProfilePage() {
                                                     : `${bio.slice(0, bioLimit)}${bio.length > bioLimit ? "..." : ""}`
                                                 : "No bio provided yet."}
                                             {bio && bio.length > bioLimit && (
-                                                <button
+                                                <TextButton
                                                     onClick={() => setExpandedBio(!expandedBio)}
-                                                    className="ep-view-more-btn"
+                                                    sx={{ ml: 1, p: 0, fontSize: '0.75rem' }}
                                                 >
                                                     {expandedBio ? "View Less" : "View More"}
-                                                </button>
+                                                </TextButton>
                                             )}
                                         </Typography>
                                     </Box>
@@ -921,7 +920,7 @@ function InterviewerProfilePage() {
                                                     setProfile((prev) => ({ ...prev, skills: newValue }))
                                                 }
                                                 renderInput={(params) => (
-                                                    <TextField
+                                                    <FormTextField
                                                         {...params}
                                                         placeholder="Add skills"
                                                         size="small"
@@ -1216,7 +1215,7 @@ function InterviewerProfilePage() {
                                                     setProfile({ ...profile, industryIds: newValue.map((i) => i.id) })
                                                 }
                                                 renderInput={(params) => (
-                                                    <TextField
+                                                    <FormTextField
                                                         {...params}
                                                         placeholder="Select industries"
                                                         size="small"
@@ -1473,7 +1472,7 @@ function InterviewerProfilePage() {
                                                 Portfolio
                                             </Typography>
                                             {editMode ? (
-                                                <TextField
+                                                <FormTextField
                                                     fullWidth
                                                     size="small"
                                                     placeholder="https://yourportfolio.com"
@@ -1568,33 +1567,6 @@ function InterviewerProfilePage() {
                                         )}
                                     </SidebarCard>
 
-                                    <Box className="ep-side-card ep-match-card">
-                                        <Typography
-                                            variant="overline"
-                                            sx={{ fontWeight: 800, color: "text.secondary" }}
-                                        >
-                                            Checklist
-                                        </Typography>
-                                        <Box className="ep-progress-bg">
-                                            <Box
-                                                className="ep-progress-bar"
-                                                sx={{
-                                                    width: `${(profile?.skills?.length ? 33 : 0) + (profile?.companies?.length ? 33 : 0) + (profile?.portfolioUrl ? 34 : 0)}%`,
-                                                }}
-                                            />
-                                        </Box>
-                                        <Typography sx={{ fontSize: "0.9rem", color: "text.secondary", mb: 2 }}>
-                                            Complete the essentials so your profile feels finished.
-                                        </Typography>
-                                        <Box component="ul" className="ep-benefit-list" sx={{ mb: 0 }}>
-                                            {["Skills added", "Companies added", "Portfolio linked"].map((item, i) => (
-                                                <Box key={item} component="li" className="ep-benefit-item">
-                                                    <Box className="ep-benefit-check">{i + 1}</Box>
-                                                    {item}
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    </Box>
                                 </Box>
                             </Box>
                         )}
@@ -1635,7 +1607,7 @@ function InterviewerProfilePage() {
                                 Cancel
                             </SecondaryButton>
                             <PrimaryButton
-                                size="large"
+                                size="lg"
                                 startIcon={<SaveIcon size={18} strokeWidth={2} />}
                                 onClick={() => setShowConfirmSave(true)}
                                 loading={saving}

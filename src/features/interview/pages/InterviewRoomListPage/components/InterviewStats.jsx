@@ -1,6 +1,7 @@
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import { CalendarCheck2, CheckCircle2, Clock3, Star } from "lucide-react";
 import { ROLES } from "../../../../../common/constants/common";
+import AppText from "../../../../../common/components/AppText";
 
 const StatCard = ({ icon, label, value, iconBgColor }) => (
     <Box
@@ -58,23 +59,19 @@ const StatCard = ({ icon, label, value, iconBgColor }) => (
             {icon}
         </Box>
         <Box>
-            <Typography
-                variant="body2"
-                color="text.secondary"
+            <AppText
+                variant="overline"
                 sx={{
                     mb: 0.2,
-                    textTransform: "uppercase",
                     letterSpacing: 0.75,
-                    fontWeight: 700,
-                    fontSize: "0.66rem",
                     lineHeight: 1.2,
                 }}
             >
                 {label}
-            </Typography>
-            <Typography variant="h5" fontWeight={700} sx={{ fontSize: { xs: "1.5rem", sm: "1.8rem" }, lineHeight: 1.1 }}>
+            </AppText>
+            <AppText variant="bodyStrong" sx={{ fontSize: { xs: "1.5rem", sm: "1.8rem" }, lineHeight: 1.1 }}>
                 {value}
-            </Typography>
+            </AppText>
         </Box>
     </Box>
 );

@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Dialog from "@mui/material/Dialog";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
 import Avatar from "@mui/material/Avatar";
 import Paper from "@mui/material/Paper";
 import LinearProgress from "@mui/material/LinearProgress";
@@ -16,6 +15,7 @@ import Badge from "@mui/material/Badge";
 import Divider from "@mui/material/Divider";
 import BaseCard from "../../../common/components/cards/BaseCard";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import FormTextField from "../../../common/components/form/FormTextField";
 import {
     BrainCircuit,
     X,
@@ -376,7 +376,7 @@ function StepInput({ query, setQuery, cvFile, setCvFile, jdFile, setJdFile, onSu
             <Typography variant="overline" sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
                 <Sparkles size={14} color="var(--mui-palette-secondary-dark)" /> What's your primary goal?
             </Typography>
-            <TextField
+            <FormTextField
                 multiline
                 minRows={3}
                 maxRows={4}
@@ -757,7 +757,7 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
                             if (v === null || v === undefined || v === "null" || v === "undefined") return null;
                             const isDesc = k.toLowerCase().includes("description") || k.toLowerCase().includes("summary") || k.toLowerCase().includes("responsibilities");
                             return (
-                                <TextField
+                                <FormTextField
                                     key={k}
                                     fullWidth
                                     size="small"
@@ -793,7 +793,7 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
 
                                 return (
                                     <Box key={k} sx={{ gridColumn: 'span 12' }}>
-                                        <TextField
+                                        <FormTextField
                                             fullWidth
                                             size="small"
                                             label={k.replace(/_/g, " ").toUpperCase()}
@@ -811,14 +811,16 @@ function ArrayOfObjectsSection({ title, items, onUpdate }) {
                             })}
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                            <SecondaryButton size="small" onClick={() => setIsAdding(false)}>Cancel</SecondaryButton>
-                            <PrimaryButton size="small" onClick={handleSaveNew}>Save</PrimaryButton>
+                            <SecondaryButton size="sm" onClick={() => setIsAdding(false)}>Cancel</SecondaryButton>
+                            <PrimaryButton size="sm" onClick={handleSaveNew}>Save</PrimaryButton>
                         </Box>
                     </BaseCard>
                 ) : (
-                    <SecondaryButton onClick={() => setIsAdding(true)} sx={{ mt: 0.5, py: 1, borderStyle: 'dashed' }}>
-                        + Add {title.replace(/_/g, " ")}
-                    </SecondaryButton>
+                    <Box sx={{ mt: 0.5 }}>
+                        <SecondaryButton onClick={() => setIsAdding(true)}>
+                            + Add {title.replace(/_/g, " ")}
+                        </SecondaryButton>
+                    </Box>
                 )}
             </Box>
         </Box>
@@ -885,7 +887,7 @@ function DynamicSection({ data, onUpdate }) {
                                     params.inputProps.maxLength = 50; 
                                 }
                                 return (
-                                    <TextField 
+                                    <FormTextField 
                                         {...params} 
                                         variant="outlined" 
                                         label={key.replace(/_/g, " ").toUpperCase()} 
@@ -909,7 +911,7 @@ function DynamicSection({ data, onUpdate }) {
                 if (typeof val === 'string' || typeof val === 'number') {
                     const isLongText = typeof val === 'string' && val.length > 60;
                     return (
-                        <TextField
+                        <FormTextField
                             key={key}
                             label={key.replace(/_/g, " ").toUpperCase()}
                             placeholder={getMeaningfulPlaceholder(key, isLongText)}
@@ -1032,9 +1034,11 @@ function StepVerification({ extractedJsonStr, setExtractedJsonStr, onConfirm, lo
             </Box>
 
             <Box sx={{ mt: "auto", display: "flex", justifyContent: "flex-end", pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-                <PrimaryButton disabled={isParseError || loading} loading={loading} onClick={onConfirm} sx={{ px: 4, py: 1.5, mt: 2 }}>
-                    Confirm & Find Coaches
-                </PrimaryButton>
+                <Box sx={{ mt: 2 }}>
+                    <PrimaryButton disabled={isParseError || loading} loading={loading} onClick={onConfirm}>
+                        Confirm & Find Coaches
+                    </PrimaryButton>
+                </Box>
             </Box>
         </motion.div>
     );
@@ -1249,9 +1253,11 @@ function StepResults({ results, onRefine }) {
                         AI has identified the top experts for your profile.
                     </Typography>
                 </Box>
-                <SecondaryButton onClick={onRefine} sx={{ gap: 0.75, flexShrink: 0 }}>
-                    <RefreshCw size={15} /> Refine
-                </SecondaryButton>
+                <Box sx={{ flexShrink: 0 }}>
+                    <SecondaryButton onClick={onRefine} startIcon={<RefreshCw size={15} />}>
+                        Refine
+                    </SecondaryButton>
+                </Box>
             </Box>
 
             <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: 0.5, pb: 0.5 }}>
@@ -1357,15 +1363,14 @@ function StepResults({ results, onRefine }) {
                                             </Box>
 
                                             {/* Book Now */}
-                                            <PrimaryButton
-                                                onClick={() => handleBookNow(slugProfileUrl)}
-                                                sx={{ 
-                                                    whiteSpace: "nowrap", gap: 0.75, flexShrink: 0,
-                                                    px: 3
-                                                }}
-                                            >
-                                                Book Now <ArrowRight size={16} />
-                                            </PrimaryButton>
+                                            <Box sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                                                <PrimaryButton
+                                                    onClick={() => handleBookNow(slugProfileUrl)}
+                                                    endIcon={<ArrowRight size={16} />}
+                                                >
+                                                    Book Now
+                                                </PrimaryButton>
+                                            </Box>
                                         </Box>
 
                                     {skills.length > 0 && (

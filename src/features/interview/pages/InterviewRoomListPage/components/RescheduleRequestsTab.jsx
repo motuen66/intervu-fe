@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
     Box,
-    Typography,
     Stack,
     Avatar,
     Pagination,
@@ -11,7 +10,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField,
     Badge,
     useTheme,
 } from "@mui/material";
@@ -20,9 +18,12 @@ import { formattedDateTime } from "../../../../../common/utils/dateFormatter";
 import ConfirmModal from "../../../../../common/components/ConfirmModal";
 import StatusChip from "../../../../../common/components/StatusChip";
 import { PrimaryButton, SecondaryButton, SuccessButton, DangerButton } from "../../../../../common/components/buttons";
+import FormTextField from "../../../../../common/components/form/FormTextField";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import { getRescheduleRequestStatusConfig } from "../../../../../common/constants/statusConfig";
 import { alpha } from "@mui/material/styles";
+import AppText from "../../../../../common/components/AppText";
+import SectionHeading from "../../../../../common/components/SectionHeading";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -130,18 +131,18 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                         }}>
                             <Clock size={16} strokeWidth={2} />
                         </Box>
-                        <Typography variant="h6" fontWeight={900} sx={{ textTransform: "uppercase", letterSpacing: "-0.5px" }}>
+                        <AppText variant="bodyStrong" sx={{ textTransform: "uppercase", letterSpacing: "-0.5px" }}>
                             {interviewType}
-                        </Typography>
+                        </AppText>
                     </Stack>
 
                     <Stack direction="row" spacing={2} alignItems="center" sx={{ pl: 5 }}>
                         {/* Duration */}
                         <Stack direction="row" spacing={0.75} alignItems="center">
                             <Clock size={14} strokeWidth={2} color="var(--mui-palette-text-secondary)" />
-                            <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                            <AppText variant="label">
                                 {duration} minutes session
-                            </Typography>
+                            </AppText>
                         </Stack>
                     </Stack>
                 </Box>
@@ -196,12 +197,12 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                     </Badge>
                 </Box>
                 <Box sx={{ pl: 1.5 }}>
-                    <Typography variant="body2" fontWeight={700} fontSize="0.9rem" sx={{ color: "text.primary" }}>
+                    <AppText variant="bodyStrong" sx={{ fontSize: "0.9rem" }}>
                         {requesterName}
-                    </Typography>
-                    <Typography variant="caption" fontWeight={600} sx={{ color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem" }}>
+                    </AppText>
+                    <AppText variant="overline" sx={{ letterSpacing: "0.5px", fontSize: "0.65rem" }}>
                         {isSentByMe ? "You / Requester" : "Requester"}
-                    </Typography>
+                    </AppText>
                 </Box>
 
                 <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
@@ -210,14 +211,14 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                 <Stack direction="row" spacing={2.5} alignItems="center">
                     {/* Original Time - Muffled */}
                     <Box sx={{ opacity: 0.7 }}>
-                        <Typography variant="caption" fontWeight={700} sx={{ color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block", mb: 0.5 }}>
+                        <AppText variant="overline" sx={{ letterSpacing: "0.5px", fontSize: "0.65rem", display: "block", mb: 0.5 }}>
                             Original Time
-                        </Typography>
+                        </AppText>
                         <Stack direction="row" spacing={0.75} alignItems="center">
                             <Calendar size={14} strokeWidth={2} color="var(--mui-palette-text-secondary)" />
-                            <Typography variant="body2" fontWeight={500} color="text.secondary">
+                            <AppText variant="label">
                                 {originalTime ? formattedDateTime(originalTime) : "N/A"}
-                            </Typography>
+                            </AppText>
                         </Stack>
                     </Box>
 
@@ -238,14 +239,14 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
 
                     {/* Proposed Time - Highlighted */}
                     <Box>
-                        <Typography variant="caption" fontWeight={800} sx={{ color: "primary.main", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block", mb: 0.5 }}>
+                        <AppText variant="overline" sx={{ color: "primary.main", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block", mb: 0.5 }}>
                             Proposed Time
-                        </Typography>
+                        </AppText>
                         <Stack direction="row" spacing={0.75} alignItems="center">
                             <Calendar size={14} strokeWidth={2.5} color={theme.palette.primary.main} />
-                            <Typography variant="body2" fontWeight={800} color="text.primary">
+                            <AppText variant="bodyStrong">
                                 {proposedTime ? formattedDateTime(proposedTime) : "N/A"}
-                            </Typography>
+                            </AppText>
                         </Stack>
                     </Box>
                 </Stack>
@@ -256,26 +257,10 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                 <Box sx={{ minWidth: 100 }}>
                     {isWaitingForMyResponse && (
                         <Stack direction="row" spacing={0.75}>
-                            <SuccessButton
-                                size="small"
-                                onClick={() => onApprove(request)}
-                                sx={{
-                                    px: 1.5,
-                                    py: 0.5,
-                                    fontSize: "0.75rem",
-                                }}
-                            >
+                            <SuccessButton size="sm" onClick={() => onApprove(request)}>
                                 Approve
                             </SuccessButton>
-                            <DangerButton
-                                size="small"
-                                onClick={() => onReject(request)}
-                                sx={{
-                                    px: 1.5,
-                                    py: 0.5,
-                                    fontSize: "0.75rem",
-                                }}
-                            >
+                            <DangerButton size="sm" onClick={() => onReject(request)}>
                                 Reject
                             </DangerButton>
                         </Stack>
@@ -308,12 +293,12 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                             <MoreHorizontal size={14} strokeWidth={2} color="var(--mui-palette-text-secondary)" />
                         </Box>
                         <Box>
-                            <Typography variant="caption" fontWeight={700} sx={{ color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block" }}>
+                            <AppText variant="overline" sx={{ letterSpacing: "0.5px", fontSize: "0.65rem", display: "block" }}>
                                 Reason for reschedule
-                            </Typography>
-                            <Typography variant="body2" color="text.primary" sx={{ fontStyle: "italic", mt: 0.25 }}>
+                            </AppText>
+                            <AppText variant="body" sx={{ fontStyle: "italic", mt: 0.25 }}>
                                 "{request.reason}"
-                            </Typography>
+                            </AppText>
                         </Box>
                     </Box>
                 )}
@@ -341,12 +326,12 @@ function RescheduleRequestCard({ request, user, onApprove, onReject }) {
                             <X size={14} strokeWidth={2.5} />
                         </Box>
                         <Box>
-                            <Typography variant="caption" fontWeight={800} sx={{ color: "error.main", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block" }}>
+                            <AppText variant="overline" sx={{ color: "error.main", letterSpacing: "0.5px", fontSize: "0.65rem", display: "block" }}>
                                 Rejection Feedback
-                            </Typography>
-                            <Typography variant="body2" color="error.dark" sx={{ fontStyle: "italic", mt: 0.25, fontWeight: 500 }}>
+                            </AppText>
+                            <AppText variant="body" sx={{ color: "error.dark", fontStyle: "italic", mt: 0.25, fontWeight: 500 }}>
                                 "{request.rejectionReason}"
-                            </Typography>
+                            </AppText>
                         </Box>
                     </Box>
                 )}
@@ -434,12 +419,12 @@ function RescheduleRequestsTab({
                         borderColor: "divider",
                     }}
                 >
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                    <AppText variant="bodyStrong" sx={{ color: "text.secondary", mb: 0.5 }}>
                         No reschedule requests
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    </AppText>
+                    <AppText variant="muted">
                         Pending reschedule requests will appear here
-                    </Typography>
+                    </AppText>
                 </Box>
             ) : (
                 <Stack spacing={2}>
@@ -463,11 +448,11 @@ function RescheduleRequestsTab({
                     alignItems="center"
                     sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}
                 >
-                    <Typography variant="body2" color="text.secondary">
+                    <AppText variant="muted">
                         Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{" "}
                         {Math.min(page * ITEMS_PER_PAGE, requests?.length || 0)} of{" "}
                         {requests?.length || 0} results
-                    </Typography>
+                    </AppText>
                     <Pagination
                         count={totalPages}
                         page={page}
@@ -502,12 +487,14 @@ function RescheduleRequestsTab({
                     fullWidth
                     PaperProps={{ sx: dialogStyles.paper }}
                 >
-                    <DialogTitle>Reject Reschedule Request</DialogTitle>
+                    <DialogTitle component="div">
+                        <SectionHeading title="Reject Reschedule Request" disableGutters />
+                    </DialogTitle>
                     <DialogContent>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        <AppText variant="muted" sx={{ mb: 2 }}>
                             Please provide a reason for rejecting this reschedule request. The requester will see this message.
-                        </Typography>
-                        <TextField
+                        </AppText>
+                        <FormTextField
                             autoFocus
                             fullWidth
                             multiline

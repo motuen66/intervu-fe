@@ -23,7 +23,6 @@ import {
     TableHead,
     TableRow,
     Typography,
-    Button,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 // import ReplayIcon from "@mui/icons-material/Replay";
@@ -31,10 +30,13 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import toast from "react-hot-toast";
 import { axiosInstance, callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
-import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../common/components/buttons";
 import FormTextField from "../../../common/components/form/FormTextField";
 import FormSelect from "../../../common/components/form/FormSelect";
 import StatusChip from "../../../common/components/StatusChip";
+import PageHeader from "../../../common/components/PageHeader";
+import SectionHeading from "../../../common/components/SectionHeading";
+import AppText from "../../../common/components/AppText";
 import { adminEndPoints } from "../services/adminApi";
 import { dialogStyles } from "../../../common/constants/uiStyles";
 
@@ -105,10 +107,8 @@ const DetailRow = ({ label, value }) => (
 const SectionCard = ({ title, children, action }) => (
     <Card variant="outlined" sx={{ borderColor: "divider", bgcolor: "background.paper", borderRadius: 3 }}>
         <CardContent sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
-                    {title}
-                </Typography>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+                <SectionHeading title={title} size="sm" />
                 {action}
             </Box>
             {children}
@@ -376,23 +376,20 @@ function ProblemResolutionDetail() {
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
-            <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
-                <Box>
-                    <SecondaryButton
+            <Box sx={{ mb: 3 }}>
+                <Box sx={{ mb: 1 }}>
+                    <TextButton
                         startIcon={<ArrowBackIcon />}
                         onClick={() => navigate(-1)}
-                        variant="text"
                     >
                         Back
-                    </SecondaryButton>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: "text.primary" }}>
-                        Problem Resolution Detail
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-                        Room ID: {routeRoomId}
-                    </Typography>
+                    </TextButton>
                 </Box>
-            </Stack>
+                <PageHeader
+                    title="Problem Resolution Detail"
+                    subtitle={`Room ID: ${routeRoomId}`}
+                />
+            </Box>
 
             {errorMessage && (
                 <Alert severity="error" sx={{ mb: 3 }}>
@@ -500,25 +497,14 @@ function ProblemResolutionDetail() {
                             <SectionCard title="Booking Context">
                                 <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 2 }}>
                                     {!audioUrl && (
-                                        <Button
-                                            variant="contained"
+                                        <PrimaryButton
                                             startIcon={<PlayArrowIcon />}
                                             onClick={handleLoadAudio}
                                             disabled={downloadingAudio || loading || !reportDetail}
                                         >
                                             {downloadingAudio ? "Loading..." : "Play Audio"}
-                                        </Button>
+                                        </PrimaryButton>
                                     )}
-                                    {/* 
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<ReplayIcon />}
-                                        onClick={handleDownloadAudio}
-                                        disabled={downloadingAudio || loading || !reportDetail}
-                                    >
-                                        {downloadingAudio && !audioUrl ? "Downloading..." : "Download"}
-                                    </Button>
-                                    */}
                                 </Box>
 
                                 {audioUrl && (

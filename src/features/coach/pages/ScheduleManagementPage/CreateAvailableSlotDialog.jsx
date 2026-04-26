@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { Box, TextField, Typography, Modal, Card, Stack, FormControl, MenuItem, Chip } from "@mui/material";
+import { Box, Typography, Modal, Card, Stack, FormControl, MenuItem } from "@mui/material";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import { IoAdd } from "react-icons/io5";
 import toast from "react-hot-toast";
 import StatusChip from "../../../../common/components/StatusChip";
 
 import FormSelect from "../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 const CreateAvailableSlotDialog = ({
     open,
@@ -58,16 +60,16 @@ const CreateAvailableSlotDialog = ({
         >
             <Card sx={{ width: "90%", maxWidth: "500px", borderRadius: "12px", maxHeight: "90vh", overflowY: "auto" }}>
                 <Box sx={{ p: 3 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
-                        Set Availability Time
-                    </Typography>
+                    <Box sx={{ mb: 3 }}>
+                        <SectionHeading title="Set Availability Time" as="h2" disableGutters />
+                    </Box>
 
                     <Stack spacing={2.5}>
                         <Box>
                             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}>
                                 Date
                             </Typography>
-                            <TextField
+                            <FormTextField
                                 type="date"
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -81,9 +83,6 @@ const CreateAvailableSlotDialog = ({
                                     max: maxDate,
                                 }}
                                 fullWidth
-                                variant="outlined"
-                                size="small"
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                             />
                         </Box>
 
@@ -92,7 +91,7 @@ const CreateAvailableSlotDialog = ({
                                 Duplicate to other dates (Optional)
                             </Typography>
                             <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                                <TextField
+                                <FormTextField
                                     type="date"
                                     value={tempDate}
                                     onChange={(e) => setTempDate(e.target.value)}
@@ -106,11 +105,9 @@ const CreateAvailableSlotDialog = ({
                                         max: maxDate,
                                     }}
                                     fullWidth
-                                    variant="outlined"
-                                    size="small"
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 />
-                                <SecondaryButton onClick={handleAddDuplicateDate} sx={{ minWidth: "auto", px: 1 }}>
+                                <SecondaryButton size="sm" onClick={handleAddDuplicateDate}>
                                     <IoAdd size={20} />
                                 </SecondaryButton>
                             </Stack>
@@ -137,7 +134,6 @@ const CreateAvailableSlotDialog = ({
                                         onChange={(e) =>
                                             setFormData({ ...formData, startHour: Number(e.target.value) })
                                         }
-                                        sx={{ borderRadius: "8px" }}
                                     >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
@@ -151,7 +147,6 @@ const CreateAvailableSlotDialog = ({
                                     <FormSelect
                                         value={formData.startMinute}
                                         onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
-                                        sx={{ borderRadius: "8px" }}
                                     >
                                         {[0, 30].map((minute) => (
                                             <MenuItem key={minute} value={minute}>
@@ -172,7 +167,6 @@ const CreateAvailableSlotDialog = ({
                                     <FormSelect
                                         value={formData.endHour}
                                         onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
-                                        sx={{ borderRadius: "8px" }}
                                     >
                                         {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                                             <MenuItem key={hour} value={hour}>
@@ -186,7 +180,6 @@ const CreateAvailableSlotDialog = ({
                                     <FormSelect
                                         value={formData.endMinute}
                                         onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
-                                        sx={{ borderRadius: "8px" }}
                                     >
                                         {[0, 30].map((minute) => (
                                             <MenuItem key={minute} value={minute}>

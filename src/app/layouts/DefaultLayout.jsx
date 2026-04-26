@@ -1,13 +1,14 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import ScrollTopFab from "./ScrollTopFab";
 import useUser from "../../common/hooks/useUser";
-import { AppBar, Toolbar, Container, Typography, Box, CssBaseline, Button, Avatar } from "@mui/material";
+import { AppBar, Toolbar, Container, Typography, Box, CssBaseline, Avatar } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { setToken, setUserData } from "../../common/store/authSlice";
 import { callApi } from "../../common/utils/apiConnector";
 import { METHOD } from "../../common/constants/api";
 import { authEndPoints } from "../../features/auth/services/authApi";
 import SuspendedGate from "../../common/components/SuspendedGate";
+import { SecondaryButton } from "../../common/components/buttons";
 
 const DefaultLayout = () => {
     const { userData } = useSelector((state) => state.auth || {});
@@ -47,9 +48,11 @@ const DefaultLayout = () => {
                                 {userData?.fullName?.charAt(0).toUpperCase() || "U"}
                             </Avatar>
                         )}
-                        <Button variant="outlined" sx={{ ml: 2 }} onClick={logout}>
-                            Sign In
-                        </Button>
+                        <Box sx={{ ml: 2 }}>
+                            <SecondaryButton size="sm" onClick={logout}>
+                                Sign In
+                            </SecondaryButton>
+                        </Box>
                     </Toolbar>
                 </Container>
             </AppBar>

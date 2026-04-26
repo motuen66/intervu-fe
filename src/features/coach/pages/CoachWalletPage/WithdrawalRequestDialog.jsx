@@ -15,27 +15,28 @@ import { formatCurrency } from "../../../../common/utils/dateFormatter";
 import { requestWithdrawal } from "../../services/walletApi";
 
 export default function WithdrawalRequestDialog({ open, onClose, onSuccess, balance }) {
-    const [form, setForm] = useState({ amount: 0, notes: "" });
+    const [form, setForm] = useState({ amount: "", notes: "" });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const theme = useTheme();
 
     const handleSubmit = async () => {
         setError("");
-        if (form.amount <= 2000) {
+        const amount = Number(form.amount || 0);
+        if (amount <= 2000) {
             setError("Amount must be greater than 2000.");
             return;
         }
-        if (form.amount > balance) {
+        if (amount > balance) {
             setError("Amount exceeds your current balance.");
             return;
         }
 
         setSaving(true);
         try {
-            await requestWithdrawal({ amount: form.amount, notes: form.notes || null });
+            await requestWithdrawal({ amount, notes: form.notes || null });
             onSuccess?.();
-            setForm({ amount: 0, notes: "" });
+            setForm({ amount: "", notes: "" });
             onClose();
         } catch {
             // Error already handled by callApi
@@ -45,7 +46,7 @@ export default function WithdrawalRequestDialog({ open, onClose, onSuccess, bala
     };
 
     const handleClose = () => {
-        setForm({ amount: 0, notes: "" });
+        setForm({ amount: "", notes: "" });
         setError("");
         onClose();
     };
@@ -95,7 +96,7 @@ export default function WithdrawalRequestDialog({ open, onClose, onSuccess, bala
                         onChange={(e) => {
                             const val = e.target.value;
                             if (val.length <= 12) {
-                                setForm({ ...form, amount: Number(val) });
+                                setForm({ ...form, amount: val });
                             }
                         }}
                         inputProps={{ min: 0 }}

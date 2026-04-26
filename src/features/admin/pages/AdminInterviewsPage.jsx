@@ -12,21 +12,22 @@ import InterviewTypeManagementPage from "./InterviewTypeManagement/InterviewType
 import "./AdminDashboard.css";
 import "./AdminInterviewsPage.css";
 import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
 
 export default function AdminInterviewsPage() {
     const [openTypesModal, setOpenTypesModal] = useState(false);
 
     return (
-        <Container maxWidth="xl" className="admin-page admin-interviews-page">
-            <div className="admin-page-header">
-                <div>
-                    <h2 className="admin-page-title">Interviews</h2>
-                    <p className="admin-page-subtitle">Monitor interview activity and settings.</p>
-                </div>
-                <PrimaryButton onClick={() => setOpenTypesModal(true)}>
-                    Manage Interview Types
-                </PrimaryButton>
-            </div>
+        <Container maxWidth="xl" className="admin-page admin-interviews-page" sx={{ py: 3 }}>
+            <AdminPageHeader
+                title="Interviews"
+                subtitle="Monitor interview activity and settings."
+                actionButton={
+                    <PrimaryButton size="md" onClick={() => setOpenTypesModal(true)}>
+                        Manage Interview Types
+                    </PrimaryButton>
+                }
+            />
 
             <div className="admin-card admin-interviews-card">
                 <div className="admin-interviews-empty">

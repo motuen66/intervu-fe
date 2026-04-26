@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -17,7 +17,6 @@ import {
 import {
   Avatar,
   Box,
-  Chip,
   Container,
   Grid,
   LinearProgress,
@@ -30,6 +29,7 @@ import {
 import Navbar from '../../../common/components/Navbar/Navbar';
 import { PrimaryButton, SecondaryButton, TextButton } from '../../../common/components/buttons';
 import FormTextField from '../../../common/components/form/FormTextField';
+import { Tag } from '../../../common/components';
 import '../styles/LandingPage.css';
 
 const MotionBox = motion.create(Box);
@@ -175,11 +175,12 @@ function LandingPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.7 }}
               >
-                <Chip
+                <Tag
                   icon={<Sparkles size={14} />}
                   label="The New Standard for Interview Excellence"
                   color="secondary"
-                  size="small"
+                  size="sm"
+                  variant="soft"
                   sx={{ mb: 3, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}
                 />
                 <Typography
@@ -485,10 +486,11 @@ function LandingPage() {
                   transition={{ duration: 0.6 }}
                 >
                   <Stack gap={2.5} sx={{ height: '100%', justifyContent: 'center' }}>
-                    <Chip
+                    <Tag
                       label="Join our network"
                       color="secondary"
-                      size="small"
+                      size="sm"
+                      variant="soft"
                       sx={{ width: 'fit-content', fontWeight: 800, letterSpacing: '0.08em' }}
                     />
                     <Typography variant="h2" sx={{ maxWidth: 520, fontSize: { xs: '2.1rem', md: '2.9rem' } }}>
@@ -659,8 +661,8 @@ function LandingPage() {
                             />
                             <PrimaryButton
                               type="submit"
+                              fullWidth
                               loading={formStatus === 'submitting'}
-                              sx={{ width: '100%', py: 1.4 }}
                             >
                               Submit application
                             </PrimaryButton>

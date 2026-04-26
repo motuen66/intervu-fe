@@ -25,15 +25,18 @@ export const commonMenuProps = {
   }
 };
 
-export default function FormSelect({ sx, MenuProps, ...props }) {
+export default function FormSelect({ sx, MenuProps, sizeVariant = "md", error = false, ...props }) {
   return (
     <Select
       {...props}
       MenuProps={{ ...commonMenuProps, ...MenuProps }}
+      size="small"
+      error={error}
       sx={(theme) => ({
-        ...fieldStyles.outlinedFocus(theme),
+        ...fieldStyles.outlinedFocus(theme, sizeVariant),
         maxWidth: '100%',
         '& .MuiSelect-select': {
+          minHeight: "unset !important",
           textOverflow: 'ellipsis',
           overflow: 'hidden',
           whiteSpace: 'nowrap',

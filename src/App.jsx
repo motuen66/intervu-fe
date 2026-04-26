@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import useUser from "./common/hooks/useUser";
 import { useState } from "react";
 import BankSelection from "./features/profiles/coach/page/BankSelection";
+import Box from "@mui/material/Box";
 import { PrimaryButton, SecondaryButton } from "./common/components/buttons";
 
 function App() {
@@ -16,15 +17,17 @@ function App() {
                     Fetch your profile
                 </PrimaryButton>
             )}
-            <SecondaryButton LinkComponent={Link} to={"/interview"} sx={{ ml: 2 }}>
-                Interview Rooms
-            </SecondaryButton>
-            <SecondaryButton LinkComponent={Link} to={"/signup"} sx={{ ml: 2 }}>
-                Signup
-            </SecondaryButton>
-            <SecondaryButton LinkComponent={Link} to={"/login"} sx={{ ml: 2 }}>
-                Login
-            </SecondaryButton>
+            <Box sx={{ ml: 2, display: "inline-flex", gap: 2 }}>
+                <SecondaryButton LinkComponent={Link} to={"/interview"}>
+                    Interview Rooms
+                </SecondaryButton>
+                <SecondaryButton LinkComponent={Link} to={"/signup"}>
+                    Signup
+                </SecondaryButton>
+                <SecondaryButton LinkComponent={Link} to={"/login"}>
+                    Login
+                </SecondaryButton>
+            </Box>
             <BankSelection selectedBin={bankId} onBankBinChange={setBankId} />
         </div>
     );

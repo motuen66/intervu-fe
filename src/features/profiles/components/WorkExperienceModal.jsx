@@ -4,7 +4,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField,
     Stack,
     FormControlLabel,
     Checkbox,
@@ -13,13 +12,13 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
-    FormHelperText,
-    Chip,
     Avatar,
 } from "@mui/material";
-import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import { DangerButton, PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
 import { CompanyLogo } from "../../../common/utils/logoImageGenerator";
 import FormSelect from "../../../common/components/form/FormSelect";
+import FormTextField from "../../../common/components/form/FormTextField";
+import Tag from "../../../common/components/Tag";
 
 const EMPLOYMENT_TYPES = [
     "Full-time",
@@ -178,9 +177,9 @@ const WorkExperienceModal = ({
                                 .filter((s) => formData.skillIds?.includes(s.id))
                                 .slice(0, 6)
                                 .map((s) => (
-                                    <Chip
+                                    <Tag
                                         key={s.id}
-                                        size="small"
+                                        size="sm"
                                         label={s.name}
                                         avatar={
                                             s.iconUrl ? (
@@ -197,7 +196,7 @@ const WorkExperienceModal = ({
             )}
             <DialogContent dividers>
                 <Stack spacing={2.5} sx={{ mt: 1 }}>
-                    <TextField
+                    <FormTextField
                         label="Job title"
                         placeholder="e.g. Retail Sales Manager"
                         fullWidth
@@ -233,7 +232,7 @@ const WorkExperienceModal = ({
                         inputValue={formData.companyName}
                         onInputChange={(e, val) => setFormData({ ...formData, companyName: val })}
                         renderInput={(params) => (
-                            <TextField
+                            <FormTextField
                                 {...params}
                                 label="Company or organization"
                                 placeholder="e.g. Microsoft"
@@ -267,7 +266,7 @@ const WorkExperienceModal = ({
                     </Box>
 
                     <Stack direction="row" spacing={2}>
-                        <TextField
+                        <FormTextField
                             label="Start date"
                             type="date"
                             fullWidth
@@ -278,7 +277,7 @@ const WorkExperienceModal = ({
                             error={!!errors.startDate}
                             helperText={errors.startDate}
                         />
-                        <TextField
+                        <FormTextField
                             label="End date"
                             type="date"
                             fullWidth
@@ -291,7 +290,7 @@ const WorkExperienceModal = ({
                         />
                     </Stack>
 
-                    <TextField
+                    <FormTextField
                         label="Location"
                         placeholder="e.g. London, United Kingdom"
                         fullWidth
@@ -299,22 +298,20 @@ const WorkExperienceModal = ({
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     />
 
-                    <FormControl fullWidth>
-                        <InputLabel>Location type</InputLabel>
-                        <FormSelect
-                            value={formData.locationType}
-                            label="Location type"
-                            onChange={(e) => setFormData({ ...formData, locationType: e.target.value })}
-                        >
-                            <MenuItem value="">Please select</MenuItem>
-                            {LOCATION_TYPES.map((type) => (
-                                <MenuItem key={type} value={type}>
-                                    {type}
-                                </MenuItem>
-                            ))}
-                        </FormSelect>
-                        <FormHelperText>Select the location type (e.g. Remote)</FormHelperText>
-                    </FormControl>
+                    <FormTextField
+                        select
+                        label="Location type"
+                        fullWidth
+                        value={formData.locationType}
+                        onChange={(e) => setFormData({ ...formData, locationType: e.target.value })}
+                    >
+                        <MenuItem value="">Please select</MenuItem>
+                        {LOCATION_TYPES.map((type) => (
+                            <MenuItem key={type} value={type}>
+                                {type}
+                            </MenuItem>
+                        ))}
+                    </FormTextField>
 
                     <Autocomplete
                         multiple
@@ -323,12 +320,12 @@ const WorkExperienceModal = ({
                         value={(allSkills || []).filter((s) => formData.skillIds.includes(s.id))}
                         onChange={handleSkillChange}
                         renderInput={(params) => (
-                            <TextField {...params} label="Skills" placeholder="Select matching skills" />
+                            <FormTextField {...params} label="Skills" placeholder="Select matching skills" />
                         )}
                         isOptionEqualToValue={(option, value) => option.id === value.id}
                     />
 
-                    <TextField
+                    <FormTextField
                         label="Description"
                         multiline
                         rows={4}
@@ -352,16 +349,9 @@ const WorkExperienceModal = ({
             <DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
                 <Box>
                     {experience?.id && (
-                        <SecondaryButton
-                            onClick={() => onDelete?.(experience)}
-                            sx={{
-                                color: "error.main",
-                                borderColor: "error.main",
-                                "&:hover": { borderColor: "error.dark", color: "error.dark" },
-                            }}
-                        >
+                        <DangerButton onClick={() => onDelete?.(experience)}>
                             Delete
-                        </SecondaryButton>
+                        </DangerButton>
                     )}
                 </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>

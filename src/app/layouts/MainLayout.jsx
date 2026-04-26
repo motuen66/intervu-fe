@@ -307,7 +307,7 @@ const MainLayout = () => {
                 )}
 
                 <main className="main-content">
-                    <Container maxWidth={false} sx={{ maxWidth: "1350px", pt: 3, pb: 6 }}>
+                    <Container maxWidth={false} sx={{ maxWidth: "1280px", px: { xs: 2, sm: 4 }, pt: 3, pb: 6 }}>
                         <Outlet />
                     </Container>
                 </main>

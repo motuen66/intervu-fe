@@ -3,12 +3,10 @@ import { useSelector } from "react-redux";
 import {
     Box,
     Typography,
-    Container,
     Grid,
     Card,
     CardContent,
     Stack,
-    TextField,
     MenuItem,
     Paper,
     Table,
@@ -17,7 +15,6 @@ import {
     TableCell,
     TableBody,
     CircularProgress,
-    Button,
     IconButton,
     Tooltip,
     Dialog,
@@ -37,13 +34,14 @@ import HourglassEmptyRoundedIcon from "@mui/icons-material/HourglassEmptyRounded
 import AttachMoneyRoundedIcon from "@mui/icons-material/AttachMoneyRounded";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
-import SecondaryButton from "../../../common/components/buttons/SecondaryButton";
 import { interviewEndPoints } from "../../interview/services/interviewRoomApi";
 import { profileEndPoints } from "../../profile/services/profileApi";
 import { formatCurrency } from "../../../common/utils/dateFormatter";
 import { ROLES } from "../../../common/constants/common";
 import { trackPaymentSuccess } from "../../../utils/analytics";
 import { useSearchParams } from "react-router-dom";
+import { AppText, FormTextField, PageHeader } from "../../../common/components";
+import { SecondaryButton, TextButton } from "../../../common/components/buttons";
 
 const transactionStatusConfig = {
     PENDING: { label: "Pending", color: "#FFA500", bgColor: "#FFF3E0" },
@@ -369,17 +367,12 @@ const PaymentHistoryPage = () => {
     };
 
     return (
-        <Box sx={{ bgcolor: "#f8f9fb", minHeight: "100vh", py: 4 }}>
-            <Container maxWidth="lg">
+        <>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                    <Box>
-                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
-                            Payment History
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            View all your interview booking transactions
-                        </Typography>
-                    </Box>
+                    <PageHeader
+                        title="Payment History"
+                        subtitle="View all your interview booking transactions"
+                    />
                     <Tooltip title="Refresh">
                         <IconButton onClick={fetchPaymentHistory} aria-label="refresh payment history" sx={{ border: "1px solid #d6d9e0", bgcolor: 'white' }}>
                             <RefreshRoundedIcon />
@@ -402,9 +395,9 @@ const PaymentHistoryPage = () => {
                                             <ReceiptLongRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            <AppText variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
                                                 Total Transactions
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="h5" fontWeight={700}>{stats.transactionCount}</Typography>
                                         </Box>
                                     </Stack>
@@ -417,9 +410,9 @@ const PaymentHistoryPage = () => {
                                             <CheckCircleRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            <AppText variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
                                                 Completed Amount
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="h5" fontWeight={700} sx={{ color: '#2e7d32' }}>
                                                 {formatCurrency(stats.totalSpent)}
                                             </Typography>
@@ -434,9 +427,9 @@ const PaymentHistoryPage = () => {
                                             <HourglassEmptyRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            <AppText variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
                                                 Pending Amount
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="h5" fontWeight={700} sx={{ color: '#ed6c02' }}>
                                                 {formatCurrency(stats.totalPending)}
                                             </Typography>
@@ -451,9 +444,9 @@ const PaymentHistoryPage = () => {
                                             <AttachMoneyRoundedIcon />
                                         </Box>
                                         <Box>
-                                            <Typography color="text.secondary" variant="caption" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            <AppText variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
                                                 Average Amount
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="h5" fontWeight={700} sx={{ color: '#7b1fa2' }}>
                                                 {formatCurrency(stats.average)}
                                             </Typography>
@@ -465,13 +458,12 @@ const PaymentHistoryPage = () => {
 
                         {/* Filters */}
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
-                            <TextField
+                            <FormTextField
                                 placeholder="Search by coach, interview ID, or candidate..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                size="small"
+                                sizeVariant="sm"
                                 sx={{ flex: 1, bgcolor: 'white', borderRadius: 2 }}
-                                variant="outlined"
                             />
                             <FormControl size="small" sx={{ minWidth: 160, bgcolor: 'white', borderRadius: 2 }}>
                                 <InputLabel id="history-page-status-label">Status</InputLabel>
@@ -545,9 +537,8 @@ const PaymentHistoryPage = () => {
                                                 </TableCell>
                                                 <TableCell align="right" sx={{ borderTopRightRadius: 16, borderBottomRightRadius: 16 }}>
                                                     <SecondaryButton
-                                                        size="small"
+                                                        size="sm"
                                                         onClick={() => setSelectedTransaction(transaction)}
-                                                        sx={{ py: 0.5, px: 2 }}
                                                     >
                                                         View details
                                                     </SecondaryButton>
@@ -560,7 +551,7 @@ const PaymentHistoryPage = () => {
 
                             {(!filteredTransactions || filteredTransactions.length === 0) && (
                                 <Box sx={{ textAlign: "center", py: 5 }}>
-                                    <Typography color="text.secondary">No transactions found</Typography>
+                                    <AppText variant="muted">No transactions found</AppText>
                                 </Box>
                             )}
                         </Box>
@@ -576,9 +567,9 @@ const PaymentHistoryPage = () => {
                                 <Stack spacing={1.25}>
                                     {getInterviewDetails(selectedTransaction).map((item) => (
                                         <Box key={item.label}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                                            <AppText variant="caption" sx={{ display: "block" }}>
                                                 {item.label}
-                                            </Typography>
+                                            </AppText>
                                             <Typography variant="body2" fontWeight={600}>
                                                 {item.value}
                                             </Typography>
@@ -588,13 +579,12 @@ const PaymentHistoryPage = () => {
                                 </Stack>
                             </DialogContent>
                             <DialogActions>
-                                <Button onClick={() => setSelectedTransaction(null)}>Close</Button>
+                                <TextButton onClick={() => setSelectedTransaction(null)} size="sm">Close</TextButton>
                             </DialogActions>
                         </Dialog>
                     </>
                 )}
-            </Container>
-        </Box>
+        </>
     );
 };
 

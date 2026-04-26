@@ -30,6 +30,10 @@ html {
     background-color: var(--mui-palette-background-default, #f8fafc);
 }
 
+html {
+    overflow-y: scroll;
+}
+
 * {
     box-sizing: border-box;
 }

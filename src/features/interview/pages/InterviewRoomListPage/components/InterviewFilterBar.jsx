@@ -1,6 +1,4 @@
 import {
-    TextField,
-    Typography,
     InputAdornment,
     MenuItem,
     Stack,
@@ -8,6 +6,8 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import AppText from "../../../../common/components/AppText";
 
 function InterviewFilterBar({ 
     searchQuery, 
@@ -26,7 +26,7 @@ function InterviewFilterBar({
             sx={{ mb: 2 }}
         >
             {/* Search Input */}
-            <TextField
+            <FormTextField
                 placeholder="Search for interviews..."
                 size="small"
                 value={searchQuery}
@@ -72,7 +72,7 @@ function InterviewFilterBar({
                     }
                 >
                     <MenuItem value="">
-                        <Typography variant="body2">Filter</Typography>
+                        <AppText variant="label">Filter</AppText>
                     </MenuItem>
                     {filterOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
@@ -81,22 +81,6 @@ function InterviewFilterBar({
                     ))}
                 </FormSelect>
 
-                {/* <Button
-                    variant="outlined"
-                    startIcon={<FileDownloadOutlinedIcon />}
-                    onClick={onExport}
-                    sx={{
-                        borderRadius: 2,
-                        borderColor: "divider",
-                        color: "text.secondary",
-                        "&:hover": {
-                            borderColor: "text.secondary",
-                            bgcolor: "action.hover",
-                        },
-                    }}
-                >
-                    Export
-                </Button> */}
             </Stack>
         </Stack>
     );

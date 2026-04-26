@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useImperativeHandle, forwardRef, useState } from "react";
 import {
     Box,
-    Button,
     Chip,
     CircularProgress,
     Divider,
     IconButton,
     Stack,
     Tooltip,
-    Typography,
 } from "@mui/material";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -24,6 +22,8 @@ import {
     PREPARED_QUESTION_INTERACTION_TYPE,
     PREPARED_QUESTION_STATUS,
 } from "../../services/preparedQuestionApi";
+import { PrimaryButton, SecondaryButton, SuccessButton } from "../../../../common/components/buttons";
+import AppText from "../../../../common/components/AppText";
 
 function extractErrorMessage(error, fallback) {
     return (
@@ -90,48 +90,41 @@ function QuestionCard({ item, busyAction, onMark, onUnmark, onSend }) {
                 )}
             </Stack>
 
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+            <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
                 {item.title}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1.25 }}>
+            </AppText>
+            <AppText variant="body" sx={{ color: "text.secondary", mb: 1.25 }}>
                 {stripHtml(item.description)}
-            </Typography>
+            </AppText>
 
             <Stack direction="row" spacing={1} flexWrap="wrap">
                 {isCoding ? (
-                    <Button
-                        variant="contained"
-                        size="small"
+                    <PrimaryButton
+                        size="sm"
                         startIcon={<SendRoundedIcon />}
                         disabled={isIncomplete || busyAction === "send"}
                         onClick={() => onSend(item)}
-                        sx={{ textTransform: "none" }}
                     >
                         {isAsked ? "Resend to editor" : "Send to editor"}
-                    </Button>
+                    </PrimaryButton>
                 ) : isAsked ? (
-                    <Button
-                        variant="outlined"
-                        size="small"
+                    <SecondaryButton
+                        size="sm"
                         startIcon={<RadioButtonUncheckedIcon />}
                         disabled={busyAction === "unmark"}
                         onClick={() => onUnmark(item)}
-                        sx={{ textTransform: "none" }}
                     >
                         Unmark
-                    </Button>
+                    </SecondaryButton>
                 ) : (
-                    <Button
-                        variant="contained"
-                        size="small"
-                        color="success"
+                    <SuccessButton
+                        size="sm"
                         startIcon={<CheckCircleOutlineIcon />}
                         disabled={busyAction === "mark"}
                         onClick={() => onMark(item)}
-                        sx={{ textTransform: "none" }}
                     >
                         Mark as asked
-                    </Button>
+                    </SuccessButton>
                 )}
             </Stack>
         </Box>
@@ -224,14 +217,12 @@ const PreparedQuestionsWorkspace = forwardRef(function PreparedQuestionsWorkspac
                 sx={(t) => ({ px: 2, py: 1.25, borderBottom: `1px solid ${t.palette.divider}` })}
             >
                 <Box>
-                    <Typography variant="subtitle2" fontWeight={700}>
-                        Question roadmap
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <AppText variant="bodyStrong">Question roadmap</AppText>
+                    <AppText variant="caption" sx={{ color: "text.secondary" }}>
                         {items.length === 0
                             ? "No prepared questions"
                             : `${askedCount}/${items.length} asked`}
-                    </Typography>
+                    </AppText>
                 </Box>
                 <Tooltip title="Refresh">
                     <IconButton size="small" onClick={fetchItems} disabled={loading}>
@@ -247,12 +238,10 @@ const PreparedQuestionsWorkspace = forwardRef(function PreparedQuestionsWorkspac
                     </Box>
                 ) : items.length === 0 ? (
                     <Stack alignItems="center" spacing={1} sx={{ py: 4, px: 2, color: "text.secondary", textAlign: "center" }}>
-                        <Typography variant="subtitle2" fontWeight={700}>
-                            Nothing prepared yet
-                        </Typography>
-                        <Typography variant="caption">
+                        <AppText variant="bodyStrong">Nothing prepared yet</AppText>
+                        <AppText variant="caption">
                             Close the room and open &quot;Prepare Questions&quot; on this round to build your list.
-                        </Typography>
+                        </AppText>
                     </Stack>
                 ) : (
                     <Stack spacing={1.25} divider={<Divider flexItem sx={{ opacity: 0 }} />}>

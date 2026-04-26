@@ -4,15 +4,12 @@ import { useSelector } from "react-redux";
 import {
     Avatar,
     Box,
-    Button,
-    Chip,
     CircularProgress,
     FormControl,
     IconButton,
     MenuItem,
     Paper,
     Stack,
-    TextField,
     Tooltip,
     Typography,
 } from "@mui/material";
@@ -47,6 +44,8 @@ import { SORT_OPTIONS } from "../../../../common/constants/types";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import { FormTextField, Tag } from "../../../../common/components";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../../common/components/buttons";
 
 /* ─── Main Page ───────────────────────────────────────────────── */
 export default function QuestionDetailPage() {
@@ -540,28 +539,23 @@ export default function QuestionDetailPage() {
         >
             {/* Main column */}
             <Box flex={1} minWidth={0}>
-                <Button
-                    startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate("/questions")}
-                    sx={{
-                        color: "text.secondary",
-                        textTransform: "none",
-                        fontSize: 13,
-                        p: 0,
-                        mb: 2.25,
-                        "&:hover": { color: "primary.main", background: "none" },
-                    }}
-                >
-                    All Questions
-                </Button>
+                <Box sx={{ mb: 2.25 }}>
+                    <TextButton
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => navigate("/questions")}
+                        size="sm"
+                    >
+                        All Questions
+                    </TextButton>
+                </Box>
 
                 <Stack direction="row" alignItems="flex-start" gap={1} mb={0.75}>
                     {editing ? (
                         <Box flex={1}>
-                            <TextField
+                            <FormTextField
                                 fullWidth
                                 multiline
-                                size="small"
+                                sizeVariant="sm"
                                 value={editContent}
                                 onChange={(e) => {
                                     const WORD_LIMIT = 60;
@@ -579,25 +573,21 @@ export default function QuestionDetailPage() {
                                 sx={{ mb: 1 }}
                             />
                             <Stack direction="row" gap={1}>
-                                <Button
-                                    size="small"
-                                    variant="contained"
+                                <PrimaryButton
+                                    size="sm"
                                     startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
                                     disabled={savingEdit}
                                     onClick={requestSaveEdit}
-                                    sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
                                     {savingEdit ? "Saving..." : "Save"}
-                                </Button>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
+                                </PrimaryButton>
+                                <SecondaryButton
+                                    size="sm"
                                     startIcon={<CloseIcon sx={{ fontSize: 14 }} />}
                                     onClick={() => setEditing(false)}
-                                    sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
                                     Cancel
-                                </Button>
+                                </SecondaryButton>
                             </Stack>
                         </Box>
                     ) : (
@@ -679,8 +669,8 @@ export default function QuestionDetailPage() {
                 {/* Actions */}
                 <Stack direction="row" flexWrap="wrap" gap={0.75} mb={2.75}>
                     <Tooltip title={questionLiked ? "Unlike" : "Like"} placement="top">
-                        <Button
-                            size="small"
+                        <SecondaryButton
+                            size="sm"
                             startIcon={
                                 questionLiked ? (
                                     <ThumbUpIcon sx={{ fontSize: 15, color: "primary.main" }} />
@@ -689,39 +679,15 @@ export default function QuestionDetailPage() {
                                 )
                             }
                             onClick={handleLikeQuestion}
-                            variant="outlined"
-                            sx={{
-                                borderRadius: 999,
-                                textTransform: "none",
-                                fontSize: 13,
-                                color: questionLiked ? "primary.main" : "text.primary",
-                                borderColor: questionLiked ? "primary.main" : "divider",
-                                bgcolor: questionLiked ? "primary.50" : "transparent",
-                                "&:hover": { bgcolor: "action.hover" },
-                            }}
                         >
                             Like {` ${getQuestionLikeCount(data)}`}
-                        </Button>
+                        </SecondaryButton>
                     </Tooltip>
-                    {actionBtns.map(({ icon, label, onClick, active, tooltip }) => (
+                    {actionBtns.map(({ icon, label, onClick, tooltip }) => (
                         <Tooltip key={label} title={tooltip} placement="top">
-                            <Button
-                                size="small"
-                                startIcon={icon}
-                                onClick={onClick}
-                                variant="outlined"
-                                sx={{
-                                    borderRadius: 999,
-                                    textTransform: "none",
-                                    fontSize: 13,
-                                    color: active ? "primary.main" : "text.primary",
-                                    borderColor: active ? "primary.main" : "divider",
-                                    bgcolor: active ? "primary.50" : "transparent",
-                                    "&:hover": { bgcolor: "action.hover" },
-                                }}
-                            >
+                            <SecondaryButton size="sm" startIcon={icon} onClick={onClick}>
                                 {label}
-                            </Button>
+                            </SecondaryButton>
                         </Tooltip>
                     ))}
                 </Stack>
@@ -780,9 +746,9 @@ export default function QuestionDetailPage() {
                                 (currentUser?.fullName?.[0] ?? currentUser?.name?.[0] ?? "?")}
                         </Avatar>
                         <Box flex={1}>
-                            <TextField
+                            <FormTextField
                                 fullWidth
-                                size="small"
+                                sizeVariant="sm"
                                 multiline
                                 minRows={2}
                                 placeholder="Add your own answer to this question..."
@@ -791,16 +757,14 @@ export default function QuestionDetailPage() {
                                 sx={{ mb: 1 }}
                             />
                             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                                <Button
-                                    size="small"
-                                    variant="contained"
+                                <PrimaryButton
+                                    size="sm"
                                     endIcon={<SendIcon sx={{ fontSize: 14 }} />}
                                     disabled={!answerInput.trim() || submittingAnswer}
                                     onClick={handleAddComment}
-                                    sx={{ textTransform: "none", borderRadius: 999 }}
                                 >
                                     {submittingAnswer ? "Posting..." : "Post Answer"}
-                                </Button>
+                                </PrimaryButton>
                             </Box>
                         </Box>
                     </Stack>
@@ -920,11 +884,11 @@ export default function QuestionDetailPage() {
                                         allCompanies?.find((c) => (c.name || c.companyName) === itemName);
 
                                     return (
-                                        <Chip
+                                        <Tag
                                             key={isObject ? item.id : item}
                                             icon={<CompanyLogo name={matchedCompany?.domain || itemName} size={14} />}
                                             label={itemName}
-                                            size="small"
+                                            size="sm"
                                             sx={{
                                                 bgcolor: "grey.100",
                                                 fontSize: 13,
@@ -993,7 +957,7 @@ export default function QuestionDetailPage() {
                                     (q.companyNames && q.companyNames.length > 0)) && (
                                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                                         {[...(q.roles || []), ...(q.tags || [])].slice(0, 2).map((tag, i) => (
-                                            <Chip
+                                            <Tag
                                                 key={i}
                                                 icon={
                                                     <CompanyLogo
@@ -1002,7 +966,7 @@ export default function QuestionDetailPage() {
                                                     />
                                                 }
                                                 label={typeof tag === "object" ? tag.name : tag}
-                                                size="small"
+                                                size="sm"
                                                 sx={{
                                                     height: 20,
                                                     fontSize: 11,

@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Box, Button, CircularProgress, Pagination, Stack, Typography } from "@mui/material";
+import { Box, CircularProgress, Pagination, Stack } from "@mui/material";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import PageHeader from "../../../../common/components/PageHeader";
+import AppText from "../../../../common/components/AppText";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { interactionEndPoints } from "../../service/interactionApi";
 import QuestionCard from "../InterviewQuestionsPage/QuestionCard";
+import { PrimaryButton } from "../../../../common/components/buttons";
 
 const PAGE_SIZE = 10;
 
@@ -49,34 +51,16 @@ export default function SavedQuestionsPage() {
     }, [page, currentUser]);
 
     return (
-        <Box sx={{ maxWidth: 900, mx: "auto", px: 3, pt: 4, pb: 8 }}>
-            {/* Header */}
-            <Button
-                startIcon={<ArrowBackIcon />}
-                onClick={() => navigate(-1)}
-                sx={{
-                    color: "text.secondary",
-                    textTransform: "none",
-                    fontSize: 13,
-                    p: 0,
-                    mb: 2.5,
-                    "&:hover": { color: "primary.main", background: "none" },
-                }}
-            >
-                Back
-            </Button>
-
-            <Stack direction="row" alignItems="center" gap={1.25} mb={3}>
-                <BookmarkIcon color="primary" />
-                <Typography variant="h5" fontWeight={700}>
-                    Saved Questions
-                </Typography>
-                {totalCount != null && (
-                    <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                        ({totalCount})
-                    </Typography>
-                )}
-            </Stack>
+        <>
+            <PageHeader
+                title="Saved Questions"
+                subtitle="Review and manage the questions you've bookmarked for later practice."
+                actions={
+                    totalCount != null ? (
+                        <AppText variant="muted">({totalCount} questions)</AppText>
+                    ) : null
+                }
+            />
 
             {/* Content */}
             {loading ? (
@@ -94,15 +78,15 @@ export default function SavedQuestionsPage() {
                     }}
                 >
                     <BookmarkIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1.5 }} />
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                    <AppText variant="bodyStrong" sx={{ color: "text.secondary", mb: 0.5 }}>
                         No saved questions yet
-                    </Typography>
-                    <Typography variant="body2" color="text.disabled" mb={2.5}>
+                    </AppText>
+                    <AppText variant="muted" sx={{ mb: 2.5 }}>
                         Save questions while browsing and they will appear here.
-                    </Typography>
-                    <Button variant="contained" onClick={() => navigate("/questions")} sx={{ textTransform: "none" }}>
+                    </AppText>
+                    <PrimaryButton onClick={() => navigate("/questions")} size="md">
                         Browse Questions
-                    </Button>
+                    </PrimaryButton>
                 </Box>
             ) : (
                 <>
@@ -125,6 +109,6 @@ export default function SavedQuestionsPage() {
                     )}
                 </>
             )}
-        </Box>
+        </>
     );
 }

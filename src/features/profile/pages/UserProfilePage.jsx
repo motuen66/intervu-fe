@@ -2,12 +2,8 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import {
     Box,
-    Container,
     Paper,
     Avatar,
-    Typography,
-    TextField,
-    Button,
     IconButton,
     Grid,
     Divider,
@@ -20,6 +16,8 @@ import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { profileEndPoints } from '../services/profileApi';
 import toast from 'react-hot-toast';
+import { AppText, FormTextField, PageHeader, SectionHeading } from '../../../common/components';
+import { PrimaryButton, SecondaryButton } from '../../../common/components/buttons';
 // import UploadCv from "../components/UploadCv.jsx";
 
 export default function UserProfilePage() {
@@ -244,72 +242,45 @@ export default function UserProfilePage() {
     }
 
     return (
-        <Box sx={{ minHeight: "100vh", background: "#ffffff", py: 4 }}>
-            <Container maxWidth="md">
+        <>
 
                 <Paper sx={{ p: 4, borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}></Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
-                        Settings
-                    </Typography>
+                    <PageHeader title="Settings" />
                     {/* Email Section */}
                     <Box sx={{ mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                            Email
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
+                        <SectionHeading title="Email" />
+                        <AppText variant="muted" sx={{ mb: 2 }}>
                             Your account is connected through Google. Please create a password with Exponent
                             before making email changes.
-                        </Typography>
-                        <TextField
+                        </AppText>
+                        <FormTextField
                             fullWidth
                             value={email}
                             disabled
-                            variant="outlined"
                             sx={{ mb: 2, background: "rgba(0,0,0,0.02)" }}
                         />
-                        <Button
-                            variant="outlined"
-                            disabled
-                            sx={{
-                                borderColor: "rgba(0,0,0,0.2)",
-                                color: "rgba(0,0,0,0.4)",
-                                textTransform: "none",
-                            }}
-                        >
-                            Update email
-                        </Button>
+                        <SecondaryButton disabled>Update email</SecondaryButton>
                     </Box>
 
                     <Divider sx={{ my: 4 }} />
 
                     {/* Password Settings */}
                     <Box sx={{ mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                            Password Settings
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)", mb: 2 }}>
+                        <SectionHeading title="Password Settings" />
+                        <AppText variant="muted" sx={{ mb: 2 }}>
                             Click the button below to change your password.
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            onClick={() => setShowPasswordForm(!showPasswordForm)}
-                            sx={{
-                                bgcolor: "primary.main",
-                                "&:hover": {
-                                    bgcolor: "primary.dark",
-                                },
-                                textTransform: "none",
-                                mb: showPasswordForm ? 3 : 0,
-                            }}
-                        >
-                            {showPasswordForm ? "Hide Password Form" : "Change Password"}
-                        </Button>
+                        </AppText>
+                        <Box sx={{ mb: showPasswordForm ? 3 : 0 }}>
+                            <PrimaryButton onClick={() => setShowPasswordForm(!showPasswordForm)}>
+                                {showPasswordForm ? "Hide Password Form" : "Change Password"}
+                            </PrimaryButton>
+                        </Box>
 
                         {/* Change Password Form */}
                         {showPasswordForm && (
                             <Box sx={{ mt: 3 }}>
-                                <TextField
+                                <FormTextField
                                     fullWidth
                                     type="password"
                                     label="Current Password"
@@ -320,10 +291,9 @@ export default function UserProfilePage() {
                                             currentPassword: e.target.value,
                                         }))
                                     }
-                                    variant="outlined"
                                     sx={{ mb: 2 }}
                                 />
-                                <TextField
+                                <FormTextField
                                     fullWidth
                                     type="password"
                                     label="New Password"
@@ -331,10 +301,9 @@ export default function UserProfilePage() {
                                     onChange={(e) =>
                                         setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))
                                     }
-                                    variant="outlined"
                                     sx={{ mb: 2 }}
                                 />
-                                <TextField
+                                <FormTextField
                                     fullWidth
                                     type="password"
                                     label="Confirm New Password"
@@ -345,27 +314,18 @@ export default function UserProfilePage() {
                                             confirmPassword: e.target.value,
                                         }))
                                     }
-                                    variant="outlined"
                                     sx={{ mb: 2 }}
                                 />
-                                <Button
-                                    variant="contained"
+                                <PrimaryButton
                                     onClick={handleChangePassword}
                                     disabled={
                                         !passwordData.currentPassword ||
                                         !passwordData.newPassword ||
                                         !passwordData.confirmPassword
                                     }
-                                    sx={{
-                                        bgcolor: "primary.main",
-                                        "&:hover": {
-                                            bgcolor: "primary.dark",
-                                        },
-                                        textTransform: "none",
-                                    }}
                                 >
                                     Update Password
-                                </Button>
+                                </PrimaryButton>
                             </Box>
                         )}
                     </Box>
@@ -374,15 +334,12 @@ export default function UserProfilePage() {
 
                     {/* Notification Settings */}
                     <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                            Notification Settings
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "rgba(0,0,0,0.6)" }}>
+                        <SectionHeading title="Notification Settings" />
+                        <AppText variant="muted">
                             When would you like to receive an email?
-                        </Typography>
+                        </AppText>
                     </Box>
                 </Paper>
-            </Container>
-        </Box>
+        </>
     );
 }

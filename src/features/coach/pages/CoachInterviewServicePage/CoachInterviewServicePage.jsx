@@ -6,12 +6,13 @@ import { METHOD } from "../../../../common/constants/api";
 import CreateCoachServiceDialog from "./CreateCoachServiceDialog";
 import UpdateCoachServiceDialog from "./UpdateCoachServiceDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import { Box, Toolbar, Typography, CircularProgress, IconButton } from "@mui/material";
+import { Box, CircularProgress, IconButton } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import toast from "react-hot-toast";
 import "./CoachInterviewServicePage.css";
 import { PrimaryButton } from "../../../../common/components/buttons";
+import PageHeader from "../../../../common/components/PageHeader";
 
 export default function CoachInterviewServicePage() {
     const [items, setItems] = useState([]);
@@ -92,19 +93,13 @@ export default function CoachInterviewServicePage() {
     };
 
     return (
-        <Box className="coach-service-management" p={2}>
+        <Box className="coach-service-management">
             <div className="coach-service-panel">
-                <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Box>
-                        <Typography variant="h6">My Interview Services</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Manage the interview types you offer and set your own pricing.
-                        </Typography>
-                    </Box>
-                    <Box>
-                        <PrimaryButton onClick={() => setOpenCreate(true)}>Add Service</PrimaryButton>
-                    </Box>
-                </Toolbar>
+                    <PageHeader
+                        title="My Interview Services"
+                        subtitle="Manage the interview types you offer and set your own pricing."
+                        actions={<PrimaryButton onClick={() => setOpenCreate(true)}>Add Service</PrimaryButton>}
+                    />
 
                 {loading ? (
                     <Box display="flex" justifyContent="center" mt={6} mb={6}>

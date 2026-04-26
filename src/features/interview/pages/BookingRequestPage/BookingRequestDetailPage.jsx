@@ -28,7 +28,6 @@ import {
     DialogContent,
     DialogActions,
 } from "@mui/material";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LinkIcon from "@mui/icons-material/Link";
 import CloseIcon from "@mui/icons-material/Close";
@@ -39,7 +38,8 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import SessionResultSection from "./components/SessionResultSection";
 import FormTextField from "../../../../common/components/form/FormTextField";
-import { SecondaryButton, DangerButton } from "../../../../common/components/buttons";
+import { PrimaryButton, SecondaryButton, DangerButton } from "../../../../common/components/buttons";
+import PageHeader from "../../../../common/components/PageHeader";
 import { dialogStyles } from "../../../../common/constants/uiStyles";
 import { CvDialog } from "../../../../features/profiles/components/CvDialog";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -48,61 +48,57 @@ import { userEndPoints } from "../../../../common/services/userApi";
 import CancelInterviewConfirmDialog from "../InterviewRoomListPage/components/CancelInterviewConfirmDialog";
 import "./BookingRequestPage.css";
 import { trackInitiatePayment, trackCreateBooking, trackServiceUsed } from "../../../../utils/analytics";
+import AppText from "../../../../common/components/AppText";
+import SectionHeading from "../../../../common/components/SectionHeading";
+import StatusChip from "../../../../common/components/StatusChip";
 
 // UI Helper: Detail Item matching the premium style
 const DetailItem = ({ label, value, statusBadge, color }) => (
     <Box>
-        <Typography
-            variant="caption"
-            color="#94a3b8"
-            fontWeight={700}
-            sx={{ letterSpacing: "0.08em", display: "block", mb: 1.5, fontSize: "0.75rem" }}
-        >
+        <AppText variant="overline" sx={{ color: "#94a3b8", letterSpacing: "0.08em", display: "block", mb: 1.5, fontSize: "0.75rem" }}>
             {label}
-        </Typography>
+        </AppText>
         {statusBadge ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <FiberManualRecordIcon sx={{ fontSize: 10, color: color || "#22c55e" }} />
-                <Typography variant="body1" fontWeight={800} color="#111827">
+                <AppText variant="bodyStrong" sx={{ color: "#111827", fontWeight: 600 }}>
                     {value}
-                </Typography>
+                </AppText>
             </Box>
         ) : (
-            <Typography
-                variant="body1"
-                fontWeight={800}
-                color={color || "#0f172a"}
-                sx={{ fontSize: "1.05rem", lineHeight: 1.15 }}
-            >
+            <AppText variant="bodyStrong" sx={{ color: color || "#0f172a", fontSize: "1.05rem", lineHeight: 1.15, fontWeight: 600 }}>
                 {value || "—"}
-            </Typography>
+            </AppText>
         )}
     </Box>
 );
 
 const SectionCard = ({ title, icon: Icon, children, sx }) => (
     <Box sx={{ bgcolor: "white", p: 5, borderRadius: "24px", border: "1px solid #f1f5f9", mb: 1, ...sx }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
-            {Icon && (
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        bgcolor: "#111827",
-                        color: "white",
-                        borderRadius: "50%",
-                        p: 0.5,
-                    }}
-                >
-                    <Icon sx={{ fontSize: 20 }} />
-                </Box>
-            )}
-            <Typography variant="h6" fontWeight={900} color="#111827" sx={{ letterSpacing: "-0.01em" }}>
-                {title}
-            </Typography>
-        </Stack>
+        <SectionHeading
+            title={title}
+            icon={
+                Icon ? (
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            bgcolor: "action.hover",
+                            color: "text.secondary",
+                            borderRadius: "50%",
+                            p: 0.5,
+                        }}
+                    >
+                        <Icon sx={{ fontSize: 20 }} />
+                    </Box>
+                ) : null
+            }
+            disableGutters
+        />
+        <Box sx={{ mt: 3 }}>
         {children}
+        </Box>
     </Box>
 );
 
@@ -538,12 +534,14 @@ export default function BookingRequestDetailPage() {
     if (!detail) {
         return (
             <Box sx={{ textAlign: "center", py: 10 }}>
-                <Typography variant="h5" color="text.secondary">
+                <AppText variant="bodyStrong" sx={{ color: "text.secondary", fontSize: "1.125rem" }}>
                     Booking request not found.
-                </Typography>
-                <SecondaryButton sx={{ mt: 4 }} onClick={() => navigate("/booking-requests")}>
-                    Back to list
-                </SecondaryButton>
+                </AppText>
+                <Box sx={{ mt: 4 }}>
+                    <SecondaryButton onClick={() => navigate("/booking-requests")}>
+                        Back to list
+                    </SecondaryButton>
+                </Box>
             </Box>
         );
     }
@@ -557,132 +555,27 @@ export default function BookingRequestDetailPage() {
     const isPendingApproval = detail.status === BOOKING_REQUEST_STATUS.PendingForApprovalAfterPayment;
 
     return (
-        <Box sx={{ minHeight: "100vh", pt: 3, pb: 6, px: { xs: 3, md: 4 } }}>
-            <Box className="booking-detail-page" sx={{ maxWidth: 1200, mx: "auto", width: "100%" }}>
-                {/* NAVIGATION & TOP ACTIONS */}
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
-                    <Stack direction="row" alignItems="center" spacing={1.5}>
-                        <IconButton
-                            onClick={() => navigate("/booking-requests")}
-                            sx={{
-                                bgcolor: "white",
-                                border: "1px solid #f1f5f9",
-                                "&:hover": { bgcolor: "#f1f5f9" },
-                                p: 1,
-                            }}
-                        >
-                            <ArrowBackIosNewIcon sx={{ fontSize: 14, color: "#111827" }} />
-                        </IconButton>
-                        <Box>
-                            <Typography
-                                variant="caption"
-                                color="#94a3b8"
-                                fontWeight={700}
-                                sx={{ letterSpacing: "0.05em" }}
-                            >
-                                RETURN TO LIST
-                            </Typography>
-                        </Box>
-                    </Stack>
-
-                    {/* Primary Action Context Dependent */}
-                    <Stack direction="row" spacing={2}>
-                        {/* Legacy: coach accept/reject booking request */}
-                        {/* {isCoach && isPaid && !hasCompletedInterview && (
-                            <>
-                                <SecondaryButton
-                                    onClick={handleAccept}
-                                    loading={responding}
-                                    sx={{
-                                        borderRadius: "14px",
-                                        px: 4,
-                                        bgcolor: "#bef264",
-                                        color: "#111827",
-                                        border: "none",
-                                        "&:hover": { bgcolor: "#a3e635" },
-                                    }}
-                                >
-                                    Accept Request
-                                </SecondaryButton>
-                                <DangerButton onClick={() => setRejectOpen(true)} sx={{ borderRadius: "14px", px: 3 }}>
-                                    Reject
-                                </DangerButton>
-                            </>
-                        )} */}
-
-                        {!isCoach && !hasCompletedInterview && (
-                            <>
+        <>
+            <PageHeader
+                    title={isAccepted ? "Interview Details" : "Booking Details"}
+                    subtitle={`Session: ${detail.interviewTypeName || (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? "External Session" : "JD Interview")}`}
+                    actions={
+                        !isCoach && !hasCompletedInterview ? (
+                            <Stack direction="row" spacing={1.5}>
                                 {isPending && (
-                                    <SecondaryButton
-                                        onClick={handlePay}
-                                        loading={paying}
-                                        sx={{
-                                            borderRadius: "14px",
-                                            px: 4,
-                                            bgcolor: "#bef264",
-                                            color: "#111827",
-                                            border: "none",
-                                            "&:hover": { bgcolor: "#a3e635" },
-                                        }}
-                                    >
+                                    <PrimaryButton onClick={handlePay} loading={paying}>
                                         Pay {detail.totalAmount?.toLocaleString()} ₫
-                                    </SecondaryButton>
+                                    </PrimaryButton>
                                 )}
                                 {(isPending || isAccepted) && (
-                                    <DangerButton
-                                        onClick={handleOpenCancelRequestConfirm}
-                                        loading={cancelling}
-                                        sx={{ borderRadius: "14px", px: 3 }}
-                                    >
+                                    <DangerButton onClick={handleOpenCancelRequestConfirm} loading={cancelling}>
                                         Cancel Request
                                     </DangerButton>
                                 )}
-                            </>
-                        )}
-
-                        {/* {isAccepted && (
-                            <SecondaryButton
-                                onClick={() => navigate("/home")}
-                                sx={{
-                                    borderRadius: "28px",
-                                    px: 4,
-                                    py: 1.1,
-                                    fontWeight: 900,
-                                    border: "none",
-                                }}
-                            >
-                                Schedule Follow-up
-                            </SecondaryButton>
-                        )} */}
-                    </Stack>
-                </Stack>
-
-                {/* PAGE TITLE */}
-                <Box sx={{ mb: 3 }}>
-                    <Typography
-                        fontWeight={900}
-                        color="#0f172a"
-                        sx={{
-                            letterSpacing: "-0.03em",
-                            fontSize: { xs: "2.2rem", md: "3rem" },
-                            lineHeight: 1.1,
-                            mb: 1,
-                            fontFamily: '"Outfit", "Plus Jakarta Sans", sans-serif',
-                        }}
-                    >
-                        {isAccepted ? "Interview Results" : "Booking Details"}
-                    </Typography>
-                    <Typography
-                        variant="h6"
-                        color="#475569"
-                        fontWeight={700}
-                        sx={{ fontSize: "1.15rem", opacity: 0.9 }}
-                    >
-                        {"Session: "}
-                        {detail.interviewTypeName ||
-                            (detail.type === BOOKING_REQUEST_TYPE.EXTERNAL ? "External Session" : "JD Interview")}
-                    </Typography>
-                </Box>
+                            </Stack>
+                        ) : null
+                    }
+                />
 
                 {/* CONTENT STACK — vertical alignment of all major blocks */}
                 <Stack spacing={1.5}>
@@ -751,14 +644,9 @@ export default function BookingRequestDetailPage() {
                         >
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <LinkIcon sx={{ fontSize: 15, color: "#94a3b8" }} />
-                                <Typography
-                                    variant="caption"
-                                    color="#94a3b8"
-                                    fontWeight={700}
-                                    sx={{ letterSpacing: "0.08em", textTransform: "uppercase", fontSize: "0.68rem" }}
-                                >
+                                <AppText variant="overline" sx={{ color: "#94a3b8", letterSpacing: "0.08em", fontSize: "0.68rem" }}>
                                     Documents
-                                </Typography>
+                                </AppText>
                             </Stack>
                             {detail.jobDescriptionUrl?.length > 4 && (
                                 <Box
@@ -776,12 +664,12 @@ export default function BookingRequestDetailPage() {
                                     }}
                                     onClick={() => openDocumentDialog("Job Description", detail.jobDescriptionUrl)}
                                 >
-                                    <Typography variant="body2" fontWeight={700} color="#0f172a">
+                                    <AppText variant="bodyStrong" sx={{ color: "#0f172a" }}>
                                         Job Description
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: "#4F46E5", fontWeight: 800 }}>
+                                    </AppText>
+                                    <AppText variant="caption" sx={{ color: "#4F46E5", fontWeight: 800 }}>
                                         VIEW ↗
-                                    </Typography>
+                                    </AppText>
                                 </Box>
                             )}
                             {detail.cvUrl?.length > 4 && (
@@ -800,12 +688,12 @@ export default function BookingRequestDetailPage() {
                                     }}
                                     onClick={() => openDocumentDialog("Candidate CV", detail.cvUrl)}
                                 >
-                                    <Typography variant="body2" fontWeight={700} color="#0f172a">
+                                    <AppText variant="bodyStrong" sx={{ color: "#0f172a" }}>
                                         Candidate CV
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: "#4F46E5", fontWeight: 800 }}>
+                                    </AppText>
+                                    <AppText variant="caption" sx={{ color: "#4F46E5", fontWeight: 800 }}>
                                         VIEW ↗
-                                    </Typography>
+                                    </AppText>
                                 </Box>
                             )}
                         </Box>
@@ -859,87 +747,31 @@ export default function BookingRequestDetailPage() {
                                                     sx={{ mb: 3 }}
                                                 >
                                                     <Box>
-                                                        <Typography
-                                                            variant="caption"
-                                                            color="#94a3b8"
-                                                            fontWeight={800}
-                                                            sx={{ letterSpacing: "0.1em", display: "block", mb: 0.5 }}
-                                                        >
+                                                        <AppText variant="overline" sx={{ color: "#94a3b8", letterSpacing: "0.1em", display: "block", mb: 0.5 }}>
                                                             ROUND
-                                                        </Typography>
-                                                        <Typography
-                                                            variant="h4"
-                                                            fontWeight={900}
-                                                            color="#0f172a"
-                                                            sx={{ lineHeight: 1 }}
-                                                        >
+                                                        </AppText>
+                                                        <AppText variant="bodyStrong" sx={{ color: "#0f172a", fontSize: "2rem", lineHeight: 1, fontWeight: 700 }}>
                                                             {String(r.roundNumber).padStart(2, "0")}
-                                                        </Typography>
+                                                        </AppText>
                                                     </Box>
                                                     <Stack direction="row" spacing={1} alignItems="center">
                                                         {isCancelled && (
-                                                            <Box
-                                                                sx={{
-                                                                    py: 0.6,
-                                                                    px: 2,
-                                                                    borderRadius: "12px",
-                                                                    bgcolor: "#fef2f2",
-                                                                    border: "1px solid #fecaca",
-                                                                }}
-                                                            >
-                                                                <Typography
-                                                                    variant="caption"
-                                                                    sx={{
-                                                                        color: "#ef4444",
-                                                                        fontWeight: 900,
-                                                                        fontSize: "0.7rem",
-                                                                        letterSpacing: "0.05em",
-                                                                    }}
-                                                                >
-                                                                    CANCELLED
-                                                                </Typography>
-                                                            </Box>
+                                                            <StatusChip label="Cancelled" color="error" size="sm" />
                                                         )}
-                                                        <Box
-                                                            sx={{
-                                                                py: 0.6,
-                                                                px: 2,
-                                                                borderRadius: "12px",
-                                                                bgcolor: "#0f172a",
-                                                                border: "1px solid #1e293b",
-                                                            }}
-                                                        >
-                                                            <Typography
-                                                                variant="caption"
-                                                                sx={{
-                                                                    color: "#bef264",
-                                                                    fontWeight: 900,
-                                                                    fontSize: "0.7rem",
-                                                                    letterSpacing: "0.05em",
-                                                                }}
-                                                            >
-                                                                {r.isCoding ? "TECHNICAL" : "GENERAL"}
-                                                            </Typography>
-                                                        </Box>
+                                                        <StatusChip
+                                                            label={r.isCoding ? "Technical" : "General"}
+                                                            color={r.isCoding ? "info" : "default"}
+                                                            size="sm"
+                                                        />
                                                     </Stack>
                                                 </Stack>
 
                                                 <Box sx={{ mb: 4 }}>
-                                                    <Typography
-                                                        variant="h6"
-                                                        fontWeight={800}
-                                                        color="#0f172a"
-                                                        sx={{ mb: 1, lineHeight: 1.2 }}
-                                                    >
+                                                    <AppText variant="bodyStrong" sx={{ color: "#0f172a", mb: 1, lineHeight: 1.2, fontWeight: 600, fontSize: "1.125rem" }}>
                                                         {r.interviewTypeName}
-                                                    </Typography>
+                                                    </AppText>
                                                     <Stack spacing={1}>
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="#64748b"
-                                                            fontWeight={600}
-                                                            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                                                        >
+                                                        <AppText variant="label" sx={{ color: "#64748b", display: "flex", alignItems: "center", gap: 1, fontWeight: 600 }}>
                                                             <AccessTimeIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
                                                             {new Date(r.startTime).toLocaleString("en-US", {
                                                                 day: "numeric",
@@ -958,7 +790,7 @@ export default function BookingRequestDetailPage() {
                                                                     • {formatDurationLabel(roundDurationMinutes)}
                                                                 </span>
                                                             )}
-                                                        </Typography>
+                                                        </AppText>
                                                         {/* <Typography
                                                             variant="body2"
                                                             color="#64748b"
@@ -983,12 +815,12 @@ export default function BookingRequestDetailPage() {
                                                         alignItems: "center",
                                                     }}
                                                 >
-                                                    <Typography variant="body2" color="#94a3b8" fontWeight={700}>
+                                                    <AppText variant="label" sx={{ color: "#94a3b8", fontWeight: 700 }}>
                                                         Session Price
-                                                    </Typography>
-                                                    <Typography variant="h6" fontWeight={900} color="#0f172a">
+                                                    </AppText>
+                                                    <AppText variant="bodyStrong" sx={{ color: "#0f172a", fontSize: "1.125rem", fontWeight: 700 }}>
                                                         {r.price?.toLocaleString()} ₫
-                                                    </Typography>
+                                                    </AppText>
                                                 </Box>
 
                                                 {canCancelRound && (
@@ -997,7 +829,6 @@ export default function BookingRequestDetailPage() {
                                                             fullWidth
                                                             loading={cancellingRoundId === r.id}
                                                             onClick={() => handleOpenCancelRoundConfirm(r)}
-                                                            sx={{ borderRadius: "12px", py: 1 }}
                                                         >
                                                             Cancel Round
                                                         </DangerButton>
@@ -1026,13 +857,12 @@ export default function BookingRequestDetailPage() {
                             icon={CloseIcon}
                             sx={{ bgcolor: "#fff1f2", border: "1px solid #fecdd3", p: 4 }}
                         >
-                            <Typography variant="body1" color="#991b1b" fontWeight={500}>
+                            <AppText variant="body" sx={{ color: "#991b1b", fontWeight: 500 }}>
                                 {detail.rejectionReason}
-                            </Typography>
+                            </AppText>
                         </SectionCard>
                     )}
                 </Stack>
-            </Box>
 
             <CancelInterviewConfirmDialog
                 open={cancelRoundConfirmState.open}
@@ -1070,9 +900,9 @@ export default function BookingRequestDetailPage() {
             >
                 <DialogTitle sx={{ fontWeight: 900, px: 4, pt: 4 }}>Reject Request</DialogTitle>
                 <DialogContent sx={{ px: 4 }}>
-                    <Typography variant="body2" color="#64748b" sx={{ mb: 3 }}>
+                    <AppText variant="muted" sx={{ color: "#64748b", mb: 3 }}>
                         Please explain why you cannot accept this session.
-                    </Typography>
+                    </AppText>
                     <FormTextField
                         fullWidth
                         multiline
@@ -1097,6 +927,6 @@ export default function BookingRequestDetailPage() {
                 url={documentDialog.url}
                 title={documentDialog.title || "Document Viewer"}
             />
-        </Box>
+        </>
     );
 }

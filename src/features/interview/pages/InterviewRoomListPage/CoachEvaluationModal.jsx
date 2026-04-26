@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Box,
-    Button,
     CircularProgress,
     FormControl,
     FormControlLabel,
@@ -13,14 +12,17 @@ import {
     RadioGroup,
     Slider,
     Stack,
-    TextField,
     Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
-import { buttonStyles, dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
+import { dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import { PrimaryButton } from "../../../../common/components/buttons";
+import SectionHeading from "../../../../common/components/SectionHeading";
+import AppText from "../../../../common/components/AppText";
 
 function CoachEvaluationModal({
     open,
@@ -257,29 +259,20 @@ function CoachEvaluationModal({
                     p: 3,
                 })}
             >
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                    <Typography id="coach-evaluation-modal" variant="h5" component="h2">
-                        Incomplete Mock Interview Evaluation
-                    </Typography>
-                    {showCloseButton && (
-                        <IconButton
-                            aria-label="Close evaluation modal"
-                            onClick={handleClose}
-                            sx={{ color: "text.secondary", cursor: "pointer" }}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                    )}
-                </Stack>
+                <SectionHeading
+                    title="Incomplete Mock Interview Evaluation"
+                    as="h2"
+                    disableGutters
+                />
                 {room?.candidateName && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    <AppText variant="muted" sx={{ mb: 0.5 }}>
                         Candidate: <strong>{room.candidateName}</strong>
-                    </Typography>
+                    </AppText>
                 )}
                 {interviewLabel && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    <AppText variant="muted" sx={{ mb: 2 }}>
                         {interviewLabel}
-                    </Typography>
+                    </AppText>
                 )}
                 {error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
@@ -289,14 +282,14 @@ function CoachEvaluationModal({
                 {loading ? (
                     <Stack alignItems="center" sx={{ py: 4 }}>
                         <CircularProgress size={28} />
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        <AppText variant="muted" sx={{ mt: 1 }}>
                             Loading evaluation form...
-                        </Typography>
+                        </AppText>
                     </Stack>
                 ) : (
                     <Stack spacing={2} sx={{ maxHeight: "60vh", overflowY: "auto", pr: 1 }}>
                         {items.length === 0 ? (
-                            <Typography color="text.secondary">No evaluation items configured.</Typography>
+                            <AppText variant="muted">No evaluation items configured.</AppText>
                         ) : (
                             items.map((item, index) => (
                                 <Box
@@ -308,9 +301,9 @@ function CoachEvaluationModal({
                                         p: 2,
                                     }}
                                 >
-                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                    <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
                                         {item.question}
-                                    </Typography>
+                                    </AppText>
                                     <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 0.5 }}>
                                         <Box sx={{ flex: 1 }}>
                                             <Slider
@@ -323,21 +316,21 @@ function CoachEvaluationModal({
                                                 onChange={(_, val) => handleItemChange(index, "score", val)}
                                             />
                                             <Stack direction="row" justifyContent="space-between" sx={{ mt: -1 }}>
-                                                <Typography variant="caption" color="text.secondary">Very Bad</Typography>
-                                                <Typography variant="caption" color="text.secondary">Average</Typography>
-                                                <Typography variant="caption" color="text.secondary">Very Good</Typography>
+                                                <AppText variant="caption">Very Bad</AppText>
+                                                <AppText variant="caption">Average</AppText>
+                                                <AppText variant="caption">Very Good</AppText>
                                             </Stack>
                                         </Box>
                                         <Box sx={{ width: 80, textAlign: "right" }}>
                                             <Typography variant="h6" color={getScoreColor(item.score)} sx={{ fontWeight: 700, lineHeight: 1 }}>
                                                 {item.score}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
+                                            <AppText variant="caption">
                                                 {getScoreLabel(item.score)}
-                                            </Typography>
+                                            </AppText>
                                         </Box>
                                     </Stack>
-                                    <TextField
+                                    <FormTextField
                                         label="Feedback"
                                         value={item.answer || ""}
                                         onChange={(e) => handleItemChange(index, "answer", e.target.value)}
@@ -358,10 +351,10 @@ function CoachEvaluationModal({
                                 p: 2,
                             }}
                         >
-                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            <AppText variant="bodyStrong" sx={{ mb: 1 }}>
                                 Others
-                            </Typography>
-                            <TextField
+                            </AppText>
+                            <FormTextField
                                 label="Additional notes"
                                 value={others}
                                 onChange={handleOthersChange}
@@ -398,14 +391,12 @@ function CoachEvaluationModal({
                             </FormControl>
                         </Box>
                         <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ pt: 1 }}>
-                            <Button
-                                variant="contained"
+                            <PrimaryButton
                                 disabled={submitting || items.length === 0}
                                 onClick={handleSubmit}
-                                sx={(theme) => ({ ...buttonStyles.primaryCta(theme) })}
                             >
                                 {submitting ? "Submitting..." : "Submit"}
-                            </Button>
+                            </PrimaryButton>
                         </Stack>
                     </Stack>
                 )}

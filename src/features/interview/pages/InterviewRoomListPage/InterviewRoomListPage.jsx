@@ -1,4 +1,5 @@
-import { Box, Typography, Stack, Tabs, Tab, Container, CircularProgress } from "@mui/material";
+import { Box, Stack, Tabs, Tab, CircularProgress } from "@mui/material";
+import PageHeader from "../../../../common/components/PageHeader";
 import { interviewEndPoints, getSessions } from "../../services/interviewRoomApi";
 import useUser from "../../../../common/hooks/useUser.jsx";
 import { callApi } from "../../../../common/utils/apiConnector.js";
@@ -634,24 +635,11 @@ function InterviewRoomListPage() {
     );
 
     return (
-        <Box sx={{ minHeight: "100vh", py: 4 }}>
-            <Container maxWidth="lg">
-                <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "flex-start", sm: "center" }}
-                    spacing={2}
-                    sx={{ mb: 4 }}
-                >
-                    <Box>
-                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5, color: "text.primary" }}>
-                            My Interviews
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Track your upcoming practice sessions and review past performance feedback.
-                        </Typography>
-                    </Box>
-                </Stack>
+        <>
+                <PageHeader
+                    title="My Interviews"
+                    subtitle="Track your upcoming practice sessions and review past performance feedback."
+                />
 
                 <InterviewStats
                     totalCount={stats.completed}
@@ -787,8 +775,6 @@ function InterviewRoomListPage() {
                         />
                     )}
                 </Suspense>
-            </Container>
-
             <Suspense fallback={null}>
                 {genQuestionsModalState.open && (
                     <GeneratedQuestionsModal
@@ -806,7 +792,7 @@ function InterviewRoomListPage() {
                     />
                 )}
             </Suspense>
-        </Box>
+        </>
     );
 }
 

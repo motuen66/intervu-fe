@@ -247,7 +247,6 @@ const UploadCv = ({ profile, canEdit = true }) => {
                         <SecondaryButton
                             onClick={() => setViewerOpen(true)}
                             startIcon={<VisibilityIcon size={18} />}
-                            sx={{ borderRadius: "10px", px: 2 }}
                         >
                             View
                         </SecondaryButton>
@@ -257,16 +256,6 @@ const UploadCv = ({ profile, canEdit = true }) => {
                                     onClick={handleStartUpload}
                                     disabled={isLoading}
                                     startIcon={<CloudUploadIcon size={18} />}
-                                    sx={{
-                                        borderRadius: "10px",
-                                        px: 2,
-                                        borderColor: theme.palette.primary.main,
-                                        color: theme.palette.primary.main,
-                                        "&:hover": {
-                                            backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                                            borderColor: theme.palette.primary.dark,
-                                        },
-                                    }}
                                 >
                                     Update
                                 </SecondaryButton>
@@ -379,20 +368,12 @@ const UploadCv = ({ profile, canEdit = true }) => {
 
                     <Box sx={{ display: "flex", gap: 2, mt: 3, justifyContent: "flex-end" }}>
                         {hasExistingCv && (
-                            <SecondaryButton onClick={handleCancelUpload} sx={{ borderRadius: "10px" }}>
-                                Cancel
-                            </SecondaryButton>
+                            <SecondaryButton onClick={handleCancelUpload}>Cancel</SecondaryButton>
                         )}
                         <PrimaryButton
                             onClick={handleUpload}
                             loading={isLoading}
                             disabled={!cvFile}
-                            sx={{
-                                py: 1.25,
-                                px: 4,
-                                borderRadius: "10px",
-                                boxShadow: "0 4px 14px 0 rgba(198,245,111,0.39)",
-                            }}
                         >
                             Upload and Process CV
                         </PrimaryButton>

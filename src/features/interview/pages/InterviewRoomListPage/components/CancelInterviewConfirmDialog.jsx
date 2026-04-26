@@ -1,7 +1,6 @@
 import {
     Alert,
     Box,
-    Button,
     CircularProgress,
     Dialog,
     DialogActions,
@@ -16,8 +15,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
-import { SecondaryButton } from "../../../../../common/components/buttons";
+import { PrimaryButton, DangerButton } from "../../../../../common/components/buttons";
 import StatusChip from "../../../../../common/components/StatusChip";
+import AppText from "../../../../../common/components/AppText";
 
 function CancelInterviewConfirmDialog({
     open,
@@ -88,12 +88,12 @@ function CancelInterviewConfirmDialog({
                             <ErrorOutlineRoundedIcon sx={{ fontSize: 18 }} />
                         </Box>
                         <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
+                            <AppText variant="bodyStrong" sx={{ fontSize: "1.125rem", fontWeight: 800, lineHeight: 1.2 }}>
                                 {title}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                            </AppText>
+                            <AppText variant="muted" sx={{ mt: 0.5 }}>
                                 {displaySubtitle}
-                            </Typography>
+                            </AppText>
                         </Box>
                     </Box>
                     <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>
@@ -262,40 +262,18 @@ function CancelInterviewConfirmDialog({
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5, pt: 1.5 }}>
                 <Box sx={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Button
+                    <DangerButton
                         onClick={onConfirm}
                         disabled={confirmLoading}
-                        sx={{
-                            color: "error.main",
-                            fontWeight: 800,
-                            textTransform: "none",
-                            minHeight: 44,
-                            px: 1.5,
-                        }}
                     >
                         {confirmLoading ? <CircularProgress size={16} color="inherit" /> : confirmText}
-                    </Button>
-                    <SecondaryButton
-                        onClick={onClose}
-                        sx={(theme) => ({
-                            minWidth: 150,
-                            borderRadius: "12px",
-                            bgcolor: "text.primary",
-                            borderColor: "text.primary",
-                            color: "background.paper",
-                            "&:hover": {
-                                bgcolor: theme.palette.grey[900],
-                                borderColor: theme.palette.grey[900],
-                            },
-                        })}
-                    >
-                        {cancelText}
-                    </SecondaryButton>
+                    </DangerButton>
+                    <Box sx={{ minWidth: 150 }}>
+                        <PrimaryButton fullWidth onClick={onClose}>
+                            {cancelText}
+                        </PrimaryButton>
+                    </Box>
                 </Box>
-                {/* Hidden action for keyboard submit compatibility */}
-                <Button onClick={onConfirm} sx={{ display: "none" }}>
-                    {confirmText}
-                </Button>
             </DialogActions>
         </Dialog>
     );

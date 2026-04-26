@@ -11,9 +11,7 @@ import {
     TableRow,
     Paper,
     CircularProgress,
-    Button,
     Stack,
-    TextField,
     MenuItem,
     Dialog,
     DialogTitle,
@@ -25,15 +23,19 @@ import {
     Grid,
     FormControl,
     InputLabel,
+    IconButton,
 } from "@mui/material";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../common/components/form/FormTextField";
 import CloseIcon from "@mui/icons-material/Close";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { formatCurrency } from "../../../../common/utils/dateFormatter.js";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
 const transactionStatusConfig = {
     PENDING: { label: "Pending", color: "#FFA500", bgColor: "#FFF3E0" },
@@ -208,26 +210,14 @@ Interview ID: ${transaction.interviewId}
                             backgroundColor: "#f5f5f5",
                         }}
                     >
-                    <Box>
-                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
-                            Payment History
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            View all your interview booking transactions
-                        </Typography>
-                    </Box>
-                    <Button
-                        onClick={onClose}
-                        sx={{
-                            minWidth: 40,
-                            width: 40,
-                            height: 40,
-                            p: 0,
-                            borderRadius: "50%",
-                        }}
-                    >
+                    <SectionHeading
+                        title="Payment History"
+                        description="View all your interview booking transactions"
+                        disableGutters
+                    />
+                    <IconButton onClick={onClose} size="small">
                         <CloseIcon />
-                    </Button>
+                    </IconButton>
                 </Box>
 
                 {/* Content */}
@@ -326,7 +316,7 @@ Interview ID: ${transaction.interviewId}
 
                             {/* Filters */}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
-                                <TextField
+                                <FormTextField
                                     placeholder="Search by coach, interview ID, or candidate..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -422,25 +412,23 @@ Interview ID: ${transaction.interviewId}
                                                     </TableCell>
                                                     <TableCell align="center">
                                                         <Stack direction="row" spacing={1} justifyContent="center">
-                                                            <Button
-                                                                size="small"
-                                                                variant="outlined"
+                                                            <SecondaryButton
+                                                                size="sm"
                                                                 startIcon={<VisibilityOutlinedIcon />}
                                                                 onClick={() => handleViewDetails(transaction)}
                                                                 sx={{ textTransform: "none" }}
                                                             >
                                                                 View
-                                                            </Button>
+                                                            </SecondaryButton>
                                                             {transaction.status === "COMPLETED" && (
-                                                                <Button
-                                                                    size="small"
-                                                                    variant="outlined"
+                                                                <SecondaryButton
+                                                                    size="sm"
                                                                     startIcon={<FileDownloadIcon />}
                                                                     onClick={() => handleDownloadReceipt(transaction)}
                                                                     sx={{ textTransform: "none" }}
                                                                 >
                                                                     Receipt
-                                                                </Button>
+                                                                </SecondaryButton>
                                                             )}
                                                         </Stack>
                                                     </TableCell>
@@ -550,7 +538,7 @@ Interview ID: ${transaction.interviewId}
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDetailsDialog}>Close</Button>
+                    <PrimaryButton onClick={handleCloseDetailsDialog}>Close</PrimaryButton>
                 </DialogActions>
             </Dialog>
         </>

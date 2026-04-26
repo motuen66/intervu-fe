@@ -16,6 +16,7 @@ import { Box, Typography, Stack, CircularProgress, CardContent } from "@mui/mate
 import { addDays, startOfDay } from "date-fns";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import { PrimaryButton } from "../../../../common/components/buttons";
+import PageHeader from "../../../../common/components/PageHeader";
 import { IoAdd } from "react-icons/io5";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
@@ -544,35 +545,17 @@ const ScheduleManagement = () => {
 
     return (
         <>
-            <Box sx={{ minHeight: "100vh", py: 4 }}>
-                <Box sx={{ maxWidth: "1400px", mx: "auto" }}>
-                    {/* Header */}
-                    <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        justifyContent="space-between"
-                        alignItems={{ xs: "flex-start", sm: "center" }}
-                        spacing={2}
-                        sx={{ mb: 4 }}
-                    >
-                        <div>
-                            <Typography variant="h3" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
-                                Interview Schedule
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                Manage your available time slots for interviews
-                            </Typography>
-                        </div>
+            <PageHeader
+                title="Interview Schedule"
+                subtitle="Manage your available time slots for interviews"
+                actions={
+                    <PrimaryButton startIcon={<IoAdd size={18} />} onClick={handleAddClick}>
+                        Add Slot
+                    </PrimaryButton>
+                }
+            />
 
-                        <PrimaryButton
-                            startIcon={<IoAdd size={18} />}
-                            onClick={handleAddClick}
-                            sx={{ py: 1.25, px: 3 }}
-                        >
-                            Add Slot
-                        </PrimaryButton>
-                    </Stack>
-
-                    {/* Main Content */}
+            {/* Main Content */}
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
                         {/* Calendar Section */}
                         <BaseCard
@@ -718,9 +701,8 @@ const ScheduleManagement = () => {
                             />
                         </Stack>
                     </Box>
-                </Box>
 
-                {/* Modal Add/Edit */}
+            {/* Modal Add/Edit */}
                 {openModal &&
                     (editingId ? (
                         <UpdateAvailableSlotDialog
@@ -755,7 +737,6 @@ const ScheduleManagement = () => {
                             maxDate={maxDateStr}
                         />
                     ))}
-            </Box>
 
             {/* Confirm Delete */}
             <ConfirmModal

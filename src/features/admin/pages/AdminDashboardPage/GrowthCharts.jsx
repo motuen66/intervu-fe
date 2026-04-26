@@ -1,7 +1,6 @@
 import React from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
 import Skeleton from "@mui/material/Skeleton";
 import {
     AreaChart,
@@ -15,6 +14,7 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import SectionHeading from "../../../../common/components/SectionHeading";
 import { useTheme } from "@mui/material/styles";
 
 export default function GrowthCharts({ data, loading }) {
@@ -37,9 +37,9 @@ export default function GrowthCharts({ data, loading }) {
         <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6 }}>
                 <BaseCard sx={{ p: 3, height: 400 }}>
-                    <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
-                        Revenue Trend
-                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                        <SectionHeading title="Revenue Trend" size="sm" />
+                    </Box>
                     <Box sx={{ height: 300, width: "100%" }}>
                         <ResponsiveContainer>
                             <AreaChart data={data?.revenue || []}>
@@ -76,9 +76,9 @@ export default function GrowthCharts({ data, loading }) {
 
             <Grid size={{ xs: 12, md: 6 }}>
                 <BaseCard sx={{ p: 3, height: 400 }}>
-                    <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
-                        User Growth
-                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                        <SectionHeading title="User Growth" size="sm" />
+                    </Box>
                     <Box sx={{ height: 300, width: "100%" }}>
                         <ResponsiveContainer>
                             <BarChart data={data?.userGrowth || []}>

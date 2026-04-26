@@ -17,7 +17,8 @@ import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { callApi } from '../../../../../common/utils/apiConnector';
 import { METHOD } from '../../../../../common/constants/api';
-import { SecondaryButton } from '../../../../../common/components/buttons';
+import { PrimaryButton } from '../../../../../common/components/buttons';
+import AppText from '../../../../../common/components/AppText';
 
 // Thin dark progress bar matching design
 const SlimProgress = styled(LinearProgress)(({ theme }) => ({
@@ -160,12 +161,12 @@ const RoundResultItem = ({ round }) => {
                 bgcolor: 'white', p: 5, borderRadius: '24px',
                 border: '1px solid #f1f5f9', textAlign: 'center', mb: 3
             }}>
-                <Typography fontWeight={800} sx={{ mb: 1, color: '#0f172a', fontSize: '1.1rem' }}>
+                <AppText variant="bodyStrong" sx={{ mb: 1, color: '#0f172a', fontSize: '1.1rem', fontWeight: 800 }}>
                     Session in Progress
-                </Typography>
-                <Typography variant="body2" color="#64748b">
+                </AppText>
+                <AppText variant="muted" sx={{ color: '#64748b' }}>
                     Results will appear here once <strong>{round.interviewTypeName}</strong> is completed.
-                </Typography>
+                </AppText>
             </Box>
         );
     }
@@ -176,12 +177,12 @@ const RoundResultItem = ({ round }) => {
                 bgcolor: 'white', p: 5, borderRadius: '24px',
                 border: '1px solid #f1f5f9', textAlign: 'center', mb: 3
             }}>
-                <Typography fontWeight={800} sx={{ mb: 1, color: '#0f172a', fontSize: '1.1rem' }}>
+                <AppText variant="bodyStrong" sx={{ mb: 1, color: '#0f172a', fontSize: '1.1rem', fontWeight: 800 }}>
                     Evaluation Pending
-                </Typography>
-                <Typography variant="body2" color="#64748b">
+                </AppText>
+                <AppText variant="muted" sx={{ color: '#64748b' }}>
                     Waiting for the coach to submit evaluation for <strong>{round.interviewTypeName}</strong>.
-                </Typography>
+                </AppText>
             </Box>
         );
     }
@@ -209,14 +210,9 @@ const RoundResultItem = ({ round }) => {
                     borderRight: { md: '1px solid #f1f5f9' },
                     gap: 2,
                 }}>
-                    <Typography
-                        variant="caption"
-                        color="#94a3b8"
-                        fontWeight={700}
-                        sx={{ letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: '0.7rem' }}
-                    >
+                    <AppText variant="overline" sx={{ color: '#94a3b8', letterSpacing: '0.12em', fontSize: '0.7rem' }}>
                         Overall Performance
-                    </Typography>
+                    </AppText>
 
                     <CircularGauge value={overallScore} />
                 </Box>
@@ -224,12 +220,12 @@ const RoundResultItem = ({ round }) => {
                 {/* Right: Coach Evaluation */}
                 <Box sx={{ flex: 1, p: 4 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                        <Typography fontWeight={800} color="#0f172a" sx={{ fontSize: '1.25rem', letterSpacing: '-0.01em' }}>
+                        <AppText variant="bodyStrong" sx={{ color: '#0f172a', fontSize: '1.25rem', letterSpacing: '-0.01em', fontWeight: 800 }}>
                             Coach Evaluation
-                        </Typography>
-                        <Typography variant="caption" color="#94a3b8" fontWeight={500} sx={{ fontStyle: 'italic' }}>
+                        </AppText>
+                        <AppText variant="caption" sx={{ color: '#94a3b8', fontWeight: 500, fontStyle: 'italic' }}>
                             Evaluated by {evaluation?.coachName || 'Coach'}
-                        </Typography>
+                        </AppText>
                     </Stack>
 
                     <Grid container spacing={3} alignItems="stretch">
@@ -238,17 +234,18 @@ const RoundResultItem = ({ round }) => {
                                 <Box sx={{ flex: 1 }}>
                                     {/* Skill name + score on same row */}
                                     <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.75 }}>
-                                        <Typography variant="body2" fontWeight={700} color="#0f172a" sx={{ flex: 1, pr: 1, lineHeight: 1.4 }}>
+                                        <AppText variant="bodyStrong" sx={{ color: '#0f172a', flex: 1, pr: 1, lineHeight: 1.4 }}>
                                             {skill.name}
-                                        </Typography>
-                                        <Typography fontWeight={900} sx={{
+                                        </AppText>
+                                        <AppText variant="bodyStrong" sx={{
                                             fontSize: '1rem',
                                             color: '#6abf40',
                                             whiteSpace: 'nowrap',
-                                            letterSpacing: '-0.01em'
+                                            letterSpacing: '-0.01em',
+                                            fontWeight: 900,
                                         }}>
                                             {typeof skill.score === 'number' ? skill.score.toFixed(1) : '—'}
-                                        </Typography>
+                                        </AppText>
                                     </Stack>
 
                                     {/* Thin progress bar */}
@@ -260,9 +257,9 @@ const RoundResultItem = ({ round }) => {
 
                                     {/* Comment */}
                                     {skill.comment && (
-                                        <Typography variant="caption" color="#64748b" sx={{ lineHeight: 1.5, display: 'block' }}>
+                                        <AppText variant="caption" sx={{ color: '#64748b', lineHeight: 1.5, display: 'block' }}>
                                             {skill.comment}
-                                        </Typography>
+                                        </AppText>
                                     )}
                                 </Box>
                             </Grid>
@@ -271,19 +268,19 @@ const RoundResultItem = ({ round }) => {
                     {(resolvedHireDecision !== undefined || resolvedOthers) && (
                         <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #f1f5f9' }}>
                             {resolvedOthers && (
-                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#0f172a', fontWeight: 700, }}>
+                                <AppText variant="bodyStrong" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#0f172a' }}>
                                     <strong>Others:</strong> {resolvedOthers}
-                                </Typography>
+                                </AppText>
                             )}
                             {resolvedHireDecision !== undefined && (
-                                <Typography variant="body2" sx={{ color: '#0f172a', fontWeight: 700, mb: resolvedOthers ? 1 : 0 }}>
+                                <AppText variant="bodyStrong" sx={{ color: '#0f172a', mb: resolvedOthers ? 1 : 0 }}>
                                     Hire Decision:{' '}
                                     {typeof resolvedHireDecision === 'boolean'
                                         ? (resolvedHireDecision ? 'Yes' : 'No')
                                         : String(resolvedHireDecision).toLowerCase() === 'yes' || String(resolvedHireDecision).toLowerCase() === 'true'
                                           ? 'Yes'
                                           : 'No'}
-                                </Typography>
+                                </AppText>
                             )}
                         </Box>
                     )}
@@ -297,24 +294,15 @@ const RoundResultItem = ({ round }) => {
                             <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid #f1f5f9' }}>
                                 <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
                                     <Box>
-                                        <Typography variant="body2" fontWeight={800} color="#0f172a" sx={{ mb: 0.5 }}>Coding Workspace Saved</Typography>
-                                        <Typography variant="caption" color="#64748b">Review the problem statement, your code, and test results in read-only mode.</Typography>
+                                        <AppText variant="bodyStrong" sx={{ color: '#0f172a', mb: 0.5, fontWeight: 800 }}>Coding Workspace Saved</AppText>
+                                        <AppText variant="caption" sx={{ color: '#64748b' }}>Review the problem statement, your code, and test results in read-only mode.</AppText>
                                     </Box>
-                                    <SecondaryButton
+                                    <PrimaryButton
+                                        size="md"
                                         onClick={() => navigate(`/interview/room/${targetRoomId}?viewOnly=true`)}
-                                        sx={{
-                                            borderRadius: '12px',
-                                            px: 3,
-                                            bgcolor: '#0f172a',
-                                            color: 'white',
-                                            '&:hover': { bgcolor: '#1e293b' },
-                                            fontSize: '0.8rem',
-                                            fontWeight: 800,
-                                            gap: 1
-                                        }}
                                     >
                                         Review Workspace ↗
-                                    </SecondaryButton>
+                                    </PrimaryButton>
                                 </Stack>
                             </Box>
                         );
@@ -332,15 +320,15 @@ const RoundResultItem = ({ round }) => {
                         }}>
                             <FormatAlignLeftIcon sx={{ fontSize: 16, color: '#0f172a' }} />
                         </Box>
-                        <Typography fontWeight={800} color="#0f172a" sx={{ fontSize: '1rem' }}>
+                        <AppText variant="bodyStrong" sx={{ color: '#0f172a', fontSize: '1rem', fontWeight: 800 }}>
                             My Feedback
-                        </Typography>
+                        </AppText>
                     </Stack>
                     
                     <Box sx={{ textAlign: 'right' }}>
-                         <Typography variant="caption" color="#94a3b8" fontWeight={700} sx={{ letterSpacing: '0.08em', display: 'block', mb: 0.5, fontSize: '0.62rem', textTransform: 'uppercase' }}>
+                         <AppText variant="overline" sx={{ color: '#94a3b8', letterSpacing: '0.08em', display: 'block', mb: 0.5, fontSize: '0.62rem' }}>
                             Coach Rating
-                        </Typography>
+                        </AppText>
                         <Rating
                             value={feedback?.rating || 0}
                             readOnly
@@ -353,15 +341,11 @@ const RoundResultItem = ({ round }) => {
 
                 {/* Quote block */}
                 <Box sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: '12px', mb: 3 }}>
-                    <Typography
-                        variant="body2"
-                        color="#495057"
-                        sx={{ fontStyle: 'italic', lineHeight: 1.7 }}
-                    >
+                    <AppText variant="body" sx={{ color: '#495057', fontStyle: 'italic', lineHeight: 1.7 }}>
                         {feedback?.comments
                             ? feedback.comments
                             : 'Recording your thoughts helps in identifying areas for improvement.'}
-                    </Typography>
+                    </AppText>
                 </Box>
 
                 {/* Feedback content rendered above */}
@@ -401,9 +385,9 @@ export default function SessionResultSection({ bookingRequest }) {
                     mb: 4, pb: 0, px: 1
                 }}>
                     <Stack direction="row" spacing={2} alignItems="center">
-                        <Typography variant="h6" fontWeight={900} color="#0f172a" sx={{ letterSpacing: '-0.02em', fontSize: '1.25rem' }}>
+                        <AppText variant="bodyStrong" sx={{ color: '#0f172a', letterSpacing: '-0.02em', fontSize: '1.25rem', fontWeight: 900 }}>
                             Performance Insights
-                        </Typography>
+                        </AppText>
                         <Tabs
                             value={activeTab}
                             onChange={(_, v) => setActiveTab(v)}
@@ -430,15 +414,15 @@ export default function SessionResultSection({ bookingRequest }) {
                             ))}
                         </Tabs>
                     </Stack>
-                    <Typography variant="caption" color="#94a3b8" fontWeight={600} sx={{ fontStyle: 'italic' }}>
+                    <AppText variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, fontStyle: 'italic' }}>
                         Switch tabs to view results per round
-                    </Typography>
+                    </AppText>
                 </Box>
             ) : (
                 <Box sx={{ mb: 4, px: 1 }}>
-                    <Typography variant="h6" fontWeight={900} color="#0f172a" sx={{ letterSpacing: '-0.02em', fontSize: '1.25rem' }}>
+                    <AppText variant="bodyStrong" sx={{ color: '#0f172a', letterSpacing: '-0.02em', fontSize: '1.25rem', fontWeight: 900 }}>
                         Session Insights
-                    </Typography>
+                    </AppText>
                 </Box>
             )}
 

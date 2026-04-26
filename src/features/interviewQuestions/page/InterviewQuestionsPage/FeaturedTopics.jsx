@@ -1,5 +1,6 @@
-﻿import { Box, Paper, Typography } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import { AppText } from "../../../../common/components";
 
 const FEATURED_TOPICS = [
     { label: "Latest Amazon Solution Architect questions", icon: "☁️", palette: "warning" },
@@ -56,9 +57,9 @@ export default function FeaturedTopics({ onTopicClick }) {
                     >
                         {t.icon}
                     </Box>
-                    <Typography variant="body2" fontWeight={500}>
+                    <AppText variant="bodyStrong">
                         {t.label}
-                    </Typography>
+                    </AppText>
                 </Paper>
             ))}
         </Box>

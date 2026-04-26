@@ -1,6 +1,7 @@
-import { Autocomplete, TextField, createFilterOptions } from "@mui/material";
+import { Autocomplete, createFilterOptions } from "@mui/material";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import FormTextField from "../../../../common/components/form/FormTextField";
 
 const filter = createFilterOptions({
     stringify: (option) => `${option.shortName ?? ""} ${option.name ?? ""} ${option.code ?? ""}`,
@@ -65,11 +66,11 @@ function BankSelection({ selectedBin, valueBin, accountNumber, onChange, onBankB
                 onChange={handleBankChange}
                 getOptionLabel={(bank) => bank?.short_name || ""}
                 renderInput={(params) => (
-                    <TextField {...params} label="Select Bank" placeholder="Search name or code..." fullWidth />
+                    <FormTextField {...params} label="Select Bank" placeholder="Search name or code..." fullWidth />
                 )}
                 isOptionEqualToValue={(option, value) => option.bin === value.bin}
             />
-            <TextField
+            <FormTextField
                 label="Account Number"
                 fullWidth
                 value={localAccount}

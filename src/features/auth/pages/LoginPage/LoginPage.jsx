@@ -9,8 +9,9 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import toast from "react-hot-toast";
 import SplitText from "./SplitText";
-import { TextField, Typography, Box, InputAdornment, IconButton } from "@mui/material";
+import { Typography, Box, InputAdornment, IconButton } from "@mui/material";
 import { PrimaryButton } from "../../../../common/components/buttons";
+import { FormTextField } from "../../../../common/components";
 import { ROLES } from "../../../../common/constants/common";
 import {
     ASSESSMENT_DATA_STATE,
@@ -293,22 +294,11 @@ function LoginPage() {
 
                         <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ position: "relative", zIndex: 1 }}>
                             <div style={{ marginBottom: "16px" }}>
-                                <TextField
+                                <FormTextField
                                     label="Email"
                                     type="email"
-                                    variant="outlined"
+                                    sizeVariant="md"
                                     fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: theme.palette.divider },
-                                            "&:hover fieldset": { borderColor: theme.palette.text.secondary },
-                                            "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
-                                        },
-                                        "& .MuiInputAdornment-root": { opacity: 1, visibility: "visible" },
-                                        "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
-                                    }}
                                     {...register("email", { required: "Email is required" })}
                                     error={!!errors.email}
                                     helperText={errors.email?.message}
@@ -316,21 +306,11 @@ function LoginPage() {
                             </div>
 
                             <div style={{ marginBottom: "8px" }}>
-                                <TextField
+                                <FormTextField
                                     label="Password"
                                     type={showPassword ? "text" : "password"}
-                                    variant="outlined"
+                                    sizeVariant="md"
                                     fullWidth
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "8px",
-                                            "& fieldset": { borderColor: theme.palette.divider },
-                                            "&:hover fieldset": { borderColor: theme.palette.text.secondary },
-                                            "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
-                                        },
-                                        "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
-                                        "& .MuiInputLabel-root.Mui-focused": { color: theme.palette.primary.main },
-                                    }}
                                     {...register("password", { required: "Password is required" })}
                                     error={!!errors.password}
                                     helperText={errors.password?.message}
@@ -380,16 +360,7 @@ function LoginPage() {
                                         loading={false}
                                         disabled={isSubmitting || googleSubmitting}
                                         fullWidth
-                                        sx={{
-                                            padding: "14px 28px",
-                                            borderRadius: "10px",
-                                            fontSize: "17px",
-                                            backgroundColor: theme.palette.secondary.main,
-                                            color: theme.palette.secondary.contrastText,
-                                            "&:hover": {
-                                                backgroundColor: theme.palette.secondary.dark,
-                                            },
-                                        }}
+                                        size="md"
                                     >
                                         Login
                                     </PrimaryButton>

@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
     Box,
-    Button,
     MenuItem,
     Stack,
-    TextField,
-    Typography,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
@@ -13,6 +10,9 @@ import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
 import RichDescriptionEditor from "../shared/RichDescriptionEditor";
 import TestCasesEditor from "../shared/TestCasesEditor";
 import { PREPARED_QUESTION_INTERACTION_TYPE } from "../../services/preparedQuestionApi";
+import FormTextField from "../../../../common/components/form/FormTextField";
+import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
+import AppText from "../../../../common/components/AppText";
 
 const DEFAULT_TEST_CASE = () => ({
     inputs: [{ name: "", value: "" }],
@@ -213,7 +213,7 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
                 <Stack spacing={2}>
-                    <TextField
+                    <FormTextField
                         select
                         label="Question type"
                         size="small"
@@ -228,9 +228,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                                 {c.label}
                             </MenuItem>
                         ))}
-                    </TextField>
+                    </FormTextField>
 
-                    <TextField
+                    <FormTextField
                         label="Display category label (optional)"
                         size="small"
                         value={form.displayCategoryLabel}
@@ -239,7 +239,7 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                         fullWidth
                     />
 
-                    <TextField
+                    <FormTextField
                         label="Title"
                         size="small"
                         value={form.title}
@@ -251,9 +251,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                     />
 
                     <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
                             Description <span style={{ color: "#d32f2f" }}>*</span>
-                        </Typography>
+                        </AppText>
                         <RichDescriptionEditor
                             value={form.description}
                             onChange={(html) => updateField("description", html)}
@@ -265,15 +265,15 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                             }
                         />
                         {errors.description && (
-                            <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                            <AppText variant="caption" sx={{ mt: 0.5, display: "block", color: "error.main" }}>
                                 {errors.description}
-                            </Typography>
+                            </AppText>
                         )}
                     </Box>
 
                     {isCoding && (
                         <>
-                            <TextField
+                            <FormTextField
                                 label="Function name"
                                 size="small"
                                 value={form.functionName}
@@ -289,9 +289,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                             />
 
                             <Box>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                <AppText variant="bodyStrong" sx={{ mb: 1 }}>
                                     Test cases
-                                </Typography>
+                                </AppText>
                                 <TestCasesEditor
                                     testCases={form.testCases}
                                     activeTestCaseTab={activeTestCaseTab}
@@ -306,9 +306,9 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                                     removeExpectedOutput={removeExpectedOutput}
                                 />
                                 {errors.testCases && (
-                                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                                    <AppText variant="caption" sx={{ mt: 0.5, display: "block", color: "error.main" }}>
                                         {errors.testCases}
-                                    </Typography>
+                                    </AppText>
                                 )}
                             </Box>
                         </>
@@ -327,23 +327,20 @@ function CustomQuestionTab({ editingItem, onSubmit, onCancelEdit, isSubmitting }
                 })}
             >
                 {isEditMode && (
-                    <Button
+                    <SecondaryButton
                         onClick={onCancelEdit}
                         startIcon={<CancelRoundedIcon />}
-                        sx={{ textTransform: "none" }}
                     >
                         Cancel edit
-                    </Button>
+                    </SecondaryButton>
                 )}
-                <Button
-                    variant="contained"
+                <PrimaryButton
                     onClick={handleSubmit}
                     disabled={isSubmitting}
                     startIcon={isEditMode ? <SaveRoundedIcon /> : <AddRoundedIcon />}
-                    sx={{ textTransform: "none" }}
                 >
-                    {isEditMode ? "Save changes" : "Add to roadmap"}
-                </Button>
+                    {isEditMode ? "Save changes" : "Add to list"}
+                </PrimaryButton>
             </Stack>
         </Box>
     );

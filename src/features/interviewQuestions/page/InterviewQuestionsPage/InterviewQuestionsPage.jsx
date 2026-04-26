@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Box, Button, CircularProgress, MenuItem, Pagination, Stack, Typography } from "@mui/material";
+import { Box, CircularProgress, MenuItem, Pagination, Stack } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -10,6 +10,8 @@ import QuestionCard from "./QuestionCard";
 import QuestionFilters from "./QuestionFilters";
 import QuestionSidebar from "./QuestionSidebar";
 import FormSelect from "../../../../common/components/form/FormSelect";
+import { PrimaryButton } from "../../../../common/components/buttons";
+import { AppText, PageHeader } from "../../../../common/components";
 
 export default function InterviewQuestionsPage() {
     const navigate = useNavigate();
@@ -125,28 +127,26 @@ export default function InterviewQuestionsPage() {
     // };
 
     return (
-        <Box sx={{ maxWidth: 1200, mx: "auto", px: 3, pt: 4, pb: 8 }}>
-            {/* Header */}
-            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 3.5, gap: 2 }}>
-                <Box>
-                    <Typography variant="h4" mb={0.75}>
-                        Interview Questions
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520 }}>
-                        {totalCount != null
+        <>
+            <PageHeader
+                    title="Interview Questions"
+                    subtitle={
+                        totalCount != null
                             ? `Review this list of ${totalCount.toLocaleString()} interview questions and answers verified by hiring managers and candidates.`
-                            : "Browse real interview questions shared by candidates and hiring managers."}
-                    </Typography>
-                </Box>
-                <Button
-                    variant="contained"
-                    startIcon={<ShareIcon />}
-                    onClick={() => navigate("/questions/share")}
-                    sx={{ whiteSpace: "nowrap", px: 2.5 }}
-                >
-                    Share interview
-                </Button>
-            </Box>
+                            : "Browse real interview questions shared by candidates and hiring managers."
+                    }
+                    actions={
+                        <Box sx={{ whiteSpace: "nowrap" }}>
+                            <PrimaryButton
+                                size="md"
+                                startIcon={<ShareIcon />}
+                                onClick={() => navigate("/questions/share")}
+                            >
+                                Share interview
+                            </PrimaryButton>
+                        </Box>
+                    }
+                />
 
             <QuestionFilters filters={filters} onChange={handleFilterChange} companies={companies} />
 
@@ -159,9 +159,9 @@ export default function InterviewQuestionsPage() {
                             <CircularProgress size={30} />
                         </Box>
                     ) : questions.length === 0 ? (
-                        <Typography align="center" color="text.secondary" py={7.5}>
+                        <AppText variant="muted" align="center" sx={{ py: 7.5 }}>
                             No questions found. Try changing filters.
-                        </Typography>
+                        </AppText>
                     ) : (
                         <>
                             {(() => {
@@ -189,9 +189,9 @@ export default function InterviewQuestionsPage() {
                                     shape="rounded"
                                 />
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Typography variant="body2" color="text.secondary" noWrap>
+                                    <AppText variant="muted" noWrap>
                                         Per page:
-                                    </Typography>
+                                    </AppText>
                                     <FormSelect
                                         size="small"
                                         value={pageSize}
@@ -217,6 +217,6 @@ export default function InterviewQuestionsPage() {
                     onSearchChange={setSidebarSearch}
                 />
             </Box>
-        </Box>
+        </>
     );
 }

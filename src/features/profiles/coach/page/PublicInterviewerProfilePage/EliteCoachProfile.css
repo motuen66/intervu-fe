@@ -12,8 +12,6 @@
     --ep-radius-sm: 8px;
     --ep-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.04);
 
-    background-color: var(--ep-bg);
-    min-height: 100vh;
     color: var(--ep-text-main);
     padding-bottom: 5rem;
 }

@@ -7,7 +7,6 @@ import {
     Stack,
     Tab,
     Tabs,
-    Typography,
     useMediaQuery,
     useTheme,
 } from "@mui/material";
@@ -24,6 +23,8 @@ import {
     reorderPreparedQuestions,
     updatePreparedQuestion,
 } from "../../services/preparedQuestionApi";
+import AppText from "../../../../common/components/AppText";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 const TABS = {
     BANK: "bank",
@@ -192,13 +193,11 @@ function PreparedQuestionsModal({ open, onClose, roomId, roomTitle }) {
                 })}
             >
                 <Box>
-                    <Typography variant="h6" fontWeight={700}>
-                        Prepare interview questions
-                    </Typography>
+                    <SectionHeading title="Prepare interview questions" disableGutters as="h2" />
                     {roomTitle && (
-                        <Typography variant="caption" color="text.secondary">
+                        <AppText variant="caption" sx={{ color: "text.secondary" }}>
                             {roomTitle}
-                        </Typography>
+                        </AppText>
                     )}
                 </Box>
                 <IconButton onClick={handleClose} size="small">
@@ -265,12 +264,12 @@ function PreparedQuestionsModal({ open, onClose, roomId, roomTitle }) {
                     })}
                 >
                     <Box sx={(t) => ({ px: 2, py: 1.5, borderBottom: `1px solid ${t.palette.divider}` })}>
-                        <Typography variant="subtitle2" fontWeight={700}>
+                        <AppText variant="bodyStrong">
                             Selected questions ({items.length})
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        </AppText>
+                        <AppText variant="caption" sx={{ color: "text.secondary" }}>
                             Drag the arrows to reorder — this is the order the coach sees in the room.
-                        </Typography>
+                        </AppText>
                     </Box>
                     <Box sx={{ flex: 1, minHeight: 0 }}>
                         <SelectedQuestionsPanel

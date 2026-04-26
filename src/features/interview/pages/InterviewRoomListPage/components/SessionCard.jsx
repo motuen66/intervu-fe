@@ -101,14 +101,13 @@ function ActionButtonGroup({
                 sx={{ width: { xs: "100%", sm: "auto" } }}
             >
                 <SuccessButton
-                    size={compact ? "small" : "medium"}
+                    size={compact ? "sm" : "md"}
                     startIcon={<Video size={16} strokeWidth={2} />}
                     onClick={(e) => {
                         e.stopPropagation();
                         if (onJoin) onJoin(target);
                         else navigate(`/interview/room/${target.id}`);
                     }}
-                    sx={{ width: { xs: "100%", sm: "auto" } }}
                 >
                     Join
                 </SuccessButton>
@@ -159,45 +158,26 @@ function ActionButtonGroup({
             sx={{ width: { xs: "100%", sm: "auto" } }}
         >
             {isCandidate && canCancel && (
-                <DangerButton
-                    size={compact ? "small" : "medium"}
-                    onClick={stop(onCancel)}
-                    sx={{ width: { xs: "100%", sm: "auto" } }}
-                >
+                <DangerButton size={compact ? "sm" : "md"} onClick={stop(onCancel)}>
                     Cancel
                 </DangerButton>
             )}
             {isCandidate && (
                 <Tooltip title={rescheduleDisabledReason} arrow disableHoverListener={!disableReschedule}>
-                    <span style={{ display: "inline-flex", width: "100%" }}>
+                    <span style={{ display: "inline-flex" }}>
                         <SecondaryButton
-                            size={compact ? "small" : "medium"}
+                            size={compact ? "sm" : "md"}
                             disabled={disableReschedule}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (!disableReschedule) onReschedule?.(target);
                             }}
-                            sx={{ width: { xs: "100%", sm: "auto" } }}
                         >
                             Reschedule
                         </SecondaryButton>
                     </span>
                 </Tooltip>
             )}
-            {/* {!hideJoin && (
-                <PrimaryButton
-                    size={compact ? "small" : "medium"}
-                    startIcon={<Video size={14} strokeWidth={2} />}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (onJoin) onJoin(target);
-                        else navigate(`/interview/room/${target.id}`);
-                    }}
-                    sx={{ width: { xs: "100%", sm: "auto" } }}
-                >
-                    Join
-                </PrimaryButton>
-            )} */}
         </Stack>
     );
 }

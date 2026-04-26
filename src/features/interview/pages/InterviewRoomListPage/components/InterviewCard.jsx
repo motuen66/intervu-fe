@@ -320,13 +320,12 @@ function InterviewCard({
         if (!showActions) {
             return showQuestions ? (
                 <SecondaryButton
-                    size="small"
+                    size="sm"
                     startIcon={<ClipboardList size={14} />}
                     onClick={(e) => {
                         e.stopPropagation();
                         onReviewQuestions?.(room);
                     }}
-                    sx={{ fontSize: "0.8rem", px: 2 }}
                 >
                     Questions
                 </SecondaryButton>
@@ -434,20 +433,7 @@ function InterviewCard({
         if (room.status === INTERVIEW_ROOM_STATUS.CANCELLED) {
             return (
                 <Stack direction="row" justifyContent="flex-end" alignItems="center" sx={{ width: "100%" }}>
-                    <DangerButton
-                        disabled
-                        sx={{
-                            "&.Mui-disabled": {
-                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
-                                color: "error.main",
-                                border: "1px solid",
-                                borderColor: (theme) => alpha(theme.palette.error.main, 0.5),
-                                opacity: 1,
-                            },
-                        }}
-                    >
-                        Cancelled
-                    </DangerButton>
+                    <DangerButton disabled>Cancelled</DangerButton>
                 </Stack>
             );
         }
@@ -456,13 +442,12 @@ function InterviewCard({
         if (showQuestions) {
             return (
                 <SecondaryButton
-                    size="small"
+                    size="sm"
                     startIcon={<ClipboardList size={14} />}
                     onClick={(e) => {
                         e.stopPropagation();
                         onReviewQuestions?.(room);
                     }}
-                    sx={{ fontSize: "0.8rem", px: 2 }}
                 >
                     Questions
                 </SecondaryButton>

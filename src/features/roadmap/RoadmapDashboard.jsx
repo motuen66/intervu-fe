@@ -778,7 +778,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                     >
                         {error}
                     </Alert>
-                    <PrimaryButton size="small" onClick={handleRegenerate} loading={isLoadingRoadmap}>
+                    <PrimaryButton size="sm" onClick={handleRegenerate} loading={isLoadingRoadmap}>
                         Retry
                     </PrimaryButton>
                 </Stack>
@@ -804,10 +804,10 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                         assessment, we&apos;ll ask you to complete it first.
                     </Typography>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 1 }}>
-                        <PrimaryButton size="small" onClick={handleGenerateFirstTime} loading={isLoadingRoadmap}>
+                        <PrimaryButton size="sm" onClick={handleGenerateFirstTime} loading={isLoadingRoadmap}>
                             Generate roadmap
                         </PrimaryButton>
-                        <SecondaryButton size="small" onClick={() => navigate("/assessment")}>
+                        <SecondaryButton size="sm" onClick={() => navigate("/assessment")}>
                             Go to assessment
                         </SecondaryButton>
                     </Stack>

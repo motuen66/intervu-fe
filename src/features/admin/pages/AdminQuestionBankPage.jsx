@@ -8,7 +8,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import toast from "react-hot-toast";
 
 import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
-import SearchInput from "../../../common/components/admin/SearchInput";
+import SearchInput from "../../../common/components/inputs/SearchInput";
 import TableActionsMenu from "../../../common/components/table/TableActionsMenu";
 import DataTable from "../../../common/components/table/DataTable";
 import StatusChip from "../../../common/components/StatusChip";
@@ -281,7 +281,7 @@ export default function AdminQuestionBankPage() {
                 title="Question Bank"
                 subtitle="Moderate incoming contributions and manage published questions."
                 actionButton={
-                    <PrimaryButton startIcon={<RefreshIcon />} onClick={fetchQuestions}>
+                    <PrimaryButton size="md" startIcon={<RefreshIcon />} onClick={fetchQuestions}>
                         Refresh
                     </PrimaryButton>
                 }

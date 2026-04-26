@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Box, Typography } from "@mui/material";
-import { PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import { Dialog, DialogActions, DialogContent, DialogTitle, Stack, Box, Typography } from "@mui/material";
+import { DangerButton, PrimaryButton, SecondaryButton } from "../../../common/components/buttons";
+import FormTextField from "../../../common/components/form/FormTextField";
 import { CompanyLogo } from "../../../common/utils/logoImageGenerator";
 
 const EMPTY_FORM = {
@@ -88,22 +89,23 @@ function CertificateDialog({ open, onClose, onSave, onDelete, certificate }) {
             )}
             <DialogContent dividers>
                 <Stack spacing={2} sx={{ mt: 1 }}>
-                    <TextField
+                    <FormTextField
                         fullWidth
                         label="Certificate name"
+                        required
                         value={form.name}
                         onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                         error={!!errors.name}
                         helperText={errors.name}
                     />
-                    <TextField
+                    <FormTextField
                         fullWidth
                         label="Issuer"
                         value={form.issuer}
                         onChange={(e) => setForm((prev) => ({ ...prev, issuer: e.target.value }))}
                     />
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                        <TextField
+                        <FormTextField
                             fullWidth
                             label="Issued date"
                             type="date"
@@ -111,7 +113,7 @@ function CertificateDialog({ open, onClose, onSave, onDelete, certificate }) {
                             value={form.issuedAt}
                             onChange={(e) => setForm((prev) => ({ ...prev, issuedAt: e.target.value }))}
                         />
-                        <TextField
+                        <FormTextField
                             fullWidth
                             label="Expiry date"
                             type="date"
@@ -122,7 +124,7 @@ function CertificateDialog({ open, onClose, onSave, onDelete, certificate }) {
                             helperText={errors.expiryAt}
                         />
                     </Stack>
-                    <TextField
+                    <FormTextField
                         fullWidth
                         label="Certificate link"
                         placeholder="https://..."
@@ -134,16 +136,9 @@ function CertificateDialog({ open, onClose, onSave, onDelete, certificate }) {
             <DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
                 <Stack direction="row" spacing={1}>
                     {certificate?.id && (
-                        <SecondaryButton
-                            onClick={() => onDelete?.(certificate)}
-                            sx={{
-                                color: "error.main",
-                                borderColor: "error.main",
-                                "&:hover": { borderColor: "error.dark", color: "error.dark" },
-                            }}
-                        >
+                        <DangerButton onClick={() => onDelete?.(certificate)}>
                             Delete
-                        </SecondaryButton>
+                        </DangerButton>
                     )}
                 </Stack>
                 <Stack direction="row" spacing={1}>

@@ -6,7 +6,6 @@ import Grow from "@mui/material/Grow";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
@@ -18,7 +17,6 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import Divider from "@mui/material/Divider";
-import TextField from "@mui/material/TextField";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -53,6 +51,8 @@ import { useTheme } from "@mui/material/styles";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import CalendlyCalendar from "../../../../../common/components/CalendlyCalendar";
 import FormSelect from "../../../../../common/components/form/FormSelect";
+import FormTextField from "../../../../../common/components/form/FormTextField";
+import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
 import "./JDBookingDialog.css";
 
 const STEPS = ["Job Details & Rounds", "Schedule Rounds"];
@@ -760,7 +760,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             <Typography className="jd-label-mini">Job url</Typography>
                                             <Box className="jd-input-stitch">
                                                 <Link size={18} color="#94a3b8" aria-hidden />
-                                                <TextField
+                                                <FormTextField
                                                     fullWidth
                                                     variant="standard"
                                                     placeholder={uploadingJd ? `Uploading: ${jdUploadingName}...` : "https://company.com/role"}
@@ -824,7 +824,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             <Typography className="jd-label-mini">CV url</Typography>
                                             <Box className="jd-input-stitch">
                                                 <FileUser size={18} color="#94a3b8" aria-hidden />
-                                                <TextField
+                                                <FormTextField
                                                     fullWidth
                                                     variant="standard"
                                                     placeholder={uploadingCv ? `Uploading: ${cvUploadingName}...` : "https://drive.google.com/cv.pdf"}
@@ -941,21 +941,9 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                 Define the logical flow of your assessment process
                                             </Typography>
                                         </Box>
-                                        <Button
-                                            size="medium"
-                                            variant="contained"
-                                            color="secondary"
-                                            startIcon={<AddIcon />}
-                                            onClick={addRound}
-                                            sx={{
-                                                borderRadius: "8px",
-                                                px: 2.5,
-                                                fontWeight: 700,
-                                                textTransform: "none",
-                                            }}
-                                        >
+                                        <SecondaryButton startIcon={<AddIcon />} onClick={addRound}>
                                             Add Round
-                                        </Button>
+                                        </SecondaryButton>
                                     </Stack>
 
                                     <Box className="jd-sequence-panel-stitch">
@@ -1427,35 +1415,26 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
                 <Stack direction="row" spacing={2} alignItems="center">
                     {activeStep === 1 && (
-                        <Button
-                            startIcon={<ArrowBackIcon />}
-                            onClick={handleBackStep}
-                            sx={{ fontWeight: 700, textTransform: "none", color: "text.secondary" }}
-                        >
-                            Back
-                        </Button>
+                            <TextButton startIcon={<ArrowBackIcon />} onClick={handleBackStep}>
+                                Back
+                            </TextButton>
                     )}
-                    <Button
-                        onClick={handleClose}
-                        sx={{ color: "text.secondary", fontWeight: 700, textTransform: "none" }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        className="jd-btn-next-footer"
-                        onClick={activeStep === 0 ? handleNextStep : handleSubmit}
-                        disabled={activeStep === 0 ? !canProceedStep1 : !allRoundsConfigured || saving}
-                        endIcon={!saving && <ArrowRight size={20} strokeWidth={2.25} />}
-                        sx={{ minWidth: { xs: "100%", sm: 240 }, py: 1.25 }}
-                    >
-                        {activeStep === 0
-                            ? "Next: Schedule Rounds"
-                            : saving
-                                ? "Confirming & Paying..."
-                                : "Confirm & Pay Now"}
-                    </Button>
+                        <TextButton onClick={handleClose}>Cancel</TextButton>
+                        <Box sx={{ minWidth: { xs: "100%", sm: 240 } }}>
+                            <PrimaryButton
+                                className="jd-btn-next-footer"
+                                onClick={activeStep === 0 ? handleNextStep : handleSubmit}
+                                disabled={activeStep === 0 ? !canProceedStep1 : !allRoundsConfigured || saving}
+                                endIcon={!saving && <ArrowRight size={20} strokeWidth={2.25} />}
+                                fullWidth
+                            >
+                                {activeStep === 0
+                                    ? "Next: Schedule Rounds"
+                                    : saving
+                                      ? "Confirming & Paying..."
+                                      : "Confirm & Pay Now"}
+                            </PrimaryButton>
+                        </Box>
                 </Stack>
             </DialogActions>
         </Dialog>

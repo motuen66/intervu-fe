@@ -17,7 +17,6 @@ import {
 } from "../store/notificationSlice";
 import { 
     Dialog, 
-    DialogTitle, 
     DialogContent, 
     Box, 
     Typography, 
@@ -27,6 +26,8 @@ import {
 } from "@mui/material";
 import { dialogStyles } from "../../../common/constants/uiStyles";
 import { getNotificationConfig, formatTimeAgo } from "../utils/notificationUtils";
+import AppText from "../../../common/components/AppText";
+import SectionHeading from "../../../common/components/SectionHeading";
 import "./NotificationDropdown.css";
 
 const PAGE_SIZE = 8;
@@ -209,7 +210,9 @@ export default function NotificationDropdown() {
                 <div className="noti-panel">
                     {/* Header */}
                     <div className="noti-header">
-                        <h3>Notifications</h3>
+                        <AppText variant="bodyStrong" className="noti-header-title">
+                            Notifications
+                        </AppText>
                     </div>
 
                     {/* Tabs */}
@@ -233,11 +236,11 @@ export default function NotificationDropdown() {
                         {displayItems.length === 0 ? (
                             <div className="noti-empty">
                                 <NotificationsNoneOutlinedIcon style={{ fontSize: 44, opacity: 0.25 }} />
-                                <p>
+                                <AppText variant="muted" className="noti-empty-text">
                                     {activeTab === "unread"
                                         ? "You're all caught up!"
                                         : "No notifications yet"}
-                                </p>
+                                </AppText>
                             </div>
                         ) : (
                             displayItems.map((n) => (
@@ -345,15 +348,10 @@ function NotificationDetailModal({ notification, onClose }) {
                     <Icon sx={{ fontSize: 24 }} />
                 </Avatar>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.3 }}
-                    >
-                        {notification.title}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <SectionHeading title={notification.title} size="sm" disableGutters />
+                    <AppText variant="caption">
                         {formatTimeAgo(notification.createdAt)}
-                    </Typography>
+                    </AppText>
                 </div>
                 <IconButton
                     id="noti-detail-close"
@@ -368,17 +366,12 @@ function NotificationDetailModal({ notification, onClose }) {
             <Divider />
 
             <DialogContent sx={{ p: 2.5, py: 3 }}>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: "text.primary",
-                        lineHeight: 1.6,
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                    }}
+                <AppText
+                    variant="body"
+                    sx={{ lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}
                 >
                     {notification.message}
-                </Typography>
+                </AppText>
             </DialogContent>
         </Dialog>
     );

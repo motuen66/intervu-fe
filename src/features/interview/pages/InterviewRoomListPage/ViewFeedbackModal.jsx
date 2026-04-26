@@ -29,6 +29,7 @@ import { METHOD } from "../../../../common/constants/api";
 import { ROLES } from "../../../../common/constants/common";
 import StarIcon from "@mui/icons-material/Star";
 import CloseIcon from "@mui/icons-material/Close";
+import SectionHeading from "../../../../common/components/SectionHeading";
 
 function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
     const [feedback, setFeedback] = useState(null);
@@ -127,9 +128,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
             }}
         >
             <DialogTitle sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }} component="div">
-                <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: "-0.01em" }} component="span">
-                    Evaluation Details
-                </Typography>
+                <SectionHeading title="Evaluation Details" disableGutters />
                 <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
                     <CloseIcon />
                 </IconButton>
