@@ -298,6 +298,7 @@ const Navbar = () => {
                 ],
             },
             { label: "My Interviews", path: "/interview", type: "link", icon: Video, sectionLabel: "RECORDS" },
+            { label: "Questions", path: "/questions", type: "link", icon: Library, sectionLabel: "RESOURCES" },
         ],
     };
 

@@ -19,7 +19,7 @@ import Navbar from "../../common/components/Navbar/Navbar";
 import AdminSidebar from "../../features/admin/components/AdminSidebar";
 import usePageTracking from "../../hooks/usePageTracking";
 import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/helpers/assessmentHelper";
-import { CollectQuestionTrayProvider } from "../../common/context/CollectQuestionTrayContext";
+import { ProcessingTrayProvider } from "../../common/context/ProcessingTrayContext";
 
 const MainLayout = () => {
     // automatic SPA page tracking for routes rendered inside MainLayout
@@ -92,7 +92,7 @@ const MainLayout = () => {
                 { label: "Home", path: "/home" },
                 { label: "Questions", path: "/questions" },
                 { label: "Interview", path: "/interview" },
-                { label: "Roadmap", path: "/assessment?step=roadmap" },
+                { label: "Roadmap", path: "/roadmap" },
                 { label: "Booking Requests", path: "/booking-requests" },
                 { label: "Settings", path: "/settings" },
             ],
@@ -161,123 +161,123 @@ const MainLayout = () => {
     // ADMIN LAYOUT
     if (isAdmin) {
         return (
-            <CollectQuestionTrayProvider>
-            <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-                <AdminSidebar
-                    userData={userData}
-                    remoteAvatar={remoteAvatar}
-                    onLogout={handleLogout}
-                    mobileOpen={mobileOpen}
-                    onMobileClose={() => setMobileOpen(false)}
-                />
-                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-                    {/* Admin Topbar */}
-                    <Box
-                        component="header"
-                        sx={{
-                            height: 60,
-                            bgcolor: "background.paper",
-                            borderBottom: 1,
-                            borderColor: "divider",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            px: 2.5,
-                            position: "sticky",
-                            top: 0,
-                            zIndex: 20,
-                        }}
-                    >
-                        {/* Mobile hamburger */}
-                        <IconButton
-                            onClick={() => setMobileOpen(true)}
-                            sx={{ display: { xs: "flex", lg: "none" }, color: "text.primary" }}
+            <ProcessingTrayProvider>
+                <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+                    <AdminSidebar
+                        userData={userData}
+                        remoteAvatar={remoteAvatar}
+                        onLogout={handleLogout}
+                        mobileOpen={mobileOpen}
+                        onMobileClose={() => setMobileOpen(false)}
+                    />
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+                        {/* Admin Topbar */}
+                        <Box
+                            component="header"
+                            sx={{
+                                height: 60,
+                                bgcolor: "background.paper",
+                                borderBottom: 1,
+                                borderColor: "divider",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                px: 2.5,
+                                position: "sticky",
+                                top: 0,
+                                zIndex: 20,
+                            }}
                         >
-                            <Menu size={22} />
-                        </IconButton>
-                        <Box sx={{ display: { xs: "none", lg: "block" } }} />
+                            {/* Mobile hamburger */}
+                            <IconButton
+                                onClick={() => setMobileOpen(true)}
+                                sx={{ display: { xs: "flex", lg: "none" }, color: "text.primary" }}
+                            >
+                                <Menu size={22} />
+                            </IconButton>
+                            <Box sx={{ display: { xs: "none", lg: "block" } }} />
 
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <NotificationDropdown />
-                            <Box sx={{ position: "relative" }} ref={adminDropdownRef}>
-                                <Avatar
-                                    src={remoteAvatar ?? userData?.profilePicture}
-                                    alt={userData?.fullName || "Admin"}
-                                    sx={{ width: 36, height: 36, cursor: "pointer" }}
-                                    onClick={() => setIsAdminDropdownOpen((v) => !v)}
-                                >
-                                    {!(remoteAvatar ?? userData?.profilePicture) &&
-                                        (userData?.fullName?.charAt(0) || "A")}
-                                </Avatar>
-                                <AnimatePresence>
-                                    {isAdminDropdownOpen && (
-                                        <motion.div
-                                            className="user-dropdown-menu"
-                                            initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                                            transition={{ duration: 0.15 }}
-                                            style={{
-                                                position: "absolute",
-                                                right: 0,
-                                                top: "calc(100% + 8px)",
-                                                minWidth: 200,
-                                            }}
-                                        >
-                                            <div className="dropdown-user-info">
-                                                <p className="user-name">{userData?.fullName}</p>
-                                                <p className="user-email">{userData?.email}</p>
-                                            </div>
-                                            <div className="dropdown-divider" />
-                                            <button
-                                                className="dropdown-item"
-                                                onClick={() => {
-                                                    navigate("/user/profile");
-                                                    setIsAdminDropdownOpen(false);
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                <NotificationDropdown />
+                                <Box sx={{ position: "relative" }} ref={adminDropdownRef}>
+                                    <Avatar
+                                        src={remoteAvatar ?? userData?.profilePicture}
+                                        alt={userData?.fullName || "Admin"}
+                                        sx={{ width: 36, height: 36, cursor: "pointer" }}
+                                        onClick={() => setIsAdminDropdownOpen((v) => !v)}
+                                    >
+                                        {!(remoteAvatar ?? userData?.profilePicture) &&
+                                            (userData?.fullName?.charAt(0) || "A")}
+                                    </Avatar>
+                                    <AnimatePresence>
+                                        {isAdminDropdownOpen && (
+                                            <motion.div
+                                                className="user-dropdown-menu"
+                                                initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                                transition={{ duration: 0.15 }}
+                                                style={{
+                                                    position: "absolute",
+                                                    right: 0,
+                                                    top: "calc(100% + 8px)",
+                                                    minWidth: 200,
                                                 }}
                                             >
-                                                <User size={15} /> Profile
-                                            </button>
-                                            <button
-                                                className="dropdown-item"
-                                                onClick={() => {
-                                                    navigate("/settings");
-                                                    setIsAdminDropdownOpen(false);
-                                                }}
-                                            >
-                                                <Settings size={15} /> Settings
-                                            </button>
-                                            <div className="dropdown-divider" />
-                                            <button
-                                                className="dropdown-item logout-link"
-                                                onClick={() => {
-                                                    setIsAdminDropdownOpen(false);
-                                                    handleLogout();
-                                                }}
-                                            >
-                                                <LogOut size={15} /> Logout
-                                            </button>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                                <div className="dropdown-user-info">
+                                                    <p className="user-name">{userData?.fullName}</p>
+                                                    <p className="user-email">{userData?.email}</p>
+                                                </div>
+                                                <div className="dropdown-divider" />
+                                                <button
+                                                    className="dropdown-item"
+                                                    onClick={() => {
+                                                        navigate("/user/profile");
+                                                        setIsAdminDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <User size={15} /> Profile
+                                                </button>
+                                                <button
+                                                    className="dropdown-item"
+                                                    onClick={() => {
+                                                        navigate("/settings");
+                                                        setIsAdminDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <Settings size={15} /> Settings
+                                                </button>
+                                                <div className="dropdown-divider" />
+                                                <button
+                                                    className="dropdown-item logout-link"
+                                                    onClick={() => {
+                                                        setIsAdminDropdownOpen(false);
+                                                        handleLogout();
+                                                    }}
+                                                >
+                                                    <LogOut size={15} /> Logout
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </Box>
                             </Box>
                         </Box>
-                    </Box>
 
-                    {/* Admin Main Content */}
-                    <Box component="main" sx={{ flex: 1, p: { xs: 2, md: "20px 24px 32px" } }}>
-                        <Outlet />
+                        {/* Admin Main Content */}
+                        <Box component="main" sx={{ flex: 1, p: { xs: 2, md: "20px 24px 32px" } }}>
+                            <Outlet />
+                        </Box>
                     </Box>
+                    <SuspendedGate />
                 </Box>
-                <SuspendedGate />
-            </Box>
-            </CollectQuestionTrayProvider>
+            </ProcessingTrayProvider>
         );
     }
 
     // CANDIDATE / COACH LAYOUT
     return (
-        <CollectQuestionTrayProvider>
+        <ProcessingTrayProvider>
             <CandidateAssessmentGate />
             <div className="main-layout">
                 {isAssessmentLocked ? (
@@ -320,7 +320,7 @@ const MainLayout = () => {
                     </div>
                 </footer>
             </div>
-        </CollectQuestionTrayProvider>
+        </ProcessingTrayProvider>
     );
 };
 

@@ -6,6 +6,7 @@ import {
     FormControl,
     FormControlLabel,
     FormHelperText,
+    IconButton,
     Modal,
     Radio,
     RadioGroup,
@@ -13,6 +14,7 @@ import {
     Stack,
     Typography,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
@@ -22,12 +24,18 @@ import { PrimaryButton } from "../../../../common/components/buttons";
 import SectionHeading from "../../../../common/components/SectionHeading";
 import AppText from "../../../../common/components/AppText";
 
-function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
+function CoachEvaluationModal({
+    open,
+    room,
+    onClose,
+    onSubmitted,
+    allowClose = false,
+    showCloseButton = false,
+}) {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [items, setItems] = useState([]);
     const [error, setError] = useState("");
-    const [isCompleted, setIsCompleted] = useState(false);
     const [others, setOthers] = useState("");
     const [hireDecision, setHireDecision] = useState("");
 
@@ -86,7 +94,7 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                 });
                 const data = res?.data;
                 const evaluationStructure = parseEvaluationStructure(data);
-                
+
                 // Normalize keys to ensure consistency (handles both lowercase and PascalCase from API)
                 const normalizedResults = (
                     data?.evaluationResults ||
@@ -101,14 +109,13 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                 }));
 
                 setItems(normalizedResults);
-                setIsCompleted(Boolean(data?.isEvaluationCompleted));
                 setOthers(data?.others ?? data?.Others ?? evaluationStructure?.others ?? "");
                 setHireDecision(
                     normalizeHireDecision(
                         data?.hireDecision ??
-                            data?.isHire ??
-                            evaluationStructure?.hireDecision ??
-                            "",
+                        data?.isHire ??
+                        evaluationStructure?.hireDecision ??
+                        "",
                     ),
                 );
             } catch (err) {
@@ -126,9 +133,9 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
             prev.map((item, i) =>
                 i === index
                     ? {
-                          ...item,
-                          [field]: field === "score" ? Number(value) : value,
-                      }
+                        ...item,
+                        [field]: field === "score" ? Number(value) : value,
+                    }
                     : item,
             ),
         );
@@ -181,12 +188,8 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
                 displaySuccessMessage: true,
                 alertErrorMessage: true,
             });
-            setIsCompleted(true);
             if (onSubmitted) {
                 onSubmitted();
-            }
-            if (onClose) {
-                onClose();
             }
         } catch (err) {
             setError(err?.response?.data?.message || "Failed to submit evaluation.");
@@ -196,15 +199,13 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     };
 
     const handleClose = (event, reason) => {
-        const hasPending = !isCompleted && !error;
-        if (hasPending) {
+        if (!allowClose) {
             return;
         }
         setItems([]);
         setOthers("");
         setHireDecision("");
         setError("");
-        setIsCompleted(false);
         if (onClose) {
             onClose();
         }
@@ -240,7 +241,12 @@ function CoachEvaluationModal({ open, room, onClose, onSubmitted }) {
     };
 
     return (
-        <Modal open={open} onClose={handleClose} aria-labelledby="coach-evaluation-modal">
+        <Modal
+            open={open}
+            onClose={handleClose}
+            aria-labelledby="coach-evaluation-modal"
+            disableEscapeKeyDown={!allowClose}
+        >
             <Box
                 sx={(theme) => ({
                     ...dialogStyles.paper(theme),

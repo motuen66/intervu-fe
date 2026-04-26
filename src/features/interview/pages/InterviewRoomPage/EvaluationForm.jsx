@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState, useRef } from "react";
 import { Box, Typography, Stack, Slider, TextField, Button, CircularProgress, Alert } from "@mui/material";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
@@ -7,7 +7,7 @@ import { buttonStyles, fieldStyles } from "../../../../common/constants/uiStyles
 import SaveIcon from "@mui/icons-material/Save";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
-function EvaluationForm({ roomId }) {
+const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
     const [evalItems, setEvalItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [savingDraft, setSavingDraft] = useState(false);
@@ -62,7 +62,7 @@ function EvaluationForm({ roomId }) {
     };
 
     const saveDraft = async () => {
-        if (!roomId || evalItems.length === 0 || savingDraft) return;
+        if (!roomId || evalItems.length === 0 || savingDraft || !hasUnsavedChanges.current) return false;
         
         setSavingDraft(true);
         try {
@@ -75,12 +75,18 @@ function EvaluationForm({ roomId }) {
             });
             setLastSaved(new Date());
             hasUnsavedChanges.current = false;
+            return true;
         } catch (err) {
             console.warn("Auto-save draft failed", err);
+            return false;
         } finally {
             setSavingDraft(false);
         }
     };
+
+    useImperativeHandle(ref, () => ({
+        saveDraftBeforeLeave: saveDraft,
+    }));
 
     const handleEvalChange = (index, field, value) => {
         setEvalItems((prev) =>
@@ -198,6 +204,6 @@ function EvaluationForm({ roomId }) {
             </Typography>
         </Stack>
     );
-}
+});
 
 export default EvaluationForm;

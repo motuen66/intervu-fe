@@ -41,10 +41,12 @@ import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useWhiteboardSync } from "../../hooks/useWhiteboardSync.js";
 import { useTranscript } from "../../hooks/useTranscript.js"; // Changed from useDeepgramTranscript
 import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
+import CoachEvaluationModal from "../InterviewRoomListPage/CoachEvaluationModal";
 
 // Analytics
 import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
-import { useCollectQuestionTray } from "../../../../common/context/CollectQuestionTrayContext";
+import { useProcessingTray } from "../../../../common/context/ProcessingTrayContext";
+import { QUESTION_STATUS_BUCKETS } from "../../../../common/constants/processingTrayJobs";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -234,6 +236,7 @@ function InterviewRoomPage() {
     // live imperative handle if the drawer has ever been opened this session.
     const preparedQuestionsRef = useRef(null);
     const [roadmapOpen, setRoadmapOpen] = useState(false);
+    const evaluationFormRef = useRef(null);
 
     // ── SignalR ──────────────────────────────────────────────────────────────
     const { connectionId, peers, sendSignal, leaveRoom } = useInterviewSignalR({
@@ -616,23 +619,68 @@ function InterviewRoomPage() {
         sendSignal("SendMicState", roomId, isMicOn).catch?.(() => { });
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
-    const { startCollecting } = useCollectQuestionTray();
+    const { startJob } = useProcessingTray();
 
     // ── Leave room ──────────────────────────────────────────────────────────
-    const handleLeaveRoom = useCallback(() => {
+
+    const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
+    const [isPreparingLeave, setIsPreparingLeave] = useState(false);
+
+    const handleLeaveRoom = useCallback(async () => {
+        if (isPreparingLeave) return;
+
+        if (Number(user?.role) === ROLES.INTERVIEWER) {
+            // Save current in-room draft before opening mandatory final submission modal.
+            setIsPreparingLeave(true);
+            try {
+                await evaluationFormRef.current?.saveDraftBeforeLeave?.();
+            } catch (err) {
+                console.warn("Failed to save evaluation draft before leave:", err);
+                toast.error("Could not save evaluation draft automatically.");
+            } finally {
+                setCoachEvaluationState({ open: true, room: roomInfo });
+                setIsPreparingLeave(false);
+            }
+            return;
+        }
+
         leaveRoom();
         try {
             trackLeaveInterviewRoom(roomId);
         } catch (err) {
             console.warn("trackLeaveInterviewRoom failed", err);
         }
-        // Only the coach receives the AiAnalysisCompleted notification, so only
-        // start the collection tray for interviewers leaving a transcript-bearing room.
-        if (roomId && Number(user?.role) === ROLES.INTERVIEWER) {
-            startCollecting({ roomId });
-        }
         navigate("/interview");
-    }, [leaveRoom, navigate, roomId, user?.role, startCollecting]);
+    }, [isPreparingLeave, leaveRoom, navigate, roomId, user?.role, roomInfo]);
+
+    const handleCoachEvaluationSubmitted = () => {
+        // Only call leaveRoom and navigate away AFTER submission is successful
+        leaveRoom();
+        try {
+            trackLeaveInterviewRoom(roomId);
+        } catch (err) {
+            console.warn("trackLeaveInterviewRoom failed", err);
+        }
+        setCoachEvaluationState({ open: false, room: null });
+        startJob({
+            kind: "collect-questions",
+            runningTitle: "Analyzing questions…",
+            completeTitle: "Analysis Complete!",
+            completeCtaLabel: "Review Now",
+            statusBuckets: QUESTION_STATUS_BUCKETS,
+            completeNotificationType: "AiAnalysisCompleted",
+            referenceId: roomId,
+            completeCtaAction: () =>
+                navigate(`/interview?roomId=${roomId}&action=review-questions`),
+        });
+        navigate("/interview");
+    };
+
+    const handleCloseCoachEvaluation = () => {
+        // Modal has its own internal block if submission is not done,
+        // but if it somehow closes, we reset state.
+        setCoachEvaluationState({ open: false, room: null });
+    };
 
     // Ensure we emit leave event on unmount/navigation
     useEffect(() => {
@@ -1469,6 +1517,7 @@ function InterviewRoomPage() {
                                 user={user}
                                 jobDescriptionUrl={bookingDocLinks.jobDescriptionUrl}
                                 cvUrl={bookingDocLinks.cvUrl}
+                                evaluationFormRef={evaluationFormRef}
                             />
                         )}
                     </Box>
@@ -1569,6 +1618,7 @@ function InterviewRoomPage() {
                     <Button
                         id="footer-btn-end-interview"
                         onClick={handleLeaveRoom}
+                        disabled={isPreparingLeave}
                         startIcon={<CallEndIcon />}
                         aria-label="Leave"
                         sx={{
@@ -1584,7 +1634,7 @@ function InterviewRoomPage() {
                             "&:active": { transform: "scale(0.94)" },
                         }}
                     >
-                        End Interview
+                        {isPreparingLeave ? "Preparing..." : "End Interview"}
                     </Button>
                 </Box>
             </Box>
@@ -1844,6 +1894,16 @@ function InterviewRoomPage() {
 
             {/* ═══ Report Room Modal ═══ */}
             <RoomReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} roomId={roomId} />
+
+            {/* ═══ Coach Evaluation Modal ═══ */}
+            <CoachEvaluationModal
+                open={coachEvaluationState.open}
+                room={coachEvaluationState.room}
+                onClose={handleCloseCoachEvaluation}
+                onSubmitted={handleCoachEvaluationSubmitted}
+                allowClose={true}
+                showCloseButton={true}
+            />
         </Box>
     );
 }

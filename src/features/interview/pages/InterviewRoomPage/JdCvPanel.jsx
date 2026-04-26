@@ -86,7 +86,7 @@ function getInlineDocumentPreviewUrl(rawUrl) {
     return "";
 }
 
-export function JdCvPanel({ roomId, user, jobDescriptionUrl, cvUrl }) {
+export function JdCvPanel({ roomId, user, jobDescriptionUrl, cvUrl, evaluationFormRef = null }) {
     const [tab, setTab] = useState(0);
 
     return (
@@ -124,7 +124,9 @@ export function JdCvPanel({ roomId, user, jobDescriptionUrl, cvUrl }) {
                 {tab === 1 && <DocumentLinkTab url={cvUrl} emptyText="CV was not provided." />}
 
                 {/* Tab 2: Evaluate */}
-                {tab === 2 && user?.role !== ROLES.CANDIDATE && <EvaluateTab roomId={roomId} user={user} />}
+                {tab === 2 && user?.role !== ROLES.CANDIDATE && (
+                    <EvaluateTab roomId={roomId} user={user} evaluationFormRef={evaluationFormRef} />
+                )}
             </Box>
         </Box>
     );
@@ -260,8 +262,8 @@ function DocumentLinkTab({ title, url, emptyText, icon }) {
     );
 }
 
-function EvaluateTab({ roomId, user }) {
+function EvaluateTab({ roomId, user, evaluationFormRef }) {
     if (user?.role !== ROLES.CANDIDATE) {
-        return <EvaluationForm roomId={roomId} />;
+        return <EvaluationForm ref={evaluationFormRef} roomId={roomId} />;
     }
 }
