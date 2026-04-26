@@ -6,6 +6,7 @@ import Grow from "@mui/material/Grow";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import CircularProgress from "@mui/material/CircularProgress";
 import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
@@ -42,6 +43,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { addMonths, format, startOfDay } from "date-fns";
 import { AIM_LEVEL_LABELS } from "../../../../../common/constants/status";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
+import { candidateProfileEndPoints } from "../../../../profiles/candidate/service/candidateProfileApi";
 import { createJDBookingRequest, payBookingRequest } from "../../../../interview/services/bookingRequestApi";
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
@@ -50,6 +52,7 @@ import toast from "react-hot-toast";
 import { useTheme } from "@mui/material/styles";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import CalendlyCalendar from "../../../../../common/components/CalendlyCalendar";
+import StatusChip from "../../../../../common/components/StatusChip";
 import FormSelect from "../../../../../common/components/form/FormSelect";
 import FormTextField from "../../../../../common/components/form/FormTextField";
 import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
@@ -326,11 +329,22 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const [jdUploadingName, setJdUploadingName] = useState("");
     const [cvUploadingName, setCvUploadingName] = useState("");
     const [bookingSessionId, setBookingSessionId] = useState("");
+    const [uploadedMeta, setUploadedMeta] = useState({
+        jobDescriptionUrl: null,
+        cvUrl: null,
+    });
+    const [manualUrls, setManualUrls] = useState({ jobDescriptionUrl: "", cvUrl: "" });
+    const [urlInputMode, setUrlInputMode] = useState({ jobDescriptionUrl: "link", cvUrl: "link" });
+    const [cvSource, setCvSource] = useState("manual");
+    const [profileCvUrl, setProfileCvUrl] = useState("");
+    const [loadingProfileCv, setLoadingProfileCv] = useState(false);
+    const [hasAttemptedProfileCvFetch, setHasAttemptedProfileCvFetch] = useState(false);
 
     const { userData } = useSelector((state) => state.auth);
 
     const jdFileInputRef = React.useRef(null);
     const cvFileInputRef = React.useRef(null);
+    const profileCvFetchRequestRef = React.useRef(0);
     const [services, setServices] = useState([]);
     const [loadingServices, setLoadingServices] = useState(false);
     const [freeSlots, setFreeSlots] = useState([]);
@@ -351,12 +365,61 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
+    const fetchProfileCvUrl = useCallback(async () => {
+        if (!userData?.id) {
+            setProfileCvUrl("");
+            setHasAttemptedProfileCvFetch(false);
+            setLoadingProfileCv(false);
+            return;
+        }
+
+        const requestId = ++profileCvFetchRequestRef.current;
+        setLoadingProfileCv(true);
+        setHasAttemptedProfileCvFetch(false);
+
+        try {
+            const endpoint = candidateProfileEndPoints.VIEW_OWN_CANDIDATE_PROFILE.replace("{id}", userData.id);
+            const response = await callApi({
+                method: METHOD.GET,
+                endpoint,
+            });
+
+            if (profileCvFetchRequestRef.current !== requestId) return;
+
+            if (response?.success) {
+                setProfileCvUrl((response?.data?.cvUrl || "").trim());
+            } else {
+                setProfileCvUrl("");
+            }
+        } catch (err) {
+            if (profileCvFetchRequestRef.current !== requestId) return;
+            console.error("Error fetching profile CV:", err);
+            setProfileCvUrl("");
+        } finally {
+            if (profileCvFetchRequestRef.current === requestId) {
+                setHasAttemptedProfileCvFetch(true);
+                setLoadingProfileCv(false);
+            }
+        }
+    }, [userData?.id]);
+
     useEffect(() => {
         if (open && coachId) {
             loadServices();
             fetchFreeSlots();
             setBookingSessionId(crypto.randomUUID?.() || Date.now().toString());
         }
+
+        if (open && userData?.id) {
+            fetchProfileCvUrl();
+        }
+
+        if (open && !userData?.id) {
+            setProfileCvUrl("");
+            setLoadingProfileCv(false);
+            setHasAttemptedProfileCvFetch(false);
+        }
+
         if (!open) {
             setActiveStep(0);
             setForm({ jobDescriptionUrl: "", cvUrl: "", aimLevel: "" });
@@ -369,8 +432,15 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             setBookingSessionId("");
             setJdUploadingName("");
             setCvUploadingName("");
+            setUploadedMeta({ jobDescriptionUrl: null, cvUrl: null });
+            setManualUrls({ jobDescriptionUrl: "", cvUrl: "" });
+            setUrlInputMode({ jobDescriptionUrl: "link", cvUrl: "link" });
+            setCvSource("manual");
+            setProfileCvUrl("");
+            setLoadingProfileCv(false);
+            setHasAttemptedProfileCvFetch(false);
         }
-    }, [open, coachId]);
+    }, [open, coachId, userData?.id, fetchProfileCvUrl]);
 
     const loadServices = async () => {
         setLoadingServices(true);
@@ -557,6 +627,11 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             const folder = `bookings/${userData?.id || "anonymous"}/${coachId}/${bookingSessionId}`;
             const url = await uploadMedia(file, folder);
             setForm((prev) => ({ ...prev, [field]: url }));
+            setUploadedMeta((prev) => ({ ...prev, [field]: { fileName: file.name, url } }));
+            setUrlInputMode((prev) => ({ ...prev, [field]: "file" }));
+            if (!isJd) {
+                setCvSource("uploaded");
+            }
             toast.success("File uploaded successfully!");
             if (formErrors[field]) {
                 setFormErrors((prev) => ({ ...prev, [field]: "" }));
@@ -670,6 +745,35 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
     const handleClose = () => onClose();
 
+    const switchToManualLink = (field) => {
+        setUrlInputMode((prev) => ({ ...prev, [field]: "link" }));
+        setForm((prev) => ({ ...prev, [field]: manualUrls[field] || "" }));
+        if (field === "cvUrl") {
+            setCvSource("manual");
+        }
+    };
+
+    const switchToUploadedFile = (field) => {
+        const uploadedUrl = uploadedMeta[field]?.url;
+        if (!uploadedUrl) return;
+        setUrlInputMode((prev) => ({ ...prev, [field]: "file" }));
+        setForm((prev) => ({ ...prev, [field]: uploadedUrl }));
+        if (field === "cvUrl") {
+            setCvSource("uploaded");
+        }
+    };
+
+    const useProfileCv = () => {
+        if (!profileCvUrl) return;
+        setUrlInputMode((prev) => ({ ...prev, cvUrl: "link" }));
+        setManualUrls((prev) => ({ ...prev, cvUrl: profileCvUrl }));
+        setForm((prev) => ({ ...prev, cvUrl: profileCvUrl }));
+        setCvSource("profile");
+        if (formErrors.cvUrl) {
+            setFormErrors((prev) => ({ ...prev, cvUrl: "" }));
+        }
+    };
+
     const userTimezone = useMemo(() => {
         try {
             return Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, " ");
@@ -710,9 +814,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     <Typography
                         sx={{ fontSize: "0.9375rem", color: "text.secondary", lineHeight: 1.55, maxWidth: 560 }}
                     >
-                        {activeStep === 0
-                            ? "Submit details and build your assessment workflow."
-                            : "Select dates and times for each round."}
+                        {activeStep === 1 && "Select dates and times for each round."}
                     </Typography>
                 </Box>
                 <IconButton
@@ -758,49 +860,118 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}
                                         >
                                             <Typography className="jd-label-mini">Job url</Typography>
-                                            <Box className="jd-input-stitch">
-                                                <Link size={18} color="#94a3b8" aria-hidden />
-                                                <FormTextField
-                                                    fullWidth
-                                                    variant="standard"
-                                                    placeholder={uploadingJd ? `Uploading: ${jdUploadingName}...` : "https://company.com/role"}
-                                                    value={uploadingJd ? "" : form.jobDescriptionUrl}
-                                                    onChange={(e) =>
-                                                        setForm({ ...form, jobDescriptionUrl: e.target.value })
-                                                    }
-                                                    helperText={uploadingJd ? `Saving to session folder...` : ""}
-                                                    InputProps={{ disableUnderline: true }}
-                                                    sx={{
-                                                        "& .MuiInputBase-input": {
-                                                            py: 0.5,
-                                                            fontSize: "0.95rem",
-                                                            fontWeight: 600,
-                                                            color: "#0f172a",
-                                                        },
-                                                        "& .MuiFormHelperText-root": {
-                                                            mx: 0,
-                                                            fontSize: "0.7rem",
-                                                            fontWeight: 500,
-                                                            color: "#6366f1"
-                                                        }
-                                                    }}
-                                                />
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => jdFileInputRef.current?.click()}
-                                                    disabled={uploadingJd}
-                                                    sx={{ color: "#6366f1" }}
-                                                >
-                                                    <UploadCloud size={18} />
-                                                </IconButton>
-                                                <input
-                                                    type="file"
-                                                    accept=".pdf,.doc,.docx,image/*"
-                                                    hidden
-                                                    ref={jdFileInputRef}
-                                                    onChange={(e) => handleFileUpload(e, "jobDescriptionUrl")}
-                                                />
-                                            </Box>
+                                            {uploadingJd ? (
+                                                <Box className="jd-input-stitch">
+                                                    <Link size={18} color="#94a3b8" aria-hidden />
+                                                    <FormTextField
+                                                        fullWidth
+                                                        variant="standard"
+                                                        placeholder={`Uploading: ${jdUploadingName}...`}
+                                                        value=""
+                                                        helperText="Saving to session folder..."
+                                                        InputProps={{ disableUnderline: true }}
+                                                        sx={{
+                                                            "& .MuiInputBase-input": {
+                                                                py: 0.5,
+                                                                fontSize: "0.95rem",
+                                                                fontWeight: 600,
+                                                                color: "#0f172a",
+                                                            },
+                                                            "& .MuiFormHelperText-root": {
+                                                                mx: 0,
+                                                                fontSize: "0.7rem",
+                                                                fontWeight: 500,
+                                                                color: "#6366f1",
+                                                            },
+                                                        }}
+                                                    />
+                                                </Box>
+                                            ) : uploadedMeta.jobDescriptionUrl && urlInputMode.jobDescriptionUrl === "file" ? (
+                                                <Stack spacing={0.5}>
+                                                    <Box className="jd-input-stitch" sx={{ justifyContent: "space-between" }}>
+                                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                                                            <CheckCircle size={16} color="#22c55e" />
+                                                            <Typography
+                                                                sx={{
+                                                                    fontSize: "0.88rem",
+                                                                    fontWeight: 600,
+                                                                    color: "#0f172a",
+                                                                    overflow: "hidden",
+                                                                    textOverflow: "ellipsis",
+                                                                    whiteSpace: "nowrap",
+                                                                    maxWidth: 180,
+                                                                }}
+                                                            >
+                                                                {uploadedMeta.jobDescriptionUrl.fileName}
+                                                            </Typography>
+                                                        </Stack>
+                                                        <Stack direction="row" spacing={0.75} alignItems="center">
+                                                            <StatusChip label="Uploaded" color="success" size="sm" variant="filled" />
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => jdFileInputRef.current?.click()}
+                                                                sx={{ color: "#6366f1" }}
+                                                            >
+                                                                <UploadCloud size={17} />
+                                                            </IconButton>
+                                                        </Stack>
+                                                    </Box>
+                                                    <TextButton
+                                                        sx={{ alignSelf: "flex-start", fontSize: "0.75rem", px: 0.5 }}
+                                                        onClick={() => switchToManualLink("jobDescriptionUrl")}
+                                                    >
+                                                        Use link 
+                                                    </TextButton>
+                                                </Stack>
+                                            ) : (
+                                                <Stack spacing={0.5}>
+                                                    <Box className="jd-input-stitch">
+                                                        <Link size={18} color="#94a3b8" aria-hidden />
+                                                        <FormTextField
+                                                            fullWidth
+                                                            variant="standard"
+                                                            placeholder="https://company.com/role"
+                                                            value={manualUrls.jobDescriptionUrl}
+                                                            onChange={(e) => {
+                                                                const nextValue = e.target.value;
+                                                                setManualUrls((prev) => ({ ...prev, jobDescriptionUrl: nextValue }));
+                                                                setForm((prev) => ({ ...prev, jobDescriptionUrl: nextValue }));
+                                                            }}
+                                                            InputProps={{ disableUnderline: true }}
+                                                            sx={{
+                                                                "& .MuiInputBase-input": {
+                                                                    py: 0.5,
+                                                                    fontSize: "0.95rem",
+                                                                    fontWeight: 600,
+                                                                    color: "#0f172a",
+                                                                },
+                                                            }}
+                                                        />
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => jdFileInputRef.current?.click()}
+                                                            sx={{ color: "#6366f1" }}
+                                                        >
+                                                            <UploadCloud size={18} />
+                                                        </IconButton>
+                                                    </Box>
+                                                    {uploadedMeta.jobDescriptionUrl && (
+                                                        <TextButton
+                                                            sx={{ alignSelf: "flex-start", fontSize: "0.75rem", px: 0.5 }}
+                                                            onClick={() => switchToUploadedFile("jobDescriptionUrl")}
+                                                        >
+                                                            Use uploaded file 
+                                                        </TextButton>
+                                                    )}
+                                                </Stack>
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.doc,.docx,image/*"
+                                                hidden
+                                                ref={jdFileInputRef}
+                                                onChange={(e) => handleFileUpload(e, "jobDescriptionUrl")}
+                                            />
                                             {formErrors.jobDescriptionUrl && (
                                                 <Typography
                                                     sx={{
@@ -822,51 +993,189 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                             sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}
                                         >
                                             <Typography className="jd-label-mini">CV url</Typography>
-                                            <Box className="jd-input-stitch">
-                                                <FileUser size={18} color="#94a3b8" aria-hidden />
-                                                <FormTextField
-                                                    fullWidth
-                                                    variant="standard"
-                                                    placeholder={uploadingCv ? `Uploading: ${cvUploadingName}...` : "https://drive.google.com/cv.pdf"}
-                                                    value={uploadingCv ? "" : form.cvUrl}
-                                                    onChange={(e) => {
-                                                        setForm({ ...form, cvUrl: e.target.value });
-                                                        if (formErrors.cvUrl)
-                                                            setFormErrors((prev) => ({ ...prev, cvUrl: "" }));
-                                                    }}
-                                                    helperText={uploadingCv ? `Saving to session folder...` : ""}
-                                                    InputProps={{ disableUnderline: true }}
-                                                    sx={{
-                                                        "& .MuiInputBase-input": {
-                                                            py: 0.5,
-                                                            fontSize: "0.95rem",
-                                                            fontWeight: 600,
-                                                            color: "#0f172a",
-                                                        },
-                                                        "& .MuiFormHelperText-root": {
-                                                            mx: 0,
-                                                            fontSize: "0.7rem",
-                                                            fontWeight: 500,
-                                                            color: "#6366f1"
-                                                        }
-                                                    }}
-                                                />
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => cvFileInputRef.current?.click()}
-                                                    disabled={uploadingCv}
-                                                    sx={{ color: "#6366f1" }}
-                                                >
-                                                    <UploadCloud size={18} />
-                                                </IconButton>
-                                                <input
-                                                    type="file"
-                                                    accept=".pdf,.doc,.docx,image/*"
-                                                    hidden
-                                                    ref={cvFileInputRef}
-                                                    onChange={(e) => handleFileUpload(e, "cvUrl")}
-                                                />
-                                            </Box>
+                                            {uploadingCv ? (
+                                                <Box className="jd-input-stitch">
+                                                    <FileUser size={18} color="#94a3b8" aria-hidden />
+                                                    <FormTextField
+                                                        fullWidth
+                                                        variant="standard"
+                                                        placeholder={`Uploading: ${cvUploadingName}...`}
+                                                        value=""
+                                                        helperText="Saving to session folder..."
+                                                        InputProps={{ disableUnderline: true }}
+                                                        sx={{
+                                                            "& .MuiInputBase-input": {
+                                                                py: 0.5,
+                                                                fontSize: "0.95rem",
+                                                                fontWeight: 600,
+                                                                color: "#0f172a",
+                                                            },
+                                                            "& .MuiFormHelperText-root": {
+                                                                mx: 0,
+                                                                fontSize: "0.7rem",
+                                                                fontWeight: 500,
+                                                                color: "#6366f1",
+                                                            },
+                                                        }}
+                                                    />
+                                                </Box>
+                                            ) : uploadedMeta.cvUrl && urlInputMode.cvUrl === "file" ? (
+                                                <Stack spacing={0.5}>
+                                                    <Box className="jd-input-stitch" sx={{ justifyContent: "space-between" }}>
+                                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                                                            <CheckCircle size={16} color="#22c55e" />
+                                                            <Typography
+                                                                sx={{
+                                                                    fontSize: "0.88rem",
+                                                                    fontWeight: 600,
+                                                                    color: "#0f172a",
+                                                                    overflow: "hidden",
+                                                                    textOverflow: "ellipsis",
+                                                                    whiteSpace: "nowrap",
+                                                                    maxWidth: 180,
+                                                                }}
+                                                            >
+                                                                {uploadedMeta.cvUrl.fileName}
+                                                            </Typography>
+                                                        </Stack>
+                                                        <Stack direction="row" spacing={0.75} alignItems="center">
+                                                            <StatusChip label="Uploaded" color="success" size="sm" variant="filled" />
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => cvFileInputRef.current?.click()}
+                                                                sx={{ color: "#6366f1" }}
+                                                            >
+                                                                <UploadCloud size={17} />
+                                                            </IconButton>
+                                                        </Stack>
+                                                    </Box>
+                                                    {!loadingProfileCv && profileCvUrl ? (
+                                                        <Stack direction="row" spacing={0.5} alignItems="center">
+                                                            <TextButton
+                                                                sx={{ fontSize: "0.75rem", px: 0.5 }}
+                                                                onClick={() => switchToManualLink("cvUrl")}
+                                                            >
+                                                                Use link 
+                                                            </TextButton>
+                                                            <TextButton sx={{ fontSize: "0.75rem", px: 0.5 }} onClick={useProfileCv}>
+                                                                Use profile CV
+                                                            </TextButton>
+                                                        </Stack>
+                                                    ) : (
+                                                        <TextButton
+                                                            sx={{ alignSelf: "flex-start", fontSize: "0.75rem", px: 0.5 }}
+                                                            onClick={() => switchToManualLink("cvUrl")}
+                                                        >
+                                                            Use link 
+                                                        </TextButton>
+                                                    )}
+                                                    {loadingProfileCv && (
+                                                        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ ml: 0.5 }}>
+                                                            <CircularProgress size={12} thickness={7} />
+                                                            <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                                                                Checking profile CV...
+                                                            </Typography>
+                                                        </Stack>
+                                                    )}
+                                                </Stack>
+                                            ) : (
+                                                <Stack spacing={0.5}>
+                                                    <Box className="jd-input-stitch">
+                                                        <FileUser size={18} color="#94a3b8" aria-hidden />
+                                                        <FormTextField
+                                                            fullWidth
+                                                            variant="standard"
+                                                            placeholder="https://drive.google.com/cv.pdf"
+                                                            value={cvSource === "profile" ? "Your CV" : manualUrls.cvUrl}
+                                                            onChange={(e) => {
+                                                                const nextValue = e.target.value;
+                                                                setManualUrls((prev) => ({ ...prev, cvUrl: nextValue }));
+                                                                setForm((prev) => ({ ...prev, cvUrl: nextValue }));
+                                                                if (cvSource === "profile") {
+                                                                    setCvSource("manual");
+                                                                }
+                                                                if (formErrors.cvUrl)
+                                                                    setFormErrors((prev) => ({ ...prev, cvUrl: "" }));
+                                                            }}
+                                                            InputProps={{ disableUnderline: true }}
+                                                            sx={{
+                                                                "& .MuiInputBase-input": {
+                                                                    py: 0.5,
+                                                                    fontSize: "0.95rem",
+                                                                    fontWeight: 600,
+                                                                    color: "#0f172a",
+                                                                },
+                                                            }}
+                                                        />
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => cvFileInputRef.current?.click()}
+                                                            sx={{ color: "#6366f1" }}
+                                                        >
+                                                            <UploadCloud size={18} />
+                                                        </IconButton>
+                                                    </Box>
+                                                    {uploadedMeta.cvUrl && !loadingProfileCv && profileCvUrl ? (
+                                                        <Stack direction="row" spacing={0.5} alignItems="center">
+                                                            <TextButton
+                                                                sx={{ fontSize: "0.75rem", px: 0.5 }}
+                                                                onClick={() => switchToUploadedFile("cvUrl")}
+                                                            >
+                                                                Use uploaded file
+                                                            </TextButton>
+                                                            <TextButton sx={{ fontSize: "0.75rem", px: 0.5 }} onClick={useProfileCv}>
+                                                                Use profile CV
+                                                            </TextButton>
+                                                        </Stack>
+                                                    ) : (
+                                                        uploadedMeta.cvUrl && (
+                                                            <TextButton
+                                                                sx={{ alignSelf: "flex-start", fontSize: "0.75rem", px: 0.5 }}
+                                                                onClick={() => switchToUploadedFile("cvUrl")}
+                                                            >
+                                                                Use uploaded file
+                                                            </TextButton>
+                                                        )
+                                                    )}
+                                                    {loadingProfileCv && (
+                                                        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ ml: 0.5 }}>
+                                                            <CircularProgress size={12} thickness={7} />
+                                                            <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                                                                Checking profile CV...
+                                                            </Typography>
+                                                        </Stack>
+                                                    )}
+                                                    {!loadingProfileCv && profileCvUrl && !uploadedMeta.cvUrl && (
+                                                        <TextButton
+                                                            sx={{ alignSelf: "flex-start", fontSize: "0.75rem", px: 0.5 }}
+                                                            onClick={useProfileCv}
+                                                        >
+                                                            Use profile CV
+                                                        </TextButton>
+                                                    )}
+                                                    {!loadingProfileCv &&
+                                                        hasAttemptedProfileCvFetch &&
+                                                        userData?.id &&
+                                                        !profileCvUrl && (
+                                                            <Typography
+                                                                sx={{
+                                                                    fontSize: "0.72rem",
+                                                                    color: "text.secondary",
+                                                                    px: 0.5,
+                                                                }}
+                                                            >
+                                                                No CV found in your profile yet. Upload here or add one in Profile.
+                                                            </Typography>
+                                                        )}
+                                                </Stack>
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept=".pdf,.doc,.docx,image/*"
+                                                hidden
+                                                ref={cvFileInputRef}
+                                                onChange={(e) => handleFileUpload(e, "cvUrl")}
+                                            />
                                             {formErrors.cvUrl && (
                                                 <Typography
                                                     sx={{
@@ -880,48 +1189,6 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     {formErrors.cvUrl}
                                                 </Typography>
                                             )}
-                                        </Grid>
-                                        <Grid
-                                            item
-                                            xs={12}
-                                            md={4}
-                                            sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}
-                                        >
-                                            <Typography className="jd-label-mini">Target</Typography>
-                                            <Box className="jd-input-stitch">
-                                                <Target size={18} color="#94a3b8" aria-hidden />
-                                                <FormSelect
-                                                    fullWidth
-                                                    variant="standard"
-                                                    value={form.aimLevel}
-                                                    onChange={(e) => setForm({ ...form, aimLevel: e.target.value })}
-                                                    disableUnderline
-                                                    displayEmpty
-                                                    renderValue={(selected) => {
-                                                        if (selected === "" || selected === undefined)
-                                                            return "Software Engineer";
-                                                        return AIM_LEVEL_LABELS[selected] ?? selected;
-                                                    }}
-                                                    sx={{
-                                                        "& .MuiSelect-select": {
-                                                            py: 0.5,
-                                                            fontSize: "0.95rem",
-                                                            fontWeight: 400,
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                        },
-                                                    }}
-                                                >
-                                                    <MenuItem value="">
-                                                        <em>Not specified</em>
-                                                    </MenuItem>
-                                                    {Object.entries(AIM_LEVEL_LABELS).map(([val, label]) => (
-                                                        <MenuItem key={val} value={val}>
-                                                            {label}
-                                                        </MenuItem>
-                                                    ))}
-                                                </FormSelect>
-                                            </Box>
                                         </Grid>
                                     </Grid>
                                 </Box>

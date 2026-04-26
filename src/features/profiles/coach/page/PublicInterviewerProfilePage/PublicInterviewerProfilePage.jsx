@@ -756,15 +756,6 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                                 Fully refundable if cancelled 24h prior
                             </p>
                         </div>
-
-                        {/* Match Card (Derived logic) */}
-                        <div className="ep-side-card ep-match-card">
-                            <h5>Coach Match Index</h5>
-                            <div className="ep-progress-bg">
-                                <div className="ep-progress-bar" style={{ width: "85%" }}></div>
-                            </div>
-                            <p style={{ fontSize: "0.75rem", color: "#64748b" }}>Based on your background analysis.</p>
-                        </div>
                     </aside>
                 </div>
             </main>
