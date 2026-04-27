@@ -625,26 +625,6 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                     <Box sx={{ flex: 1 }} />
 
                     <Stack spacing={0.5} alignItems={{ xs: "flex-start", md: "flex-end" }} direction={{ xs: "column", sm: "row" }}>
-                        {/* B4: Share button — copies a public read-only link */}
-                        {!readOnly && effectiveUserId ? (
-                            <SecondaryButton
-                                size="small"
-                                onClick={handleShare}
-                                aria-label="Copy public roadmap link"
-                                startIcon={shareCopied ? <Check size={14} /> : <Link2 size={14} />}
-                                sx={{
-                                    bgcolor: "rgba(255,255,255,0.14)",
-                                    color: "primary.contrastText",
-                                    borderColor: "rgba(255,255,255,0.3)",
-                                    "&:hover": {
-                                        bgcolor: "rgba(255,255,255,0.22)",
-                                        borderColor: "rgba(255,255,255,0.5)",
-                                    },
-                                }}
-                            >
-                                {shareCopied ? "Copied" : "Share"}
-                            </SecondaryButton>
-                        ) : null}
                         {readOnly ? (
                             <Chip
                                 size="small"
