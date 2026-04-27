@@ -28,9 +28,6 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
 } from 'recharts';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
@@ -58,11 +55,8 @@ const TYPE_COLOR_MAP = {
     Refund: 'warning',
 };
 
-const PIE_COLORS = ['#4f46e5', '#06b6d4', '#84cc16', '#f59e0b', '#ef4444', '#9333ea'];
-
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const ANALYTICS_PAGE_SIZE = 100;
-const MAX_ANALYTICS_ITEMS = 1500;
 
 const getInitials = (name = '') =>
     name.split(' ').filter(Boolean).slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
@@ -132,6 +126,8 @@ const getDateSafe = (value) => {
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
+
+const isReliableBusinessDate = (date) => Boolean(date) && date.getFullYear() >= 2000;
 
 const toPercentChange = (current, previous) => {
     if (!previous) return current > 0 ? 100 : 0;
@@ -260,9 +256,9 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         try {
             const all = [];
             let currentPage = 1;
-            let total = Number.POSITIVE_INFINITY;
+            let totalItems = Number.POSITIVE_INFINITY;
 
-            while (all.length < total && all.length < MAX_ANALYTICS_ITEMS) {
+            while (all.length < totalItems) {
                 const response = await callApi({
                     method: METHOD.GET,
                     endpoint: `${adminEndPoints.GET_TRANSACTIONS}?${getQueryString(currentPage, ANALYTICS_PAGE_SIZE)}`,
@@ -274,7 +270,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 const items = (response.data?.items || []).map(normalizeTransaction);
                 if (!items.length) break;
 
-                total = Number(response.data?.totalItems) || items.length;
+                totalItems = Number(response.data?.totalItems) || items.length;
                 all.push(...items);
                 currentPage += 1;
             }
@@ -297,7 +293,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
     }, [fetchAnalyticsTransactions]);
 
     const analytics = useMemo(() => {
-        const data = Array.isArray(analyticsTransactions) ? analyticsTransactions : [];
+        const data = analyticsTransactions.length ? analyticsTransactions : transactions;
         const now = Date.now();
         const currentStart = now - 30 * DAY_IN_MS;
         const previousStart = now - 60 * DAY_IN_MS;
@@ -316,8 +312,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         let currentPaidTransactionCount = 0;
         let previousPaidTransactionCount = 0;
 
-        const statusCounter = new Map();
         const monthlyMap = new Map();
+        const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
         const months = Array.from({ length: 6 }).map((_, index) => {
             const d = new Date();
             d.setDate(1);
@@ -336,8 +332,6 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             const status = transaction.status || 'Unknown';
             const createdAt = getDateSafe(transaction.createdAt);
             const paidTransaction = isPaidTransaction(transaction);
-            const statusCount = statusCounter.get(status) || 0;
-            statusCounter.set(status, statusCount + 1);
 
             if (paidTransaction) {
                 grossValue += amount;
@@ -345,7 +339,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             }
             if (isPaidStatus(status)) paidCount += 1;
 
-            if (createdAt) {
+            if (isReliableBusinessDate(createdAt)) {
                 const time = createdAt.getTime();
                 if (time >= currentStart) {
                     currentCount += 1;
@@ -368,16 +362,13 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 if (monthData && paidTransaction) {
                     monthData.value += amount;
                 }
+            } else {
+                const monthData = monthlyMap.get(currentMonthKey);
+                if (monthData && paidTransaction) {
+                    monthData.value += amount;
+                }
             }
         });
-
-        const statusBreakdown = Array.from(statusCounter.entries())
-            .map(([name, value], index) => ({
-                name,
-                value,
-                color: PIE_COLORS[index % PIE_COLORS.length],
-            }))
-            .sort((a, b) => b.value - a.value);
 
         const monthlyTrend = months.map((key) => {
             const monthData = monthlyMap.get(key);
@@ -408,9 +399,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             successDelta,
             averagePaidValueDelta,
             monthlyTrend,
-            statusBreakdown,
         };
-    }, [analyticsTransactions]);
+    }, [analyticsTransactions, transactions]);
 
     const handleExportCsv = useCallback(() => {
         if (!analyticsTransactions.length) {
@@ -590,13 +580,12 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 </Grid>
             </Grid>
 
-            {/* Temporarily hidden charts: line/area trend + pie donut status mix
             <Grid container spacing={2}>
-                <Grid size={{ xs: 12, lg: 8 }}>
+                <Grid size={{ xs: 12 }}>
                     <BaseCard sx={{ p: 2.5 }}>
                         <SectionHeading
-                            title={`${title || 'Earnings'} Trend`}
-                            description={`Paid ${String(title || 'earnings').toLowerCase()} value in the last 6 months`}
+                            title={isOutflowContext ? 'Money Out Trend' : 'Money In Trend'}
+                            description={`Using live data from current ${title?.toLowerCase() || 'tab'} (6 months)`}
                         />
                         {analyticsLoading ? (
                             <Skeleton variant="rounded" height={320} />
@@ -606,8 +595,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                     <AreaChart data={analytics.monthlyTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="valueGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2} />
-                                                <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
+                                                <stop offset="5%" stopColor={isOutflowContext ? theme.palette.error.main : theme.palette.primary.main} stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor={isOutflowContext ? theme.palette.error.main : theme.palette.primary.main} stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
@@ -634,8 +623,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                         <Area
                                             type="monotone"
                                             dataKey="value"
-                                            name={title || 'Earnings'}
-                                            stroke={theme.palette.primary.main}
+                                            name={isOutflowContext ? 'Money Out' : 'Money In'}
+                                            stroke={isOutflowContext ? theme.palette.error.main : theme.palette.primary.main}
                                             strokeWidth={2.5}
                                             fillOpacity={1}
                                             fill="url(#valueGradient)"
@@ -646,64 +635,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                         )}
                     </BaseCard>
                 </Grid>
-
-                <Grid size={{ xs: 12, lg: 4 }}>
-                    <BaseCard sx={{ p: 2.5, height: '100%' }}>
-                        <SectionHeading
-                            title="Status Mix"
-                            description="Distribution by transaction status"
-                        />
-                        {analyticsLoading ? (
-                            <Skeleton variant="rounded" height={260} />
-                        ) : analytics.statusBreakdown.length ? (
-                            <>
-                                <Box sx={{ height: 240, width: '100%' }}>
-                                    <ResponsiveContainer>
-                                        <PieChart>
-                                            <Pie
-                                                data={analytics.statusBreakdown}
-                                                dataKey="value"
-                                                nameKey="name"
-                                                innerRadius={58}
-                                                outerRadius={88}
-                                                paddingAngle={3}
-                                            >
-                                                {analytics.statusBreakdown.map((entry) => (
-                                                    <Cell key={entry.name} fill={entry.color} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip
-                                                formatter={(value) => `${value} transactions`}
-                                                contentStyle={{
-                                                    border: `1px solid ${theme.palette.divider}`,
-                                                    borderRadius: 10,
-                                                    boxShadow: theme.shadows[4],
-                                                }}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </Box>
-                                <Stack spacing={1}>
-                                    {analytics.statusBreakdown.map((item) => (
-                                        <Stack key={item.name} direction="row" alignItems="center" justifyContent="space-between">
-                                            <Stack direction="row" alignItems="center" spacing={1}>
-                                                <Box sx={{ width: 10, height: 10, borderRadius: '999px', bgcolor: item.color }} />
-                                                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{item.name}</Typography>
-                                            </Stack>
-                                            <Typography sx={{ fontSize: 12, fontWeight: 700 }}>{item.value}</Typography>
-                                        </Stack>
-                                    ))}
-                                </Stack>
-                            </>
-                        ) : (
-                            <Box sx={{ height: 300, display: 'grid', placeItems: 'center' }}>
-                                <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>No analytics data</Typography>
-                            </Box>
-                        )}
-                    </BaseCard>
-                </Grid>
             </Grid>
-            */}
 
             <Box className="admin-card">
                 <DataTable
