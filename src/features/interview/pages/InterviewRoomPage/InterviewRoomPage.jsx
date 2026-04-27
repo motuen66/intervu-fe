@@ -45,8 +45,6 @@ import CoachEvaluationModal from "../InterviewRoomListPage/CoachEvaluationModal"
 
 // Analytics
 import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
-import { useProcessingTray } from "../../../../common/context/ProcessingTrayContext";
-import { QUESTION_STATUS_BUCKETS } from "../../../../common/constants/processingTrayJobs";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -619,8 +617,6 @@ function InterviewRoomPage() {
         sendSignal("SendMicState", roomId, isMicOn).catch?.(() => { });
     }, [isMicOn, connectionId, roomId, sendSignal]);
 
-    const { startJob } = useProcessingTray();
-
     // ── Leave room ──────────────────────────────────────────────────────────
 
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
@@ -662,17 +658,8 @@ function InterviewRoomPage() {
             console.warn("trackLeaveInterviewRoom failed", err);
         }
         setCoachEvaluationState({ open: false, room: null });
-        startJob({
-            kind: "collect-questions",
-            runningTitle: "Analyzing questions…",
-            completeTitle: "Analysis Complete!",
-            completeCtaLabel: "Review Now",
-            statusBuckets: QUESTION_STATUS_BUCKETS,
-            completeNotificationType: "AiAnalysisCompleted",
-            referenceId: roomId,
-            completeCtaAction: () =>
-                navigate(`/interview?roomId=${roomId}&action=review-questions`),
-        });
+        // Tray now auto-starts from the BE AiAnalysisStarted notification when
+        // the room flips to Completed, so no manual startJob here.
         navigate("/interview");
     };
 
