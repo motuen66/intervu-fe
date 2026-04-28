@@ -8,6 +8,8 @@ import {
     Stack,
     Button,
     Skeleton,
+    ToggleButton,
+    ToggleButtonGroup,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import {
@@ -57,6 +59,7 @@ const TYPE_COLOR_MAP = {
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const ANALYTICS_PAGE_SIZE = 100;
+const WINDOW_OPTIONS = [7, 30, 90];
 
 const getInitials = (name = '') =>
     name.split(' ').filter(Boolean).slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
@@ -146,7 +149,14 @@ const formatCompactNumber = (value) =>
         maximumFractionDigits: 1,
     }).format(value || 0);
 
-function StatCard({ title, value, deltaValue, outflowMode = false, icon }) {
+const toDateKey = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
+function StatCard({ title, value, deltaValue, outflowMode = false, icon, compareDays = 30 }) {
     const safeDelta = Number(deltaValue) || 0;
     const isIncrease = safeDelta > 0;
     const isDecrease = safeDelta < 0;
@@ -196,7 +206,7 @@ function StatCard({ title, value, deltaValue, outflowMode = false, icon }) {
                 >
                     {formatSignedPercent(safeDelta)}
                 </Typography>
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>vs previous 30 days</Typography>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{`vs previous ${compareDays} days`}</Typography>
             </Stack>
         </BaseCard>
     );
@@ -221,6 +231,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
 
     const [analyticsTransactions, setAnalyticsTransactions] = useState([]);
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
+    const [windowDays, setWindowDays] = useState(30);
 
     const getQueryString = useCallback((pageValue, pageSizeValue) => {
         const params = new URLSearchParams();
@@ -295,8 +306,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
     const analytics = useMemo(() => {
         const data = analyticsTransactions.length ? analyticsTransactions : transactions;
         const now = Date.now();
-        const currentStart = now - 30 * DAY_IN_MS;
-        const previousStart = now - 60 * DAY_IN_MS;
+        const currentStart = now - windowDays * DAY_IN_MS;
+        const previousStart = now - (windowDays * 2) * DAY_IN_MS;
 
         const transactionCount = data.length;
         let grossValue = 0;
@@ -312,16 +323,13 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         let currentPaidTransactionCount = 0;
         let previousPaidTransactionCount = 0;
 
-        const monthlyMap = new Map();
-        const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-        const months = Array.from({ length: 6 }).map((_, index) => {
-            const d = new Date();
-            d.setDate(1);
+        const trendMap = new Map();
+        const trendKeys = Array.from({ length: windowDays }).map((_, index) => {
+            const d = new Date(now - (windowDays - 1 - index) * DAY_IN_MS);
             d.setHours(0, 0, 0, 0);
-            d.setMonth(d.getMonth() - (5 - index));
-            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            monthlyMap.set(key, {
-                label: d.toLocaleDateString('vi-VN', { month: '2-digit', year: '2-digit' }),
+            const key = toDateKey(d);
+            trendMap.set(key, {
+                label: d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
                 value: 0,
             });
             return key;
@@ -357,23 +365,23 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                     if (isPaidStatus(status)) previousPaid += 1;
                 }
 
-                const key = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}`;
-                const monthData = monthlyMap.get(key);
+                const monthData = trendMap.get(toDateKey(createdAt));
                 if (monthData && paidTransaction) {
                     monthData.value += amount;
                 }
             } else {
-                const monthData = monthlyMap.get(currentMonthKey);
+                const latestKey = trendKeys[trendKeys.length - 1];
+                const monthData = trendMap.get(latestKey);
                 if (monthData && paidTransaction) {
                     monthData.value += amount;
                 }
             }
         });
 
-        const monthlyTrend = months.map((key) => {
-            const monthData = monthlyMap.get(key);
+        const monthlyTrend = trendKeys.map((key) => {
+            const monthData = trendMap.get(key);
             return {
-                month: monthData?.label || key,
+                label: monthData?.label || key,
                 value: monthData?.value || 0,
             };
         });
@@ -400,7 +408,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             averagePaidValueDelta,
             monthlyTrend,
         };
-    }, [analyticsTransactions, transactions]);
+    }, [analyticsTransactions, transactions, windowDays]);
 
     const handleExportCsv = useCallback(() => {
         if (!analyticsTransactions.length) {
@@ -551,6 +559,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                         value={analytics.transactionCount.toLocaleString()}
                         deltaValue={analytics.countChange}
                         icon={<ReceiptLongRounded fontSize="small" />}
+                        compareDays={windowDays}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -560,6 +569,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                         deltaValue={analytics.valueChange}
                         outflowMode={isOutflowContext}
                         icon={<PaymentsRounded fontSize="small" />}
+                        compareDays={windowDays}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -568,6 +578,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                         value={`${analytics.successRate.toFixed(1)}%`}
                         deltaValue={analytics.successDelta}
                         icon={<CheckCircleRounded fontSize="small" />}
+                        compareDays={windowDays}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -576,6 +587,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                         value={formatCurrency(analytics.averagePaidValue)}
                         deltaValue={analytics.averagePaidValueDelta}
                         icon={<MonetizationOnRounded fontSize="small" />}
+                        compareDays={windowDays}
                     />
                 </Grid>
             </Grid>
@@ -583,10 +595,27 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             <Grid container spacing={2}>
                 <Grid size={{ xs: 12 }}>
                     <BaseCard sx={{ p: 2.5 }}>
-                        <SectionHeading
-                            title={isOutflowContext ? 'Money Out Trend' : 'Money In Trend'}
-                            description={`Using live data from current ${title?.toLowerCase() || 'tab'} (6 months)`}
-                        />
+                        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={1.25}>
+                            <SectionHeading
+                                title={isOutflowContext ? 'Money Out Trend' : 'Money In Trend'}
+                                description={`Using live data from current ${title?.toLowerCase() || 'tab'} (${windowDays} days)`}
+                                disableGutters
+                            />
+                            <ToggleButtonGroup
+                                size="small"
+                                value={windowDays}
+                                exclusive
+                                onChange={(_, value) => {
+                                    if (value) setWindowDays(value);
+                                }}
+                            >
+                                {WINDOW_OPTIONS.map((option) => (
+                                    <ToggleButton key={option} value={option} sx={{ px: 1.75, fontWeight: 700 }}>
+                                        {option} days
+                                    </ToggleButton>
+                                ))}
+                            </ToggleButtonGroup>
+                        </Stack>
                         {analyticsLoading ? (
                             <Skeleton variant="rounded" height={320} />
                         ) : (
@@ -601,10 +630,11 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
                                         <XAxis
-                                            dataKey="month"
+                                            dataKey="label"
                                             axisLine={false}
                                             tickLine={false}
                                             tick={{ fill: theme.palette.text.secondary, fontSize: 11 }}
+                                            minTickGap={20}
                                         />
                                         <YAxis
                                             axisLine={false}
