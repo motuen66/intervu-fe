@@ -168,6 +168,90 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Available Events */
+.fc .fc-timegrid-event.available-event {
+    background-color: #eef5e2 !important;
+    border: 1px solid #b9e36d !important;
+    border-left: 4px solid #84cc16 !important;
+}
+
+.fc .fc-timegrid-event.available-event .fc-event-bg {
+    background-color: #eef5e2 !important;
+    border: 0 !important;
+}
+
+.fc .fc-timegrid-event.available-event .fc-event-main {
+    padding-left: 6px;
+    background-color: #eef5e2 !important;
+}
+
+.fc .fc-timegrid-event.available-event .fc-event-title {
+    color: #74bf1f !important;
+    font-weight: 600;
+}
+
+.fc .fc-timegrid-event.available-event .fc-event-time {
+    color: #74bf1f !important;
+    font-weight: 600;
+}
+
+.fc .fc-timegrid-event.available-event:hover .fc-event-main {
+    border-left-color: #65a30d !important;
+}
+
+/* Daygrid available events */
+.fc .fc-daygrid-event.available-event {
+    background-color: transparent !important;
+}
+
+.fc .fc-daygrid-event.available-event .fc-event-bg {
+    background-color: transparent !important;
+}
+
+.fc .fc-daygrid-event.available-event .fc-event-main {
+    border-left: 4px solid #84cc16 !important;
+    padding-left: 6px;
+}
+
+.fc .fc-daygrid-event.available-event .fc-event-title {
+    color: #84cc16 !important;
+}
+
+/* Booked Events */
+.fc .fc-timegrid-event.booked-event {
+    background-color: #57595B !important;
+    border: 1px solid #4a4c4d !important;
+    border-left: 4px solid #0f172a !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+
+.fc .fc-timegrid-event.booked-event .fc-event-bg {
+    background-color: #57595B !important;
+    border: 0 !important;
+}
+
+.fc .fc-timegrid-event.booked-event .fc-event-main {
+    padding: 2px 6px 2px 6px;
+    background-color: transparent !important;
+}
+
+.fc .fc-timegrid-event.booked-event .fc-event-main-frame {
+    background-color: transparent !important;
+}
+
+.fc .fc-timegrid-event.booked-event .fc-event-title,
+.fc .fc-timegrid-event.booked-event .fc-event-time {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.fc .fc-timegrid-event.booked-event:hover {
+    border-color: #4a4c4d !important;
+    border-left-color: #0f172a !important;
+    background-color: #434446 !important;
+}
+
 /* Past Events */
 .fc-event.past-event {
     opacity: 0.7;

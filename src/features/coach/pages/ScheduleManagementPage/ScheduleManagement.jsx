@@ -41,6 +41,7 @@ const toTimestamp = (dateLike) => {
     const ts = new Date(dateLike).getTime();
     return Number.isNaN(ts) ? null : ts;
 };
+const rangesOverlap = (startA, endA, startB, endB) => startA < endB && endA > startB;
 const buildCalendarEventId = (availability) => {
     const status = availability.status ?? AVAILABILITY_SLOTS_STATUS.AVAILABLE;
     const slotId = availability.id ?? "no-id";
@@ -88,6 +89,28 @@ const ScheduleManagement = () => {
     const showError = (message) => {
         if (!message) return;
         toast.error(message, { id: "availability-error" });
+    };
+    const resolveErrorMessage = (payload, fallbackMessage) => {
+        const status = payload?.status;
+        const backendMsg = payload?.message;
+        if (status === 409) {
+            return backendMsg || "This time range overlaps an existing slot.";
+        }
+        if (typeof payload === "string") return payload;
+        return backendMsg || fallbackMessage;
+    };
+    const hasConflictingRange = (rangeStart, rangeEnd, excludePredicate = () => false) => {
+        const startTs = toTimestamp(rangeStart);
+        const endTs = toTimestamp(rangeEnd);
+        if (startTs === null || endTs === null) return false;
+
+        return availabilities.some((avail) => {
+            if (excludePredicate(avail)) return false;
+            const availStart = toTimestamp(avail.startTime);
+            const availEnd = toTimestamp(avail.endTime);
+            if (availStart === null || availEnd === null) return false;
+            return rangesOverlap(startTs, endTs, availStart, availEnd);
+        });
     };
 
     const parseLocalDate = (isoString) => {
@@ -332,6 +355,17 @@ const ScheduleManagement = () => {
             newStartTime: startTime.toISOString(),
             newEndTime: endTime.toISOString(),
         };
+        const movingEventKey = event.extendedProps.availabilityEventId || String(event.id);
+        if (
+            hasConflictingRange(startTime, endTime, (avail) => {
+                const availKey = buildCalendarEventId(avail);
+                return availKey === movingEventKey;
+            })
+        ) {
+            toast.error("This time range overlaps an existing slot");
+            info.revert();
+            return;
+        }
 
         try {
             const result = await dispatch(editAvailability(payload));
@@ -340,8 +374,7 @@ const ScheduleManagement = () => {
                 refetchMonth();
             } else {
                 info.revert();
-                const errMsg =
-                    typeof result.payload === "string" ? result.payload : result.payload?.message || "Failed to update";
+                const errMsg = resolveErrorMessage(result.payload, "Failed to update");
                 toast.error(errMsg);
             }
         } catch (error) {
@@ -403,10 +436,21 @@ const ScheduleManagement = () => {
                     newStartTime: newStart.toISOString(),
                     newEndTime: newEnd.toISOString(),
                 };
+                const originalStartTs = toTimestamp(originalRange.startTime);
+                const originalEndTs = toTimestamp(originalRange.endTime);
+                const hasConflict = hasConflictingRange(newStart, newEnd, (avail) => {
+                    const availStart = toTimestamp(avail.startTime);
+                    const availEnd = toTimestamp(avail.endTime);
+                    return availStart === originalStartTs && availEnd === originalEndTs;
+                });
+                if (hasConflict) {
+                    showError("This time range overlaps an existing slot");
+                    return;
+                }
 
                 const result = await dispatch(editAvailability(updatePayload));
                 if (!editAvailability.fulfilled.match(result)) {
-                    const errorMsg = typeof result.payload === "string" ? result.payload : result.payload?.message;
+                    const errorMsg = resolveErrorMessage(result.payload, "Failed to update slot");
                     showError(errorMsg || "Failed to update slot");
                     return;
                 }
@@ -416,14 +460,23 @@ const ScheduleManagement = () => {
                     const [dy, dm, dd] = allDates[i].split("-").map(Number);
                     const dupStart = new Date(dy, dm - 1, dd, startHour, startMinute, 0, 0);
                     const dupEnd = new Date(dy, dm - 1, dd, endHour, endMinute, 0, 0);
+                    if (hasConflictingRange(dupStart, dupEnd)) {
+                        showError(`This time range overlaps an existing slot for ${allDates[i]}`);
+                        return;
+                    }
 
-                    await dispatch(
+                    const duplicateResult = await dispatch(
                         addAvailability({
                             coachId: userId,
                             rangeStartTime: dupStart.toISOString(),
                             rangeEndTime: dupEnd.toISOString(),
                         }),
                     );
+                    if (!addAvailability.fulfilled.match(duplicateResult)) {
+                        const errMsg = resolveErrorMessage(duplicateResult.payload, `Failed to create slot for ${allDates[i]}`);
+                        showError(errMsg);
+                        return;
+                    }
                 }
             } else {
                 // Create new ranges for all dates
@@ -436,6 +489,10 @@ const ScheduleManagement = () => {
                         showError(`Cannot create availability in the past for date: ${dateStr}`);
                         return;
                     }
+                    if (hasConflictingRange(rangeStart, rangeEnd)) {
+                        showError(`This time range overlaps an existing slot for ${dateStr}`);
+                        return;
+                    }
 
                     const res = await dispatch(
                         addAvailability({
@@ -446,7 +503,7 @@ const ScheduleManagement = () => {
                     );
 
                     if (!addAvailability.fulfilled.match(res)) {
-                        const errMsg = typeof res.payload === "string" ? res.payload : res.payload?.message;
+                        const errMsg = resolveErrorMessage(res.payload, `Failed to create slot for ${dateStr}`);
                         showError(errMsg || `Failed to create slot for ${dateStr}`);
                         return;
                     }
@@ -484,8 +541,12 @@ const ScheduleManagement = () => {
         let classNames = [];
         const status = avail.status ?? AVAILABILITY_SLOTS_STATUS.AVAILABLE;
         const colors = getAvailabilityColors(status, isPast);
+        const isAvailable = status === AVAILABILITY_SLOTS_STATUS.AVAILABLE && !isPast;
+        const isBooked = status === AVAILABILITY_SLOTS_STATUS.BOOKED && !isPast;
 
         if (isPast) classNames.push("past-event");
+        if (isAvailable) classNames.push("available-event");
+        if (isBooked) classNames.push("booked-event");
 
         const isUnavailable = Number(avail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
 
@@ -494,8 +555,7 @@ const ScheduleManagement = () => {
             title: colors.title,
             start: avail.startTime,
             end: avail.endTime,
-            backgroundColor: colors.bg,
-            borderColor: colors.border,
+            ...(isAvailable ? {} : { backgroundColor: colors.bg, borderColor: colors.border }),
             textColor: colors.textColor,
             classNames,
             editable: !isPast && !isUnavailable,
@@ -757,15 +817,84 @@ const ScheduleManagement = () => {
                 <ConfirmModal
                     show={bookedDetailOpen}
                     title="Booked Session Details"
-                    message={`This slot is booked and cannot be edited.\n\n
-                        Time: ${parseLocalTime(bookedDetailData.startTime)} - ${parseLocalTime(bookedDetailData.endTime)}\n
-                        Date: ${parseLocalDate(bookedDetailData.startTime)}${
-                            bookedDetailData.candidateName ? `\nCandidate: ${bookedDetailData.candidateName}` : ""
-                        }${
-                            bookedDetailData.typeName || bookedDetailData.interviewType
-                                ? `\nType: ${bookedDetailData.typeName || bookedDetailData.interviewType}`
-                                : ""
-                        }`}
+                    content={
+                        <Stack spacing={1.5}>
+                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                This slot is booked and cannot be edited.
+                            </Typography>
+                            <Box
+                                sx={{
+                                    display: "inline-flex",
+                                    alignSelf: "flex-start",
+                                    px: 1.25,
+                                    py: 0.5,
+                                    borderRadius: 99,
+                                    fontSize: "0.75rem",
+                                    fontWeight: 700,
+                                    letterSpacing: 0.3,
+                                    bgcolor: "#57595B",
+                                    color: "#ffffff",
+                                    border: "1px solid #4a4c4d",
+                                }}
+                            >
+                                BOOKED
+                            </Box>
+                            <Box
+                                sx={{
+                                    display: "grid",
+                                    gridTemplateColumns: "auto 1fr",
+                                    rowGap: 1,
+                                    columnGap: 1.5,
+                                    px: 1.5,
+                                    py: 1.25,
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    borderRadius: 2,
+                                    bgcolor: "#fff",
+                                }}
+                            >
+                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                    Time
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {parseLocalTime(bookedDetailData.startTime)} - {parseLocalTime(bookedDetailData.endTime)}
+                                </Typography>
+
+                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                    Date
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {parseLocalDate(bookedDetailData.startTime)}
+                                </Typography>
+
+                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                    Candidate
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {bookedDetailData.candidateName || "Not assigned"}
+                                </Typography>
+
+                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                    Type
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {bookedDetailData.sessionName ||
+                                        bookedDetailData.interviewTypeName ||
+                                        bookedDetailData.typeName ||
+                                        bookedDetailData.interviewType ||
+                                        "Interview"}
+                                </Typography>
+                            </Box>
+                        </Stack>
+                    }
+                    paperSx={{ borderRadius: 4, overflow: "hidden" }}
+                    titleSx={{
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                        background: "linear-gradient(180deg, rgba(15,23,42,0.03), rgba(15,23,42,0.01))",
+                    }}
+                    contentSx={{ bgcolor: "#f8fafc" }}
+                    actionsSx={{ borderTop: "1px solid", borderColor: "divider", pt: 2 }}
                     confirmText="Close"
                     onConfirm={() => {
                         setBookedDetailOpen(false);

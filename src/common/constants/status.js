@@ -76,26 +76,24 @@ export const BOOKING_REQUEST_TYPE_LABELS = {
 import { theme } from "./theme";
 
 export const getAvailabilityColors = (status, isPast = false) => {
-    const { palette } = theme;
-
     const colors = {
         AVAILABLE: {
-            bg: palette.secondary.main, // #D9F99D (Electric Lime)
-            border: palette.secondary.dark, // #BEF264
+            bg: "#eef5e2",
+            border: "#9fdd3b",
             title: "Available",
-            textColor: palette.secondary.contrastText, // #0F172A (Navy)
+            textColor: "#74bf1f",
         },
         BOOKED: {
-            bg: palette.primary.main, // Deep Navy from theme primary palette
-            border: palette.primary.dark,
+            bg: "#57595B",
+            border: "#4a4c4d",
             title: "Booked",
             textColor: "#ffffff",
         },
         PAST: {
-            bg: "#D1D5DB", // Neutral Gray — not a direct theme token
-            border: palette.text.disabled, // #94A3B8
+            bg: "#D1D5DB",
+            border: theme.palette.text.disabled,
             title: "Unavailable",
-            textColor: palette.text.secondary, // #64748B
+            textColor: theme.palette.text.secondary,
         },
     };
 

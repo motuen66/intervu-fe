@@ -10,9 +10,23 @@ import { dialogStyles } from "../constants/uiStyles";
 import AppText from "./AppText";
 import SectionHeading from "./SectionHeading";
 
-function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText = "Confirm", cancelText = "Cancel" }) {
+function ConfirmModal({
+    show,
+    title,
+    message,
+    content,
+    onConfirm,
+    onCancel,
+    confirmText = "Confirm",
+    cancelText = "Cancel",
+    hideCancel = false,
+    paperSx,
+    titleSx,
+    contentSx,
+    actionsSx,
+}) {
     return (
-        <Dialog open={show} onClose={onCancel} PaperProps={{ sx: dialogStyles.paper }}>
+        <Dialog open={show} onClose={onCancel} PaperProps={{ sx: { ...dialogStyles.paper, ...paperSx } }}>
             <DialogTitle
                 component="div"
                 sx={{
@@ -20,6 +34,7 @@ function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText =
                     alignItems: "center",
                     justifyContent: "space-between",
                     borderColor: "divider",
+                    ...titleSx,
                 }}
             >
                 <SectionHeading title={title} disableGutters as="h2" />
@@ -34,15 +49,15 @@ function ConfirmModal({ show, title, message, onConfirm, onCancel, confirmText =
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            <DialogContent dividers>
-                <AppText variant="body" sx={{ whiteSpace: "pre-line" }}>
-                    {message}
-                </AppText>
+            <DialogContent dividers sx={contentSx}>
+                {content || (
+                    <AppText variant="body" sx={{ whiteSpace: "pre-line" }}>
+                        {message}
+                    </AppText>
+                )}
             </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
-                <SecondaryButton onClick={onCancel}>
-                    {cancelText}
-                </SecondaryButton>
+            <DialogActions sx={{ px: 3, pb: 3, pt: 1, ...actionsSx }}>
+                {!hideCancel && <SecondaryButton onClick={onCancel}>{cancelText}</SecondaryButton>}
                 <PrimaryButton onClick={onConfirm}>
                     {confirmText}
                 </PrimaryButton>

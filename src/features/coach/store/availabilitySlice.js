@@ -7,6 +7,11 @@ import {
     deleteAvailabilityRange,
 } from "../services/availabilityApi";
 
+const mapApiError = (error) => ({
+    status: error?.response?.status ?? null,
+    message: error?.response?.data?.message || error?.message || "Request failed",
+});
+
 export const fetchAvailabilitiesByMonth = createAsyncThunk(
     "availability/fetchByMonth",
     async ({ interviewerId, month, year }, { rejectWithValue }) => {
@@ -14,7 +19,7 @@ export const fetchAvailabilitiesByMonth = createAsyncThunk(
             const data = await getAvailabilitiesByMonth(interviewerId, month, year);
             return data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(mapApiError(error));
         }
     }
 );
@@ -30,7 +35,7 @@ export const addAvailability = createAsyncThunk(
             const data = await createAvailability(payload);
             return data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(mapApiError(error));
         }
     }
 );
@@ -46,7 +51,7 @@ export const editAvailability = createAsyncThunk(
             await updateAvailability(payload);
             return payload;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(mapApiError(error));
         }
     }
 );
@@ -58,7 +63,7 @@ export const removeAvailability = createAsyncThunk(
             await deleteAvailability(id);
             return id;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(mapApiError(error));
         }
     }
 );
@@ -74,7 +79,7 @@ export const removeAvailabilityRange = createAsyncThunk(
             await deleteAvailabilityRange(payload);
             return payload;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(mapApiError(error));
         }
     }
 );

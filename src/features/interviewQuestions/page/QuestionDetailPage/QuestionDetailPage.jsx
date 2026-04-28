@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
     Avatar,
@@ -41,6 +41,7 @@ import AnswerCard from "./AnswerCard";
 import ReportDialog from "./ReportDialog";
 import { timeAgo } from "../../../../common/utils/dateFormatter";
 import { SORT_OPTIONS } from "../../../../common/constants/types";
+import { ROLES } from "../../../../common/constants/common";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
 import FormSelect from "../../../../common/components/form/FormSelect";
@@ -51,6 +52,7 @@ import { PrimaryButton, SecondaryButton, TextButton } from "../../../../common/c
 export default function QuestionDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const currentUser = useSelector((state) => state.auth.userData);
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -443,16 +445,19 @@ export default function QuestionDetailPage() {
     const companyLabel = companyNames.length ? `Asked at ${companyNames.join(", ")}` : "Community question";
     const roles = data.roles ?? [];
     const tags = data.tags ?? [];
+    const isAdmin = currentUser?.role === ROLES.ADMIN;
     const isOwner = !!currentUser?.id && String(currentUser.id) === String(data.createdBy ?? data.authorId);
+
+    const reportContext = location.state?.fromAdminReports ? location.state : null;
 
     const actionBtns = [
         {
             icon: saved ? <BookmarkIcon sx={{ fontSize: 15 }} /> : <BookmarkBorderIcon sx={{ fontSize: 15 }} />,
             label: `Save${saveCount > 0 ? ` ${saveCount}` : ""}`,
-
             onClick: handleSaveQuestion,
             active: saved,
             tooltip: "",
+            show: !isAdmin,
         },
         {
             icon: <AddCircleOutlineIcon sx={{ fontSize: 15 }} />,
@@ -472,12 +477,14 @@ export default function QuestionDetailPage() {
                         },
                     },
                 }),
+            show: !isAdmin,
         },
         {
             icon: <ShareIcon sx={{ fontSize: 15 }} />,
             label: "Share",
             onClick: handleShare,
             tooltip: copied ? "Link copied!" : "Copy link",
+            show: true,
         },
         {
             icon: <FlagOutlinedIcon sx={{ fontSize: 15 }} />,
@@ -489,8 +496,9 @@ export default function QuestionDetailPage() {
                     questionTitle: data.title,
                     questionAuthor: data.authorName,
                 }),
+            show: !isAdmin,
         },
-    ];
+    ].filter(btn => btn.show);
 
     const detailRows = [
         { label: "Companies", items: companyNames },
@@ -542,12 +550,57 @@ export default function QuestionDetailPage() {
                 <Box sx={{ mb: 2.25 }}>
                     <TextButton
                         startIcon={<ArrowBackIcon />}
-                        onClick={() => navigate("/questions")}
+                        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/questions"))}
                         size="sm"
                     >
-                        All Questions
+                        {isAdmin ? "Back to Management" : "All Questions"}
                     </TextButton>
                 </Box>
+
+                {reportContext && (
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: 2,
+                            mb: 3,
+                            bgcolor: "error.50",
+                            borderColor: "error.light",
+                            borderRadius: 2,
+                            borderLeft: "4px solid",
+                            borderLeftColor: "error.main",
+                        }}
+                    >
+                        <Typography variant="subtitle2" color="error.dark" fontWeight={700} mb={0.5}>
+                            ADMIN MODERATION VIEW - REPORTED QUESTION
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <strong>Reporter:</strong> {reportContext.reportReporter || "Anonymous"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            <strong>Reason:</strong> {reportContext.reportReason || "No reason provided"}
+                        </Typography>
+                    </Paper>
+                )}
+
+                {isAdmin && !reportContext && (
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: 1.5,
+                            mb: 3,
+                            bgcolor: "primary.50",
+                            borderColor: "primary.light",
+                            borderRadius: 2,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 1,
+                        }}
+                    >
+                        <Typography variant="caption" color="primary.dark" fontWeight={700}>
+                            ADMIN MODERATION MODE
+                        </Typography>
+                    </Paper>
+                )}
 
                 <Stack direction="row" alignItems="flex-start" gap={1} mb={0.75}>
                     {editing ? (
@@ -595,7 +648,7 @@ export default function QuestionDetailPage() {
                             {data.content}
                         </Typography>
                     )}
-                    {isOwner && !editing && (
+                    {(isOwner || isAdmin) && !editing && (
                         <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 0.25 }}>
                             <Tooltip title="Edit question" placement="top">
                                 <IconButton
@@ -668,21 +721,23 @@ export default function QuestionDetailPage() {
 
                 {/* Actions */}
                 <Stack direction="row" flexWrap="wrap" gap={0.75} mb={2.75}>
-                    <Tooltip title={questionLiked ? "Unlike" : "Like"} placement="top">
-                        <SecondaryButton
-                            size="sm"
-                            startIcon={
-                                questionLiked ? (
-                                    <ThumbUpIcon sx={{ fontSize: 15, color: "primary.main" }} />
-                                ) : (
-                                    <ThumbUpOutlinedIcon sx={{ fontSize: 15 }} />
-                                )
-                            }
-                            onClick={handleLikeQuestion}
-                        >
-                            Like {` ${getQuestionLikeCount(data)}`}
-                        </SecondaryButton>
-                    </Tooltip>
+                    {!isAdmin && (
+                        <Tooltip title={questionLiked ? "Unlike" : "Like"} placement="top">
+                            <SecondaryButton
+                                size="sm"
+                                startIcon={
+                                    questionLiked ? (
+                                        <ThumbUpIcon sx={{ fontSize: 15, color: "primary.main" }} />
+                                    ) : (
+                                        <ThumbUpOutlinedIcon sx={{ fontSize: 15 }} />
+                                    )
+                                }
+                                onClick={handleLikeQuestion}
+                            >
+                                Like {` ${getQuestionLikeCount(data)}`}
+                            </SecondaryButton>
+                        </Tooltip>
+                    )}
                     {actionBtns.map(({ icon, label, onClick, tooltip }) => (
                         <Tooltip key={label} title={tooltip} placement="top">
                             <SecondaryButton size="sm" startIcon={icon} onClick={onClick}>
@@ -736,39 +791,41 @@ export default function QuestionDetailPage() {
                 </Paper>
 
                 {/* Add answer */}
-                <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-                    <Stack direction="row" alignItems="flex-start" gap={1.5}>
-                        <Avatar
-                            src={currentUser?.profilePicture ?? ""}
-                            sx={{ width: 36, height: 36, bgcolor: "primary.main", mt: 0.5 }}
-                        >
-                            {!currentUser?.profilePicture &&
-                                (currentUser?.fullName?.[0] ?? currentUser?.name?.[0] ?? "?")}
-                        </Avatar>
-                        <Box flex={1}>
-                            <FormTextField
-                                fullWidth
-                                sizeVariant="sm"
-                                multiline
-                                minRows={2}
-                                placeholder="Add your own answer to this question..."
-                                value={answerInput}
-                                onChange={(e) => setAnswerInput(e.target.value)}
-                                sx={{ mb: 1 }}
-                            />
-                            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                                <PrimaryButton
-                                    size="sm"
-                                    endIcon={<SendIcon sx={{ fontSize: 14 }} />}
-                                    disabled={!answerInput.trim() || submittingAnswer}
-                                    onClick={handleAddComment}
-                                >
-                                    {submittingAnswer ? "Posting..." : "Post Answer"}
-                                </PrimaryButton>
+                {!isAdmin && (
+                    <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+                        <Stack direction="row" alignItems="flex-start" gap={1.5}>
+                            <Avatar
+                                src={currentUser?.profilePicture ?? ""}
+                                sx={{ width: 36, height: 36, bgcolor: "primary.main", mt: 0.5 }}
+                            >
+                                {!currentUser?.profilePicture &&
+                                    (currentUser?.fullName?.[0] ?? currentUser?.name?.[0] ?? "?")}
+                            </Avatar>
+                            <Box flex={1}>
+                                <FormTextField
+                                    fullWidth
+                                    sizeVariant="sm"
+                                    multiline
+                                    minRows={2}
+                                    placeholder="Add your own answer to this question..."
+                                    value={answerInput}
+                                    onChange={(e) => setAnswerInput(e.target.value)}
+                                    sx={{ mb: 1 }}
+                                />
+                                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                                    <PrimaryButton
+                                        size="sm"
+                                        endIcon={<SendIcon sx={{ fontSize: 14 }} />}
+                                        disabled={!answerInput.trim() || submittingAnswer}
+                                        onClick={handleAddComment}
+                                    >
+                                        {submittingAnswer ? "Posting..." : "Post Answer"}
+                                    </PrimaryButton>
+                                </Box>
                             </Box>
-                        </Box>
-                    </Stack>
-                </Paper>
+                        </Stack>
+                    </Paper>
+                )}
 
                 {/* Answers list */}
                 {loadingAnswers ? (
@@ -818,6 +875,7 @@ export default function QuestionDetailPage() {
                                         key={a.id ?? idx}
                                         answer={a}
                                         currentUserId={currentUser?.id}
+                                        isAdmin={isAdmin}
                                         isQuestionAuthor={isQuestionAuthor}
                                         isHottest={!!a.id && a.id === hottestAnswerId}
                                         onEdit={a.id ? handleUpdateComment : undefined}
@@ -830,7 +888,7 @@ export default function QuestionDetailPage() {
                                             })
                                         }
                                         onDelete={
-                                            a.id && isCommentAuthor
+                                            a.id && (isCommentAuthor || isAdmin)
                                                 ? () =>
                                                       openConfirm({
                                                           title: "Delete comment?",

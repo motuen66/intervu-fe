@@ -161,7 +161,9 @@ export default function AdminQuestionBankPage() {
                                     textDecoration: row?.id ? "underline" : "none",
                                 }}
                                 onClick={() => {
-                                    if (row?.id) navigate(`/questions/${row.id}`);
+                                    if (row?.id) {
+                                        navigate(`/questions/${row.id}`, { state: { fromAdminBank: true } });
+                                    }
                                 }}
                             >
                                 {value || "-"}
@@ -247,7 +249,7 @@ export default function AdminQuestionBankPage() {
                             label: 'View question',
                             icon: <VisibilityIcon fontSize="small" />,
                             onClick: () => {
-                                if (row?.id) navigate(`/questions/${row.id}`);
+                                if (row?.id) navigate(`/questions/${row.id}`, { state: { fromAdminBank: true } });
                             },
                         },
                     ];
