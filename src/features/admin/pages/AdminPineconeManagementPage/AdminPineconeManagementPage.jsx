@@ -39,10 +39,10 @@ export default function AdminPineconeManagementPage() {
             if (res?.success) {
                 setStats(res.data);
             } else {
-                toast.error("Failed to load Pinecone stats.");
+                toast.error("Could not retrieve vector statistics. Please try again later.");
             }
         } catch {
-            toast.error("Error fetching Pinecone stats.");
+            toast.error("An unexpected error occurred while fetching vector stats.");
         } finally {
             setLoading(false);
         }
@@ -61,13 +61,13 @@ export default function AdminPineconeManagementPage() {
                 arg: { namespace },
             });
             if (res?.success) {
-                toast.success(`Sync job for "${namespace}" queued successfully.`);
+                toast.success(`Vector sync started for "${namespace}". This process may take a few minutes.`);
                 fetchStats();
             } else {
-                toast.error(res?.message || `Failed to queue sync for "${namespace}".`);
+                toast.error(res?.message || `Unable to start sync for "${namespace}".`);
             }
         } catch {
-            toast.error(`Error queuing sync for "${namespace}".`);
+            toast.error(`An unexpected error occurred while starting sync for "${namespace}".`);
         } finally {
             setSyncingNs((prev) => ({ ...prev, [namespace]: false }));
         }
@@ -85,22 +85,22 @@ export default function AdminPineconeManagementPage() {
                 endpoint: adminEndPoints.DELETE_PINECONE_NAMESPACE(namespace),
             });
             if (res?.success) {
-                toast.success(`Namespace "${namespace}" purged successfully.`);
+                toast.success(`Successfully cleared all data from "${namespace}" namespace.`);
                 fetchStats();
             } else {
-                toast.error(res?.message || `Failed to purge "${namespace}".`);
+                toast.error(res?.message || `Unable to purge "${namespace}".`);
             }
         } catch {
-            toast.error(`Error purging "${namespace}".`);
+            toast.error(`An unexpected error occurred while purging "${namespace}".`);
         } finally {
             setPurgingNs((prev) => ({ ...prev, [namespace]: false }));
         }
     };
 
-    const namespaceRows = stats?.namespaces 
-        ? Object.entries(stats.namespaces).sort(([a], [b]) => a.localeCompare(b)) 
+    const namespaceRows = stats?.namespaces
+        ? Object.entries(stats.namespaces).sort(([a], [b]) => a.localeCompare(b))
         : [];
-    
+
     const outOfSyncCount = namespaceRows.reduce((acc, [_, data]) => acc + Math.abs(data.delta), 0);
 
     return (
@@ -151,10 +151,10 @@ export default function AdminPineconeManagementPage() {
             {/* Namespace Breakdown */}
             <BaseCard sx={{ p: 0 }}>
                 <Box sx={{ p: 3, pb: 1 }}>
-                    <SectionHeading 
-                        title="SQL vs Pinecone Comparison" 
+                    <SectionHeading
+                        title="SQL vs Pinecone Comparison"
                         description="Compare record counts between the primary SQL database and the Pinecone vector index to detect data drift."
-                        size="sm" 
+                        size="sm"
                     />
                 </Box>
                 {loading ? (
@@ -169,35 +169,35 @@ export default function AdminPineconeManagementPage() {
                     <Box sx={{ p: 0 }}>
                         <DataTable
                             columns={[
-                                { 
-                                    field: 'namespace', 
+                                {
+                                    field: 'namespace',
                                     headerName: 'Namespace',
                                     render: (val) => <Box sx={{ fontWeight: 600, textTransform: 'capitalize' }}>{val}</Box>
                                 },
-                                { 
-                                    field: 'sqlCount', 
+                                {
+                                    field: 'sqlCount',
                                     headerName: 'SQL Count',
                                     render: (val) => <Box sx={{ fontWeight: 500 }}>{val.toLocaleString()}</Box>
                                 },
-                                { 
-                                    field: 'vectorCount', 
+                                {
+                                    field: 'vectorCount',
                                     headerName: 'Vector Count',
                                     render: (val) => <Box sx={{ fontWeight: 500, color: 'primary.main' }}>{val.toLocaleString()}</Box>
                                 },
-                                { 
-                                    field: 'delta', 
+                                {
+                                    field: 'delta',
                                     headerName: 'Delta',
                                     render: (val) => (
-                                        <Box sx={{ 
-                                            fontWeight: 700, 
-                                            color: val === 0 ? 'success.main' : val > 0 ? 'error.main' : 'warning.main' 
+                                        <Box sx={{
+                                            fontWeight: 700,
+                                            color: val === 0 ? 'success.main' : val > 0 ? 'error.main' : 'warning.main'
                                         }}>
                                             {val > 0 ? `+${val}` : val}
                                         </Box>
                                     )
                                 },
-                                { 
-                                    field: 'status', 
+                                {
+                                    field: 'status',
                                     headerName: 'Status',
                                     render: (val) => <StatusBadge status={val} />
                                 },
@@ -207,9 +207,9 @@ export default function AdminPineconeManagementPage() {
                                     render: (_, row) => (
                                         <Box sx={{ display: 'flex', gap: 1 }}>
                                             <Tooltip title="Trigger Full Re-sync">
-                                                <IconButton 
-                                                    color="primary" 
-                                                    size="small" 
+                                                <IconButton
+                                                    color="primary"
+                                                    size="small"
                                                     onClick={() => handleSync(row.namespace)}
                                                     disabled={syncingNs[row.namespace] || purgingNs[row.namespace]}
                                                 >
@@ -217,9 +217,9 @@ export default function AdminPineconeManagementPage() {
                                                 </IconButton>
                                             </Tooltip>
                                             <Tooltip title="Purge Namespace (Delete All)">
-                                                <IconButton 
-                                                    color="error" 
-                                                    size="small" 
+                                                <IconButton
+                                                    color="error"
+                                                    size="small"
                                                     onClick={() => handlePurge(row.namespace)}
                                                     disabled={syncingNs[row.namespace] || purgingNs[row.namespace]}
                                                 >
