@@ -15,20 +15,20 @@ import { theme } from "../../../common/constants/theme";
 const p = theme.palette;
 
 const TYPE_CONFIG = {
-    BookingNew: { icon: CalendarMonthIcon, color: p.primary.main, bg: p.primary.main + "14" },
-    BookingAccepted: { icon: CheckCircleIcon, color: p.success.main, bg: p.success.main + "14" },
-    BookingRejected: { icon: CancelIcon, color: p.error.main, bg: p.error.main + "14" },
-    PaymentSuccess: { icon: PaymentIcon, color: p.success.main, bg: p.success.main + "14" },
-    RescheduleRequested: { icon: SwapHorizIcon, color: p.warning.main, bg: p.warning.main + "14" },
-    RescheduleAccepted: { icon: EventAvailableIcon, color: p.success.main, bg: p.success.main + "14" },
-    RescheduleRejected: { icon: EventBusyIcon, color: p.error.main, bg: p.error.main + "14" },
-    InterviewReminder: { icon: AccessAlarmIcon, color: p.primary.light, bg: p.primary.light + "14" },
-    FeedbackReceived: { icon: RateReviewIcon, color: p.secondary.main, bg: p.secondary.main + "14" },
-    AiAnalysisCompleted: { icon: AutoAwesomeIcon, color: p.secondary.main, bg: p.secondary.main + "14" },
-    SystemAnnouncement: { icon: CampaignIcon, color: p.text.secondary, bg: p.text.secondary + "14" },
+    BookingNew: { icon: CalendarMonthIcon, color: p.secondary.main, bg: p.primary.main },
+    BookingAccepted: { icon: CheckCircleIcon, color: p.secondary.main, bg: p.primary.main },
+    BookingRejected: { icon: CancelIcon, color: p.secondary.main, bg: p.primary.main },
+    PaymentSuccess: { icon: PaymentIcon, color: p.secondary.main, bg: p.primary.main },
+    RescheduleRequested: { icon: SwapHorizIcon, color: p.secondary.main, bg: p.primary.main },
+    RescheduleAccepted: { icon: EventAvailableIcon, color: p.secondary.main, bg: p.primary.main },
+    RescheduleRejected: { icon: EventBusyIcon, color: p.secondary.main, bg: p.primary.main },
+    InterviewReminder: { icon: AccessAlarmIcon, color: p.secondary.main, bg: p.primary.main },
+    FeedbackReceived: { icon: RateReviewIcon, color: p.secondary.main, bg: p.primary.main },
+    AiAnalysisCompleted: { icon: AutoAwesomeIcon, color: p.secondary.main, bg: p.primary.main },
+    SystemAnnouncement: { icon: CampaignIcon, color: p.secondary.main, bg: p.primary.main },
 };
 
-const DEFAULT_CONFIG = { icon: NotificationsIcon, color: p.primary.main, bg: p.primary.main + "14" };
+const DEFAULT_CONFIG = { icon: NotificationsIcon, color: p.secondary.main, bg: p.primary.main };
 
 export function getNotificationConfig(type) {
     return TYPE_CONFIG[type] || DEFAULT_CONFIG;
