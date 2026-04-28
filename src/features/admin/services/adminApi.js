@@ -47,6 +47,7 @@ export const adminEndPoints = {
     // System Management Endpoints
     GET_PINECONE_STATS: `${ADMIN_BASE_URL}/system/pinecone-stats`,
     POST_PINECONE_SYNC: `${ADMIN_BASE_URL}/system/pinecone-sync`,
+    DELETE_PINECONE_NAMESPACE: (namespace) => `${ADMIN_BASE_URL}/system/pinecone-namespace/${namespace}`,
     GET_AI_HEALTH: `${ADMIN_BASE_URL}/system/ai-health`,
     GET_AI_CONFIG: `${ADMIN_BASE_URL}/system/ai-config`,
     GET_PYTHON_AI_METRICS: (filters = {}) => {

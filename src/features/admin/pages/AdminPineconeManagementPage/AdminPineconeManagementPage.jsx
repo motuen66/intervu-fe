@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Grid, Typography, Divider, CircularProgress, Container } from "@mui/material";
-import { Database, Layers, RefreshCw } from "lucide-react";
+import { Box, Grid, Typography, Divider, CircularProgress, Container, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Tooltip } from "@mui/material";
+import { Database, Layers, RefreshCw, AlertTriangle, CheckCircle, XCircle, Trash2, Zap } from "lucide-react";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -11,12 +11,26 @@ import BaseCard from "../../../../common/components/cards/BaseCard";
 import PrimaryButton from "../../../../common/components/buttons/PrimaryButton";
 import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
 import SectionHeading from "../../../../common/components/SectionHeading";
+import DataTable from "../../../../common/components/table/DataTable";
+
+const StatusBadge = ({ status }) => {
+    switch (status) {
+        case "Synced":
+            return <Chip icon={<CheckCircle size={14} />} label="Synced" color="success" size="small" sx={{ fontWeight: 600 }} />;
+        case "Excess":
+            return <Chip icon={<XCircle size={14} />} label="Excess" color="error" size="small" sx={{ fontWeight: 600 }} />;
+        case "Stale":
+            return <Chip icon={<AlertTriangle size={14} />} label="Stale" color="warning" size="small" sx={{ fontWeight: 600 }} />;
+        default:
+            return <Chip label={status || "Unknown"} size="small" />;
+    }
+};
 
 export default function AdminPineconeManagementPage() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [syncingCoaches, setSyncingCoaches] = useState(false);
-    const [syncingQuestions, setSyncingQuestions] = useState(false);
+    const [syncingNs, setSyncingNs] = useState({});
+    const [purgingNs, setPurgingNs] = useState({});
 
     const fetchStats = useCallback(async () => {
         setLoading(true);
@@ -38,8 +52,8 @@ export default function AdminPineconeManagementPage() {
         fetchStats();
     }, [fetchStats]);
 
-    const handleSync = async (namespace, setSyncing) => {
-        setSyncing(true);
+    const handleSync = async (namespace) => {
+        setSyncingNs((prev) => ({ ...prev, [namespace]: true }));
         try {
             const res = await callApi({
                 method: METHOD.POST,
@@ -48,24 +62,52 @@ export default function AdminPineconeManagementPage() {
             });
             if (res?.success) {
                 toast.success(`Sync job for "${namespace}" queued successfully.`);
+                fetchStats();
             } else {
                 toast.error(res?.message || `Failed to queue sync for "${namespace}".`);
             }
         } catch {
             toast.error(`Error queuing sync for "${namespace}".`);
         } finally {
-            setSyncing(false);
+            setSyncingNs((prev) => ({ ...prev, [namespace]: false }));
         }
     };
 
-    const namespaceRows = stats?.namespaces ? Object.entries(stats.namespaces) : [];
-    const namespaceCount = namespaceRows.length;
+    const handlePurge = async (namespace) => {
+        if (!window.confirm(`WARNING: Are you sure you want to PURGE all vectors in the "${namespace}" namespace? This action cannot be undone and will break semantic search until a re-sync is performed.`)) {
+            return;
+        }
+
+        setPurgingNs((prev) => ({ ...prev, [namespace]: true }));
+        try {
+            const res = await callApi({
+                method: METHOD.DELETE,
+                endpoint: adminEndPoints.DELETE_PINECONE_NAMESPACE(namespace),
+            });
+            if (res?.success) {
+                toast.success(`Namespace "${namespace}" purged successfully.`);
+                fetchStats();
+            } else {
+                toast.error(res?.message || `Failed to purge "${namespace}".`);
+            }
+        } catch {
+            toast.error(`Error purging "${namespace}".`);
+        } finally {
+            setPurgingNs((prev) => ({ ...prev, [namespace]: false }));
+        }
+    };
+
+    const namespaceRows = stats?.namespaces 
+        ? Object.entries(stats.namespaces).sort(([a], [b]) => a.localeCompare(b)) 
+        : [];
+    
+    const outOfSyncCount = namespaceRows.reduce((acc, [_, data]) => acc + Math.abs(data.delta), 0);
 
     return (
         <Container maxWidth="xl" className="admin-page" sx={{ py: 3 }}>
             <AdminPageHeader
                 title="Pinecone Management"
-                subtitle="Monitor vector index health and trigger manual re-sync operations."
+                subtitle="Monitor vector index health, detect data drift between SQL and Vector DB, and trigger re-sync operations."
                 actionButton={
                     <SecondaryButton
                         size="md"
@@ -90,156 +132,130 @@ export default function AdminPineconeManagementPage() {
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                     <KpiCard
+                        icon={<AlertTriangle size={22} />}
+                        iconColor={outOfSyncCount > 0 ? "warning" : "success"}
+                        label="Out-of-sync Records"
+                        value={loading ? "—" : outOfSyncCount.toLocaleString()}
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                    <KpiCard
                         icon={<Layers size={22} />}
                         iconColor="secondary"
                         label="Dimensions"
                         value={loading ? "—" : (stats?.dimension?.toLocaleString() ?? "—")}
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                    <KpiCard
-                        icon={<Database size={22} />}
-                        iconColor="info"
-                        label="Namespaces"
-                        value={loading ? "—" : namespaceCount}
+            </Grid>
+
+            {/* Namespace Breakdown */}
+            <BaseCard sx={{ p: 0 }}>
+                <Box sx={{ p: 3, pb: 1 }}>
+                    <SectionHeading 
+                        title="SQL vs Pinecone Comparison" 
+                        description="Compare record counts between the primary SQL database and the Pinecone vector index to detect data drift."
+                        size="sm" 
                     />
-                </Grid>
-            </Grid>
-
-            <Grid container spacing={3}>
-                {/* Namespace Breakdown */}
-                <Grid size={{ xs: 12, md: 7 }}>
-                    <BaseCard sx={{ p: 3 }}>
-                        <SectionHeading title="Namespace Breakdown" size="sm" />
-                        {loading ? (
-                            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                                <CircularProgress size={32} />
-                            </Box>
-                        ) : namespaceRows.length === 0 ? (
-                            <Typography color="text.secondary" variant="body2">
-                                No namespace data available.
-                            </Typography>
-                        ) : (
-                            <Box>
-                                {/* Header */}
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        px: 1.5,
-                                        pb: 1,
-                                        borderBottom: 1,
-                                        borderColor: "divider",
-                                    }}
-                                >
-                                    <Typography variant="caption" fontWeight={700} color="text.secondary">
-                                        NAMESPACE
-                                    </Typography>
-                                    <Typography variant="caption" fontWeight={700} color="text.secondary">
-                                        VECTOR COUNT
-                                    </Typography>
-                                </Box>
-                                {namespaceRows.map(([ns, count], idx) => (
-                                    <Box key={ns}>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                px: 1.5,
-                                                py: 1.5,
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="body2"
-                                                fontWeight={500}
-                                                sx={{ textTransform: "capitalize" }}
-                                            >
-                                                {ns}
-                                            </Typography>
-                                            <Typography variant="body2" fontWeight={700} color="primary.main">
-                                                {count.toLocaleString()}
-                                            </Typography>
+                </Box>
+                {loading ? (
+                    <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                        <CircularProgress size={32} />
+                    </Box>
+                ) : namespaceRows.length === 0 ? (
+                    <Typography color="text.secondary" variant="body2" sx={{ p: 3 }}>
+                        No namespace data available.
+                    </Typography>
+                ) : (
+                    <Box sx={{ p: 0 }}>
+                        <DataTable
+                            columns={[
+                                { 
+                                    field: 'namespace', 
+                                    headerName: 'Namespace',
+                                    render: (val) => <Box sx={{ fontWeight: 600, textTransform: 'capitalize' }}>{val}</Box>
+                                },
+                                { 
+                                    field: 'sqlCount', 
+                                    headerName: 'SQL Count',
+                                    render: (val) => <Box sx={{ fontWeight: 500 }}>{val.toLocaleString()}</Box>
+                                },
+                                { 
+                                    field: 'vectorCount', 
+                                    headerName: 'Vector Count',
+                                    render: (val) => <Box sx={{ fontWeight: 500, color: 'primary.main' }}>{val.toLocaleString()}</Box>
+                                },
+                                { 
+                                    field: 'delta', 
+                                    headerName: 'Delta',
+                                    render: (val) => (
+                                        <Box sx={{ 
+                                            fontWeight: 700, 
+                                            color: val === 0 ? 'success.main' : val > 0 ? 'error.main' : 'warning.main' 
+                                        }}>
+                                            {val > 0 ? `+${val}` : val}
                                         </Box>
-                                        {idx < namespaceRows.length - 1 && <Divider />}
-                                    </Box>
-                                ))}
-                                {stats?.fetchedAt && (
-                                    <Typography
-                                        variant="caption"
-                                        color="text.disabled"
-                                        sx={{ display: "block", mt: 2, px: 1.5 }}
-                                    >
-                                        Last fetched: {new Date(stats.fetchedAt).toLocaleString()}
-                                    </Typography>
-                                )}
-                            </Box>
-                        )}
-                    </BaseCard>
-                </Grid>
-
-                {/* Re-sync Controls */}
-                <Grid size={{ xs: 12, md: 5 }}>
-                    <BaseCard sx={{ p: 3 }}>
-                        <SectionHeading
-                            title="Re-sync Vectors"
-                            description="Enqueue a background job to rebuild the vector index for a namespace. The main thread returns immediately — sync runs via Hangfire."
-                            size="sm"
+                                    )
+                                },
+                                { 
+                                    field: 'status', 
+                                    headerName: 'Status',
+                                    render: (val) => <StatusBadge status={val} />
+                                },
+                                {
+                                    field: 'actions',
+                                    headerName: 'Actions',
+                                    render: (_, row) => (
+                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                            <Tooltip title="Trigger Full Re-sync">
+                                                <IconButton 
+                                                    color="primary" 
+                                                    size="small" 
+                                                    onClick={() => handleSync(row.namespace)}
+                                                    disabled={syncingNs[row.namespace] || purgingNs[row.namespace]}
+                                                >
+                                                    {syncingNs[row.namespace] ? <CircularProgress size={16} /> : <Zap size={18} />}
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Purge Namespace (Delete All)">
+                                                <IconButton 
+                                                    color="error" 
+                                                    size="small" 
+                                                    onClick={() => handlePurge(row.namespace)}
+                                                    disabled={syncingNs[row.namespace] || purgingNs[row.namespace]}
+                                                >
+                                                    {purgingNs[row.namespace] ? <CircularProgress size={16} /> : <Trash2 size={18} />}
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    )
+                                }
+                            ]}
+                            data={namespaceRows.map(([ns, data]) => ({
+                                id: ns,
+                                namespace: ns,
+                                sqlCount: data.sqlCount,
+                                vectorCount: data.vectorCount,
+                                delta: data.delta,
+                                status: data.status,
+                            }))}
+                            totalItems={namespaceRows.length}
+                            page={0}
+                            pageSize={10}
+                            loading={false}
+                            actions={false}
+                            showIndex={false}
+                            showHeader={false}
                         />
-                        <Box sx={{ mb: 1.5 }} />
-
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <Box
-                                sx={{
-                                    p: 2,
-                                    borderRadius: 2,
-                                    border: 1,
-                                    borderColor: "divider",
-                                    bgcolor: "action.hover",
-                                }}
-                            >
-                                <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
-                                    Coaches Namespace
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-                                    Re-indexes all coach profiles for semantic search.
-                                </Typography>
-                                <PrimaryButton
-                                    loading={syncingCoaches}
-                                    onClick={() => handleSync("coaches", setSyncingCoaches)}
-                                    fullWidth
-                                >
-                                    Re-sync Coaches
-                                </PrimaryButton>
-                            </Box>
-
-                            <Box
-                                sx={{
-                                    p: 2,
-                                    borderRadius: 2,
-                                    border: 1,
-                                    borderColor: "divider",
-                                    bgcolor: "action.hover",
-                                }}
-                            >
-                                <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
-                                    Questions Namespace
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-                                    Re-indexes all question bank entries for semantic search.
-                                </Typography>
-                                <PrimaryButton
-                                    loading={syncingQuestions}
-                                    onClick={() => handleSync("questions", setSyncingQuestions)}
-                                    fullWidth
-                                >
-                                    Re-sync Questions
-                                </PrimaryButton>
-                            </Box>
-                        </Box>
-                    </BaseCard>
-                </Grid>
-            </Grid>
+                    </Box>
+                )}
+                {stats?.fetchedAt && (
+                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider' }}>
+                        <Typography variant="caption" color="text.secondary">
+                            Last fetched: {new Date(stats.fetchedAt).toLocaleString()}
+                        </Typography>
+                    </Box>
+                )}
+            </BaseCard>
         </Container>
     );
 }
