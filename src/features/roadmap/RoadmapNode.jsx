@@ -14,6 +14,13 @@ const RoadmapNode = ({ data, selected }) => {
     const childSkillPreview = (data.childSkills ?? []).slice(0, 2);
     const hiddenSkillCount = Math.max((data.childSkills ?? []).length - childSkillPreview.length, 0);
     const progress = Number(data.progress) || 0;
+    // Phase 5.1 — surface the audit trail (current/target/score) on the card
+    // itself, not just in the detail panel. Empty values are gracefully hidden.
+    const currentLevel = data.currentLevel != null ? String(data.currentLevel) : "";
+    const targetLevel = data.targetLevel != null ? String(data.targetLevel) : "";
+    const score = Number(data.score);
+    const hasLevelTrio = currentLevel !== "" && targetLevel !== "";
+    const hasScore = Number.isFinite(score) && score > 0;
 
     return (
         <div
@@ -59,6 +66,33 @@ const RoadmapNode = ({ data, selected }) => {
             </div>
 
             <SkillProgressBar progress={progress} status={status} />
+
+            {hasLevelTrio || hasScore ? (
+                <div
+                    style={{
+                        marginTop: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "10.5px",
+                        color: "#475569",
+                        fontWeight: 600,
+                    }}
+                    aria-label="Assessment summary"
+                >
+                    {hasLevelTrio ? (
+                        <span title="Your current level / target level">
+                            Lv {currentLevel}/{targetLevel}
+                        </span>
+                    ) : null}
+                    {hasLevelTrio && hasScore ? (
+                        <span aria-hidden="true" style={{ color: "#CBD5E1" }}>
+                            ·
+                        </span>
+                    ) : null}
+                    {hasScore ? <span title="Assessment score">Score {Math.round(score)}/100</span> : null}
+                </div>
+            ) : null}
 
             {data.recommendedCoach ? (
                 <div

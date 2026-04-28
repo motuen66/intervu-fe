@@ -1142,6 +1142,33 @@ function NodeDetail({ phase, node, readOnly = false }) {
                         <p style={{ margin: 0, color: "#475569", lineHeight: 1.6 }}>
                             {selectedSkill.mentor_note ?? "No mentor note available."}
                         </p>
+
+                        {Array.isArray(selectedSkill.interview_drills) && selectedSkill.interview_drills.length > 0 ? (
+                            <div style={{ marginTop: "16px" }}>
+                                <h4
+                                    style={{
+                                        marginTop: 0,
+                                        marginBottom: "8px",
+                                        color: "#0F172A",
+                                        fontSize: "15px",
+                                    }}
+                                >
+                                    Interview Drills
+                                </h4>
+                                <ul
+                                    style={{
+                                        margin: 0,
+                                        paddingLeft: "18px",
+                                        color: "#475569",
+                                        lineHeight: 1.6,
+                                    }}
+                                >
+                                    {selectedSkill.interview_drills.map((drill, idx) => (
+                                        <li key={idx}>{drill}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : null}
                     </div>
                 ) : (
                     <p style={{ margin: 0, color: "#64748B" }}>Select a skill in this phase to view detail.</p>

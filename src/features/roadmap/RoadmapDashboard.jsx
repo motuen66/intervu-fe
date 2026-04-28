@@ -88,9 +88,18 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                       const recommendedServiceSource =
                           node.recommended_service ?? node.recommendedService ?? node.RecommendedService ?? null;
 
+                      const interviewDrillsSource =
+                          node.interview_drills ?? node.interviewDrills ?? node.InterviewDrills ?? [];
+
                       return {
                           skill_id: node.skill_id ?? node.skillId ?? node.SkillId ?? `skill_${phaseIndex}_${nodeIndex}`,
                           skill_name: node.skill_name ?? node.skillName ?? node.SkillName ?? "Skill",
+                          mentor_note: node.mentor_note ?? node.mentorNote ?? node.MentorNote ?? "",
+                          interview_drills: Array.isArray(interviewDrillsSource)
+                              ? interviewDrillsSource.map((drill) =>
+                                    typeof drill === "string" ? drill : (drill?.text ?? drill?.label ?? ""),
+                                ).filter(Boolean)
+                              : [],
                           assessment: {
                               current_level:
                                   assessment.current_level ?? assessment.currentLevel ?? assessment.CurrentLevel ?? "",
@@ -99,6 +108,7 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                               sfia_level: assessment.sfia_level ?? assessment.sfiaLevel ?? assessment.SfiaLevel ?? 0,
                               status: assessment.status ?? assessment.Status ?? "Missing",
                               progress: assessment.progress ?? assessment.Progress ?? 0,
+                              score: assessment.score ?? assessment.Score ?? 0,
                           },
                           child_skills: Array.isArray(childSkills)
                               ? childSkills.map((childSkill) => {
@@ -160,6 +170,9 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
         };
     });
 
+    const masteredSource =
+        rawRoadmap.mastered_summary ?? rawRoadmap.masteredSummary ?? rawRoadmap.MasteredSummary ?? [];
+
     return {
         roadmap_metadata: {
             target_role: metadataSource.target_role ?? metadataSource.targetRole ?? metadataSource.TargetRole ?? "",
@@ -171,6 +184,20 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                 normalizedPhases.length,
         },
         phases: normalizedPhases,
+        // Phase 3 backend surfaces the skills the candidate has already met
+        // their target on. The roadmap itself doesn't list them as nodes (so
+        // they don't add UI clutter); we render them as a separate badge so
+        // the candidate sees what's already done.
+        mastered_summary: Array.isArray(masteredSource)
+            ? masteredSource
+                  .map((item) => ({
+                      skill_id: item.skill_id ?? item.skillId ?? item.SkillId ?? "",
+                      skill_name: item.skill_name ?? item.skillName ?? item.SkillName ?? item.skill_id ?? "",
+                      current_level: item.current_level ?? item.currentLevel ?? item.CurrentLevel ?? 0,
+                      target_level: item.target_level ?? item.targetLevel ?? item.TargetLevel ?? 0,
+                  }))
+                  .filter((item) => item.skill_name)
+            : [],
     };
 };
 
@@ -424,6 +451,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
         [resolvedRoadmap, roadmap],
     );
     const roadmapMetadata = sourceRoadmap?.roadmap_metadata ?? {};
+    const masteredSummary = sourceRoadmap?.mastered_summary ?? [];
 
     // B3: record a snapshot whenever the roadmap changes so we can show wins later
     useEffect(() => {
@@ -710,6 +738,53 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                             ? ` · and improved ${monthlyWins.improvedThisMonth} more`
                             : ""}
                     </Typography>
+                </Box>
+            ) : null}
+
+            {/* Phase 5.3: skills the candidate already meets target on. Backend
+                surfaces these via mastered_summary so the FE can show "credit
+                where it's due" without polluting the roadmap with completed nodes. */}
+            {masteredSummary.length > 0 ? (
+                <Box
+                    sx={{
+                        px: 2,
+                        py: 1.25,
+                        borderRadius: "12px",
+                        bgcolor: alpha(theme.palette.success.main, 0.06),
+                        border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                    }}
+                >
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ sm: "center" }}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+                            <Check size={16} color={theme.palette.success.main} />
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Skills you already have
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                ({masteredSummary.length})
+                            </Typography>
+                        </Stack>
+                        <Stack
+                            direction="row"
+                            spacing={0.75}
+                            sx={{ flexWrap: "wrap", rowGap: 0.75, flex: 1, minWidth: 0 }}
+                        >
+                            {masteredSummary.map((item) => (
+                                <Chip
+                                    key={item.skill_id || item.skill_name}
+                                    size="small"
+                                    label={item.skill_name}
+                                    title={`Current ${item.current_level} ≥ target ${item.target_level}`}
+                                    sx={{
+                                        bgcolor: alpha(theme.palette.success.main, 0.12),
+                                        color: theme.palette.success.dark,
+                                        fontWeight: 600,
+                                        border: `1px solid ${alpha(theme.palette.success.main, 0.25)}`,
+                                    }}
+                                />
+                            ))}
+                        </Stack>
+                    </Stack>
                 </Box>
             ) : null}
 
