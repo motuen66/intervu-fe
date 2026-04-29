@@ -48,9 +48,9 @@ const TIMEFRAME_OPTIONS = [
 const USE_CASE_LABELS = {
     SmartSearchQuestion: "Smart Question Search",
     SmartSearchCoach: "Smart Coach Search",
-    SmartSearchCvExtraction: "CV Extraction (Smart Search)",
+    SmartSearchCvExtraction: "File Extraction (Smart Search)",
     CvEvaluation: "Candidate CV Evaluation",
-    CvExtraction: "CV Extraction",
+    CvExtraction: "File Extraction",
     AutoAssessment: "Automated Interview Assessment",
     GenerateRoadmap: "Generate Learning Roadmap",
     UpdateRoadmapProgress: "Update Roadmap Progress",
