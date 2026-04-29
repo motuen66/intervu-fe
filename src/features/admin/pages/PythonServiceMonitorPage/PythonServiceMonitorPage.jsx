@@ -66,14 +66,14 @@ function useUseCaseColors(useCases) {
     const theme = useTheme();
     return useMemo(() => {
         const palette = [
-            theme.palette.primary.main,
-            theme.palette.success.main,
-            theme.palette.info.main,
-            theme.palette.warning.main,
-            theme.palette.secondary.main,
-            theme.palette.error.main,
-            theme.palette.primary.light,
-            theme.palette.success.dark,
+            '#00C49F', // Vibrant Teal
+            '#FFBB28', // Vibrant Yellow
+            '#FF8042', // Vibrant Orange
+            '#0088FE', // Vibrant Blue
+            '#FF6B6B', // Vibrant Red
+            '#A29BFE', // Vibrant Purple
+            '#FDCB6E', // Warm Yellow
+            '#00CEC9', // Turquoise
         ];
         const map = {};
         useCases.forEach((uc, i) => {
@@ -155,10 +155,10 @@ function UsagePieChart({ series, useCases }) {
                                     border: `1px solid ${theme.palette.divider}`,
                                     borderRadius: 8,
                                     fontSize: 12,
-                                    color: theme.palette.text.primary,
+                                    color: theme.palette.text.secondary,
                                 }}
-                                labelStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
-                                itemStyle={{ color: theme.palette.text.primary }}
+                                labelStyle={{ color: theme.palette.text.secondary, fontWeight: 600 }}
+                                itemStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
                                 formatter={(value, name) => {
                                     const pct = grandTotal > 0 ? ((value / grandTotal) * 100).toFixed(1) : 0;
                                     return [`${value} (${pct}%)`, name];
@@ -244,11 +244,11 @@ function UsageLineChart({ series, useCases, bucketUnit }) {
                                     border: `1px solid ${theme.palette.divider}`,
                                     borderRadius: 8,
                                     fontSize: 12,
-                                    color: theme.palette.text.primary,
+                                    color: theme.palette.text.secondary,
                                 }}
-                                labelStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
-                                itemStyle={{ color: theme.palette.text.primary }}
-                                cursor={{ stroke: alpha(theme.palette.text.primary, 0.2), strokeWidth: 1 }}
+                                labelStyle={{ color: theme.palette.text.secondary, fontWeight: 600 }}
+                                itemStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
+                                cursor={{ stroke: alpha(theme.palette.secondary.main, 0.4), strokeWidth: 1 }}
                                 formatter={(value, name) => {
                                     const uc = Object.entries(keyMap).find(([, v]) => v === name)?.[0] ?? name;
                                     return [value, labelUseCase(uc)];

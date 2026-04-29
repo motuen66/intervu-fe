@@ -649,7 +649,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                                 borderRadius: 10,
                                                 boxShadow: theme.shadows[4],
                                             }}
-                                            itemStyle={{ color: theme.palette.primary.main }}
+                                            itemStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
                                         />
                                         <Area
                                             type="monotone"
