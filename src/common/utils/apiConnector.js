@@ -137,6 +137,8 @@ export const callApi = async ({
         if (error.status == HTTP_RESPONSE_STATUS_CODE.FORBIDDENT) {
             toast.error("You do not have permission to perform this action.");
             // window.location.href = "/";
+        } else if (error.status === HTTP_RESPONSE_STATUS_CODE.NOT_FOUND) {
+            return;
         } else if (alertErrorMessage) {
             toast.error(error.response?.data?.message || error.message || "An error occurred");
             throw error;

@@ -31,7 +31,6 @@ export default function CoachInterviewServicePage() {
             setItems(data || []);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to load your interview services.");
         } finally {
             setLoading(false);
         }
@@ -42,7 +41,7 @@ export default function CoachInterviewServicePage() {
             const result = await callApi({
                 method: METHOD.GET,
                 endpoint: interviewTypeEndPoints.GET_ALL_TYPES,
-                alertErrorMessage: true,
+                alertErrorMessage: false,
             });
             const list = result.items || result.data || [];
             setInterviewTypes(list);
@@ -95,11 +94,11 @@ export default function CoachInterviewServicePage() {
     return (
         <Box className="coach-service-management">
             <div className="coach-service-panel">
-                    <PageHeader
-                        title="My Interview Services"
-                        subtitle="Manage the interview types you offer and set your own pricing."
-                        actions={<PrimaryButton onClick={() => setOpenCreate(true)}>Add Service</PrimaryButton>}
-                    />
+                <PageHeader
+                    title="My Interview Services"
+                    subtitle="Manage the interview types you offer and set your own pricing."
+                    actions={<PrimaryButton onClick={() => setOpenCreate(true)}>Add Service</PrimaryButton>}
+                />
 
                 {loading ? (
                     <Box display="flex" justifyContent="center" mt={6} mb={6}>
