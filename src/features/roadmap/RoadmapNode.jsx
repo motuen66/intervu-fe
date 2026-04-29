@@ -4,7 +4,6 @@ import { Handle, Position } from "@xyflow/react";
 import SkillStatusBadge from "./components/SkillStatusBadge";
 import SkillProgressBar from "./components/SkillProgressBar";
 import { getStatusConfig } from "./components/statusConfig";
-import { formatVndCurrency } from "./utils/formatCurrency";
 
 const RoadmapNode = ({ data, selected }) => {
     const theme = useTheme();
@@ -91,29 +90,6 @@ const RoadmapNode = ({ data, selected }) => {
                         </span>
                     ) : null}
                     {hasScore ? <span title="Assessment score">Score {Math.round(score)}/100</span> : null}
-                </div>
-            ) : null}
-
-            {data.recommendedCoach ? (
-                <div
-                    style={{
-                        marginTop: "8px",
-                        fontSize: "11px",
-                        color: "#1D4ED8",
-                        fontWeight: 600,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                    }}
-                    title={data.recommendedCoach.name}
-                >
-                    Coach: {data.recommendedCoach.name}
-                    {data.recommendedService?.price != null
-                        ? ` · ${formatVndCurrency(data.recommendedService.price)}`
-                        : ""}
-                    {data.recommendedService?.duration_minutes != null
-                        ? ` · ${data.recommendedService.duration_minutes}min`
-                        : ""}
                 </div>
             ) : null}
 

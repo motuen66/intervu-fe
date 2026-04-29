@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import SkillStatusBadge from "./components/SkillStatusBadge";
 import SkillProgressBar from "./components/SkillProgressBar";
-import { formatVndCurrency } from "./utils/formatCurrency";
 
 const PHASE_TABS = {
     RECOMMENDATIONS: "recommendations",
@@ -415,14 +414,11 @@ function NodeDetail({ phase, node, readOnly = false }) {
     // payload can propagate RoadmapNodeId through to the InterviewRoom.
     const handleScheduleWithRecommended = (nodeSkillId) => {
         const coach = selectedSkill?.recommended_coach;
-        const service = selectedSkill?.recommended_service;
         const slug = coach?.slug_profile_url ?? coach?.slugProfileUrl ?? coach?.id;
         if (!slug) return;
 
         const params = new URLSearchParams({ from: "roadmap" });
         if (nodeSkillId) params.set("roadmapNodeId", nodeSkillId);
-        if (service?.id) params.set("serviceId", service.id);
-        if (service?.interview_type_name) params.set("serviceName", service.interview_type_name);
         navigate(`/profile/${encodeURIComponent(slug)}?${params.toString()}`);
     };
 
@@ -503,7 +499,6 @@ function NodeDetail({ phase, node, readOnly = false }) {
     const progress = selectedSkill?.assessment?.progress ?? 0;
     const recommendedCoaches = phase.recommended_coaches ?? [];
     const nodeCoach = selectedSkill?.recommended_coach ?? null;
-    const nodeService = selectedSkill?.recommended_service ?? null;
     const visibleMocks = showAllMocks ? sortedMockHistory : sortedMockHistory.slice(0, RECENT_MOCKS_EXPANDED);
     const hiddenMockCount = Math.max(0, sortedMockHistory.length - RECENT_MOCKS_EXPANDED);
     const overallScoreStyle = overallMockAverage != null ? getScoreStyle(overallMockAverage) : null;
@@ -637,17 +632,6 @@ function NodeDetail({ phase, node, readOnly = false }) {
                                 />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontWeight: 700, fontSize: "15px" }}>{nodeCoach.name}</div>
-                                    {nodeService ? (
-                                        <div style={{ color: "#475569", fontSize: "13px", marginTop: "2px" }}>
-                                            {nodeService.interview_type_name}
-                                            {nodeService.price != null
-                                                ? ` · ${formatVndCurrency(nodeService.price)}`
-                                                : ""}
-                                            {nodeService.duration_minutes != null
-                                                ? ` · ${nodeService.duration_minutes}min`
-                                                : ""}
-                                        </div>
-                                    ) : null}
                                 </div>
                                 {!readOnly ? (
                                     <button
@@ -909,16 +893,16 @@ function NodeDetail({ phase, node, readOnly = false }) {
                         </div>
 
                         {/* X8: feedback loop — capture sentiment to tune future LLM output */}
-                        {!readOnly ? (
+                        {/* {!readOnly ? (
                             <SkillFeedback skillId={selectedSkill.skill_id} skillName={selectedSkill.skill_name} />
-                        ) : null}
+                        ) : null} */}
 
-                        <div style={{ marginBottom: "8px", color: "#334155", fontSize: "14px" }}>
+                        {/* <div style={{ marginBottom: "8px", color: "#334155", fontSize: "14px" }}>
                             <strong>Current:</strong> {selectedSkill.assessment?.current_level ?? "N/A"}
                         </div>
                         <div style={{ marginBottom: "14px", color: "#334155", fontSize: "14px" }}>
                             <strong>Target:</strong> {selectedSkill.assessment?.target_level ?? "N/A"}
-                        </div>
+                        </div> */}
 
                         {/* X6: onboarding nudge for Missing skills */}
                         {status === "Missing" && childSkillDetails.length > 0 ? (
@@ -986,7 +970,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
                         </div>
 
                         {/* X6: Child skills with clickable practice questions */}
-                        <h4 style={{ marginTop: 0, marginBottom: "10px", color: "#0F172A", fontSize: "15px" }}>
+                        {/* <h4 style={{ marginTop: 0, marginBottom: "10px", color: "#0F172A", fontSize: "15px" }}>
                             Sub-skills {hasChildQuestions ? "& practice" : ""}
                         </h4>
                         {childSkillDetails.length === 0 ? (
@@ -1134,14 +1118,14 @@ function NodeDetail({ phase, node, readOnly = false }) {
                                     </div>
                                 ))}
                             </div>
-                        )}
+                        )} */}
 
-                        <h4 style={{ marginTop: 0, marginBottom: "8px", color: "#0F172A", fontSize: "15px" }}>
+                        {/* <h4 style={{ marginTop: 0, marginBottom: "8px", color: "#0F172A", fontSize: "15px" }}>
                             Mentor Note
                         </h4>
                         <p style={{ margin: 0, color: "#475569", lineHeight: 1.6 }}>
                             {selectedSkill.mentor_note ?? "No mentor note available."}
-                        </p>
+                        </p> */}
 
                         {Array.isArray(selectedSkill.interview_drills) && selectedSkill.interview_drills.length > 0 ? (
                             <div style={{ marginTop: "16px" }}>
