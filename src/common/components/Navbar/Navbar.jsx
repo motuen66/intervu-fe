@@ -294,7 +294,7 @@ const Navbar = () => {
                     { label: "Booking Requests", path: "/booking-requests", icon: CalendarClock },
                     { label: "My Services", path: "/my-services", icon: Briefcase },
                     { label: "Schedule", path: "/schedule", icon: Calendar },
-                    { label: "Wallet", path: "/dashboard/wallet", icon: CreditCard },
+                    { label: "Wallet", path: "/wallet", icon: CreditCard },
                 ],
             },
             { label: "My Interviews", path: "/interview", type: "link", icon: Video, sectionLabel: "RECORDS" },
