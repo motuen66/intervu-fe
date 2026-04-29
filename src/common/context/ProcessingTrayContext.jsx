@@ -7,7 +7,7 @@ import { QUESTION_STATUS_BUCKETS, ROADMAP_STATUS_BUCKETS, resolveStatusLabel } f
 const ProcessingTrayContext = createContext(null);
 
 const MOCK_CAP = 95;
-const TICK_MS = 600;
+const TICK_MS = 1800;
 const TICK_STEP = 9;
 const STORAGE_KEY = "intervu:processingTray";
 const HANDLED_KEY = "intervu:processingTray:handledStartIds";
@@ -63,19 +63,11 @@ function readPersisted() {
 }
 
 function writePersisted(data) {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch {
-        /* ignore */
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 function clearPersisted() {
-    try {
-        localStorage.removeItem(STORAGE_KEY);
-    } catch {
-        /* ignore */
-    }
+    localStorage.removeItem(STORAGE_KEY);
 }
 
 function readHandledStartIds() {
@@ -90,12 +82,8 @@ function readHandledStartIds() {
 }
 
 function writeHandledStartIds(set) {
-    try {
-        const trimmed = Array.from(set).slice(-50);
-        localStorage.setItem(HANDLED_KEY, JSON.stringify(trimmed));
-    } catch {
-        /* ignore */
-    }
+    const trimmed = Array.from(set).slice(-50);
+    localStorage.setItem(HANDLED_KEY, JSON.stringify(trimmed));
 }
 
 // Persist only the fields we need to resume — functions cannot be serialized.
@@ -213,11 +201,7 @@ export function ProcessingTrayProvider({ children }) {
         const persisted = readPersisted();
         if (!persisted) return;
         const resumedProgress = computeProgressFromElapsed(persisted.startedAt);
-        ctaActionRef.current = buildCtaAction(
-            persisted.job.kind,
-            persisted.job.referenceId,
-            navigate,
-        );
+        ctaActionRef.current = buildCtaAction(persisted.job.kind, persisted.job.referenceId, navigate);
         setJob(persisted.job);
         setProgress(resumedProgress);
         setVisible(true);
@@ -276,9 +260,7 @@ export function ProcessingTrayProvider({ children }) {
                 completeCtaAction: () =>
                     navigate(
                         n.actionUrl ??
-                            (referenceId
-                                ? `/interview?roomId=${referenceId}&action=review-questions`
-                                : "/interview"),
+                            (referenceId ? `/interview?roomId=${referenceId}&action=review-questions` : "/interview"),
                     ),
             };
         };
@@ -348,10 +330,7 @@ export function ProcessingTrayProvider({ children }) {
         if (typeof action === "function") action();
     }, []);
 
-    const status = useMemo(
-        () => (job ? resolveStatusLabel(job.statusBuckets, progress) : ""),
-        [job, progress],
-    );
+    const status = useMemo(() => (job ? resolveStatusLabel(job.statusBuckets, progress) : ""), [job, progress]);
 
     const value = useMemo(
         () => ({ startJob, completeJob, hideTray, registerAutoStartFactory }),
