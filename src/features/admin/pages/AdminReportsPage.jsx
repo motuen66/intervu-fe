@@ -259,7 +259,17 @@ export default function AdminReportsPage() {
                         textDecoration: row?.questionId ? "underline" : "none",
                     }}
                     title={value || "-"}
-                    onClick={() => { if (row?.questionId) navigate(`/questions/${row.questionId}`); }}
+                    onClick={() => {
+                        if (row?.questionId) {
+                            navigate(`/questions/${row.questionId}`, {
+                                state: {
+                                    reportReason: row.reason,
+                                    reportReporter: row.reporterName,
+                                    fromAdminReports: true,
+                                }
+                            });
+                        }
+                    }}
                 >
                     {value || "-"}
                 </Typography>

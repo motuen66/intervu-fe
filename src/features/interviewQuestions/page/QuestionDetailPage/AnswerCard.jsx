@@ -29,6 +29,7 @@ export default function AnswerCard({
     onDelete,
     onVote,
     onReport,
+    isAdmin = false,
 }) {
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState(comment.content ?? "");
@@ -173,7 +174,7 @@ export default function AnswerCard({
                             </IconButton>
                         </Tooltip>
                     )}
-                    {onDelete && !editing && (
+                    {(isAuthor || isAdmin) && onDelete && !editing && (
                         <Tooltip title="Delete" placement="top">
                             <IconButton
                                 size="small"
@@ -268,28 +269,32 @@ export default function AnswerCard({
             )}
             {/* Actions */}
             <Stack direction="row" gap={2}>
-                <Tooltip title={voted ? "Unlike" : "Like"} placement="top">
+                {!isAdmin && (
+                    <Tooltip title={voted ? "Unlike" : "Like"} placement="top">
+                        <TextButton
+                            size="sm"
+                            startIcon={
+                                voted ? (
+                                    <ThumbUpIcon sx={{ fontSize: 15, color: "primary.main" }} />
+                                ) : (
+                                    <ThumbUpOutlinedIcon sx={{ fontSize: 15 }} />
+                                )
+                            }
+                            onClick={handleVote}
+                        >
+                            Like {voteCount != null ? ` ${voteCount}` : ""}
+                        </TextButton>
+                    </Tooltip>
+                )}
+                {!isAdmin && (
                     <TextButton
                         size="sm"
-                        startIcon={
-                            voted ? (
-                                <ThumbUpIcon sx={{ fontSize: 15, color: "primary.main" }} />
-                            ) : (
-                                <ThumbUpOutlinedIcon sx={{ fontSize: 15 }} />
-                            )
-                        }
-                        onClick={handleVote}
+                        startIcon={<FlagOutlinedIcon sx={{ fontSize: 15 }} />}
+                        onClick={onReport}
                     >
-                        Like {voteCount != null ? ` ${voteCount}` : ""}
+                        Report
                     </TextButton>
-                </Tooltip>
-                <TextButton
-                    size="sm"
-                    startIcon={<FlagOutlinedIcon sx={{ fontSize: 15 }} />}
-                    onClick={onReport}
-                >
-                    Report
-                </TextButton>
+                )}
             </Stack>
         </Paper>
     );

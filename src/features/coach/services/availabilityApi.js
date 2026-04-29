@@ -26,6 +26,25 @@ export const getAvailabilitiesByMonth = async (interviewerId, month, year) => {
     const schedule = result?.data ?? {};
     const freeSlots = Array.isArray(schedule?.freeSlots) ? schedule.freeSlots : Array.isArray(schedule) ? schedule : [];
     const bookedSlots = Array.isArray(schedule?.bookedSlots) ? schedule.bookedSlots : [];
+    const baseOrigin = (() => {
+        try {
+            return new URL(BE_BASE_URL).origin;
+        } catch (_) {
+            return "";
+        }
+    })();
+    const pickFirstString = (...values) => {
+        const found = values.find((val) => typeof val === "string" && val.trim().length > 0);
+        return found ? found.trim() : "";
+    };
+    const normalizeImageUrl = (value) => {
+        if (!value || typeof value !== "string") return "";
+        const raw = value.trim();
+        if (!raw) return "";
+        if (/^(https?:)?\/\//i.test(raw) || /^data:/i.test(raw) || /^blob:/i.test(raw)) return raw;
+        if (!baseOrigin) return raw;
+        return raw.startsWith("/") ? `${baseOrigin}${raw}` : `${baseOrigin}/${raw}`;
+    };
 
     const normalizedFree = freeSlots.map((item) => ({
         ...item,
@@ -44,6 +63,56 @@ export const getAvailabilitiesByMonth = async (interviewerId, month, year) => {
         endTime: normalizeTime(item.endTime),
         status: AVAILABILITY_SLOTS_STATUS.BOOKED,
         isBooked: true,
+        candidateName: pickFirstString(
+            item.candidateName,
+            item.candidate?.fullName,
+            item.candidate?.name,
+            item.candidate?.username,
+            item.bookingRequest?.candidateName,
+            item.interviewRoom?.candidateName,
+        ),
+        candidateAvatar: pickFirstString(
+            item.candidateAvatar,
+            item.candidateProfilePicture,
+            item.candidateProfileImage,
+            item.candidate?.avatarUrl,
+            item.candidate?.profilePicture,
+            item.candidate?.profilePictureUrl,
+            item.candidate?.profileImage,
+            item.candidate?.avatar,
+            item.candidate?.imageUrl,
+            item.candidate?.user?.profilePicture,
+            item.candidate?.user?.avatarUrl,
+            item.bookingRequest?.candidateAvatar,
+            item.bookingRequest?.candidateProfilePicture,
+            item.bookingRequest?.candidateProfileImage,
+            item.interviewRoom?.candidateAvatar,
+            item.interviewRoom?.candidateProfilePicture,
+            item.interviewRoom?.candidateProfileImage,
+            item.interviewRoom?.candidate?.avatarUrl,
+            item.interviewRoom?.candidate?.profilePicture,
+            item.interviewRoom?.candidate?.profilePictureUrl,
+            item.interviewRoom?.candidate?.profileImage,
+            item.interviewRoom?.candidate?.user?.profilePicture,
+            item.interviewRoom?.candidate?.user?.avatarUrl,
+        ),
+        sessionName: pickFirstString(
+            item.sessionName,
+            item.serviceName,
+            item.interviewTypeName,
+            item.problemShortName,
+            item.typeName,
+            item.interviewType,
+            item.type?.name,
+            item.bookingRequest?.serviceName,
+            item.bookingRequest?.interviewTypeName,
+            item.interviewRoom?.interviewTypeName,
+            item.interviewRoom?.problemShortName,
+            item.interviewRoom?.title,
+        ),
+    })).map((item) => ({
+        ...item,
+        candidateAvatar: normalizeImageUrl(item.candidateAvatar),
     }));
 
     const merged = [...normalizedFree, ...normalizedBooked];

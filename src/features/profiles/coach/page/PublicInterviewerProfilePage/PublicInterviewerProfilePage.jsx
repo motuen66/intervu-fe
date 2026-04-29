@@ -737,6 +737,18 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                                         fullWidth
                                         onClick={() => setJdBookingOpen(true)}
                                         startIcon={<FileText size={16} />}
+                                        sx={(theme) => ({
+                                            backgroundColor: theme.palette.secondary.main,
+                                            color: theme.palette.secondary.contrastText,
+                                            fontWeight: 700,
+                                            border: "none",
+                                            boxShadow: "0 2px 8px rgba(217, 249, 157, 0.25)",
+                                            "&:hover": {
+                                                backgroundColor: theme.palette.secondary.dark,
+                                                boxShadow: "0 4px 16px rgba(217, 249, 157, 0.4)",
+                                                transform: "translateY(-1px)",
+                                            },
+                                        })}
                                     >
                                         JD Multi-Round Booking
                                     </SecondaryButton>
