@@ -77,6 +77,17 @@ const adminNavItems = [
     },
 ];
 
+// Open all groups by default (both mobile and desktop)
+const getInitialOpenGroups = () =>
+    adminNavItems.reduce((acc, section) => {
+        section.items.forEach((item) => {
+            if (item.children && item.key) {
+                acc[item.key] = true;
+            }
+        });
+        return acc;
+    }, {});
+
 const SidebarMenuItem = ({ item, isActive, onClick, collapsed }) => {
     const ItemIcon = item.icon;
     return (
@@ -195,7 +206,7 @@ const SidebarGroupItem = ({ item, openGroups, onToggleGroup, location, onNavigat
                         bgcolor: "action.hover",
                         transform: "translateX(4px)",
                         "& .sidebar-label": { color: "primary.main" },
-                        "& .sidebar-icon-box": { transform: "rotate(5deg) scale(1.05)" }
+                        "& .sidebar-icon-box": { transform: "rotate(5deg) scale(1.05)" },
                     },
                     "&:active": { transform: "scale(0.98)" },
                 }}
@@ -290,7 +301,7 @@ const SidebarGroupItem = ({ item, openGroups, onToggleGroup, location, onNavigat
 export default function AdminSidebar({ userData, remoteAvatar, onLogout, mobileOpen, onMobileClose }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const [openGroups, setOpenGroups] = useState({ income: false, reports: true, users: true, system: false });
+    const [openGroups, setOpenGroups] = useState(() => getInitialOpenGroups());
     const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
         return localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY) === "true";
