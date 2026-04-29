@@ -3,7 +3,22 @@ import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import BaseCard from "./BaseCard";
 
+let kpiCardDeprecationWarned = false;
+
+/**
+ * @deprecated Use `MetricCard` from `common/components/cards/MetricCard` instead.
+ * KpiCard remains during incremental migration of dashboard screens and will be removed
+ * once all call sites are converted.
+ */
 export default function KpiCard({ icon, iconColor = "primary", label, value, growthPercent }) {
+    if (import.meta.env?.DEV && !kpiCardDeprecationWarned) {
+        kpiCardDeprecationWarned = true;
+        // eslint-disable-next-line no-console
+        console.warn(
+            "[KpiCard] Deprecated. Migrate to MetricCard (common/components/cards/MetricCard).",
+        );
+    }
+
     const isPositive = growthPercent > 0;
     const growthColor = isPositive ? "success" : growthPercent < 0 ? "error" : "text.disabled";
 

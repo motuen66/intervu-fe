@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import { useState } from "react";
+import { Activity, BarChart3, Cpu, Shield, Timer, Zap } from "lucide-react";
 import {
     AppText,
     DangerButton,
@@ -17,6 +18,7 @@ import {
     Tag,
     TextButton,
 } from "../../../common/components";
+import { MetricCard } from "../../../common/components/cards/MetricCard";
 
 export default function UIKitPage() {
     const [value, setValue] = useState("");
@@ -70,12 +72,100 @@ export default function UIKitPage() {
             </Stack>
 
             <SectionHeading title="Status / Tags" />
-            <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 4 }}>
                 <StatusChip label="Pending" color="warning" />
                 <StatusChip label="Done" color="success" variant="filled" size="sm" />
                 <Tag label="React" />
                 <Tag label="Senior" variant="outlined" />
             </Stack>
+
+            <SectionHeading
+                title="MetricCard — Premium SaaS KPI"
+                description="Hover any card to see the lift, ambient glow, watermark rotation, badge swap, and bottom accent line. Variants tint glow + watermark + accent gradient."
+            />
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(5, 1fr)" },
+                    gap: 2.5,
+                    mb: 4,
+                }}
+            >
+                <MetricCard
+                    variant="navy"
+                    label="Total Requests"
+                    value={1284}
+                    icon={<BarChart3 />}
+                    trend={{ value: 12.5 }}
+                />
+                <MetricCard
+                    variant="purple"
+                    label="Total Tokens"
+                    value={842100}
+                    icon={<Cpu />}
+                    trend={{ value: 8.2 }}
+                />
+                <MetricCard
+                    variant="amber"
+                    label="Prompt Tokens"
+                    value={310500}
+                    icon={<Zap />}
+                    trend={{ value: 5.1 }}
+                />
+                <MetricCard
+                    variant="emerald"
+                    label="Avg Latency"
+                    value="1.24s"
+                    icon={<Timer />}
+                    trend={{ value: -15.4 }}
+                />
+                <MetricCard
+                    variant="rose"
+                    label="Success Rate"
+                    value="99.98%"
+                    icon={<Shield />}
+                    trend={{ value: 0.02 }}
+                />
+            </Box>
+
+            <SectionHeading
+                title="MetricCard — States"
+                description="Sizes, interactive (clickable), loading skeleton, blue variant."
+            />
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
+                    gap: 2.5,
+                    mb: 6,
+                }}
+            >
+                <MetricCard
+                    variant="blue"
+                    size="sm"
+                    label="Size SM"
+                    value={428}
+                    icon={<Activity />}
+                    trend={{ value: 3.1 }}
+                />
+                <MetricCard
+                    variant="blue"
+                    size="lg"
+                    label="Size LG"
+                    value={428000}
+                    icon={<Activity />}
+                    trend={{ value: 24 }}
+                />
+                <MetricCard
+                    variant="navy"
+                    label="Clickable card"
+                    value={9876}
+                    icon={<BarChart3 />}
+                    trend={{ value: 7.4 }}
+                    onClick={() => alert("MetricCard clicked")}
+                />
+                <MetricCard variant="navy" label="Loading" value={0} icon={<BarChart3 />} loading />
+            </Box>
         </Box>
     );
 }

@@ -44,6 +44,16 @@ export const theme = createTheme({
             dark: "#0284C7",
             contrastText: "#FFFFFF",
         },
+        // Decorative accents reserved for non-semantic surfaces (MetricCard variants, glows).
+        // Do NOT use for status/affordance — those must come from success/warning/error/info.
+        accents: {
+            purple: "#A78BFA",
+            purpleSoft: "#EDE9FE",
+            blueSoft: "#DBEAFE",
+            amberSoft: "#FEF3C7",
+            roseSoft: "#FFE4E6",
+            emeraldSoft: "#D1FAE5",
+        },
         background: {
             default: "#F8FAFC", // Soft Blue-Gray (Slate 50)
             paper: "#FFFFFF", // Pure White
