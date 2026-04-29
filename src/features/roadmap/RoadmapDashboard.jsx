@@ -69,7 +69,8 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                 role: coach.role ?? coach.Role ?? "",
                 rating: coach.rating ?? coach.Rating ?? 0,
                 avatar: coach.avatar ?? coach.Avatar ?? "",
-                profileUrl: coach.profileUrl ?? coach.ProfileUrl ?? coach.slugProfileUrl ?? coach.SlugProfileUrl ?? null,
+                profileUrl:
+                    coach.profileUrl ?? coach.ProfileUrl ?? coach.slugProfileUrl ?? coach.SlugProfileUrl ?? null,
             })),
             mock_history: mockHistorySource.map((mock, mockIndex) => ({
                 mock_id: mock.mock_id ?? mock.mockId ?? mock.MockId ?? `mock_${phaseIndex}_${mockIndex}`,
@@ -96,9 +97,11 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                           skill_name: node.skill_name ?? node.skillName ?? node.SkillName ?? "Skill",
                           mentor_note: node.mentor_note ?? node.mentorNote ?? node.MentorNote ?? "",
                           interview_drills: Array.isArray(interviewDrillsSource)
-                              ? interviewDrillsSource.map((drill) =>
-                                    typeof drill === "string" ? drill : (drill?.text ?? drill?.label ?? ""),
-                                ).filter(Boolean)
+                              ? interviewDrillsSource
+                                    .map((drill) =>
+                                        typeof drill === "string" ? drill : (drill?.text ?? drill?.label ?? ""),
+                                    )
+                                    .filter(Boolean)
                               : [],
                           assessment: {
                               current_level:
@@ -153,10 +156,7 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                                         recommendedServiceSource.interviewTypeName ??
                                         recommendedServiceSource.InterviewTypeName ??
                                         "",
-                                    price:
-                                        recommendedServiceSource.price ??
-                                        recommendedServiceSource.Price ??
-                                        null,
+                                    price: recommendedServiceSource.price ?? recommendedServiceSource.Price ?? null,
                                     duration_minutes:
                                         recommendedServiceSource.duration_minutes ??
                                         recommendedServiceSource.durationMinutes ??
@@ -549,8 +549,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                 const fallbackSkillId = phaseDetailsById[phaseId]?.nodes?.[0]?.skill_id ?? null;
                 const requestedSkillId = nextSelection.skill_id ?? prevSelection.skill_id;
 
-                const skillBelongsToPhase =
-                    requestedSkillId && nodeDetailsById[requestedSkillId]?.phase_id === phaseId;
+                const skillBelongsToPhase = requestedSkillId && nodeDetailsById[requestedSkillId]?.phase_id === phaseId;
                 const skillId = skillBelongsToPhase ? requestedSkillId : fallbackSkillId;
 
                 return {
@@ -644,73 +643,29 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
 
                     <HeroStat icon={UserRound} label="TARGET ROLE" value={roadmapMetadata.target_role || "N/A"} />
                     <HeroStat icon={Target} label="TARGET LEVEL" value={roadmapMetadata.target_level || "N/A"} />
-                    <HeroStat
-                        icon={Layers3}
-                        label="PHASES"
-                        value={`${roadmapMetadata.total_phases ?? 0} phases`}
-                    />
+                    <HeroStat icon={Layers3} label="PHASES" value={`${roadmapMetadata.total_phases ?? 0} phases`} />
 
-                    <Box sx={{ flex: 1 }} />
-
-                    <Stack spacing={0.5} alignItems={{ xs: "flex-start", md: "flex-end" }} direction={{ xs: "column", sm: "row" }}>
-                        {readOnly ? (
-                            <Chip
-                                size="small"
-                                label="Read-only view"
-                                sx={{
-                                    bgcolor: "rgba(255,255,255,0.14)",
-                                    color: "inherit",
-                                    border: "1px solid rgba(255,255,255,0.3)",
-                                    fontWeight: 700,
-                                }}
-                            />
-                        ) : (
+                    {readOnly && (
                         <>
-                        <SecondaryButton
-                            size="small"
-                            onClick={handleRegenerate}
-                            // disabled={isLoadingRoadmap || regenerateBlocked}
-                            disabled={isLoadingRoadmap}
-                            title={regenerateTitle}
-                            aria-label={
-                                regenerateBlocked
-                                    ? `Regenerate unavailable, next available in ${formatRemaining(cooldownRemainingMs)}`
-                                    : "Regenerate roadmap from scratch"
-                            }
-                            startIcon={
-                                <RefreshCw
-                                    size={14}
-                                    style={{ animation: isLoadingRoadmap ? "spin 1s linear infinite" : "none" }}
-                                />
-                            }
-                            sx={{
-                                bgcolor: "rgba(255,255,255,0.14)",
-                                color: "primary.contrastText",
-                                borderColor: "rgba(255,255,255,0.3)",
-                                "&:hover": {
-                                    bgcolor: "rgba(255,255,255,0.22)",
-                                    borderColor: "rgba(255,255,255,0.5)",
-                                },
-                                "&.Mui-disabled": {
-                                    bgcolor: "rgba(255,255,255,0.08)",
-                                    color: "rgba(255,255,255,0.6)",
-                                    borderColor: "rgba(255,255,255,0.15)",
-                                },
-                            }}
-                        >
-                            {isLoadingRoadmap ? "Regenerating…" : "Regenerate"}
-                        </SecondaryButton>
-                        {regenerateBlocked && !isLoadingRoadmap ? (
-                            <Typography
-                                variant="caption"
-                                sx={{ opacity: 0.85, fontSize: "0.7rem", letterSpacing: "0.02em" }}
+                            <Box sx={{ flex: 1 }} />
+                            <Stack
+                                spacing={0.5}
+                                alignItems={{ xs: "flex-start", md: "flex-end" }}
+                                direction={{ xs: "column", sm: "row" }}
                             >
-                                Next available in {formatRemaining(cooldownRemainingMs)}
-                            </Typography>
-                        ) : null}
+                                <Chip
+                                    size="small"
+                                    label="Read-only view"
+                                    sx={{
+                                        bgcolor: "rgba(255,255,255,0.14)",
+                                        color: "inherit",
+                                        border: "1px solid rgba(255,255,255,0.3)",
+                                        fontWeight: 700,
+                                    }}
+                                />
+                            </Stack>
                         </>
-                        )}
-                    </Stack>
+                    )}
                 </Stack>
             </Box>
 
@@ -820,12 +775,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                     </Box>
                 </Stack>
             ) : error && !resolvedRoadmap ? (
-                <Stack
-                    alignItems="center"
-                    justifyContent="center"
-                    spacing={2}
-                    sx={{ flex: 1, p: { xs: 3, md: 5 } }}
-                >
+                <Stack alignItems="center" justifyContent="center" spacing={2} sx={{ flex: 1, p: { xs: 3, md: 5 } }}>
                     <Alert
                         severity="error"
                         onClose={() => setError(null)}
