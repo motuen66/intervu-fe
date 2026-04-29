@@ -1,5 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Grid, Typography, Divider, CircularProgress, Container, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Tooltip } from "@mui/material";
+import {
+    Box,
+    Grid,
+    Typography,
+    Divider,
+    CircularProgress,
+    Container,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Chip,
+    IconButton,
+    Tooltip,
+} from "@mui/material";
 import { Database, Layers, RefreshCw, AlertTriangle, CheckCircle, XCircle, Trash2, Zap } from "lucide-react";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -16,11 +32,29 @@ import DataTable from "../../../../common/components/table/DataTable";
 const StatusBadge = ({ status }) => {
     switch (status) {
         case "Synced":
-            return <Chip icon={<CheckCircle size={14} />} label="Synced" color="success" size="small" sx={{ fontWeight: 600 }} />;
+            return (
+                <Chip
+                    icon={<CheckCircle size={14} />}
+                    label="Synced"
+                    color="success"
+                    size="small"
+                    sx={{ fontWeight: 600 }}
+                />
+            );
         case "Excess":
-            return <Chip icon={<XCircle size={14} />} label="Excess" color="error" size="small" sx={{ fontWeight: 600 }} />;
+            return (
+                <Chip icon={<XCircle size={14} />} label="Excess" color="error" size="small" sx={{ fontWeight: 600 }} />
+            );
         case "Stale":
-            return <Chip icon={<AlertTriangle size={14} />} label="Stale" color="warning" size="small" sx={{ fontWeight: 600 }} />;
+            return (
+                <Chip
+                    icon={<AlertTriangle size={14} />}
+                    label="Stale"
+                    color="warning"
+                    size="small"
+                    sx={{ fontWeight: 600 }}
+                />
+            );
         default:
             return <Chip label={status || "Unknown"} size="small" />;
     }
@@ -74,7 +108,11 @@ export default function AdminPineconeManagementPage() {
     };
 
     const handlePurge = async (namespace) => {
-        if (!window.confirm(`WARNING: Are you sure you want to PURGE all vectors in the "${namespace}" namespace? This action cannot be undone and will break semantic search until a re-sync is performed.`)) {
+        if (
+            !window.confirm(
+                `WARNING: Are you sure you want to PURGE all vectors in the "${namespace}" namespace? This action cannot be undone and will break semantic search until a re-sync is performed.`,
+            )
+        ) {
             return;
         }
 
@@ -170,42 +208,57 @@ export default function AdminPineconeManagementPage() {
                         <DataTable
                             columns={[
                                 {
-                                    field: 'namespace',
-                                    headerName: 'Namespace',
-                                    render: (val) => <Box sx={{ fontWeight: 600, textTransform: 'capitalize' }}>{val}</Box>
-                                },
-                                {
-                                    field: 'sqlCount',
-                                    headerName: 'SQL Count',
-                                    render: (val) => <Box sx={{ fontWeight: 500 }}>{val.toLocaleString()}</Box>
-                                },
-                                {
-                                    field: 'vectorCount',
-                                    headerName: 'Vector Count',
-                                    render: (val) => <Box sx={{ fontWeight: 500, color: 'primary.main' }}>{val.toLocaleString()}</Box>
-                                },
-                                {
-                                    field: 'delta',
-                                    headerName: 'Delta',
+                                    field: "namespace",
+                                    headerName: "Namespace",
                                     render: (val) => (
-                                        <Box sx={{
-                                            fontWeight: 700,
-                                            color: val === 0 ? 'success.main' : val > 0 ? 'error.main' : 'warning.main'
-                                        }}>
+                                        <Box sx={{ fontWeight: 600, textTransform: "capitalize" }}>{val}</Box>
+                                    ),
+                                },
+                                {
+                                    field: "sqlCount",
+                                    headerName: "SQL Count",
+                                    render: (val) => (
+                                        <Box sx={{ fontWeight: 500 }}>{Number(val ?? 0).toLocaleString()}</Box>
+                                    ),
+                                },
+                                {
+                                    field: "vectorCount",
+                                    headerName: "Vector Count",
+                                    render: (val) => (
+                                        <Box sx={{ fontWeight: 500, color: "primary.main" }}>
+                                            {Number(val ?? 0).toLocaleString()}
+                                        </Box>
+                                    ),
+                                },
+                                {
+                                    field: "delta",
+                                    headerName: "Delta",
+                                    render: (val) => (
+                                        <Box
+                                            sx={{
+                                                fontWeight: 700,
+                                                color:
+                                                    val === 0
+                                                        ? "success.main"
+                                                        : val > 0
+                                                          ? "error.main"
+                                                          : "warning.main",
+                                            }}
+                                        >
                                             {val > 0 ? `+${val}` : val}
                                         </Box>
-                                    )
+                                    ),
                                 },
                                 {
-                                    field: 'status',
-                                    headerName: 'Status',
-                                    render: (val) => <StatusBadge status={val} />
+                                    field: "status",
+                                    headerName: "Status",
+                                    render: (val) => <StatusBadge status={val} />,
                                 },
                                 {
-                                    field: 'actions',
-                                    headerName: 'Actions',
+                                    field: "actions",
+                                    headerName: "Actions",
                                     render: (_, row) => (
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Box sx={{ display: "flex", gap: 1 }}>
                                             <Tooltip title="Trigger Full Re-sync">
                                                 <IconButton
                                                     color="primary"
@@ -213,7 +266,11 @@ export default function AdminPineconeManagementPage() {
                                                     onClick={() => handleSync(row.namespace)}
                                                     disabled={syncingNs[row.namespace] || purgingNs[row.namespace]}
                                                 >
-                                                    {syncingNs[row.namespace] ? <CircularProgress size={16} /> : <Zap size={18} />}
+                                                    {syncingNs[row.namespace] ? (
+                                                        <CircularProgress size={16} />
+                                                    ) : (
+                                                        <Zap size={18} />
+                                                    )}
                                                 </IconButton>
                                             </Tooltip>
                                             <Tooltip title="Purge Namespace (Delete All)">
@@ -223,12 +280,16 @@ export default function AdminPineconeManagementPage() {
                                                     onClick={() => handlePurge(row.namespace)}
                                                     disabled={syncingNs[row.namespace] || purgingNs[row.namespace]}
                                                 >
-                                                    {purgingNs[row.namespace] ? <CircularProgress size={16} /> : <Trash2 size={18} />}
+                                                    {purgingNs[row.namespace] ? (
+                                                        <CircularProgress size={16} />
+                                                    ) : (
+                                                        <Trash2 size={18} />
+                                                    )}
                                                 </IconButton>
                                             </Tooltip>
                                         </Box>
-                                    )
-                                }
+                                    ),
+                                },
                             ]}
                             data={namespaceRows.map(([ns, data]) => ({
                                 id: ns,
@@ -249,7 +310,7 @@ export default function AdminPineconeManagementPage() {
                     </Box>
                 )}
                 {stats?.fetchedAt && (
-                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider' }}>
+                    <Box sx={{ p: 2, bgcolor: "action.hover", borderTop: 1, borderColor: "divider" }}>
                         <Typography variant="caption" color="text.secondary">
                             Last fetched: {new Date(stats.fetchedAt).toLocaleString()}
                         </Typography>

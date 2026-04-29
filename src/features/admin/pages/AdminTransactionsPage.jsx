@@ -624,8 +624,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                     <AreaChart data={analytics.monthlyTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="valueGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor={isOutflowContext ? theme.palette.error.main : theme.palette.primary.main} stopOpacity={0.2} />
-                                                <stop offset="95%" stopColor={isOutflowContext ? theme.palette.error.main : theme.palette.primary.main} stopOpacity={0} />
+                                                <stop offset="5%" stopColor={isOutflowContext ? theme.palette.error.main : theme.palette.secondary.main} stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor={isOutflowContext ? theme.palette.error.main : theme.palette.secondary.main} stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
@@ -633,7 +633,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                             dataKey="label"
                                             axisLine={false}
                                             tickLine={false}
-                                            tick={{ fill: theme.palette.text.secondary, fontSize: 11 }}
+                                            tick={{ fill: theme.palette.text.primary, fontSize: 11 }}
                                             minTickGap={20}
                                         />
                                         <YAxis
@@ -649,12 +649,13 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                                 borderRadius: 10,
                                                 boxShadow: theme.shadows[4],
                                             }}
+                                            itemStyle={{ color: theme.palette.primary.main }}
                                         />
                                         <Area
                                             type="monotone"
                                             dataKey="value"
                                             name={isOutflowContext ? 'Money Out' : 'Money In'}
-                                            stroke={isOutflowContext ? theme.palette.error.main : theme.palette.primary.main}
+                                            stroke={isOutflowContext ? theme.palette.error.main : theme.palette.secondary.main}
                                             strokeWidth={2.5}
                                             fillOpacity={1}
                                             fill="url(#valueGradient)"

@@ -2,17 +2,7 @@ import React from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Skeleton from "@mui/material/Skeleton";
-import {
-    AreaChart,
-    Area,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import SectionHeading from "../../../../common/components/SectionHeading";
 import { useTheme } from "@mui/material/styles";
@@ -45,25 +35,35 @@ export default function GrowthCharts({ data, loading }) {
                             <AreaChart data={data?.revenue || []}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.15}/>
-                                        <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0}/>
+                                        <stop offset="5%" stopColor={theme.palette.secondary.main} stopOpacity={0.15} />
+                                        <stop offset="95%" stopColor={theme.palette.secondary.main} stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
-                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
+                                <XAxis
+                                    dataKey="date"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                />
                                 <Tooltip
                                     contentStyle={{
                                         borderRadius: 8,
                                         border: "none",
                                         boxShadow: theme.shadows[3],
-                                        background: theme.palette.background.paper
+                                        background: theme.palette.background.paper,
                                     }}
+                                    itemStyle={{ color: theme.palette.primary.main }}
                                 />
                                 <Area
                                     type="monotone"
                                     dataKey="amount"
-                                    stroke={theme.palette.primary.main}
+                                    stroke={theme.palette.secondary.main}
                                     strokeWidth={3}
                                     fillOpacity={1}
                                     fill="url(#colorRevenue)"
@@ -83,18 +83,39 @@ export default function GrowthCharts({ data, loading }) {
                         <ResponsiveContainer>
                             <BarChart data={data?.userGrowth || []}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
-                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
+                                <XAxis
+                                    dataKey="date"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                />
                                 <Tooltip
                                     contentStyle={{
                                         borderRadius: 8,
                                         border: "none",
                                         boxShadow: theme.shadows[3],
-                                        background: theme.palette.background.paper
+                                        background: theme.palette.background.paper,
                                     }}
                                 />
-                                <Bar dataKey="candidates" stackId="a" fill={theme.palette.info.main} radius={[0, 0, 0, 0]} barSize={32} />
-                                <Bar dataKey="coaches" stackId="a" fill={theme.palette.success.main} radius={[4, 4, 0, 0]} barSize={32} />
+                                <Bar
+                                    dataKey="candidates"
+                                    stackId="a"
+                                    fill={theme.palette.info.main}
+                                    radius={[0, 0, 0, 0]}
+                                    barSize={32}
+                                />
+                                <Bar
+                                    dataKey="coaches"
+                                    stackId="a"
+                                    fill={theme.palette.success.main}
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={32}
+                                />
                             </BarChart>
                         </ResponsiveContainer>
                     </Box>
