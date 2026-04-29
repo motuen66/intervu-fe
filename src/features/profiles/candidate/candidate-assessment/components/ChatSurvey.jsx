@@ -431,6 +431,7 @@ const ChatSurvey = () => {
     const mountedRef = useRef(true);
     const sequenceRef = useRef(0);
     const generateTimerRef = useRef(null);
+    const inputRef = useRef(null);
 
     const [stage, setStage] = useState("setup");
     const [setupSubStep, setSetupSubStep] = useState(1);
@@ -492,6 +493,12 @@ const ChatSurvey = () => {
     useEffect(() => {
         setChatDraft(answerMap[currentQuestion?.id] || "");
     }, [currentQuestion, answerMap]);
+
+    useEffect(() => {
+        if (!isBotResponding && !isSubmitting) {
+            inputRef.current?.focus();
+        }
+    }, [isBotResponding, isSubmitting, currentQuestion]);
 
     useEffect(() => {
         if (!assessmentUserId) {
@@ -613,23 +620,23 @@ const ChatSurvey = () => {
         }
 
         const words = text.split(/\s+/).filter(Boolean);
-        const animatedWordCount = Math.min(words.length, 8);
-        const animatedText = words.slice(0, animatedWordCount).join(" ");
+        const animatedWordCount = Math.min(words.length, 10);
+        const animatedWords = words.slice(0, animatedWordCount);
         const remainingText = words.slice(animatedWordCount).join(" ");
         let visibleText = "";
         setMessages((prev) =>
             prev.map((message) => (message.id === messageId ? { ...message, status: "typing", text: "" } : message)),
         );
 
-        for (const character of animatedText) {
-            visibleText += character;
+        for (const word of animatedWords) {
+            visibleText = visibleText ? `${visibleText} ${word}` : word;
             setMessages((prev) =>
                 prev.map((message) =>
                     message.id === messageId ? { ...message, status: "typing", text: visibleText } : message,
                 ),
             );
 
-            const pause = /[.!?]/.test(character) ? 140 : /[,;:]/.test(character) ? 90 : 28;
+            const pause = /[.!?]$/.test(word) ? 180 : /[,;:]$/.test(word) ? 120 : 60;
             await sleep(pause);
             if (!mountedRef.current || token !== sequenceRef.current) {
                 return false;
@@ -637,7 +644,7 @@ const ChatSurvey = () => {
         }
 
         if (remainingText) {
-            visibleText = `${animatedText} ${remainingText}`.trim();
+            visibleText = `${visibleText} ${remainingText}`.trim();
             setMessages((prev) =>
                 prev.map((message) =>
                     message.id === messageId ? { ...message, status: "typing", text: visibleText } : message,
@@ -1002,6 +1009,10 @@ const ChatSurvey = () => {
         }
 
         await submitSurvey(nextAnswerMap, chatQuestions);
+
+        setTimeout(() => {
+            inputRef.current?.focus();
+        }, 0);
     };
 
     const handleBackToSetup = () => {
@@ -1139,7 +1150,9 @@ const ChatSurvey = () => {
         const selectedValues = selectedDomainValues;
 
         return (
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 1.2 }}>
+            <Box
+                sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 1.2 }}
+            >
                 {field.options.map((option) => {
                     const isActive = selectedValues.some((item) => item.toLowerCase() === option.toLowerCase());
                     const IconComponent = domainIconMap[option] || AddCircleOutlineRoundedIcon;
@@ -1247,7 +1260,9 @@ const ChatSurvey = () => {
                                         you.
                                     </Box>
                                 </Typography>
-                                <Typography sx={{ maxWidth: "100%", color: "text.secondary", fontSize: 14, lineHeight: 1.75 }}>
+                                <Typography
+                                    sx={{ maxWidth: "100%", color: "text.secondary", fontSize: 14, lineHeight: 1.75 }}
+                                >
                                     Give the AI the role, level, stack, and context you care about most. You can click
                                     quick options, type your own answers, or mix both.
                                 </Typography>
@@ -1428,7 +1443,9 @@ const ChatSurvey = () => {
                                                 <TextField
                                                     fullWidth
                                                     value={setupForm.techstack}
-                                                    onChange={(event) => handleSetupChange("techstack", event.target.value)}
+                                                    onChange={(event) =>
+                                                        handleSetupChange("techstack", event.target.value)
+                                                    }
                                                     error={Boolean(setupErrors.techstack)}
                                                     helperText={setupErrors.techstack || null}
                                                     placeholder={techstackField.placeholder}
@@ -1468,7 +1485,9 @@ const ChatSurvey = () => {
                                                 <TextField
                                                     fullWidth
                                                     value={setupForm.domain}
-                                                    onChange={(event) => handleSetupChange("domain", event.target.value)}
+                                                    onChange={(event) =>
+                                                        handleSetupChange("domain", event.target.value)
+                                                    }
                                                     error={Boolean(setupErrors.domain)}
                                                     helperText={setupErrors.domain || null}
                                                     placeholder={domainField.placeholder}
@@ -1493,7 +1512,9 @@ const ChatSurvey = () => {
                                                     multiline
                                                     minRows={6}
                                                     value={setupForm.freeText}
-                                                    onChange={(event) => handleSetupChange("freeText", event.target.value)}
+                                                    onChange={(event) =>
+                                                        handleSetupChange("freeText", event.target.value)
+                                                    }
                                                     error={Boolean(setupErrors.freeText)}
                                                     helperText={setupErrors.freeText || null}
                                                     placeholder={freeTextField.placeholder}
@@ -1529,7 +1550,12 @@ const ChatSurvey = () => {
                                 justifyContent="space-between"
                                 alignItems={{ xs: "stretch", sm: "center" }}
                                 spacing={1.5}
-                                sx={{ pt: 2.4, mt: 2.4, borderTop: "1px solid", borderColor: alpha(theme.palette.primary.main, 0.06) }}
+                                sx={{
+                                    pt: 2.4,
+                                    mt: 2.4,
+                                    borderTop: "1px solid",
+                                    borderColor: alpha(theme.palette.primary.main, 0.06),
+                                }}
                             >
                                 {setupSubStep === 1 ? (
                                     <Button
@@ -1597,7 +1623,10 @@ const ChatSurvey = () => {
                                     >
                                         <Stack direction="row" spacing={1.1} alignItems="center">
                                             {isGenerating ? (
-                                                <CircularProgress size={18} sx={{ color: theme.palette.primary.main }} />
+                                                <CircularProgress
+                                                    size={18}
+                                                    sx={{ color: theme.palette.primary.main }}
+                                                />
                                             ) : (
                                                 <AutoAwesomeRoundedIcon fontSize="small" />
                                             )}
@@ -1844,12 +1873,17 @@ const ChatSurvey = () => {
                             >
                                 <Stack direction="row" spacing={1.25} alignItems="flex-end">
                                     <TextField
+                                        autoFocus
+                                        inputRef={inputRef}
                                         fullWidth
-                                        multiline={currentQuestion?.type !== "single"}
-                                        minRows={currentQuestion?.type !== "single" ? 3 : 1}
-                                        maxRows={currentQuestion?.type !== "single" ? 7 : 1}
+                                        multiline={true}
+                                        minRows={1}
+                                        maxRows={8}
                                         value={chatDraft}
                                         onChange={(event) => setChatDraft(event.target.value)}
+                                        onKeyDown={(e) => {
+                                            e.key === "Enter" && !e.shiftKey && handleSend();
+                                        }}
                                         placeholder={
                                             currentQuestion?.type === "single"
                                                 ? "Select a suggested answer or type your own"
@@ -1870,7 +1904,10 @@ const ChatSurvey = () => {
                                         endIcon={!isSubmitting ? <SendRoundedIcon /> : null}
                                     >
                                         {isSubmitting ? (
-                                            <CircularProgress size={18} sx={{ color: theme.palette.primary.contrastText }} />
+                                            <CircularProgress
+                                                size={18}
+                                                sx={{ color: theme.palette.secondary.main }}
+                                            />
                                         ) : isFinalQuestion ? (
                                             "Finish"
                                         ) : (
@@ -2033,7 +2070,6 @@ const ChatSurvey = () => {
                                         {isSkipping ? "Saving..." : "Skip"}
                                     </Button>
                                 </Stack>
-
                             </Stack>
                         </Paper>
                     </Stack>
@@ -2045,4 +2081,3 @@ const ChatSurvey = () => {
 };
 
 export default ChatSurvey;
-
