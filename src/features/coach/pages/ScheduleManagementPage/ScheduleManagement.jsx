@@ -34,6 +34,11 @@ const getRollingSevenDayRange = () => {
     const start = getTodayStart();
     return { start, end: addDays(start, 7) };
 };
+const getMonthFromThreeDaysAgoRange = () => {
+    const start = addDays(getTodayStart(), -3);
+    const end = addDays(start, 26);
+    return { start, end };
+};
 
 /** Snap minutes to nearest 30-min boundary */
 const snapTo30 = (minutes) => Math.round(minutes / BLOCK_MINUTES) * BLOCK_MINUTES;
@@ -235,7 +240,7 @@ const ScheduleManagement = () => {
     const handleDateSelect = (selectInfo) => {
         const start = selectInfo.start;
         const end = selectInfo.end;
-        const isAllDaySelection = selectInfo.allDay || selectInfo.view.type === "dayGridMonth";
+        const isAllDaySelection = selectInfo.allDay || selectInfo.view.type === "customMonth";
 
         if (start < new Date()) {
             toast.error("Cannot create availability in the past");
@@ -270,7 +275,7 @@ const ScheduleManagement = () => {
     };
 
     const handleDateClick = (clickInfo) => {
-        if (clickInfo.view.type !== "dayGridMonth") return;
+        if (clickInfo.view.type !== "customMonth") return;
 
         const clickedDate = startOfDay(clickInfo.date);
         if (clickedDate < todayStart) {
@@ -473,7 +478,10 @@ const ScheduleManagement = () => {
                         }),
                     );
                     if (!addAvailability.fulfilled.match(duplicateResult)) {
-                        const errMsg = resolveErrorMessage(duplicateResult.payload, `Failed to create slot for ${allDates[i]}`);
+                        const errMsg = resolveErrorMessage(
+                            duplicateResult.payload,
+                            `Failed to create slot for ${allDates[i]}`,
+                        );
                         showError(errMsg);
                         return;
                     }
@@ -580,7 +588,9 @@ const ScheduleManagement = () => {
                         refetchMonth();
                     } else {
                         showError(
-                            resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability",
+                            resultAction.payload?.message ||
+                                resultAction.error?.message ||
+                                "Failed to delete availability",
                         );
                     }
                 } else {
@@ -589,7 +599,9 @@ const ScheduleManagement = () => {
                         refetchMonth();
                     } else {
                         showError(
-                            resultAction.payload?.message || resultAction.error?.message || "Failed to delete availability",
+                            resultAction.payload?.message ||
+                                resultAction.error?.message ||
+                                "Failed to delete availability",
                         );
                     }
                 }
@@ -616,128 +628,143 @@ const ScheduleManagement = () => {
             />
 
             {/* Main Content */}
-                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
-                        {/* Calendar Section */}
-                        <BaseCard
-                            variant="outlined"
-                            sx={{ borderColor: "divider", borderRadius: "12px", overflow: "hidden" }}
-                        >
-                            <Box sx={{ p: 3, position: "relative" }}>
-                                {loading && (
-                                    <Box
-                                        sx={{
-                                            position: "absolute",
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center",
-                                            bgcolor: "rgba(255,255,255,0.4)",
-                                            zIndex: 2,
-                                            borderRadius: "12px",
-                                        }}
-                                    >
-                                        <CircularProgress />
-                                    </Box>
-                                )}
-                                <FullCalendar
-                                    ref={calendarRef}
-                                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                    initialDate={getTodayStart()}
-                                    initialView="dayGridMonth"
-                                    views={{
-                                        rollingSevenDay: {
-                                            type: "timeGrid",
-                                            duration: { days: 7 },
-                                            dateAlignment: "day",
-                                            buttonText: "7 Days",
-                                            visibleRange: getRollingSevenDayRange,
-                                        },
-                                    }}
-                                    headerToolbar={{
-                                        left: "today",
-                                        center: "title",
-                                        right: "dayGridMonth,rollingSevenDay,timeGridDay",
-                                    }}
-                                    buttonText={{ today: "Today", month: "Month", day: "Day" }}
-                                    events={calendarEvents}
-                                    eventClick={(info) => {
-                                        if (info.event.extendedProps.isPast) {
-                                            toast.error("Cannot edit past availability slots");
-                                            return;
-                                        }
-
-                                        const eventKey =
-                                            info.event.extendedProps.availabilityEventId || String(info.event.id);
-                                        const avail = availabilities.find((a) => buildCalendarEventId(a) === eventKey);
-                                        if (avail) {
-                                            handleEditClick(avail);
-                                        }
-                                    }}
-                                    selectable={true}
-                                    selectMirror={true}
-                                    select={handleDateSelect}
-                                    dateClick={handleDateClick}
-                                    selectAllow={(selectInfo) => {
-                                        if (selectInfo.view.type !== "dayGridMonth") return true;
-                                        return startOfDay(selectInfo.start) >= todayStart;
-                                    }}
-                                    editable={true}
-                                    eventDrop={handleEventChange}
-                                    eventResize={handleEventChange}
-                                    eventResizableFromStart={true}
-                                    eventDurationEditable={true}
-                                    now={new Date()}
-                                    nowIndicator={true}
-                                    snapDuration="00:30:00"
-                                    slotDuration="00:30:00"
-                                    selectOverlap={false}
-                                    eventOverlap={false}
-                                    eventAllow={(dropInfo, draggedEvent) => {
-                                        if (draggedEvent.extendedProps.isPast) return false;
-                                        if (draggedEvent.extendedProps.isUnavailable) return false;
-                                        return true;
-                                    }}
-                                    datesSet={(info) => {
-                                        setCurrentDate(info.view.currentStart);
-                                        if (info.view.type === "timeGridDay") {
-                                            setSelectedDate(info.view.currentStart);
-                                        }
-                                    }}
-                                    dayCellClassNames={(arg) => {
-                                        if (arg.view.type !== "dayGridMonth") return [];
-
-                                        const classes = [];
-                                        if (startOfDay(arg.date) < todayStart) {
-                                            classes.push("fc-day-past-disabled");
-                                        }
-                                        if (arg.isToday) {
-                                            classes.push("fc-day-today-highlight");
-                                        }
-                                        return classes;
-                                    }}
-                                    height="auto"
-                                    timeZone="local"
-                                    slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-                                    eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-                                />
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
+                {/* Calendar Section */}
+                <BaseCard variant="outlined" sx={{ borderColor: "divider", borderRadius: "12px", overflow: "hidden" }}>
+                    <Box sx={{ p: 3, position: "relative" }}>
+                        {loading && (
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    bgcolor: "rgba(255,255,255,0.4)",
+                                    zIndex: 2,
+                                    borderRadius: "12px",
+                                }}
+                            >
+                                <CircularProgress />
                             </Box>
-                        </BaseCard>
+                        )}
+                        <FullCalendar
+                            ref={calendarRef}
+                            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                            initialDate={getTodayStart()}
+                            initialView="customMonth"
+                            views={{
+                                customMonth: {
+                                    type: "dayGrid",
+                                    duration: { weeks: 4 },
+                                    dateAlignment: "day",
+                                    visibleRange: getMonthFromThreeDaysAgoRange,
+                                    buttonText: "Month",
+                                    fixedWeekCount: false,
+                                },
+                                rollingSevenDay: {
+                                    type: "timeGrid",
+                                    duration: { days: 7 },
+                                    dateAlignment: "day",
+                                    buttonText: "7 Days",
+                                    visibleRange: getRollingSevenDayRange,
+                                },
+                            }}
+                            headerToolbar={{
+                                left: "today",
+                                center: "title",
+                                right: "customMonth,rollingSevenDay,timeGridDay",
+                            }}
+                            buttonText={{ today: "Today", month: "Month", day: "Day" }}
+                            events={calendarEvents}
+                            eventClick={(info) => {
+                                if (info.event.extendedProps.isPast) {
+                                    toast.error("Cannot edit past availability slots");
+                                    return;
+                                }
 
-                        {/* Right Panel */}
-                        <Stack spacing={3}>
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <MiniCalendar
-                                    availabilities={availabilities}
-                                    onDateClick={handleMiniCalendarDateClick}
-                                    currentDate={currentDate}
-                                    selectedDate={selectedDate}
-                                />
-                            </div>
+                                const eventKey = info.event.extendedProps.availabilityEventId || String(info.event.id);
+                                const avail = availabilities.find((a) => buildCalendarEventId(a) === eventKey);
+                                if (avail) {
+                                    handleEditClick(avail);
+                                }
+                            }}
+                            selectable={true}
+                            selectMirror={true}
+                            select={handleDateSelect}
+                            dateClick={handleDateClick}
+                            selectAllow={(selectInfo) => {
+                                if (selectInfo.view.type !== "customMonth") return true;
+                                return startOfDay(selectInfo.start) >= todayStart;
+                            }}
+                            editable={true}
+                            eventDrop={handleEventChange}
+                            eventResize={handleEventChange}
+                            eventResizableFromStart={true}
+                            eventDurationEditable={true}
+                            now={new Date()}
+                            nowIndicator={true}
+                            snapDuration="00:30:00"
+                            slotDuration="00:30:00"
+                            selectOverlap={false}
+                            eventOverlap={false}
+                            eventAllow={(dropInfo, draggedEvent) => {
+                                if (draggedEvent.extendedProps.isPast) return false;
+                                if (draggedEvent.extendedProps.isUnavailable) return false;
+                                return true;
+                            }}
+                            datesSet={(info) => {
+                                setCurrentDate(info.view.currentStart);
+                                if (info.view.type === "timeGridDay") {
+                                    setSelectedDate(info.view.currentStart);
+                                }
+                            }}
+                            dayCellClassNames={(arg) => {
+                                if (arg.view.type !== "customMonth") return [];
 
-                            {/* <BaseCard
+                                const classes = [];
+                                if (startOfDay(arg.date) < todayStart) {
+                                    classes.push("fc-day-past-disabled");
+                                }
+                                if (arg.isToday) {
+                                    classes.push("fc-day-today-highlight");
+                                }
+                                return classes;
+                            }}
+                            height={800}
+                            timeZone="local"
+                            slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+                            eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+                            dayCellContent={(arg) => {
+                                const date = arg.date;
+                                const day = String(date.getDate()).padStart(2, "0");
+                                const month = String(date.getMonth() + 1).padStart(2, "0");
+                                return `${day}/${month}`;
+                            }}
+                            dayMaxEvents="auto"
+                            moreLinkContent={(args) => {
+                                return `+${args.num}`;
+                            }}
+                            // moreLinkClick=""
+                        />
+                    </Box>
+                </BaseCard>
+
+                {/* Right Panel */}
+                <Stack spacing={3}>
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <MiniCalendar
+                            availabilities={availabilities}
+                            onDateClick={handleMiniCalendarDateClick}
+                            currentDate={currentDate}
+                            selectedDate={selectedDate}
+                        />
+                    </div>
+
+                    {/* <BaseCard
                                 sx={{ background: "white", boxShadow: 1, border: "1px solid", borderColor: "grey.200" }}
                             >
                                 <CardContent sx={{ p: 2.5 }}>
@@ -753,50 +780,50 @@ const ScheduleManagement = () => {
                                 </CardContent>
                             </BaseCard> */}
 
-                            <UpcomingSessionBlog
-                                availabilities={availabilities}
-                                loading={loading}
-                                parseLocalDate={parseLocalDate}
-                                parseLocalTime={parseLocalTime}
-                            />
-                        </Stack>
-                    </Box>
+                    <UpcomingSessionBlog
+                        availabilities={availabilities}
+                        loading={loading}
+                        parseLocalDate={parseLocalDate}
+                        parseLocalTime={parseLocalTime}
+                    />
+                </Stack>
+            </Box>
 
             {/* Modal Add/Edit */}
-                {openModal &&
-                    (editingId ? (
-                        <UpdateAvailableSlotDialog
-                            open={openModal}
-                            onClose={() => {
-                                setOpenModal(false);
-                                setEditingId(null);
-                                setOriginalRange(null);
-                            }}
-                            formData={formData}
-                            setFormData={setFormData}
-                            handleSubmit={handleSubmit}
-                            handleDelete={handleDeleteFromDialog}
-                            loading={loading}
-                            minDate={minDateStr}
-                            maxDate={maxDateStr}
-                            existingBlocks={availabilities}
-                        />
-                    ) : (
-                        <CreateAvailableSlotDialog
-                            open={openModal}
-                            onClose={() => {
-                                setOpenModal(false);
-                                setEditingId(null);
-                                setOriginalRange(null);
-                            }}
-                            formData={formData}
-                            setFormData={setFormData}
-                            handleSubmit={handleSubmit}
-                            loading={loading}
-                            minDate={minDateStr}
-                            maxDate={maxDateStr}
-                        />
-                    ))}
+            {openModal &&
+                (editingId ? (
+                    <UpdateAvailableSlotDialog
+                        open={openModal}
+                        onClose={() => {
+                            setOpenModal(false);
+                            setEditingId(null);
+                            setOriginalRange(null);
+                        }}
+                        formData={formData}
+                        setFormData={setFormData}
+                        handleSubmit={handleSubmit}
+                        handleDelete={handleDeleteFromDialog}
+                        loading={loading}
+                        minDate={minDateStr}
+                        maxDate={maxDateStr}
+                        existingBlocks={availabilities}
+                    />
+                ) : (
+                    <CreateAvailableSlotDialog
+                        open={openModal}
+                        onClose={() => {
+                            setOpenModal(false);
+                            setEditingId(null);
+                            setOriginalRange(null);
+                        }}
+                        formData={formData}
+                        setFormData={setFormData}
+                        handleSubmit={handleSubmit}
+                        loading={loading}
+                        minDate={minDateStr}
+                        maxDate={maxDateStr}
+                    />
+                ))}
 
             {/* Confirm Delete */}
             <ConfirmModal
@@ -857,7 +884,8 @@ const ScheduleManagement = () => {
                                     Time
                                 </Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                    {parseLocalTime(bookedDetailData.startTime)} - {parseLocalTime(bookedDetailData.endTime)}
+                                    {parseLocalTime(bookedDetailData.startTime)} -{" "}
+                                    {parseLocalTime(bookedDetailData.endTime)}
                                 </Typography>
 
                                 <Typography variant="caption" sx={{ color: "text.secondary" }}>

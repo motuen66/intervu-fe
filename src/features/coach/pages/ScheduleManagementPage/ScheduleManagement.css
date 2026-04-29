@@ -97,6 +97,21 @@
 
 /* CALENDAR UI */
 
+.fc .fc-daygrid-day-frame {
+    min-height: 150px !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.fc .fc-daygrid-day-events {
+    flex-grow: 1 !important;
+    min-height: 0 !important;
+}
+
+.fc .fc-daygrid-row {
+    min-height: 150px !important;
+}
+
 .fc .fc-col-header-cell {
     background-color: #f9fafb;
     border-color: #e5e7eb;
@@ -111,6 +126,7 @@
 }
 
 .fc .fc-daygrid-day:hover {
+    cursor: pointer;
     background-color: #f9fafb;
 }
 
@@ -135,14 +151,12 @@
 }
 
 .fc .fc-daygrid-day.fc-day-today-highlight .fc-daygrid-day-number {
-    color: #ffffff;
-    background-color: var(--mui-palette-primary-main);
-    border-radius: 999px;
-    width: 1.75rem;
-    height: 1.75rem;
+    color: var(--mui-palette-text-primary);
+    background-color: var(--mui-palette-secondary-main);
+    border-radius: 99px;
     text-align: center;
     margin: 0.25rem;
-    font-weight: 700;
+    padding-inline: 5px;
 }
 
 .fc .fc-daygrid-day-number {
@@ -219,7 +233,7 @@
 
 /* Booked Events */
 .fc .fc-timegrid-event.booked-event {
-    background-color: #57595B !important;
+    background-color: #57595b !important;
     border: 1px solid #4a4c4d !important;
     border-left: 4px solid #0f172a !important;
     border-radius: 8px !important;
@@ -227,7 +241,7 @@
 }
 
 .fc .fc-timegrid-event.booked-event .fc-event-bg {
-    background-color: #57595B !important;
+    background-color: #57595b !important;
     border: 0 !important;
 }
 
