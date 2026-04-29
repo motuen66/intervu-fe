@@ -3,12 +3,15 @@ import Typography from "@mui/material/Typography";
 import { useTheme, alpha } from "@mui/material/styles";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, Equalizer } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
+import TextButton from "../../../../common/components/buttons/TextButton";
 import SectionHeading from "../../../../common/components/SectionHeading";
 import { DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function EarningsChart({ data, growthPercent }) {
     const theme = useTheme();
+    const navigate = useNavigate();
     const successColor = theme.palette.success.main;
 
     return (
@@ -19,21 +22,26 @@ export default function EarningsChart({ data, growthPercent }) {
                     size="sm"
                     icon={<Equalizer sx={{ color: "success.main", fontSize: 20 }} />}
                     action={
-                        growthPercent !== undefined && growthPercent !== 0 ? (
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 0.5,
-                                    color: "success.main",
-                                }}
-                            >
-                                <TrendingUp sx={{ fontSize: 16 }} />
-                                <Typography variant="body2" fontWeight={600} color="success.main">
-                                    +{growthPercent}% from last week
-                                </Typography>
-                            </Box>
-                        ) : null
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            {growthPercent !== undefined && growthPercent !== 0 && (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.5,
+                                        color: "success.main",
+                                    }}
+                                >
+                                    <TrendingUp sx={{ fontSize: 16 }} />
+                                    <Typography variant="body2" fontWeight={600} color="success.main">
+                                        +{growthPercent}% from last week
+                                    </Typography>
+                                </Box>
+                            )}
+                            <TextButton size="sm" onClick={() => navigate("/wallet")}>
+                                Manage
+                            </TextButton>
+                        </Box>
                     }
                     disableGutters
                 />

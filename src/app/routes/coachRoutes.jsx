@@ -24,5 +24,5 @@ export const interviewerRoutes = [
     { path: "/candidate/:slugProfileUrl", element: renderLazy(CandidateProfilePage) },
     { path: "/schedule", element: renderLazy(ScheduleManagement) },
     { path: "/my-services", element: renderLazy(CoachInterviewServicePage) },
-    { path: "/dashboard/wallet", element: renderLazy(CoachWalletPage) },
+    { path: "/wallet", element: renderLazy(CoachWalletPage) },
 ];
