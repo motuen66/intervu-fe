@@ -121,7 +121,7 @@ function CodeEditorPanel({
                     minHeight: 40,
                 }}
             >
-                {user?.role === ROLES.CANDIDATE ? (
+                {user?.role === ROLES.CANDIDATE && !readOnly ? (
                     <FormSelect
                         value={language}
                         onChange={handleLanguageChange}
@@ -139,7 +139,7 @@ function CodeEditorPanel({
                         {language === 'javascript' ? 'JavaScript (Node.js 18)' : language.charAt(0).toUpperCase() + language.slice(1)}
                     </Typography>
                 )}
-                {user?.role === ROLES.CANDIDATE && (
+                {user?.role === ROLES.CANDIDATE && !readOnly && (
                     <PrimaryButton
                         onClick={runCode}
                         startIcon={isRunning ? <CircularProgress size={14} color="inherit" /> : <PlayArrowIcon sx={{ fontSize: 16 }} />}
