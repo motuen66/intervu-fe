@@ -45,8 +45,6 @@ import CoachEvaluationModal from "../InterviewRoomListPage/CoachEvaluationModal"
 
 // Analytics
 import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
-import { useProcessingTray } from "../../../../common/context/ProcessingTrayContext";
-import { QUESTION_STATUS_BUCKETS } from "../../../../common/constants/processingTrayJobs";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -342,7 +340,6 @@ function InterviewRoomPage() {
 
                 remoteSource.connect(remoteGain).connect(dest);
             }
-
         } catch (err) {
             console.error("Audio mixing error:", err);
         }
@@ -350,7 +347,6 @@ function InterviewRoomPage() {
         return () => {
             // preserve lifecycle
         };
-
     }, [user?.role, localStream, remoteStream]);
 
     useEffect(() => {
@@ -429,7 +425,7 @@ function InterviewRoomPage() {
     const problemData =
         user?.role === ROLES.INTERVIEWER
             ? (problemDescription && problemDescription !== "<p><br></p>") ||
-                (problemShortName && problemShortName.trim() !== "")
+              (problemShortName && problemShortName.trim() !== "")
                 ? { description: problemDescription, shortName: problemShortName, testCases }
                 : null
             : receivedProblem;
@@ -611,15 +607,13 @@ function InterviewRoomPage() {
     // Broadcast camera/mic state
     useEffect(() => {
         if (!connectionId || !roomId) return;
-        sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => { });
+        sendSignal("SendCameraState", roomId, isCameraOn).catch?.(() => {});
     }, [isCameraOn, connectionId, roomId, sendSignal]);
 
     useEffect(() => {
         if (!connectionId || !roomId) return;
-        sendSignal("SendMicState", roomId, isMicOn).catch?.(() => { });
+        sendSignal("SendMicState", roomId, isMicOn).catch?.(() => {});
     }, [isMicOn, connectionId, roomId, sendSignal]);
-
-    const { startJob } = useProcessingTray();
 
     // ── Leave room ──────────────────────────────────────────────────────────
 
@@ -662,17 +656,8 @@ function InterviewRoomPage() {
             console.warn("trackLeaveInterviewRoom failed", err);
         }
         setCoachEvaluationState({ open: false, room: null });
-        startJob({
-            kind: "collect-questions",
-            runningTitle: "Analyzing questions…",
-            completeTitle: "Analysis Complete!",
-            completeCtaLabel: "Review Now",
-            statusBuckets: QUESTION_STATUS_BUCKETS,
-            completeNotificationType: "AiAnalysisCompleted",
-            referenceId: roomId,
-            completeCtaAction: () =>
-                navigate(`/interview?roomId=${roomId}&action=review-questions`),
-        });
+        // Tray now auto-starts from the BE AiAnalysisStarted notification when
+        // the room flips to Completed, so no manual startJob here.
         navigate("/interview");
     };
 
@@ -687,7 +672,7 @@ function InterviewRoomPage() {
         return () => {
             try {
                 trackLeaveInterviewRoom(roomId);
-            } catch (err) { }
+            } catch (err) {}
         };
     }, [roomId]);
 
@@ -794,19 +779,19 @@ function InterviewRoomPage() {
     const remoteAvatar = roomInfo
         ? isCandidate
             ? roomInfo.coachAvatar ||
-            roomInfo.coachProfilePicture ||
-            roomInfo.coach?.profilePicture ||
-            roomInfo.coach?.avatarUrl ||
-            roomInfo.coach?.avatar ||
-            roomInfo.interviewer?.profilePicture ||
-            roomInfo.interviewer?.avatar ||
-            roomInfo.interviewer?.avatarUrl ||
-            roomInfo.interviewerAvatar
+              roomInfo.coachProfilePicture ||
+              roomInfo.coach?.profilePicture ||
+              roomInfo.coach?.avatarUrl ||
+              roomInfo.coach?.avatar ||
+              roomInfo.interviewer?.profilePicture ||
+              roomInfo.interviewer?.avatar ||
+              roomInfo.interviewer?.avatarUrl ||
+              roomInfo.interviewerAvatar
             : roomInfo.candidateAvatar ||
-            roomInfo.candidateProfilePicture ||
-            roomInfo.candidate?.profilePicture ||
-            roomInfo.candidate?.avatarUrl ||
-            roomInfo.candidate?.avatar
+              roomInfo.candidateProfilePicture ||
+              roomInfo.candidate?.profilePicture ||
+              roomInfo.candidate?.avatarUrl ||
+              roomInfo.candidate?.avatar
         : null;
 
     // ── Horizontal resize drag ───────────────────────────────────────────────
@@ -1031,7 +1016,7 @@ function InterviewRoomPage() {
                     <Stack direction="row" spacing={2} alignItems="center">
                         <Chip
                             icon={<VisibilityIcon sx={{ fontSize: "1rem !important", color: "white !important" }} />}
-                            label="VIEW ONLY MODE"
+                            label="VIEW ONLY"
                             sx={{
                                 bgcolor: "rgba(255,255,255,0.1)",
                                 color: "white",
@@ -1040,16 +1025,13 @@ function InterviewRoomPage() {
                                 border: "1px solid rgba(255,255,255,0.2)",
                             }}
                         />
-                        <Typography variant="body2" fontWeight={600}>
-                            Reviewing Solution: {roomInfo?.title || "Coding Session"}
-                        </Typography>
                     </Stack>
                     <Box
                         sx={{ cursor: "pointer", opacity: 0.8, "&:hover": { opacity: 1 } }}
                         onClick={() => navigate(-1)}
                     >
                         <Typography variant="caption" fontWeight={700}>
-                            CLOSE REVIEW ✕
+                            ✕
                         </Typography>
                     </Box>
                 </Box>
@@ -1068,25 +1050,27 @@ function InterviewRoomPage() {
                 }}
             >
                 {/* Left: Timer */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccessTimeIcon sx={{ fontSize: 20, color: "#6B7280" }} />
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            fontWeight: 700,
-                            fontSize: "1.1rem",
-                            color:
-                                remainingSeconds <= 300
-                                    ? "error.main"
-                                    : remainingSeconds <= 600
-                                        ? "warning.main"
-                                        : "text.primary",
-                            fontVariantNumeric: "tabular-nums",
-                        }}
-                    >
-                        {displayTime}
-                    </Typography>
-                </Box>
+                {!isViewOnly && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <AccessTimeIcon sx={{ fontSize: 20, color: "#6B7280" }} />
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                fontWeight: 700,
+                                fontSize: "1.1rem",
+                                color:
+                                    remainingSeconds <= 300
+                                        ? "error.main"
+                                        : remainingSeconds <= 600
+                                          ? "warning.main"
+                                          : "text.primary",
+                                fontVariantNumeric: "tabular-nums",
+                            }}
+                        >
+                            {displayTime}
+                        </Typography>
+                    </Box>
+                )}
 
                 {/* Center: spacer */}
                 <Box sx={{ flex: 1 }} />
@@ -1094,23 +1078,25 @@ function InterviewRoomPage() {
                 {/* Right: Panel toggles */}
                 <Box sx={{ display: "flex", gap: 1 }}>
                     <Tooltip title="Report problem" placement="bottom">
-                        <IconButton
-                            onClick={() => setReportModalOpen(true)}
-                            sx={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: "8px",
-                                bgcolor: "#F3F4F6",
-                                color: "#6B7280",
-                                transition: "all 0.2s ease",
-                                "&:hover": {
-                                    bgcolor: "#E5E7EB",
-                                    color: "#EF4444",
-                                },
-                            }}
-                        >
-                            <FlagIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
+                        {!isViewOnly && (
+                            <IconButton
+                                onClick={() => setReportModalOpen(true)}
+                                sx={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: "8px",
+                                    bgcolor: "#F3F4F6",
+                                    color: "#6B7280",
+                                    transition: "all 0.2s ease",
+                                    "&:hover": {
+                                        bgcolor: "#E5E7EB",
+                                        color: "#EF4444",
+                                    },
+                                }}
+                            >
+                                <FlagIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        )}
                     </Tooltip>
                     <HeaderToggle
                         id="header-toggle-editor"
@@ -1546,11 +1532,8 @@ function InterviewRoomPage() {
                         borderLeft: "1px solid #E5E7EB",
                         transform: roadmapOpen ? "translateX(0)" : "translateX(100%)",
                         pointerEvents: roadmapOpen ? "auto" : "none",
-                        boxShadow: roadmapOpen
-                            ? "-8px 0 24px rgba(15, 23, 42, 0.12)"
-                            : "none",
-                        transition:
-                            "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s",
+                        boxShadow: roadmapOpen ? "-8px 0 24px rgba(15, 23, 42, 0.12)" : "none",
+                        transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s",
                     }}
                 >
                     <PreparedQuestionsWorkspace ref={preparedQuestionsRef} roomId={roomId} />
@@ -1754,7 +1737,7 @@ function InterviewRoomPage() {
                                     width: 10,
                                     height: 10,
                                     borderRadius: "50%",
-                                    bgcolor: /*isTranscribing ? */"#A3E635" /*: "#EF4444"*/,
+                                    bgcolor: /*isTranscribing ? */ "#A3E635" /*: "#EF4444"*/,
                                     boxShadow: isTranscribing ? "0 0 12px #A3E635" : "none",
                                     animation: isTranscribing ? "pulse 2s infinite" : "none",
                                 }}

@@ -69,7 +69,8 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                 role: coach.role ?? coach.Role ?? "",
                 rating: coach.rating ?? coach.Rating ?? 0,
                 avatar: coach.avatar ?? coach.Avatar ?? "",
-                profileUrl: coach.profileUrl ?? coach.ProfileUrl ?? coach.slugProfileUrl ?? coach.SlugProfileUrl ?? null,
+                profileUrl:
+                    coach.profileUrl ?? coach.ProfileUrl ?? coach.slugProfileUrl ?? coach.SlugProfileUrl ?? null,
             })),
             mock_history: mockHistorySource.map((mock, mockIndex) => ({
                 mock_id: mock.mock_id ?? mock.mockId ?? mock.MockId ?? `mock_${phaseIndex}_${mockIndex}`,
@@ -85,12 +86,21 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                       const childSkills = node.child_skills ?? node.childSkills ?? node.ChildSkills ?? [];
                       const recommendedCoachSource =
                           node.recommended_coach ?? node.recommendedCoach ?? node.RecommendedCoach ?? null;
-                      const recommendedServiceSource =
-                          node.recommended_service ?? node.recommendedService ?? node.RecommendedService ?? null;
+
+                      const interviewDrillsSource =
+                          node.interview_drills ?? node.interviewDrills ?? node.InterviewDrills ?? [];
 
                       return {
                           skill_id: node.skill_id ?? node.skillId ?? node.SkillId ?? `skill_${phaseIndex}_${nodeIndex}`,
                           skill_name: node.skill_name ?? node.skillName ?? node.SkillName ?? "Skill",
+                          mentor_note: node.mentor_note ?? node.mentorNote ?? node.MentorNote ?? "",
+                          interview_drills: Array.isArray(interviewDrillsSource)
+                              ? interviewDrillsSource
+                                    .map((drill) =>
+                                        typeof drill === "string" ? drill : (drill?.text ?? drill?.label ?? ""),
+                                    )
+                                    .filter(Boolean)
+                              : [],
                           assessment: {
                               current_level:
                                   assessment.current_level ?? assessment.currentLevel ?? assessment.CurrentLevel ?? "",
@@ -99,6 +109,7 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                               sfia_level: assessment.sfia_level ?? assessment.sfiaLevel ?? assessment.SfiaLevel ?? 0,
                               status: assessment.status ?? assessment.Status ?? "Missing",
                               progress: assessment.progress ?? assessment.Progress ?? 0,
+                              score: assessment.score ?? assessment.Score ?? 0,
                           },
                           child_skills: Array.isArray(childSkills)
                               ? childSkills.map((childSkill) => {
@@ -135,30 +146,14 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                                         "",
                                 }
                               : null,
-                          recommended_service: recommendedServiceSource
-                              ? {
-                                    id: recommendedServiceSource.id ?? recommendedServiceSource.Id ?? "",
-                                    interview_type_name:
-                                        recommendedServiceSource.interview_type_name ??
-                                        recommendedServiceSource.interviewTypeName ??
-                                        recommendedServiceSource.InterviewTypeName ??
-                                        "",
-                                    price:
-                                        recommendedServiceSource.price ??
-                                        recommendedServiceSource.Price ??
-                                        null,
-                                    duration_minutes:
-                                        recommendedServiceSource.duration_minutes ??
-                                        recommendedServiceSource.durationMinutes ??
-                                        recommendedServiceSource.DurationMinutes ??
-                                        null,
-                                }
-                              : null,
                       };
                   })
                 : [],
         };
     });
+
+    const masteredSource =
+        rawRoadmap.mastered_summary ?? rawRoadmap.masteredSummary ?? rawRoadmap.MasteredSummary ?? [];
 
     return {
         roadmap_metadata: {
@@ -171,6 +166,20 @@ const normalizeRoadmapPayload = (rawRoadmap) => {
                 normalizedPhases.length,
         },
         phases: normalizedPhases,
+        // Phase 3 backend surfaces the skills the candidate has already met
+        // their target on. The roadmap itself doesn't list them as nodes (so
+        // they don't add UI clutter); we render them as a separate badge so
+        // the candidate sees what's already done.
+        mastered_summary: Array.isArray(masteredSource)
+            ? masteredSource
+                  .map((item) => ({
+                      skill_id: item.skill_id ?? item.skillId ?? item.SkillId ?? "",
+                      skill_name: item.skill_name ?? item.skillName ?? item.SkillName ?? item.skill_id ?? "",
+                      current_level: item.current_level ?? item.currentLevel ?? item.CurrentLevel ?? 0,
+                      target_level: item.target_level ?? item.targetLevel ?? item.TargetLevel ?? 0,
+                  }))
+                  .filter((item) => item.skill_name)
+            : [],
     };
 };
 
@@ -424,6 +433,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
         [resolvedRoadmap, roadmap],
     );
     const roadmapMetadata = sourceRoadmap?.roadmap_metadata ?? {};
+    const masteredSummary = sourceRoadmap?.mastered_summary ?? [];
 
     // B3: record a snapshot whenever the roadmap changes so we can show wins later
     useEffect(() => {
@@ -521,8 +531,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                 const fallbackSkillId = phaseDetailsById[phaseId]?.nodes?.[0]?.skill_id ?? null;
                 const requestedSkillId = nextSelection.skill_id ?? prevSelection.skill_id;
 
-                const skillBelongsToPhase =
-                    requestedSkillId && nodeDetailsById[requestedSkillId]?.phase_id === phaseId;
+                const skillBelongsToPhase = requestedSkillId && nodeDetailsById[requestedSkillId]?.phase_id === phaseId;
                 const skillId = skillBelongsToPhase ? requestedSkillId : fallbackSkillId;
 
                 return {
@@ -616,73 +625,29 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
 
                     <HeroStat icon={UserRound} label="TARGET ROLE" value={roadmapMetadata.target_role || "N/A"} />
                     <HeroStat icon={Target} label="TARGET LEVEL" value={roadmapMetadata.target_level || "N/A"} />
-                    <HeroStat
-                        icon={Layers3}
-                        label="PHASES"
-                        value={`${roadmapMetadata.total_phases ?? 0} phases`}
-                    />
+                    <HeroStat icon={Layers3} label="PHASES" value={`${roadmapMetadata.total_phases ?? 0} phases`} />
 
-                    <Box sx={{ flex: 1 }} />
-
-                    <Stack spacing={0.5} alignItems={{ xs: "flex-start", md: "flex-end" }} direction={{ xs: "column", sm: "row" }}>
-                        {readOnly ? (
-                            <Chip
-                                size="small"
-                                label="Read-only view"
-                                sx={{
-                                    bgcolor: "rgba(255,255,255,0.14)",
-                                    color: "inherit",
-                                    border: "1px solid rgba(255,255,255,0.3)",
-                                    fontWeight: 700,
-                                }}
-                            />
-                        ) : (
+                    {readOnly && (
                         <>
-                        <SecondaryButton
-                            size="small"
-                            onClick={handleRegenerate}
-                            // disabled={isLoadingRoadmap || regenerateBlocked}
-                            disabled={isLoadingRoadmap}
-                            title={regenerateTitle}
-                            aria-label={
-                                regenerateBlocked
-                                    ? `Regenerate unavailable, next available in ${formatRemaining(cooldownRemainingMs)}`
-                                    : "Regenerate roadmap from scratch"
-                            }
-                            startIcon={
-                                <RefreshCw
-                                    size={14}
-                                    style={{ animation: isLoadingRoadmap ? "spin 1s linear infinite" : "none" }}
-                                />
-                            }
-                            sx={{
-                                bgcolor: "rgba(255,255,255,0.14)",
-                                color: "primary.contrastText",
-                                borderColor: "rgba(255,255,255,0.3)",
-                                "&:hover": {
-                                    bgcolor: "rgba(255,255,255,0.22)",
-                                    borderColor: "rgba(255,255,255,0.5)",
-                                },
-                                "&.Mui-disabled": {
-                                    bgcolor: "rgba(255,255,255,0.08)",
-                                    color: "rgba(255,255,255,0.6)",
-                                    borderColor: "rgba(255,255,255,0.15)",
-                                },
-                            }}
-                        >
-                            {isLoadingRoadmap ? "Regenerating…" : "Regenerate"}
-                        </SecondaryButton>
-                        {regenerateBlocked && !isLoadingRoadmap ? (
-                            <Typography
-                                variant="caption"
-                                sx={{ opacity: 0.85, fontSize: "0.7rem", letterSpacing: "0.02em" }}
+                            <Box sx={{ flex: 1 }} />
+                            <Stack
+                                spacing={0.5}
+                                alignItems={{ xs: "flex-start", md: "flex-end" }}
+                                direction={{ xs: "column", sm: "row" }}
                             >
-                                Next available in {formatRemaining(cooldownRemainingMs)}
-                            </Typography>
-                        ) : null}
+                                <Chip
+                                    size="small"
+                                    label="Read-only view"
+                                    sx={{
+                                        bgcolor: "rgba(255,255,255,0.14)",
+                                        color: "inherit",
+                                        border: "1px solid rgba(255,255,255,0.3)",
+                                        fontWeight: 700,
+                                    }}
+                                />
+                            </Stack>
                         </>
-                        )}
-                    </Stack>
+                    )}
                 </Stack>
             </Box>
 
@@ -710,6 +675,53 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                             ? ` · and improved ${monthlyWins.improvedThisMonth} more`
                             : ""}
                     </Typography>
+                </Box>
+            ) : null}
+
+            {/* Phase 5.3: skills the candidate already meets target on. Backend
+                surfaces these via mastered_summary so the FE can show "credit
+                where it's due" without polluting the roadmap with completed nodes. */}
+            {masteredSummary.length > 0 ? (
+                <Box
+                    sx={{
+                        px: 2,
+                        py: 1.25,
+                        borderRadius: "12px",
+                        bgcolor: alpha(theme.palette.success.main, 0.06),
+                        border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                    }}
+                >
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ sm: "center" }}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+                            <Check size={16} color={theme.palette.success.main} />
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Skills you already have
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                ({masteredSummary.length})
+                            </Typography>
+                        </Stack>
+                        <Stack
+                            direction="row"
+                            spacing={0.75}
+                            sx={{ flexWrap: "wrap", rowGap: 0.75, flex: 1, minWidth: 0 }}
+                        >
+                            {masteredSummary.map((item) => (
+                                <Chip
+                                    key={item.skill_id || item.skill_name}
+                                    size="small"
+                                    label={item.skill_name}
+                                    title={`Current ${item.current_level} ≥ target ${item.target_level}`}
+                                    sx={{
+                                        bgcolor: alpha(theme.palette.success.main, 0.12),
+                                        color: theme.palette.success.dark,
+                                        fontWeight: 600,
+                                        border: `1px solid ${alpha(theme.palette.success.main, 0.25)}`,
+                                    }}
+                                />
+                            ))}
+                        </Stack>
+                    </Stack>
                 </Box>
             ) : null}
 
@@ -745,12 +757,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                     </Box>
                 </Stack>
             ) : error && !resolvedRoadmap ? (
-                <Stack
-                    alignItems="center"
-                    justifyContent="center"
-                    spacing={2}
-                    sx={{ flex: 1, p: { xs: 3, md: 5 } }}
-                >
+                <Stack alignItems="center" justifyContent="center" spacing={2} sx={{ flex: 1, p: { xs: 3, md: 5 } }}>
                     <Alert
                         severity="error"
                         onClose={() => setError(null)}

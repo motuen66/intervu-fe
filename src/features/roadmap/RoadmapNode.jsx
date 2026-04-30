@@ -4,7 +4,6 @@ import { Handle, Position } from "@xyflow/react";
 import SkillStatusBadge from "./components/SkillStatusBadge";
 import SkillProgressBar from "./components/SkillProgressBar";
 import { getStatusConfig } from "./components/statusConfig";
-import { formatVndCurrency } from "./utils/formatCurrency";
 
 const RoadmapNode = ({ data, selected }) => {
     const theme = useTheme();
@@ -14,6 +13,13 @@ const RoadmapNode = ({ data, selected }) => {
     const childSkillPreview = (data.childSkills ?? []).slice(0, 2);
     const hiddenSkillCount = Math.max((data.childSkills ?? []).length - childSkillPreview.length, 0);
     const progress = Number(data.progress) || 0;
+    // Phase 5.1 — surface the audit trail (current/target/score) on the card
+    // itself, not just in the detail panel. Empty values are gracefully hidden.
+    const currentLevel = data.currentLevel != null ? String(data.currentLevel) : "";
+    const targetLevel = data.targetLevel != null ? String(data.targetLevel) : "";
+    const score = Number(data.score);
+    const hasLevelTrio = currentLevel !== "" && targetLevel !== "";
+    const hasScore = Number.isFinite(score) && score > 0;
 
     return (
         <div
@@ -60,26 +66,30 @@ const RoadmapNode = ({ data, selected }) => {
 
             <SkillProgressBar progress={progress} status={status} />
 
-            {data.recommendedCoach ? (
+            {hasLevelTrio || hasScore ? (
                 <div
                     style={{
                         marginTop: "8px",
-                        fontSize: "11px",
-                        color: "#1D4ED8",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "10.5px",
+                        color: "#475569",
                         fontWeight: 600,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
                     }}
-                    title={data.recommendedCoach.name}
+                    aria-label="Assessment summary"
                 >
-                    Coach: {data.recommendedCoach.name}
-                    {data.recommendedService?.price != null
-                        ? ` · ${formatVndCurrency(data.recommendedService.price)}`
-                        : ""}
-                    {data.recommendedService?.duration_minutes != null
-                        ? ` · ${data.recommendedService.duration_minutes}min`
-                        : ""}
+                    {hasLevelTrio ? (
+                        <span title="Your current level / target level">
+                            Lv {currentLevel}/{targetLevel}
+                        </span>
+                    ) : null}
+                    {hasLevelTrio && hasScore ? (
+                        <span aria-hidden="true" style={{ color: "#CBD5E1" }}>
+                            ·
+                        </span>
+                    ) : null}
+                    {hasScore ? <span title="Assessment score">Score {Math.round(score)}/100</span> : null}
                 </div>
             ) : null}
 

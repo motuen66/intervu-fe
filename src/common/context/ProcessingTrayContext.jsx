@@ -2,12 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import CollectQuestionProcessingTray from "../../features/interviewQuestions/components/CollectQuestionProcessingTray";
-import { ROADMAP_STATUS_BUCKETS, resolveStatusLabel } from "../constants/processingTrayJobs";
+import { QUESTION_STATUS_BUCKETS, ROADMAP_STATUS_BUCKETS, resolveStatusLabel } from "../constants/processingTrayJobs";
 
 const ProcessingTrayContext = createContext(null);
 
 const MOCK_CAP = 95;
-const TICK_MS = 600;
+const TICK_MS = 1800;
 const TICK_STEP = 9;
 const STORAGE_KEY = "intervu:processingTray";
 const HANDLED_KEY = "intervu:processingTray:handledStartIds";
@@ -63,19 +63,11 @@ function readPersisted() {
 }
 
 function writePersisted(data) {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch {
-        /* ignore */
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 function clearPersisted() {
-    try {
-        localStorage.removeItem(STORAGE_KEY);
-    } catch {
-        /* ignore */
-    }
+    localStorage.removeItem(STORAGE_KEY);
 }
 
 function readHandledStartIds() {
@@ -90,12 +82,8 @@ function readHandledStartIds() {
 }
 
 function writeHandledStartIds(set) {
-    try {
-        const trimmed = Array.from(set).slice(-50);
-        localStorage.setItem(HANDLED_KEY, JSON.stringify(trimmed));
-    } catch {
-        /* ignore */
-    }
+    const trimmed = Array.from(set).slice(-50);
+    localStorage.setItem(HANDLED_KEY, JSON.stringify(trimmed));
 }
 
 // Persist only the fields we need to resume — functions cannot be serialized.
@@ -213,11 +201,7 @@ export function ProcessingTrayProvider({ children }) {
         const persisted = readPersisted();
         if (!persisted) return;
         const resumedProgress = computeProgressFromElapsed(persisted.startedAt);
-        ctaActionRef.current = buildCtaAction(
-            persisted.job.kind,
-            persisted.job.referenceId,
-            navigate,
-        );
+        ctaActionRef.current = buildCtaAction(persisted.job.kind, persisted.job.referenceId, navigate);
         setJob(persisted.job);
         setProgress(resumedProgress);
         setVisible(true);
@@ -250,7 +234,8 @@ export function ProcessingTrayProvider({ children }) {
     // the start notification is ignored.
     const autoFactoriesRef = useRef(new Map()); // startType → (notification) => jobConfig
 
-    // Built-in factory: RoadmapUpdateStarted → roadmap job. Registered on mount.
+    // Built-in factories: RoadmapUpdateStarted → roadmap job (candidate),
+    // AiAnalysisStarted → collect-questions job (coach). Registered on mount.
     useEffect(() => {
         const roadmapFactory = (n) => ({
             kind: "roadmap",
@@ -262,10 +247,31 @@ export function ProcessingTrayProvider({ children }) {
             referenceId: n.referenceId ?? extractRoomIdFromActionUrl(n.actionUrl),
             completeCtaAction: () => navigate(n.actionUrl ?? "/roadmap"),
         });
+        const aiAnalysisFactory = (n) => {
+            const referenceId = n.referenceId ?? extractRoomIdFromActionUrl(n.actionUrl);
+            return {
+                kind: "collect-questions",
+                runningTitle: "Analyzing questions…",
+                completeTitle: "Analysis Complete!",
+                completeCtaLabel: "Review Now",
+                statusBuckets: QUESTION_STATUS_BUCKETS,
+                completeNotificationType: "AiAnalysisCompleted",
+                referenceId,
+                completeCtaAction: () =>
+                    navigate(
+                        n.actionUrl ??
+                            (referenceId ? `/interview?roomId=${referenceId}&action=review-questions` : "/interview"),
+                    ),
+            };
+        };
         autoFactoriesRef.current.set("RoadmapUpdateStarted", roadmapFactory);
+        autoFactoriesRef.current.set("AiAnalysisStarted", aiAnalysisFactory);
         return () => {
             if (autoFactoriesRef.current.get("RoadmapUpdateStarted") === roadmapFactory) {
                 autoFactoriesRef.current.delete("RoadmapUpdateStarted");
+            }
+            if (autoFactoriesRef.current.get("AiAnalysisStarted") === aiAnalysisFactory) {
+                autoFactoriesRef.current.delete("AiAnalysisStarted");
             }
         };
     }, [navigate]);
@@ -324,10 +330,7 @@ export function ProcessingTrayProvider({ children }) {
         if (typeof action === "function") action();
     }, []);
 
-    const status = useMemo(
-        () => (job ? resolveStatusLabel(job.statusBuckets, progress) : ""),
-        [job, progress],
-    );
+    const status = useMemo(() => (job ? resolveStatusLabel(job.statusBuckets, progress) : ""), [job, progress]);
 
     const value = useMemo(
         () => ({ startJob, completeJob, hideTray, registerAutoStartFactory }),

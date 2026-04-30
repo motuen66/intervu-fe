@@ -163,9 +163,10 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
                         label: skill.skill_name,
                         progress: skill.assessment.progress || 0,
                         status: skill.assessment.status,
+                        currentLevel: skill.assessment.current_level ?? "",
+                        targetLevel: skill.assessment.target_level ?? "",
+                        score: Number(skill.assessment.score ?? 0),
                         childSkills: childSkillNames,
-                        recommendedCoach: skill.recommended_coach ?? null,
-                        recommendedService: skill.recommended_service ?? null,
                     },
                     position: { x: nodeStartX + sIndex * (NODE_WIDTH + NODE_GAP_X), y: headerHeight },
                 });

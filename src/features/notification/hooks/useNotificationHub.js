@@ -33,6 +33,7 @@ export default function useNotificationHub(userId, token) {
             // (sound + CTA button), so skip the redundant toast. The notification
             // is still added to the dropdown via Redux above.
             const trayHandledTypes = new Set([
+                "AiAnalysisStarted",
                 "AiAnalysisCompleted",
                 "RoadmapUpdateStarted",
                 "RoadmapUpdated",
