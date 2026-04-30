@@ -1,6 +1,6 @@
 import Grid from "@mui/material/Grid";
-import KpiCard from "../../../../common/components/cards/KpiCard";
-import { AttachMoney, Groups, Star, CheckCircle } from "@mui/icons-material";
+import { CheckCircle2, DollarSign, Star, Users } from "lucide-react";
+import { MetricCard, buildMetricTrend } from "../../../../common/components/cards/MetricCard";
 import { DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function KpiCardsRow({ stats }) {
@@ -8,29 +8,29 @@ export default function KpiCardsRow({ stats }) {
 
     const cards = [
         {
-            icon: <AttachMoney />,
-            iconColor: "success",
+            icon: <DollarSign />,
+            variant: "emerald",
             label: "Total Earnings",
             value: `$${stats.totalEarnings?.toLocaleString() ?? 0}`,
             growthPercent: stats.earningsGrowthPercent,
         },
         {
-            icon: <Groups />,
-            iconColor: "info",
+            icon: <Users />,
+            variant: "blue",
             label: "Interviews Completed",
             value: stats.interviewsCompleted ?? 0,
             growthPercent: stats.interviewsGrowthPercent,
         },
         {
             icon: <Star />,
-            iconColor: "warning",
+            variant: "amber",
             label: "Average Rating",
             value: stats.averageRating ?? 0,
             growthPercent: 0,
         },
         {
-            icon: <CheckCircle />,
-            iconColor: "success",
+            icon: <CheckCircle2 />,
+            variant: "emerald",
             label: "Acceptance Rate",
             value: `${stats.acceptanceRate ?? 0}%`,
             growthPercent: stats.acceptanceRateGrowthPercent,
@@ -39,9 +39,12 @@ export default function KpiCardsRow({ stats }) {
 
     return (
         <Grid container spacing={DASHBOARD_LAYOUT.panelGap}>
-            {cards.map((card) => (
+            {cards.map(({ growthPercent, preferLower, ...card }) => (
                 <Grid size={{ xs: 12, sm: 6, md: 3 }} key={card.label}>
-                    <KpiCard {...card} />
+                    <MetricCard
+                        {...card}
+                        trend={buildMetricTrend({ delta: growthPercent, preferLower })}
+                    />
                 </Grid>
             ))}
         </Grid>

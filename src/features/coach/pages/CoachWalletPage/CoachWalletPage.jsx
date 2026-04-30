@@ -12,9 +12,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
-import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
-import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import KpiCard from "../../../../common/components/cards/KpiCard";
+import { Send, Wallet } from "lucide-react";
+import { MetricCard } from "../../../../common/components/cards/MetricCard";
 import PaginationBar from "../../../../common/components/PaginationBar";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import PageHeader from "../../../../common/components/PageHeader";
@@ -112,17 +111,17 @@ export default function CoachWalletPage() {
             {/* Balance Card */}
             <Grid container spacing={2.5} sx={{ mb: 3 }}>
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                    <KpiCard
-                        icon={<AccountBalanceWalletRoundedIcon />}
-                        iconColor="success"
+                    <MetricCard
+                        icon={<Wallet />}
+                        variant="emerald"
                         label="Current Balance"
                         value={formatCurrency(balance)}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                    <KpiCard
-                        icon={<SendRoundedIcon />}
-                        iconColor="info"
+                    <MetricCard
+                        icon={<Send />}
+                        variant="blue"
                         label="Total Withdrawals"
                         value={totalCount}
                     />

@@ -58,7 +58,7 @@ export default function GrowthCharts({ data, loading }) {
                                         boxShadow: theme.shadows[3],
                                         background: theme.palette.background.paper,
                                     }}
-                                    itemStyle={{ color: theme.palette.primary.main }}
+                                    itemStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
                                 />
                                 <Area
                                     type="monotone"

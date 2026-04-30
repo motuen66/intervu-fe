@@ -11,17 +11,9 @@ import {
     ToggleButton,
     ToggleButtonGroup,
 } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
-import {
-    TrendingUpRounded,
-    TrendingDownRounded,
-    RemoveRounded,
-    DownloadRounded,
-    PaymentsRounded,
-    MonetizationOnRounded,
-    CheckCircleRounded,
-    ReceiptLongRounded,
-} from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { DownloadRounded } from '@mui/icons-material';
+import { Receipt, Banknote, CheckCircle2, Coins } from 'lucide-react';
 import {
     AreaChart,
     Area,
@@ -41,6 +33,7 @@ import BaseCard from '../../../common/components/cards/BaseCard';
 import SectionHeading from '../../../common/components/SectionHeading';
 import useTableState from '../../../hooks/useTableState';
 import StatusChip from '../../../common/components/StatusChip';
+import { MetricCard, buildMetricTrend } from '../../../common/components/cards/MetricCard';
 import { formatCurrency } from '../../../common/utils/dateFormatter';
 import './AdminDashboard.css';
 
@@ -137,12 +130,6 @@ const toPercentChange = (current, previous) => {
     return ((current - previous) / previous) * 100;
 };
 
-const formatSignedPercent = (value) => {
-    const safe = Number(value) || 0;
-    const sign = safe > 0 ? '+' : safe < 0 ? '-' : '';
-    return `${sign}${Math.abs(safe).toFixed(1)}%`;
-};
-
 const formatCompactNumber = (value) =>
     new Intl.NumberFormat('vi-VN', {
         notation: 'compact',
@@ -155,62 +142,6 @@ const toDateKey = (date) => {
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
 };
-
-function StatCard({ title, value, deltaValue, outflowMode = false, icon, compareDays = 30 }) {
-    const safeDelta = Number(deltaValue) || 0;
-    const isIncrease = safeDelta > 0;
-    const isDecrease = safeDelta < 0;
-    const isNeutral = safeDelta === 0;
-    const isGood = outflowMode ? isDecrease : isIncrease;
-    const tone = isNeutral ? 'text.secondary' : isGood ? 'success.main' : 'error.main';
-
-    return (
-        <BaseCard sx={{ p: 2.5 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                <Box>
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600 }}>
-                        {title}
-                    </Typography>
-                    <Typography sx={{ mt: 1, fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em' }}>
-                        {value}
-                    </Typography>
-                </Box>
-                <Box
-                    sx={(theme) => ({
-                        width: 40,
-                        height: 40,
-                        borderRadius: 2,
-                        display: 'grid',
-                        placeItems: 'center',
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        color: 'primary.main',
-                    })}
-                >
-                    {icon}
-                </Box>
-            </Stack>
-            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 1.5 }}>
-                {isNeutral ? (
-                    <RemoveRounded sx={{ color: 'text.secondary', fontSize: 18 }} />
-                ) : isIncrease ? (
-                    <TrendingUpRounded sx={{ color: tone, fontSize: 18 }} />
-                ) : (
-                    <TrendingDownRounded sx={{ color: tone, fontSize: 18 }} />
-                )}
-                <Typography
-                    sx={{
-                        fontSize: 12,
-                        color: tone,
-                        fontWeight: 700,
-                    }}
-                >
-                    {formatSignedPercent(safeDelta)}
-                </Typography>
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{`vs previous ${compareDays} days`}</Typography>
-            </Stack>
-        </BaseCard>
-    );
-}
 
 export default function AdminTransactionsPage({ filterType, filterStatus, title, subtitle }) {
     const isOutflowContext = filterType === 'Payout' || filterType === 'Refund';
@@ -554,40 +485,39 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
 
             <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <StatCard
-                        title="Transactions"
+                    <MetricCard
+                        icon={<Receipt />}
+                        variant="navy"
+                        label="Transactions"
                         value={analytics.transactionCount.toLocaleString()}
-                        deltaValue={analytics.countChange}
-                        icon={<ReceiptLongRounded fontSize="small" />}
-                        compareDays={windowDays}
+                        trend={buildMetricTrend({ delta: analytics.countChange })}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <StatCard
-                        title={isOutflowContext ? 'Money Out' : isEarningsContext ? 'Money In' : 'Paid Value'}
+                    <MetricCard
+                        icon={<Banknote />}
+                        variant={isOutflowContext ? 'rose' : 'emerald'}
+                        label={isOutflowContext ? 'Money Out' : isEarningsContext ? 'Money In' : 'Paid Value'}
                         value={formatCurrency(analytics.grossValue)}
-                        deltaValue={analytics.valueChange}
-                        outflowMode={isOutflowContext}
-                        icon={<PaymentsRounded fontSize="small" />}
-                        compareDays={windowDays}
+                        trend={buildMetricTrend({ delta: analytics.valueChange, preferLower: isOutflowContext })}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <StatCard
-                        title="Paid Rate"
+                    <MetricCard
+                        icon={<CheckCircle2 />}
+                        variant="blue"
+                        label="Paid Rate"
                         value={`${analytics.successRate.toFixed(1)}%`}
-                        deltaValue={analytics.successDelta}
-                        icon={<CheckCircleRounded fontSize="small" />}
-                        compareDays={windowDays}
+                        trend={buildMetricTrend({ delta: analytics.successDelta })}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <StatCard
-                        title="Average Paid Value"
+                    <MetricCard
+                        icon={<Coins />}
+                        variant="purple"
+                        label="Average Paid Value"
                         value={formatCurrency(analytics.averagePaidValue)}
-                        deltaValue={analytics.averagePaidValueDelta}
-                        icon={<MonetizationOnRounded fontSize="small" />}
-                        compareDays={windowDays}
+                        trend={buildMetricTrend({ delta: analytics.averagePaidValueDelta })}
                     />
                 </Grid>
             </Grid>
@@ -649,7 +579,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                                 borderRadius: 10,
                                                 boxShadow: theme.shadows[4],
                                             }}
-                                            itemStyle={{ color: theme.palette.primary.main }}
+                                            itemStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
                                         />
                                         <Area
                                             type="monotone"

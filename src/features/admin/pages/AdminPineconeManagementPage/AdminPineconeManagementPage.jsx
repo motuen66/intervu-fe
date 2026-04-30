@@ -22,7 +22,7 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { adminEndPoints } from "../../services/adminApi";
 import AdminPageHeader from "../../../../common/components/admin/AdminPageHeader";
-import KpiCard from "../../../../common/components/cards/KpiCard";
+import { MetricCard } from "../../../../common/components/cards/MetricCard";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import PrimaryButton from "../../../../common/components/buttons/PrimaryButton";
 import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
@@ -161,25 +161,25 @@ export default function AdminPineconeManagementPage() {
             {/* KPI Cards */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                    <KpiCard
-                        icon={<Database size={22} />}
-                        iconColor="primary"
+                    <MetricCard
+                        icon={<Database />}
+                        variant="navy"
                         label="Total Vectors"
                         value={loading ? "—" : (stats?.totalVectorCount?.toLocaleString() ?? "—")}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                    <KpiCard
-                        icon={<AlertTriangle size={22} />}
-                        iconColor={outOfSyncCount > 0 ? "warning" : "success"}
+                    <MetricCard
+                        icon={<AlertTriangle />}
+                        variant={outOfSyncCount > 0 ? "amber" : "emerald"}
                         label="Out-of-sync Records"
                         value={loading ? "—" : outOfSyncCount.toLocaleString()}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                    <KpiCard
-                        icon={<Layers size={22} />}
-                        iconColor="secondary"
+                    <MetricCard
+                        icon={<Layers />}
+                        variant="purple"
                         label="Dimensions"
                         value={loading ? "—" : (stats?.dimension?.toLocaleString() ?? "—")}
                     />
