@@ -25,7 +25,7 @@ import {
     Pie,
     Cell,
 } from "recharts";
-import { RefreshCw, Zap, Clock, Hash, TrendingUp, Layers } from "lucide-react";
+import { RefreshCw, Zap, Clock, Hash, TrendingUp, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
@@ -613,9 +613,17 @@ export default function PythonServiceMonitorPage() {
                         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
                             <MetricCard
                                 icon={<TrendingUp />}
-                                variant="blue"
+                                variant="rose"
                                 label="Prompt tokens"
                                 value={(metrics?.totalPromptTokens ?? 0).toLocaleString()}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+                            <MetricCard
+                                icon={<CheckCircle2 />}
+                                variant="blue"
+                                label="Completion tokens"
+                                value={(metrics?.totalCompletionTokens ?? 0).toLocaleString()}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
@@ -624,14 +632,6 @@ export default function PythonServiceMonitorPage() {
                                 variant="emerald"
                                 label="Avg latency"
                                 value={`${avgLatency}ms`}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
-                            <MetricCard
-                                icon={<Layers />}
-                                variant="purple"
-                                label="Provider count"
-                                value={(metrics?.serviceCount ?? 0).toLocaleString()}
                             />
                         </Grid>
                     </Grid>

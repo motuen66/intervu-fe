@@ -23,7 +23,9 @@ export default function AmbientLayer({ glowColor, watermarkColor, watermarkIcon 
 
     return (
         <>
-            {/* Glow */}
+            {/* Glow — painted as a radial-gradient instead of a blur filter so
+                the GPU's rectangular filter buffer can't leak past the card's
+                rounded clip on hover. */}
             <Box
                 aria-hidden
                 sx={{
@@ -32,10 +34,8 @@ export default function AmbientLayer({ glowColor, watermarkColor, watermarkIcon 
                     bottom: glow.offsetBottomPx,
                     width: glow.sizePx,
                     height: glow.sizePx,
-                    borderRadius: "50%",
                     pointerEvents: "none",
-                    backgroundColor: glowColor,
-                    filter: `blur(${glow.blurPx}px)`,
+                    backgroundImage: `radial-gradient(circle at center, ${alpha(glowColor, 0.55)} 0%, ${alpha(glowColor, 0.32)} 22%, ${alpha(glowColor, 0.14)} 46%, ${alpha(glowColor, 0.04)} 68%, ${alpha(glowColor, 0)} 82%)`,
                     opacity: glow.restOpacity,
                     transform: `scale(${glow.restScale})`,
                     transformOrigin: "center",
