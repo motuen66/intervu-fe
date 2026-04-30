@@ -37,7 +37,11 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
     const [error, setError] = useState(null);
 
     const parseEvaluationStructure = (data) => {
-        const raw = data?.evaluationStructureJson ?? data?.EvaluationStructureJson ?? data?.evaluationStructure ?? data?.EvaluationStructure;
+        const raw =
+            data?.evaluationStructureJson ??
+            data?.EvaluationStructureJson ??
+            data?.evaluationStructure ??
+            data?.EvaluationStructure;
         if (!raw) return null;
         if (typeof raw === "string") {
             try {
@@ -110,25 +114,31 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
     const evaluationResults = feedback?.evaluationResults || evaluationStructure?.results || [];
     const resolvedOthers = feedback?.others ?? evaluationStructure?.others;
     const resolvedHireDecision =
-        feedback?.hireDecision ?? feedback?.hideDecision ?? evaluationStructure?.hireDecision ?? evaluationStructure?.hideDecision;
+        feedback?.hireDecision ??
+        feedback?.hideDecision ??
+        evaluationStructure?.hireDecision ??
+        evaluationStructure?.hideDecision;
     const resolvedIsHire = feedback?.isHire ?? feedback?.IsHire;
 
     return (
         <Dialog
             open={open}
             onClose={handleClose}
-            maxWidth="md"
+            maxWidth="sm"
             fullWidth
             PaperProps={{
                 sx: {
                     ...dialogStyles.paper,
                     borderRadius: "24px",
                     overflow: "hidden",
-                }
+                },
             }}
         >
-            <DialogTitle sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }} component="div">
-                <SectionHeading title="Evaluation Details" disableGutters />
+            <DialogTitle
+                sx={{ p: 3, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                component="div"
+            >
+                <SectionHeading title="Feedback" disableGutters />
                 <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
                     <CloseIcon />
                 </IconButton>
@@ -136,9 +146,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
 
             <DialogContent>
                 {loading && (
-                    <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                        {/* <CircularProgress /> */}
-                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>{/* <CircularProgress /> */}</Box>
                 )}
 
                 {error && (
@@ -148,9 +156,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                 )}
 
                 {!loading && !error && !feedback && (
-                    <Alert severity="info">
-                        No feedback data loaded. Please try again.
-                    </Alert>
+                    <Alert severity="info">No feedback data loaded. Please try again.</Alert>
                 )}
 
                 {!loading && feedback && (
@@ -161,18 +167,27 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                 {/* <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                                     Evaluation Details
                                 </Typography> */}
-                                <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid", borderColor: "grey.200", borderRadius: "12px" }}>
+                                <TableContainer
+                                    component={Paper}
+                                    elevation={0}
+                                    sx={{ border: "1px solid", borderColor: "grey.200", borderRadius: "12px" }}
+                                >
                                     <Table size="medium">
                                         <TableHead sx={{ bgcolor: "grey.50" }}>
                                             <TableRow>
                                                 <TableCell sx={{ fontWeight: 700 }}>Critria / Question</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700, width: 100 }}>Score</TableCell>
+                                                <TableCell align="center" sx={{ fontWeight: 700, width: 100 }}>
+                                                    Score
+                                                </TableCell>
                                                 <TableCell sx={{ fontWeight: 700 }}>Feedback Details</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
                                             {evaluationResults?.map((item, index) => (
-                                                <TableRow key={index} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                                                <TableRow
+                                                    key={index}
+                                                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                                                >
                                                     <TableCell component="th" scope="row">
                                                         <Typography variant="body2" fontWeight={600}>
                                                             {item.question}
@@ -187,18 +202,37 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                                                 width: 36,
                                                                 height: 36,
                                                                 borderRadius: "50%",
-                                                                bgcolor: item.score >= 8 ? "success.50" : item.score >= 5 ? "warning.50" : "error.50",
-                                                                color: item.score >= 8 ? "success.dark" : item.score >= 5 ? "warning.dark" : "error.dark",
+                                                                bgcolor:
+                                                                    item.score >= 8
+                                                                        ? "success.50"
+                                                                        : item.score >= 5
+                                                                          ? "warning.50"
+                                                                          : "error.50",
+                                                                color:
+                                                                    item.score >= 8
+                                                                        ? "success.dark"
+                                                                        : item.score >= 5
+                                                                          ? "warning.dark"
+                                                                          : "error.dark",
                                                                 fontWeight: 700,
                                                                 border: "1px solid",
-                                                                borderColor: item.score >= 8 ? "success.100" : item.score >= 5 ? "warning.100" : "error.100",
+                                                                borderColor:
+                                                                    item.score >= 8
+                                                                        ? "success.100"
+                                                                        : item.score >= 5
+                                                                          ? "warning.100"
+                                                                          : "error.100",
                                                             }}
                                                         >
                                                             {item.score}
                                                         </Box>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="text.secondary"
+                                                            sx={{ whiteSpace: "pre-wrap" }}
+                                                        >
                                                             {item.answer || "No specific feedback."}
                                                         </Typography>
                                                     </TableCell>
@@ -226,7 +260,11 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                                     <TableCell sx={{ fontWeight: 600 }}>Others</TableCell>
                                                     <TableCell align="center">-</TableCell>
                                                     <TableCell>
-                                                        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="text.secondary"
+                                                            sx={{ whiteSpace: "pre-wrap" }}
+                                                        >
                                                             {resolvedOthers}
                                                         </Typography>
                                                     </TableCell>
@@ -247,7 +285,6 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                         />
                                     </Stack>
                                 </Box> */}
-
                             </Box>
                         ) : (
                             /* Candidate View: Standard Feedback (Rating + Comments) */
@@ -336,19 +373,6 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                     </Box>
                                 )}
 
-                                {/* Status */}
-                                <Box>
-                                    <Stack direction="row" spacing={2} alignItems="center">
-                                        <Typography variant="subtitle2" color="text.secondary">
-                                            Status:
-                                        </Typography>
-                                        <StatusChip
-                                            label={feedback.isSubmitted ? "Submitted" : "Draft"}
-                                            color={feedback.isSubmitted ? "success" : "default"}
-                                        />
-                                    </Stack>
-                                </Box>
-
                                 {/* Submitted Date */}
                                 {feedback.submittedAt && (
                                     <Box>
@@ -364,9 +388,7 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
             </DialogContent>
 
             <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
-                <SecondaryButton onClick={handleClose}>
-                    Close
-                </SecondaryButton>
+                <SecondaryButton onClick={handleClose}>Close</SecondaryButton>
             </DialogActions>
         </Dialog>
     );
