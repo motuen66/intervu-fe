@@ -1,6 +1,6 @@
 import Grid from "@mui/material/Grid";
 import { Undo2, UserCircle2, Users, TrendingUp } from "lucide-react";
-import { MetricCard, MetricCardSkeleton } from "../../../../common/components/cards/MetricCard";
+import { MetricCard, MetricCardSkeleton, buildMetricTrend } from "../../../../common/components/cards/MetricCard";
 
 export default function SystemOverviewRow({ stats, loading }) {
     if (loading && !stats) {
@@ -43,16 +43,17 @@ export default function SystemOverviewRow({ stats, loading }) {
             label: "Refund Rate",
             value: `${stats?.refundRate || "0"}%`,
             growthPercent: stats?.refundRateGrowth,
+            preferLower: true,
         },
     ];
 
     return (
         <Grid container spacing={3}>
-            {cards.map(({ growthPercent, ...card }) => (
+            {cards.map(({ growthPercent, preferLower, ...card }) => (
                 <Grid size={{ xs: 12, sm: 6, md: 3 }} key={card.label}>
                     <MetricCard
                         {...card}
-                        trend={growthPercent ? { value: growthPercent } : undefined}
+                        trend={buildMetricTrend({ delta: growthPercent, preferLower })}
                     />
                 </Grid>
             ))}

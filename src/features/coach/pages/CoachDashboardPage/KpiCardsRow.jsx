@@ -1,6 +1,6 @@
 import Grid from "@mui/material/Grid";
 import { CheckCircle2, DollarSign, Star, Users } from "lucide-react";
-import { MetricCard } from "../../../../common/components/cards/MetricCard";
+import { MetricCard, buildMetricTrend } from "../../../../common/components/cards/MetricCard";
 import { DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function KpiCardsRow({ stats }) {
@@ -39,11 +39,11 @@ export default function KpiCardsRow({ stats }) {
 
     return (
         <Grid container spacing={DASHBOARD_LAYOUT.panelGap}>
-            {cards.map(({ growthPercent, ...card }) => (
+            {cards.map(({ growthPercent, preferLower, ...card }) => (
                 <Grid size={{ xs: 12, sm: 6, md: 3 }} key={card.label}>
                     <MetricCard
                         {...card}
-                        trend={growthPercent ? { value: growthPercent } : undefined}
+                        trend={buildMetricTrend({ delta: growthPercent, preferLower })}
                     />
                 </Grid>
             ))}

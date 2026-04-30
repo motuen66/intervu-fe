@@ -83,6 +83,9 @@ export default function UIKitPage() {
                 title="MetricCard — Premium SaaS KPI"
                 description="Hover any card to see the lift, ambient glow, watermark rotation, badge swap, and bottom accent line. Variants tint glow + watermark + accent gradient."
             />
+            {/* Playground-only trends below — hardcoded `{ value }` props are
+                intentional to exercise the badge in isolation. Production
+                callers must use `buildMetricTrend` from MetricCard. */}
             <Box
                 sx={{
                     display: "grid",
