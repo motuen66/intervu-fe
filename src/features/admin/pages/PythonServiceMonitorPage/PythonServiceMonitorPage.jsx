@@ -31,7 +31,7 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { adminEndPoints } from "../../services/adminApi";
 import AdminPageHeader from "../../../../common/components/admin/AdminPageHeader";
-import KpiCard from "../../../../common/components/cards/KpiCard";
+import { MetricCard } from "../../../../common/components/cards/MetricCard";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import SecondaryButton from "../../../../common/components/buttons/SecondaryButton";
 import FormSelect from "../../../../common/components/form/FormSelect";
@@ -595,41 +595,41 @@ export default function PythonServiceMonitorPage() {
                 <>
                     <Grid container spacing={2.5} sx={{ mb: 4 }}>
                         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
-                            <KpiCard
-                                icon={<Hash size={22} />}
-                                iconColor="primary"
+                            <MetricCard
+                                icon={<Hash />}
+                                variant="navy"
                                 label="Total requests"
                                 value={(metrics?.totalRequests ?? 0).toLocaleString()}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
-                            <KpiCard
-                                icon={<Zap size={22} />}
-                                iconColor="warning"
+                            <MetricCard
+                                icon={<Zap />}
+                                variant="amber"
                                 label="Total tokens"
                                 value={(metrics?.totalTokens ?? 0).toLocaleString()}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
-                            <KpiCard
-                                icon={<TrendingUp size={22} />}
-                                iconColor="info"
+                            <MetricCard
+                                icon={<TrendingUp />}
+                                variant="blue"
                                 label="Prompt tokens"
                                 value={(metrics?.totalPromptTokens ?? 0).toLocaleString()}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
-                            <KpiCard
-                                icon={<Clock size={22} />}
-                                iconColor="success"
+                            <MetricCard
+                                icon={<Clock />}
+                                variant="emerald"
                                 label="Avg latency"
                                 value={`${avgLatency}ms`}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
-                            <KpiCard
-                                icon={<Layers size={22} />}
-                                iconColor="secondary"
+                            <MetricCard
+                                icon={<Layers />}
+                                variant="purple"
                                 label="Provider count"
                                 value={(metrics?.serviceCount ?? 0).toLocaleString()}
                             />
