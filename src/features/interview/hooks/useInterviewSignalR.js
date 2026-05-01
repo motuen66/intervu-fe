@@ -112,12 +112,16 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
         return [...prev, id];
       });
       callbacks.current?.onPeerJoin?.(id);
+      // Live announcement — fires only for peers who join AFTER us, never for
+      // the initial ExistingPeers sync (which is itself a separate event).
+      callbacks.current?.onRemoteUserJoined?.(id);
     });
 
     conn.on("UserLeft", (id) => {
       tLog("SignalR", "UserLeft:", id);
       setPeers((prev) => prev.filter((x) => x !== id));
       callbacks.current?.onPeerLeave?.(id);
+      callbacks.current?.onRemoteUserLeft?.(id);
     });
 
     conn.on("ExistingPeers", (existing) => {

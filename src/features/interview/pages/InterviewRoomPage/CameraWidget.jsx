@@ -52,7 +52,12 @@ export function CameraWidget({
     isVisible,
     localStream,
     remoteStream,
+    recentlyJoinedRemote = false,
 }) {
+    const prefersReducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const showJoinGlow = recentlyJoinedRemote && !prefersReducedMotion;
     const [mode, setMode] = useState(MODE_BOTH);
     const [hovered, setHovered] = useState(false);
     const [fullscreen, setFullscreen] = useState(false);
@@ -365,8 +370,15 @@ export function CameraWidget({
                                 borderRadius: "10px",
                                 overflow: "hidden",
                                 bgcolor: "#1F2937",
-                                border: isRemoteSpeaking ? "2px solid #A3E635" : "2px solid transparent",
-                                transition: "border-color 0.2s",
+                                border: showJoinGlow
+                                    ? (theme) => `2px solid ${theme.palette.success.main}`
+                                    : isRemoteSpeaking
+                                    ? "2px solid #A3E635"
+                                    : "2px solid transparent",
+                                boxShadow: showJoinGlow
+                                    ? (theme) => `0 0 0 4px ${theme.palette.success.main}33`
+                                    : "none",
+                                transition: "border-color 0.2s, box-shadow 0.2s",
                             }}
                         >
                             <video
@@ -513,8 +525,14 @@ export function CameraWidget({
                             position: "relative",
                             borderRadius: "16px",
                             overflow: "hidden",
-                            border: "2px solid #374151",
+                            border: showJoinGlow
+                                ? (theme) => `2px solid ${theme.palette.success.main}`
+                                : "2px solid #374151",
+                            boxShadow: showJoinGlow
+                                ? (theme) => `0 0 0 6px ${theme.palette.success.main}33`
+                                : "none",
                             bgcolor: "#1F2937",
+                            transition: "border-color 0.2s, box-shadow 0.2s",
                         }}
                     >
                         <video

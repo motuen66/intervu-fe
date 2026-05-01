@@ -42,6 +42,7 @@ import { useWhiteboardSync } from "../../hooks/useWhiteboardSync.js";
 import { useTranscript } from "../../hooks/useTranscript.js"; // Changed from useDeepgramTranscript
 import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
 import { resolveLocalDisplayName, resolveRemoteDisplayName } from "../../utils/displayNames.js";
+import { playJoinChime } from "../../utils/roomSounds.js";
 import CoachEvaluationModal from "../InterviewRoomListPage/CoachEvaluationModal";
 
 // Analytics
@@ -413,6 +414,18 @@ function InterviewRoomPage() {
     const [remoteCameraOn, setRemoteCameraOn] = useState(false);
     const [remoteMicOn, setRemoteMicOn] = useState(false);
     const [remoteInterim, setRemoteInterim] = useState("");
+    const [recentlyJoinedRemote, setRecentlyJoinedRemote] = useState(false);
+    const joinGlowTimerRef = useRef(null);
+    const lastJoinAnnouncedAtRef = useRef(0);
+
+    useEffect(() => {
+        return () => {
+            if (joinGlowTimerRef.current) {
+                clearTimeout(joinGlowTimerRef.current);
+                joinGlowTimerRef.current = null;
+            }
+        };
+    }, []);
 
     // ── Problem / test-case state (Interviewer editing) ──────────────────────
     const [problemDescription, setProblemDescription] = useState("");
@@ -526,6 +539,41 @@ function InterviewRoomPage() {
             setRemoteCameraOn(false);
             setRemoteMicOn(false);
             setRemoteInterim("");
+        },
+        onRemoteUserJoined: () => {
+            const now = Date.now();
+            // Debounce: coalesce join announcements that fire within 1s.
+            if (now - lastJoinAnnouncedAtRef.current < 1000) return;
+            lastJoinAnnouncedAtRef.current = now;
+
+            const remoteRoleLabel = user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate";
+            const displayName =
+                remotePeerName && remotePeerName !== remoteRoleLabel
+                    ? remotePeerName
+                    : remoteRoleLabel;
+            toast.success(`${displayName} joined the room`, {
+                position: "top-center",
+                duration: 3000,
+            });
+            playJoinChime();
+
+            if (joinGlowTimerRef.current) clearTimeout(joinGlowTimerRef.current);
+            setRecentlyJoinedRemote(true);
+            joinGlowTimerRef.current = setTimeout(() => {
+                setRecentlyJoinedRemote(false);
+                joinGlowTimerRef.current = null;
+            }, 1200);
+        },
+        onRemoteUserLeft: () => {
+            const remoteRoleLabel = user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate";
+            const displayName =
+                remotePeerName && remotePeerName !== remoteRoleLabel
+                    ? remotePeerName
+                    : remoteRoleLabel;
+            toast(`${displayName} has left the room`, {
+                position: "top-center",
+                duration: 3000,
+            });
         },
         onReceiveCode: applyExternalCode,
         onReceiveLanguage: applyExternalLanguage,
@@ -1398,6 +1446,7 @@ function InterviewRoomPage() {
                             isVisible={panelAVisible}
                             localStream={localStream}
                             remoteStream={remoteStream}
+                            recentlyJoinedRemote={recentlyJoinedRemote}
                         />
                     </Box>
                 </Box>
