@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback, lazy, Suspense, memo } from "react";
-import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack } from "@mui/material";
+import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack, useTheme } from "@mui/material";
 import toast from "react-hot-toast";
 
 // Icons
@@ -15,6 +15,7 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import CallEndIcon from "@mui/icons-material/CallEnd";
+import LogoutIcon from "@mui/icons-material/Logout";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FlagIcon from "@mui/icons-material/Flag";
@@ -145,6 +146,7 @@ const TranscriptItem = memo(({ item }) => {
 // ---------------------------------------------------------------------------
 function InterviewRoomPage() {
     const user = useUser();
+    const theme = useTheme();
     const { roomId } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -416,7 +418,11 @@ function InterviewRoomPage() {
     const [remoteInterim, setRemoteInterim] = useState("");
     const [recentlyJoinedRemote, setRecentlyJoinedRemote] = useState(false);
     const joinGlowTimerRef = useRef(null);
-    const lastJoinAnnouncedAtRef = useRef(0);
+    // peerId -> last-announced timestamp (ms). Suppresses repeat join toasts
+    // from the same peer during reconnect flapping; cleared on UserLeft so a
+    // genuine leave→rejoin still chimes.
+    const peerJoinAnnouncedAtRef = useRef(new Map());
+    const PEER_JOIN_DEDUP_MS = 5000;
 
     useEffect(() => {
         return () => {
@@ -424,6 +430,7 @@ function InterviewRoomPage() {
                 clearTimeout(joinGlowTimerRef.current);
                 joinGlowTimerRef.current = null;
             }
+            peerJoinAnnouncedAtRef.current.clear();
         };
     }, []);
 
@@ -540,11 +547,13 @@ function InterviewRoomPage() {
             setRemoteMicOn(false);
             setRemoteInterim("");
         },
-        onRemoteUserJoined: () => {
+        onRemoteUserJoined: (peerId) => {
+            // Per-peer dedup: suppress repeated join toasts for the same peer
+            // within PEER_JOIN_DEDUP_MS (handles ICE/SignalR reconnect flapping).
             const now = Date.now();
-            // Debounce: coalesce join announcements that fire within 1s.
-            if (now - lastJoinAnnouncedAtRef.current < 1000) return;
-            lastJoinAnnouncedAtRef.current = now;
+            const lastAt = peerJoinAnnouncedAtRef.current.get(peerId) ?? 0;
+            if (now - lastAt < PEER_JOIN_DEDUP_MS) return;
+            peerJoinAnnouncedAtRef.current.set(peerId, now);
 
             const remoteRoleLabel = user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate";
             const displayName =
@@ -564,7 +573,10 @@ function InterviewRoomPage() {
                 joinGlowTimerRef.current = null;
             }, 1200);
         },
-        onRemoteUserLeft: () => {
+        onRemoteUserLeft: (peerId) => {
+            // Clear dedup entry so a genuine rejoin (after a clean leave) chimes.
+            peerJoinAnnouncedAtRef.current.delete(peerId);
+
             const remoteRoleLabel = user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate";
             const displayName =
                 remotePeerName && remotePeerName !== remoteRoleLabel
@@ -572,7 +584,15 @@ function InterviewRoomPage() {
                     : remoteRoleLabel;
             toast(`${displayName} has left the room`, {
                 position: "top-center",
-                duration: 3000,
+                duration: 4000,
+                icon: (
+                    <LogoutIcon
+                        sx={{ color: "warning.main", fontSize: 20 }}
+                    />
+                ),
+                style: {
+                    borderLeft: `4px solid ${theme.palette.warning.main}`,
+                },
             });
         },
         onReceiveCode: applyExternalCode,
