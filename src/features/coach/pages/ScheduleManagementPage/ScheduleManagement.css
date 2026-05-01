@@ -98,18 +98,20 @@
 /* CALENDAR UI */
 
 .fc .fc-daygrid-day-frame {
-    min-height: 150px !important;
+    height: 120px !important;
     display: flex !important;
     flex-direction: column !important;
+    overflow: hidden !important;
 }
 
 .fc .fc-daygrid-day-events {
-    flex-grow: 1 !important;
+    flex-grow: 0 !important;
     min-height: 0 !important;
+    overflow: hidden !important;
 }
 
 .fc .fc-daygrid-row {
-    min-height: 150px !important;
+    height: 120px !important;
 }
 
 .fc .fc-col-header-cell {
@@ -162,7 +164,9 @@
 .fc .fc-daygrid-day-number {
     color: #111827;
     font-weight: 500;
+    font-size: 0.75rem;
     padding: 4px 2px;
+    text-align: center;
 }
 
 /* EVENTS */

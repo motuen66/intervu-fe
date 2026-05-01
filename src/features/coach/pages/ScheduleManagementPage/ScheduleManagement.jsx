@@ -734,7 +734,7 @@ const ScheduleManagement = () => {
                                 }
                                 return classes;
                             }}
-                            height={800}
+                            height={600}
                             timeZone="local"
                             slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
                             eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
@@ -744,9 +744,9 @@ const ScheduleManagement = () => {
                                 const month = String(date.getMonth() + 1).padStart(2, "0");
                                 return `${day}/${month}`;
                             }}
-                            dayMaxEvents="auto"
+                            dayMaxEvents={4}
                             moreLinkContent={(args) => {
-                                return `+${args.num}`;
+                                return `${args.num} more`;
                             }}
                             // moreLinkClick=""
                         />
