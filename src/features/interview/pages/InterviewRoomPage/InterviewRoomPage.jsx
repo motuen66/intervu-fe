@@ -45,6 +45,7 @@ import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
 import { resolveLocalDisplayName, resolveRemoteDisplayName } from "../../utils/displayNames.js";
 import { playJoinChime } from "../../utils/roomSounds.js";
 import CoachEvaluationModal from "../InterviewRoomListPage/CoachEvaluationModal";
+import ConfirmModal from "../../../../common/components/ConfirmModal";
 
 // Analytics
 import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
@@ -688,8 +689,21 @@ function InterviewRoomPage() {
 
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
     const [isPreparingLeave, setIsPreparingLeave] = useState(false);
+    const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+    const leaveConfirmedRef = useRef(false);
 
-    const handleLeaveRoom = useCallback(async () => {
+    const performCandidateLeave = useCallback(() => {
+        leaveConfirmedRef.current = true;
+        leaveRoom();
+        try {
+            trackLeaveInterviewRoom(roomId);
+        } catch (err) {
+            console.warn("trackLeaveInterviewRoom failed", err);
+        }
+        navigate("/interview");
+    }, [leaveRoom, navigate, roomId]);
+
+    const handleLeaveRoom = useCallback(async ({ skipConfirm = false } = {}) => {
         if (isPreparingLeave) return;
 
         if (Number(user?.role) === ROLES.INTERVIEWER) {
@@ -707,17 +721,50 @@ function InterviewRoomPage() {
             return;
         }
 
+        if (!skipConfirm) {
+            setLeaveConfirmOpen(true);
+            return;
+        }
+
+        performCandidateLeave();
+    }, [isPreparingLeave, user?.role, roomInfo, performCandidateLeave]);
+
+    const handleConfirmLeave = useCallback(() => {
+        setLeaveConfirmOpen(false);
+        performCandidateLeave();
+    }, [performCandidateLeave]);
+
+    const handleCancelLeave = useCallback(() => {
+        setLeaveConfirmOpen(false);
+    }, []);
+
+    const handleCoachEmergencyLeave = useCallback(() => {
+        leaveConfirmedRef.current = true;
         leaveRoom();
         try {
             trackLeaveInterviewRoom(roomId);
         } catch (err) {
             console.warn("trackLeaveInterviewRoom failed", err);
         }
+        setCoachEvaluationState({ open: false, room: null });
         navigate("/interview");
-    }, [isPreparingLeave, leaveRoom, navigate, roomId, user?.role, roomInfo]);
+    }, [leaveRoom, navigate, roomId]);
+
+    // Native browser-tab close prompt — cheap insurance against an unexpected
+    // exit. Suppressed when the user has already confirmed via our modal.
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (leaveConfirmedRef.current) return;
+            event.preventDefault();
+            event.returnValue = "";
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, []);
 
     const handleCoachEvaluationSubmitted = () => {
         // Only call leaveRoom and navigate away AFTER submission is successful
+        leaveConfirmedRef.current = true;
         leaveRoom();
         try {
             trackLeaveInterviewRoom(roomId);
@@ -1948,8 +1995,21 @@ function InterviewRoomPage() {
                 room={coachEvaluationState.room}
                 onClose={handleCloseCoachEvaluation}
                 onSubmitted={handleCoachEvaluationSubmitted}
+                onLeaveWithoutEvaluating={handleCoachEmergencyLeave}
                 allowClose={true}
                 showCloseButton={true}
+            />
+
+            {/* ═══ Leave Confirmation (candidate) ═══ */}
+            <ConfirmModal
+                show={leaveConfirmOpen}
+                title="Leave the interview?"
+                message={"Your interviewer will be notified. You won't be able to rejoin once the session ends."}
+                onConfirm={handleConfirmLeave}
+                onCancel={handleCancelLeave}
+                confirmText="Leave room"
+                cancelText="Stay"
+                confirmVariant="danger"
             />
         </Box>
     );
