@@ -84,7 +84,6 @@ function ActionButtonGroup({
     onCancel,
     onReschedule,
     compact = false,
-    hideJoin = false,
 }) {
     const navigate = useNavigate();
     const stop = (fn) => (e) => {
@@ -206,10 +205,6 @@ function SessionSummary({
               : "Participant";
 
     const participantInitial = participantName?.charAt(0)?.toUpperCase() || "?";
-
-    const typeLabel =
-        room.interviewTypeName ||
-        (Array.isArray(room.rounds) && room.rounds.length > 1 ? "FULL PROCESS" : "INTERVIEW SESSION");
 
     const durationLabel = totalDurationMinutes > 0 ? `(${totalDurationMinutes}m)` : null;
     const startingIn = formatStartingIn(room?.scheduledTime, nowTs);
@@ -396,9 +391,13 @@ function RoundRow({
     showActions,
     nowTs,
     isHighlighted = false,
+    showTimeline = false,
+    isFirst = false,
+    isLast = false,
 }) {
     const title = `Round ${index + 1}: ${round.interviewTypeName || "Interview"}`;
     const duration = Number(round.durationMinutes ?? 0) || 0;
+    const isCancelled = round?.status === INTERVIEW_ROOM_STATUS.CANCELLED;
     const isInterviewer = user?.role === ROLES.INTERVIEWER;
     const canPrepareQuestions =
         isInterviewer
@@ -417,22 +416,18 @@ function RoundRow({
     const roundCanReschedule = round?.canReschedule ?? (!roundIsRescheduled && !roundHasPendingReschedule);
     const startingIn = formatStartingIn(round?.scheduledTime, nowTs);
 
-    const interviewerLabel =
-        round?.coachName ||
-        round?.interviewerName ||
-        [round?.coachFirstName, round?.coachLastName].filter(Boolean).join(" ") ||
-        "Coach assigned";
-
     return (
         <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={2}
-            alignItems={{ xs: "flex-start", md: "center" }}
+            alignItems={{ xs: "flex-start", md: "stretch" }}
             sx={(theme) => ({
                 py: 2.25,
                 px: { xs: 1.5, md: 2.5 },
                 width: "100%",
-                bgcolor: isHighlighted ? alpha(theme.palette.success.main, 0.2) : "transparent",
+                bgcolor: isHighlighted ? alpha(theme.palette.success.main, 0.2) : isCancelled ? alpha(theme.palette.error.main, 0.06) : "transparent",
+                position: "relative",
+                overflow: "hidden",
             })}
         >
             <Stack
@@ -452,11 +447,17 @@ function RoundRow({
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">
+                    <Typography
+                        variant="subtitle2"
+                        fontWeight={700}
+                        color={isCancelled ? "error.main" : "text.primary"}
+                        sx={isCancelled ? { textDecoration: "line-through", textDecorationThickness: "from-font" } : undefined}
+                    >
                         {title}
                     </Typography>
                     {isHighlighted && <StatusChip label="Nearest" color="success" />}
-                    {round?.status !== INTERVIEW_ROOM_STATUS.CANCELLED && startingIn && (
+                    {isCancelled && <StatusChip label="Cancelled" color="error" />}
+                    {!isCancelled && startingIn && (
                         <StatusChip
                             icon={<Clock size={12} />}
                             label={
@@ -468,22 +469,19 @@ function RoundRow({
                         />
                     )}
                 </Stack>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ color: "text.secondary", mt: 0.25 }}>
+                <Stack
+                    direction="row"
+                    spacing={1.5}
+                    alignItems="center"
+                    sx={(theme) => ({ color: isCancelled ? theme.palette.error.main : theme.palette.text.secondary, mt: 0.25 })}
+                >
                     <Stack direction="row" spacing={0.5} alignItems="center">
-                        <Calendar size={13} />
+                        <Calendar size={13} color="currentColor" />
                         <Typography variant="caption" fontWeight={600}>
                             {formatDate(round.scheduledTime)}, {formatTime(round.scheduledTime)}
                             {duration > 0 ? ` (${duration}m)` : ""}
                         </Typography>
                     </Stack>
-                    {/* TODO: Uncomment this block later when coach/interviewer name should be shown again for multi-round rows.
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                        <Users size={13} />
-                        <Typography variant="caption" fontWeight={600}>
-                            {interviewerLabel}
-                        </Typography>
-                    </Stack>
-                    */}
                 </Stack>
             </Box>
 
@@ -616,8 +614,6 @@ export default function SessionCard({
     const totalDurationMinutes = hasMultipleRounds
         ? computeTotalDurationMinutes(room.rounds)
         : Number(room?.durationMinutes ?? 0) || 0;
-    console.log(totalDurationMinutes);
-
     const jdUrl = room?.jobDescriptionUrl || room?.jdUrl || null;
     const cvUrl = room?.cvUrl || room?.candidateCvUrl || null;
 
@@ -818,33 +814,137 @@ export default function SessionCard({
                             overflow: "hidden",
                         })}
                     >
-                        {room.rounds.map((round, index) => (
-                            <Box
-                                key={round.id ?? index}
-                                sx={(theme) => ({
-                                    borderBottom:
-                                        index < room.rounds.length - 1 ? `1px solid ${theme.palette.divider}` : "none",
-                                })}
-                            >
-                                <RoundRow
-                                    round={round}
-                                    index={index}
-                                    user={user}
-                                    onJoin={onJoin}
-                                    onCancel={onCancel}
-                                    onReschedule={rescheduleHandler}
-                                    onPrepareQuestions={handleOpenPrepare}
-                                    showActions={showActions}
-                                    nowTs={nowTs}
-                                    isHighlighted={
-                                        (highlightedRoundId != null && round?.id === highlightedRoundId) ||
-                                        (highlightedRoundId == null &&
-                                            highlightedRoundIndex != null &&
-                                            index === highlightedRoundIndex)
-                                    }
-                                />
+                        {/* Timeline column (shared) + rounds column */}
+                        <Box sx={{ display: "flex", alignItems: "stretch" }}>
+                            <Box sx={{ width: 44, p: 1.25, display: "flex", justifyContent: "center" }}>
+                                <Box sx={{ position: "relative", width: 28, height: "100%", display: "flex", justifyContent: "center" }}>
+                                            {/* center the timeline line under the dots to avoid overlap */}
+                                            <Box
+                                                sx={(theme) => ({
+                                                    position: "absolute",
+                                                    left: "50%",
+                                                    transform: "translateX(-50%)",
+                                                    top: 12,
+                                                    bottom: 12,
+                                                    width: 2,
+                                                    borderRadius: 999,
+                                                    backgroundColor: alpha(theme.palette.divider, 0.95),
+                                                    zIndex: 0,
+                                                })}
+                                            />
+                                            <Stack direction="column" justifyContent="space-between" sx={{ height: "100%", py: 0.5, zIndex: 2 }}>
+                                                {(() => {
+                                                    // determine nearestIndex once with fallbacks
+                                                    let nearestIndex = null;
+                                                    if (highlightedRoundId != null) {
+                                                        const idx = room.rounds.findIndex((rr) => rr?.id === highlightedRoundId);
+                                                        // if highlighted round exists but is inactive, ignore
+                                                        if (idx >= 0 && room.rounds[idx].status !== INTERVIEW_ROOM_STATUS.CANCELLED && room.rounds[idx].status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
+                                                            nearestIndex = idx;
+                                                        }
+                                                    }
+
+                                                    if (nearestIndex == null && typeof highlightedRoundIndex === "number") {
+                                                        const idx = highlightedRoundIndex;
+                                                        if (idx >= 0 && idx < room.rounds.length && room.rounds[idx].status !== INTERVIEW_ROOM_STATUS.CANCELLED && room.rounds[idx].status !== INTERVIEW_ROOM_STATUS.COMPLETED) {
+                                                            nearestIndex = idx;
+                                                        }
+                                                    }
+
+                                                    if (nearestIndex == null) {
+                                                        // fallback: find next upcoming active round (not cancelled/completed)
+                                                        const now = Number(nowTs) || Date.now();
+                                                        let bestIdx = -1;
+                                                        let bestDiff = Number.POSITIVE_INFINITY;
+                                                        room.rounds.forEach((rr, idx) => {
+                                                            if (rr?.status === INTERVIEW_ROOM_STATUS.CANCELLED || rr?.status === INTERVIEW_ROOM_STATUS.COMPLETED) return;
+                                                            const t = Number(new Date(rr?.scheduledTime)?.getTime?.()) || 0;
+                                                            const diff = t - now;
+                                                            if (diff >= 0 && diff < bestDiff) {
+                                                                bestDiff = diff;
+                                                                bestIdx = idx;
+                                                            }
+                                                        });
+                                                        if (bestIdx >= 0) nearestIndex = bestIdx;
+                                                    }
+
+                                                    return room.rounds.map((r, i) => {
+                                                        const isNearest = nearestIndex != null && nearestIndex === i;
+                                                        return (
+                                                            <Box key={r.id ?? i} sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 56 }}>
+                                                                <Box
+                                                                    sx={(theme) => ({
+                                                                        width: 10,
+                                                                        height: 10,
+                                                                        borderRadius: 999,
+                                                                        bgcolor: isNearest
+                                                                            ? theme.palette.success.main
+                                                                            : r?.status === INTERVIEW_ROOM_STATUS.CANCELLED
+                                                                            ? theme.palette.error.main
+                                                                            : theme.palette.primary.main,
+                                                                        border: `2px solid ${theme.palette.background.paper}`,
+                                                                        boxShadow: `inset 0 1px 1px ${alpha(theme.palette.common.white, 0.35)}`,
+                                                                        position: "relative",
+                                                                        zIndex: 3,
+                                                                        transition: "background-color 180ms ease, transform 180ms ease, opacity 180ms ease",
+                                                                        ...(isNearest && {
+                                                                            '@keyframes nearestBlink': {
+                                                                                '0%': { transform: 'scale(1)' },
+                                                                                '50%': { transform: 'scale(1.14)' },
+                                                                                '100%': { transform: 'scale(1)' },
+                                                                            },
+                                                                            '&::after': {
+                                                                                content: '""',
+                                                                                position: 'absolute',
+                                                                                inset: -4,
+                                                                                borderRadius: 999,
+                                                                                border: `1px solid ${alpha(theme.palette.success.main, 0.45)}`,
+                                                                                opacity: 0.55,
+                                                                                animation: 'nearestBlink 1.25s infinite ease-in-out',
+                                                                            },
+                                                                            animation: 'nearestBlink 1.25s infinite ease-in-out',
+                                                                            boxShadow: `inset 0 1px 1px ${alpha(theme.palette.common.white, 0.42)}`,
+                                                                        }),
+                                                                    })}
+                                                                />
+                                                            </Box>
+                                                        );
+                                                    });
+                                                })()}
+                                            </Stack>
+                                        </Box>
                             </Box>
-                        ))}
+
+                            <Box sx={{ flex: 1 }}>
+                                {room.rounds.map((round, index) => (
+                                    <Box
+                                        key={round.id ?? index}
+                                        sx={(theme) => ({
+                                            borderBottom:
+                                                index < room.rounds.length - 1 ? `1px solid ${theme.palette.divider}` : "none",
+                                        })}
+                                    >
+                                        <RoundRow
+                                            round={round}
+                                            index={index}
+                                            user={user}
+                                            onJoin={onJoin}
+                                            onCancel={onCancel}
+                                            onReschedule={rescheduleHandler}
+                                            onPrepareQuestions={handleOpenPrepare}
+                                            showActions={showActions}
+                                            nowTs={nowTs}
+                                            isHighlighted={
+                                                (highlightedRoundId != null && round?.id === highlightedRoundId) ||
+                                                (highlightedRoundId == null &&
+                                                    highlightedRoundIndex != null &&
+                                                    index === highlightedRoundIndex)
+                                            }
+                                        />
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
                     </Box>
                 </Box>
             </Collapse>
