@@ -41,6 +41,7 @@ import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useWhiteboardSync } from "../../hooks/useWhiteboardSync.js";
 import { useTranscript } from "../../hooks/useTranscript.js"; // Changed from useDeepgramTranscript
 import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
+import { resolveLocalDisplayName, resolveRemoteDisplayName } from "../../utils/displayNames.js";
 import CoachEvaluationModal from "../InterviewRoomListPage/CoachEvaluationModal";
 
 // Analytics
@@ -767,14 +768,8 @@ function InterviewRoomPage() {
 
     // ── Peer info for camera widget ──────────────────────────────────────────
     const isCandidate = user?.role === ROLES.CANDIDATE;
-    const remotePeerName = roomInfo
-        ? isCandidate
-            ? roomInfo.coachName || "Coach"
-            : roomInfo.candidateName || "Candidate"
-        : "Peer";
-    const localRoleNameInRoom = isCandidate ? roomInfo?.candidateName : roomInfo?.coachName;
-    const localPeerName =
-        user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
+    const localPeerName = resolveLocalDisplayName(user, roomInfo, user?.role);
+    const remotePeerName = resolveRemoteDisplayName(roomInfo, user?.role);
     const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imagePath || user?.avatar;
     const remoteAvatar = roomInfo
         ? isCandidate
