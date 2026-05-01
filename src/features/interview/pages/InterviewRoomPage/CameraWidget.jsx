@@ -14,6 +14,7 @@ import MicIcon from "@mui/icons-material/Mic";
 import MicOffIcon from "@mui/icons-material/MicOff";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
+import { TextButton } from "../../../../common/components/buttons";
 
 // Camera view modes
 const MODE_BOTH = "both";
@@ -35,6 +36,92 @@ const SPRING_THRESHOLD = 0.5;
 const CORNER_MARGIN = 16;
 const TOOLBAR_HEIGHT = 48; // space above widget for hover toolbar
 
+// B4 — placeholder for "waiting / reconnecting / left" states. Uses theme tokens.
+function RemotePlaceholder({
+    avatarSrc,
+    avatarFallback,
+    label,
+    showDots,
+    showEndCta,
+    onEndCta,
+    avatarSize = 40,
+    fontSize = "0.72rem",
+    ctaSize = "sm",
+    prefersReducedMotion = false,
+}) {
+    const dotsAnim = !prefersReducedMotion;
+    return (
+        <Box
+            sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                px: 1.5,
+                textAlign: "center",
+                bgcolor: "grey.900",
+            }}
+        >
+            <Avatar
+                src={avatarSrc}
+                sx={{
+                    width: avatarSize,
+                    height: avatarSize,
+                    fontSize: avatarSize * 0.45,
+                    bgcolor: "grey.800",
+                    color: "common.white",
+                    opacity: 0.85,
+                }}
+            >
+                {avatarFallback}
+            </Avatar>
+            <Typography
+                variant="caption"
+                sx={{
+                    color: "common.white",
+                    fontSize,
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                }}
+            >
+                {label}
+                {showDots && (
+                    <Box
+                        component="span"
+                        sx={{
+                            display: "inline-block",
+                            ml: 0.25,
+                            "& > span": {
+                                display: "inline-block",
+                                opacity: dotsAnim ? 0 : 1,
+                                animation: dotsAnim ? "ivuDotPulse 1.4s infinite ease-in-out" : "none",
+                            },
+                            "& > span:nth-of-type(2)": { animationDelay: "0.2s" },
+                            "& > span:nth-of-type(3)": { animationDelay: "0.4s" },
+                            "@keyframes ivuDotPulse": {
+                                "0%, 80%, 100%": { opacity: 0 },
+                                "40%": { opacity: 1 },
+                            },
+                        }}
+                    >
+                        <span>.</span>
+                        <span>.</span>
+                        <span>.</span>
+                    </Box>
+                )}
+            </Typography>
+            {showEndCta && (
+                <TextButton size={ctaSize} onClick={onEndCta} sx={{ color: "error.light" }}>
+                    End interview
+                </TextButton>
+            )}
+        </Box>
+    );
+}
+
 export function CameraWidget({
     localVideoRef,
     remoteVideoRef,
@@ -53,11 +140,23 @@ export function CameraWidget({
     localStream,
     remoteStream,
     recentlyJoinedRemote = false,
+    remotePresence = "connected",
+    remoteRoleLabel = "Peer",
+    onEndInterview,
 }) {
     const prefersReducedMotion =
         typeof window !== "undefined" &&
         window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     const showJoinGlow = recentlyJoinedRemote && !prefersReducedMotion;
+    const showWaitingState = remotePresence !== "connected";
+    const waitingCopy =
+        remotePresence === "reconnecting"
+            ? `${remoteRoleLabel} disconnected. Waiting to reconnect`
+            : remotePresence === "left"
+            ? `${remoteRoleLabel} left the room`
+            : `Waiting for ${remoteRoleLabel} to join`;
+    const showAnimatedDots = remotePresence === "waiting" || remotePresence === "reconnecting";
+    const showEndInterviewCta = remotePresence === "left" && typeof onEndInterview === "function";
     const [mode, setMode] = useState(MODE_BOTH);
     const [hovered, setHovered] = useState(false);
     const [fullscreen, setFullscreen] = useState(false);
@@ -389,24 +488,42 @@ export function CameraWidget({
                                     width: "100%",
                                     height: "100%",
                                     objectFit: "cover",
-                                    display: remoteCameraOn ? "block" : "none",
+                                    display: remoteCameraOn && !showWaitingState ? "block" : "none",
                                 }}
                             />
-                            {!remoteCameraOn && (
-                                <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#1F2937" }}>
-                                    <Avatar src={remoteAvatar} sx={{ width: 40, height: 40, fontSize: 18 }}>
-                                        {remotePeerName?.[0] || "?"}
-                                    </Avatar>
-                                </Box>
+                            {showWaitingState ? (
+                                <RemotePlaceholder
+                                    avatarSrc={remoteAvatar}
+                                    avatarFallback={remotePeerName?.[0] || remoteRoleLabel?.[0] || "?"}
+                                    label={waitingCopy}
+                                    showDots={showAnimatedDots}
+                                    showEndCta={showEndInterviewCta}
+                                    onEndCta={onEndInterview}
+                                    avatarSize={40}
+                                    fontSize="0.72rem"
+                                    prefersReducedMotion={prefersReducedMotion}
+                                />
+                            ) : (
+                                !remoteCameraOn && (
+                                    <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#1F2937" }}>
+                                        <Avatar src={remoteAvatar} sx={{ width: 40, height: 40, fontSize: 18 }}>
+                                            {remotePeerName?.[0] || "?"}
+                                        </Avatar>
+                                    </Box>
+                                )
                             )}
-                            <Box sx={{ position: "absolute", bottom: 4, left: 4, bgcolor: "rgba(0,0,0,0.6)", px: 0.75, py: 0.25, borderRadius: 1 }}>
-                                <Typography variant="caption" sx={{ color: "#FFF", fontSize: "0.72rem", fontWeight: 700 }}>
-                                    {remotePeerName || "Peer"}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ position: "absolute", top: 4, right: 4 }}>
-                                {remoteMicOn ? <MicIcon sx={{ color: "#10B981", fontSize: 14 }} /> : <MicOffIcon sx={{ color: "#EF4444", fontSize: 14 }} />}
-                            </Box>
+                            {!showWaitingState && (
+                                <>
+                                    <Box sx={{ position: "absolute", bottom: 4, left: 4, bgcolor: "rgba(0,0,0,0.6)", px: 0.75, py: 0.25, borderRadius: 1 }}>
+                                        <Typography variant="caption" sx={{ color: "#FFF", fontSize: "0.72rem", fontWeight: 700 }}>
+                                            {remotePeerName || "Peer"}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ position: "absolute", top: 4, right: 4 }}>
+                                        {remoteMicOn ? <MicIcon sx={{ color: "#10B981", fontSize: 14 }} /> : <MicOffIcon sx={{ color: "#EF4444", fontSize: 14 }} />}
+                                    </Box>
+                                </>
+                            )}
                         </Box>
                     </Box>
 
@@ -475,8 +592,8 @@ export function CameraWidget({
                             px: 1.5,
                         }}
                     >
-                        <Avatar src={remoteAvatar} sx={{ width: 32, height: 32, fontSize: 14 }}>
-                            {remotePeerName?.[0] || "?"}
+                        <Avatar src={showWaitingState ? undefined : remoteAvatar} sx={{ width: 32, height: 32, fontSize: 14, opacity: showWaitingState ? 0.7 : 1 }}>
+                            {(showWaitingState ? remoteRoleLabel?.[0] : remotePeerName?.[0]) || "?"}
                         </Avatar>
                         <Typography
                             variant="caption"
@@ -488,19 +605,25 @@ export function CameraWidget({
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
                                 fontSize: "0.7rem",
+                                fontStyle: showWaitingState ? "italic" : "normal",
+                                opacity: showWaitingState ? 0.85 : 1,
                             }}
                         >
-                            {remotePeerName || "Peer"}
+                            {showWaitingState ? `${waitingCopy}${showAnimatedDots ? "…" : ""}` : (remotePeerName || "Peer")}
                         </Typography>
-                        {remoteMicOn ? (
-                            <MicIcon sx={{ color: "#10B981", fontSize: 16 }} />
-                        ) : (
-                            <MicOffIcon sx={{ color: "#EF4444", fontSize: 16 }} />
-                        )}
-                        {remoteCameraOn ? (
-                            <VideocamIcon sx={{ color: "#10B981", fontSize: 16 }} />
-                        ) : (
-                            <VideocamOffIcon sx={{ color: "#EF4444", fontSize: 16 }} />
+                        {!showWaitingState && (
+                            <>
+                                {remoteMicOn ? (
+                                    <MicIcon sx={{ color: "#10B981", fontSize: 16 }} />
+                                ) : (
+                                    <MicOffIcon sx={{ color: "#EF4444", fontSize: 16 }} />
+                                )}
+                                {remoteCameraOn ? (
+                                    <VideocamIcon sx={{ color: "#10B981", fontSize: 16 }} />
+                                ) : (
+                                    <VideocamOffIcon sx={{ color: "#EF4444", fontSize: 16 }} />
+                                )}
+                            </>
                         )}
                     </Box>
                 </Box>
@@ -539,18 +662,40 @@ export function CameraWidget({
                             autoPlay
                             playsInline
                             ref={(el) => { if (el && remoteStream) el.srcObject = remoteStream; }}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: showWaitingState ? "none" : "block",
+                            }}
                         />
-                        {!remoteCameraOn && (
-                            <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#1F2937" }}>
-                                <Avatar src={remoteAvatar} sx={{ width: 96, height: 96, fontSize: 40 }}>
-                                    {remotePeerName?.[0]}
-                                </Avatar>
+                        {showWaitingState ? (
+                            <RemotePlaceholder
+                                avatarSrc={remoteAvatar}
+                                avatarFallback={remotePeerName?.[0] || remoteRoleLabel?.[0] || "?"}
+                                label={waitingCopy}
+                                showDots={showAnimatedDots}
+                                showEndCta={showEndInterviewCta}
+                                onEndCta={onEndInterview}
+                                avatarSize={96}
+                                fontSize="1rem"
+                                ctaSize="md"
+                                prefersReducedMotion={prefersReducedMotion}
+                            />
+                        ) : (
+                            !remoteCameraOn && (
+                                <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#1F2937" }}>
+                                    <Avatar src={remoteAvatar} sx={{ width: 96, height: 96, fontSize: 40 }}>
+                                        {remotePeerName?.[0]}
+                                    </Avatar>
+                                </Box>
+                            )
+                        )}
+                        {!showWaitingState && (
+                            <Box sx={{ position: "absolute", bottom: 12, left: 12, bgcolor: "rgba(0,0,0,0.6)", px: 1.5, py: 0.5, borderRadius: 2 }}>
+                                <Typography sx={{ color: "#FFF", fontWeight: 700, fontSize: "0.85rem" }}>{remotePeerName || "Peer"}</Typography>
                             </Box>
                         )}
-                        <Box sx={{ position: "absolute", bottom: 12, left: 12, bgcolor: "rgba(0,0,0,0.6)", px: 1.5, py: 0.5, borderRadius: 2 }}>
-                            <Typography sx={{ color: "#FFF", fontWeight: 700, fontSize: "0.85rem" }}>{remotePeerName || "Peer"}</Typography>
-                        </Box>
                     </Box>
 
                     {/* Local — PiP bottom-right */}

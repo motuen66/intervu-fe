@@ -425,11 +425,24 @@ function InterviewRoomPage() {
     const peerJoinAnnouncedAtRef = useRef(new Map());
     const PEER_JOIN_DEDUP_MS = 5000;
 
+    // Remote presence state for waiting/reconnecting/left placeholder.
+    // "waiting": initial, peer never connected. "connected": at least one peer.
+    // "reconnecting": peer was here but currently absent (≤30s grace).
+    // "left": grace expired, treat as gone.
+    const [remotePresence, setRemotePresence] = useState("waiting");
+    const remoteHasJoinedRef = useRef(false);
+    const reconnectTimerRef = useRef(null);
+    const RECONNECT_GRACE_MS = 30000;
+
     useEffect(() => {
         return () => {
             if (joinGlowTimerRef.current) {
                 clearTimeout(joinGlowTimerRef.current);
                 joinGlowTimerRef.current = null;
+            }
+            if (reconnectTimerRef.current) {
+                clearTimeout(reconnectTimerRef.current);
+                reconnectTimerRef.current = null;
             }
             peerJoinAnnouncedAtRef.current.clear();
         };
@@ -673,6 +686,27 @@ function InterviewRoomPage() {
             }
         }
     }, [remoteStream]);
+
+    // B4 — drive remotePresence based on peers count
+    useEffect(() => {
+        if (peers.length > 0) {
+            if (reconnectTimerRef.current) {
+                clearTimeout(reconnectTimerRef.current);
+                reconnectTimerRef.current = null;
+            }
+            remoteHasJoinedRef.current = true;
+            setRemotePresence("connected");
+        } else if (remoteHasJoinedRef.current) {
+            setRemotePresence("reconnecting");
+            if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = setTimeout(() => {
+                setRemotePresence("left");
+                reconnectTimerRef.current = null;
+            }, RECONNECT_GRACE_MS);
+        } else {
+            setRemotePresence("waiting");
+        }
+    }, [peers.length]);
 
     // Broadcast camera/mic state
     useEffect(() => {
@@ -1514,6 +1548,9 @@ function InterviewRoomPage() {
                             localStream={localStream}
                             remoteStream={remoteStream}
                             recentlyJoinedRemote={recentlyJoinedRemote}
+                            remotePresence={remotePresence}
+                            remoteRoleLabel={user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate"}
+                            onEndInterview={user?.role === ROLES.INTERVIEWER ? handleLeaveRoom : undefined}
                         />
                     </Box>
                 </Box>
