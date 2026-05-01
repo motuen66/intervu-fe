@@ -12,12 +12,19 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
-import { Box, Typography, Stack, CircularProgress, CardContent } from "@mui/material";
+import { Box, Typography, Stack, CircularProgress, CardContent, Popover, Button, Chip } from "@mui/material";
 import { addDays, startOfDay } from "date-fns";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import { PrimaryButton } from "../../../../common/components/buttons";
+import { DangerButton, PrimaryButton } from "../../../../common/components/buttons";
 import PageHeader from "../../../../common/components/PageHeader";
-import { IoAdd } from "react-icons/io5";
+import {
+    IoAdd,
+    IoCreateOutline,
+    IoTrashOutline,
+    IoTimeOutline,
+    IoCalendarOutline,
+    IoPersonOutline,
+} from "react-icons/io5";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import CreateAvailableSlotDialog from "./CreateAvailableSlotDialog";
 import UpdateAvailableSlotDialog from "./UpdateAvailableSlotDialog";
@@ -80,10 +87,10 @@ const ScheduleManagement = () => {
     });
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-    // For showing booked slot details
-    const [bookedDetailOpen, setBookedDetailOpen] = useState(false);
-    const [bookedDetailData, setBookedDetailData] = useState(null);
+    // Popover anchored to a clicked event — replaces the always-modal flow
+    const [popoverState, setPopoverState] = useState({ anchorEl: null, avail: null });
     const todayStart = getTodayStart();
+    const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     const today = new Date();
     const minDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -167,6 +174,60 @@ const ScheduleManagement = () => {
         }
     }, [error]);
 
+    // Disable the FullCalendar "Today" button when the current view already includes today.
+    useEffect(() => {
+        const api = calendarRef.current?.getApi();
+        if (!api) return;
+        const view = api.view;
+        const todayMs = startOfDay(new Date()).getTime();
+        const inRange = view.currentStart.getTime() <= todayMs && todayMs < view.currentEnd.getTime();
+        const btn = document.querySelector(".fc .fc-today-button");
+        if (btn) btn.disabled = inRange;
+    }, [currentDate]);
+
+    // Keyboard shortcuts: j/p prev, k/n next, t today, 1/2/3 view, c create.
+    useEffect(() => {
+        const onKey = (e) => {
+            if (openModal || confirmOpen || popoverState.anchorEl) return;
+            const t = e.target;
+            if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            const api = calendarRef.current?.getApi();
+            if (!api) return;
+            const key = e.key.toLowerCase();
+            switch (key) {
+                case "j":
+                case "p":
+                    api.prev();
+                    break;
+                case "k":
+                case "n":
+                    api.next();
+                    break;
+                case "t":
+                    api.today();
+                    break;
+                case "1":
+                    api.changeView("customMonth");
+                    break;
+                case "2":
+                    api.changeView("rollingSevenDay");
+                    break;
+                case "3":
+                    api.changeView("timeGridDay");
+                    break;
+                case "c":
+                    handleAddClick();
+                    break;
+                default:
+                    return;
+            }
+            e.preventDefault();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [openModal, confirmOpen, popoverState.anchorEl]);
+
     const handleAddClick = () => {
         setEditingId(null);
         setOriginalRange(null);
@@ -185,13 +246,8 @@ const ScheduleManagement = () => {
     };
 
     const handleEditClick = (availability) => {
-        // Only allow editing Available blocks
-        if (Number(availability.status) === AVAILABILITY_SLOTS_STATUS.BOOKED) {
-            // Show booked detail instead
-            setBookedDetailData(availability);
-            setBookedDetailOpen(true);
-            return;
-        }
+        // Booked slots are read-only; the popover surfaces details and skips opening this dialog.
+        if (Number(availability.status) === AVAILABILITY_SLOTS_STATUS.BOOKED) return;
 
         const startDate = new Date(availability.startTime);
         const endDate = new Date(availability.endTime);
@@ -615,11 +671,16 @@ const ScheduleManagement = () => {
         setSelectedItem(null);
     };
 
+    const closePopover = () => setPopoverState({ anchorEl: null, avail: null });
+    const popoverAvail = popoverState.avail;
+    const popoverIsBooked = popoverAvail && Number(popoverAvail.status) === AVAILABILITY_SLOTS_STATUS.BOOKED;
+    const showEmptyState = !loading && availabilities.length === 0;
+
     return (
         <>
             <PageHeader
                 title="Interview Schedule"
-                subtitle="Manage your available time slots for interviews"
+                subtitle={`Manage your available time slots for interviews · Time zone: ${localTimeZone}`}
                 actions={
                     <PrimaryButton startIcon={<IoAdd size={18} />} onClick={handleAddClick}>
                         Add Slot
@@ -628,7 +689,7 @@ const ScheduleManagement = () => {
             />
 
             {/* Main Content */}
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 3, alignItems: "start" }}>
                 {/* Calendar Section */}
                 <BaseCard variant="outlined" sx={{ borderColor: "divider", borderRadius: "12px", overflow: "hidden" }}>
                     <Box sx={{ p: 3, position: "relative" }}>
@@ -649,6 +710,49 @@ const ScheduleManagement = () => {
                                 }}
                             >
                                 <CircularProgress />
+                            </Box>
+                        )}
+                        {showEmptyState && (
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    bgcolor: "rgba(255,255,255,0.85)",
+                                    zIndex: 2,
+                                    borderRadius: "12px",
+                                    pointerEvents: "none",
+                                    gap: 1.5,
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 56,
+                                        height: 56,
+                                        borderRadius: "50%",
+                                        bgcolor: "primary.50",
+                                        color: "primary.main",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <IoCalendarOutline size={28} />
+                                </Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                    No availability yet
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                    Add your first available slot to start receiving bookings.
+                                </Typography>
+                                <Box sx={{ pointerEvents: "auto", mt: 0.5 }}>
+                                    <PrimaryButton startIcon={<IoAdd size={18} />} onClick={handleAddClick}>
+                                        Add Slot
+                                    </PrimaryButton>
+                                </Box>
                             </Box>
                         )}
                         <FullCalendar
@@ -685,12 +789,18 @@ const ScheduleManagement = () => {
                                     toast.error("Cannot edit past availability slots");
                                     return;
                                 }
-
                                 const eventKey = info.event.extendedProps.availabilityEventId || String(info.event.id);
                                 const avail = availabilities.find((a) => buildCalendarEventId(a) === eventKey);
-                                if (avail) {
-                                    handleEditClick(avail);
-                                }
+                                if (avail) setPopoverState({ anchorEl: info.el, avail });
+                            }}
+                            eventDidMount={(info) => {
+                                const ev = info.event;
+                                const startStr = ev.start ? parseLocalTime(ev.start) : "";
+                                const endStr = ev.end ? parseLocalTime(ev.end) : "";
+                                const candidate = ev.extendedProps.candidateName;
+                                const lines = [`${ev.title} • ${startStr}–${endStr}`];
+                                if (candidate) lines.push(`Candidate: ${candidate}`);
+                                info.el.setAttribute("title", lines.join("\n"));
                             }}
                             selectable={true}
                             selectMirror={true}
@@ -714,7 +824,14 @@ const ScheduleManagement = () => {
                             eventAllow={(dropInfo, draggedEvent) => {
                                 if (draggedEvent.extendedProps.isPast) return false;
                                 if (draggedEvent.extendedProps.isUnavailable) return false;
-                                return true;
+                                if (dropInfo.start < new Date()) return false;
+                                const movingKey = draggedEvent.extendedProps.availabilityEventId;
+                                const wouldConflict = hasConflictingRange(
+                                    dropInfo.start,
+                                    dropInfo.end,
+                                    (avail) => buildCalendarEventId(avail) === movingKey,
+                                );
+                                return !wouldConflict;
                             }}
                             datesSet={(info) => {
                                 setCurrentDate(info.view.currentStart);
@@ -748,7 +865,12 @@ const ScheduleManagement = () => {
                             moreLinkContent={(args) => {
                                 return `${args.num} more`;
                             }}
-                            // moreLinkClick=""
+                            moreLinkClick="popover"
+                            businessHours={{
+                                daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+                                startTime: "08:00",
+                                endTime: "20:00",
+                            }}
                         />
                     </Box>
                 </BaseCard>
@@ -839,101 +961,100 @@ const ScheduleManagement = () => {
                 }}
             />
 
-            {/* Booked Slot Detail Modal */}
-            {bookedDetailOpen && bookedDetailData && (
-                <ConfirmModal
-                    show={bookedDetailOpen}
-                    title="Booked Session Details"
-                    content={
-                        <Stack spacing={1.5}>
-                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                This slot is booked and cannot be edited.
+            {/* Event quick-view popover (Google-Calendar-style) */}
+            <Popover
+                open={Boolean(popoverState.anchorEl)}
+                anchorEl={popoverState.anchorEl}
+                onClose={closePopover}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                transformOrigin={{ vertical: "bottom", horizontal: "center" }}
+                slotProps={{
+                    paper: {
+                        sx: {
+                            mt: -1,
+                            p: 2,
+                            minWidth: 260,
+                            maxWidth: 320,
+                            borderRadius: 2,
+                            boxShadow: "0 10px 32px rgba(15, 23, 42, 0.18)",
+                        },
+                    },
+                }}
+            >
+                {popoverAvail && (
+                    <Stack spacing={1.25}>
+                        <Stack direction="row" alignItems="center" justifyContent="space-between">
+                            <Chip
+                                size="small"
+                                label={popoverIsBooked ? "Booked" : "Available"}
+                                sx={
+                                    popoverIsBooked
+                                        ? { bgcolor: "#eef2ff", color: "#4338ca", fontWeight: 600 }
+                                        : { bgcolor: "#eef5e2", color: "#4d8a14", fontWeight: 600 }
+                                }
+                            />
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                {parseLocalDate(popoverAvail.startTime)}
                             </Typography>
-                            <Box
-                                sx={{
-                                    display: "inline-flex",
-                                    alignSelf: "flex-start",
-                                    px: 1.25,
-                                    py: 0.5,
-                                    borderRadius: 99,
-                                    fontSize: "0.75rem",
-                                    fontWeight: 700,
-                                    letterSpacing: 0.3,
-                                    bgcolor: "#57595B",
-                                    color: "#ffffff",
-                                    border: "1px solid #4a4c4d",
-                                }}
-                            >
-                                BOOKED
-                            </Box>
-                            <Box
-                                sx={{
-                                    display: "grid",
-                                    gridTemplateColumns: "auto 1fr",
-                                    rowGap: 1,
-                                    columnGap: 1.5,
-                                    px: 1.5,
-                                    py: 1.25,
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                    borderRadius: 2,
-                                    bgcolor: "#fff",
-                                }}
-                            >
+                        </Stack>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <IoTimeOutline size={16} />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {parseLocalTime(popoverAvail.startTime)} – {parseLocalTime(popoverAvail.endTime)}
+                            </Typography>
+                        </Stack>
+                        {popoverIsBooked && (
+                            <>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <IoPersonOutline size={16} />
+                                    <Typography variant="body2">
+                                        {popoverAvail.candidateName || "Not assigned"}
+                                    </Typography>
+                                </Stack>
                                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                    Time
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                    {parseLocalTime(bookedDetailData.startTime)} -{" "}
-                                    {parseLocalTime(bookedDetailData.endTime)}
-                                </Typography>
-
-                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                    Date
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                    {parseLocalDate(bookedDetailData.startTime)}
-                                </Typography>
-
-                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                    Candidate
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                    {bookedDetailData.candidateName || "Not assigned"}
-                                </Typography>
-
-                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                    Type
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                    {bookedDetailData.sessionName ||
-                                        bookedDetailData.interviewTypeName ||
-                                        bookedDetailData.typeName ||
-                                        bookedDetailData.interviewType ||
+                                    {popoverAvail.sessionName ||
+                                        popoverAvail.interviewTypeName ||
+                                        popoverAvail.typeName ||
+                                        popoverAvail.interviewType ||
                                         "Interview"}
                                 </Typography>
-                            </Box>
+                            </>
+                        )}
+                        <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ pt: 0.5 }}>
+                            {popoverIsBooked ? (
+                                <PrimaryButton size="small" onClick={closePopover}>
+                                    Close
+                                </PrimaryButton>
+                            ) : (
+                                <>
+                                    <DangerButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => {
+                                            const id = popoverAvail.id;
+                                            closePopover();
+                                            handleDeleteClick(id);
+                                        }}
+                                    >
+                                        <IoTrashOutline />
+                                    </DangerButton>
+                                    <PrimaryButton
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => {
+                                            const a = popoverAvail;
+                                            closePopover();
+                                            handleEditClick(a);
+                                        }}
+                                    >
+                                        <IoCreateOutline size={16} />
+                                    </PrimaryButton>
+                                </>
+                            )}
                         </Stack>
-                    }
-                    paperSx={{ borderRadius: 4, overflow: "hidden" }}
-                    titleSx={{
-                        borderBottom: "1px solid",
-                        borderColor: "divider",
-                        background: "linear-gradient(180deg, rgba(15,23,42,0.03), rgba(15,23,42,0.01))",
-                    }}
-                    contentSx={{ bgcolor: "#f8fafc" }}
-                    actionsSx={{ borderTop: "1px solid", borderColor: "divider", pt: 2 }}
-                    confirmText="Close"
-                    onConfirm={() => {
-                        setBookedDetailOpen(false);
-                        setBookedDetailData(null);
-                    }}
-                    onCancel={() => {
-                        setBookedDetailOpen(false);
-                        setBookedDetailData(null);
-                    }}
-                />
-            )}
+                    </Stack>
+                )}
+            </Popover>
         </>
     );
 };

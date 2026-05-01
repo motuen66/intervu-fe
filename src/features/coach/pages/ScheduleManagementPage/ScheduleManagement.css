@@ -180,6 +180,67 @@
     transition: all 0.15s ease-in-out;
 }
 
+/* Toolbar — segmented look for view switcher */
+.fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 12px;
+}
+
+.fc .fc-button-group {
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.fc .fc-button-group .fc-button {
+    background-color: transparent !important;
+    border: none !important;
+    color: #475569 !important;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 4px 12px;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    text-transform: none;
+}
+
+.fc .fc-button-group .fc-button:hover {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.fc .fc-button-group .fc-button.fc-button-active {
+    background-color: #ffffff !important;
+    color: var(--mui-palette-primary-main) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+}
+
+.fc .fc-button.fc-today-button {
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #0f172a !important;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 4px 14px;
+    border-radius: 999px !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    text-transform: none;
+}
+
+.fc .fc-button.fc-today-button:hover:not(:disabled) {
+    background-color: #f9fafb !important;
+}
+
+.fc .fc-button.fc-today-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+}
+
 .fc .fc-event:hover {
     filter: brightness(0.95);
     transform: translateY(-1px);
@@ -235,17 +296,17 @@
     color: #84cc16 !important;
 }
 
-/* Booked Events */
+/* Booked Events — softer indigo treatment so bookings sit alongside availability instead of dominating */
 .fc .fc-timegrid-event.booked-event {
-    background-color: #57595b !important;
-    border: 1px solid #4a4c4d !important;
-    border-left: 4px solid #0f172a !important;
+    background-color: #eef2ff !important;
+    border: 1px solid #c7d2fe !important;
+    border-left: 4px solid #4f46e5 !important;
     border-radius: 8px !important;
     overflow: hidden;
 }
 
 .fc .fc-timegrid-event.booked-event .fc-event-bg {
-    background-color: #57595b !important;
+    background-color: #eef2ff !important;
     border: 0 !important;
 }
 
@@ -260,21 +321,31 @@
 
 .fc .fc-timegrid-event.booked-event .fc-event-title,
 .fc .fc-timegrid-event.booked-event .fc-event-time {
-    color: #ffffff !important;
+    color: #4338ca !important;
     font-weight: 600;
 }
 
 .fc .fc-timegrid-event.booked-event:hover {
-    border-color: #4a4c4d !important;
-    border-left-color: #0f172a !important;
-    background-color: #434446 !important;
+    background-color: #e0e7ff !important;
 }
 
-/* Past Events */
+/* Daygrid booked events */
+.fc .fc-daygrid-event.booked-event {
+    background-color: transparent !important;
+}
+
+.fc .fc-daygrid-event.booked-event .fc-event-main {
+    border-left: 4px solid #4f46e5 !important;
+    padding-left: 6px;
+}
+
+.fc .fc-daygrid-event.booked-event .fc-event-title {
+    color: #4338ca !important;
+}
+
+/* Past Events — keep original color but dim. Cell-level past styling handles the background. */
 .fc-event.past-event {
-    opacity: 0.7;
-    background-color: #d1d5db !important;
-    border-color: #9ca3af !important;
+    opacity: 0.55;
     cursor: not-allowed;
 }
 
