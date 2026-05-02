@@ -214,6 +214,7 @@ function ProblemResolutionDetail() {
                                   detail.payoutProcessed,
                           ),
                       },
+                      transcript: detail.transcript || null,
                   }
                 : null;
 
@@ -543,6 +544,75 @@ function ProblemResolutionDetail() {
                                     value={reportDetail?.financial?.payoutLocked ? "Processed/Locked" : "Not Processed"}
                                 />
                             </SectionCard>
+
+                            {reportDetail?.transcript && (
+                                <SectionCard title="Interview Transcript">
+                                    <Box
+                                        sx={{
+                                            maxHeight: 400,
+                                            overflowY: "auto",
+                                            pr: 1,
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 2,
+                                        }}
+                                    >
+                                        {(() => {
+                                            try {
+                                                const parsed = JSON.parse(reportDetail.transcript);
+                                                if (Array.isArray(parsed)) {
+                                                     return parsed.map((item, index) => (
+                                                        <Box key={item.index || index}>
+                                                            <Typography
+                                                                variant="caption"
+                                                                sx={{
+                                                                    fontWeight: 700,
+                                                                    color:
+                                                                        item.role === "Coach"
+                                                                            ? "primary.main"
+                                                                            : "secondary.main",
+                                                                    textTransform: "uppercase",
+                                                                    display: "block",
+                                                                    mb: 0.5,
+                                                                }}
+                                                            >
+                                                                {item.role || "Unknown"}:
+                                                            </Typography>
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{
+                                                                    p: 1.5,
+                                                                    bgcolor: "action.hover",
+                                                                    borderRadius: 2,
+                                                                    borderTopLeftRadius: item.role === "Coach" ? 0 : 2,
+                                                                    borderTopRightRadius: item.role !== "Coach" ? 0 : 2,
+                                                                }}
+                                                            >
+                                                                {item.text}
+                                                            </Typography>
+                                                        </Box>
+                                                    ));
+                                                }
+                                            } catch (e) {
+                                                // Fallback for plain text
+                                            }
+                                            return (
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        whiteSpace: "pre-wrap",
+                                                        p: 2,
+                                                        bgcolor: "action.hover",
+                                                        borderRadius: 2,
+                                                    }}
+                                                >
+                                                    {reportDetail.transcript}
+                                                </Typography>
+                                            );
+                                        })()}
+                                    </Box>
+                                </SectionCard>
+                            )}
                         </Stack>
                     </Grid>
 
