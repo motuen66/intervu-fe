@@ -18,19 +18,18 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
         return { daysInMonth, startingDayOfWeek, year, month };
     }, [displayDate]);
 
-    // Mark date if it has at least one future/current AVAILABLE slot.
+    // Count future/current AVAILABLE slots per date so the mini-cal can show density.
     const availabilitiesByDate = useMemo(() => {
         const map = {};
         availabilities.forEach((avail) => {
             const status = Number(avail.status);
             if (status !== AVAILABILITY_SLOTS_STATUS.AVAILABLE) return;
 
-            // Only count future/current slots
             const startDate = new Date(avail.startTime);
             const endDate = new Date(avail.endTime);
             if (endDate >= new Date()) {
                 const dateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
-                map[dateStr] = true;
+                map[dateStr] = (map[dateStr] || 0) + 1;
             }
         });
         return map;
@@ -49,18 +48,22 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
         onDateClick(clickedDate);
     };
 
-    const renderDots = (hasAvailable) => {
-        if (!hasAvailable) return null;
+    const renderDots = (count) => {
+        if (!count) return null;
+        const visibleDots = Math.min(count, 3);
         return (
             <Box sx={{ display: "flex", gap: "2px", justifyContent: "center", mt: 0.5 }}>
-                <Box
-                    sx={{
-                        width: "4px",
-                        height: "4px",
-                        borderRadius: "50%",
-                        backgroundColor: "primary.main",
-                    }}
-                />
+                {Array.from({ length: visibleDots }).map((_, i) => (
+                    <Box
+                        key={i}
+                        sx={{
+                            width: "4px",
+                            height: "4px",
+                            borderRadius: "50%",
+                            backgroundColor: "primary.main",
+                        }}
+                    />
+                ))}
             </Box>
         );
     };
@@ -83,7 +86,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
 
         if (isValidDay) {
             const dateStr = `${daysInMonth.year}-${String(daysInMonth.month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
-            const hasAvailable = !!availabilitiesByDate[dateStr];
+            const availableCount = availabilitiesByDate[dateStr] || 0;
             const isToday = dateStr === todayStr;
             const isSelected = dateStr === selectedDateStr && !isToday;
 
@@ -119,7 +122,7 @@ const MiniCalendar = ({ availabilities, onDateClick, currentDate, selectedDate }
                     >
                         {dayNumber}
                     </Typography>
-                    {renderDots(hasAvailable)}
+                    {renderDots(availableCount)}
                 </Box>,
             );
         } else {

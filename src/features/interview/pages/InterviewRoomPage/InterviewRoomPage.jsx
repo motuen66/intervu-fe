@@ -27,6 +27,7 @@ import useUser from "../../../../common/hooks/useUser";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { ROLES } from "../../../../common/constants/common.js";
+import { INTERVIEW_ROOM_STATUS } from "../../../../common/constants/status.js";
 
 import QuestionPanel from "./QuestionPanel";
 import RoomReportModal from "./RoomReportModal";
@@ -154,10 +155,10 @@ function InterviewRoomPage() {
     const isViewOnly = searchParams.get("viewOnly") === "true";
 
     // ── Gate ──────────────────────────────────────────────────────────────────
-    // [LOADING_EFFECT] Initial state for room loading. Set to false to prevent initial blink/overlay.
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [roomInfo, setRoomInfo] = useState(null);
+    const redirectTimeoutRef = useRef(null);
     const [bookingDocLinks, setBookingDocLinks] = useState({
         jobDescriptionUrl: "",
         cvUrl: "",
@@ -165,29 +166,51 @@ function InterviewRoomPage() {
 
     const checkRoomStatus = useCallback(async () => {
         if (!user) return;
+        if (redirectTimeoutRef.current) {
+            clearTimeout(redirectTimeoutRef.current);
+            redirectTimeoutRef.current = null;
+        }
+
+        setLoading(true);
+        setError(null);
+        setRoomInfo(null);
+
         try {
-            // [LOADING_EFFECT] We could set loading(true) here, but commenting out to keep UI snappy.
-            // setLoading(true);
             const res = await callApi({ method: METHOD.GET, endpoint: `/interviewroom/${roomId}` });
             const roomPayload = res?.data;
             const room = roomPayload?.data ?? roomPayload ?? null;
             setRoomInfo(room);
-            setLoading(false);
+
             try {
                 trackRoomView(room?.id ?? roomId, { title: room?.title ?? room?.name, viewOnly: isViewOnly });
             } catch (err) {
                 console.warn("trackRoomView failed", err);
             }
+
+            if (!isViewOnly && room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING) {
+                setError("This interview room is not available to join yet. You will be redirected.");
+                redirectTimeoutRef.current = setTimeout(() => navigate("/interview"), 3000);
+            }
         } catch (err) {
             console.error("Failed to fetch room details:", err);
             setError("Failed to load interview room. You will be redirected.");
-            setTimeout(() => navigate("/interview"), 3000);
+            redirectTimeoutRef.current = setTimeout(() => navigate("/interview"), 3000);
+        } finally {
+            setLoading(false);
         }
-    }, [roomId, navigate, user]);
+    }, [roomId, navigate, user, isViewOnly]);
 
     useEffect(() => {
         if (user) checkRoomStatus();
     }, [user, checkRoomStatus]);
+
+    useEffect(() => {
+        return () => {
+            if (redirectTimeoutRef.current) {
+                clearTimeout(redirectTimeoutRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         const bookingRequestId = roomInfo?.bookingRequestId;
@@ -241,6 +264,9 @@ function InterviewRoomPage() {
     const [roadmapOpen, setRoadmapOpen] = useState(false);
     const evaluationFormRef = useRef(null);
 
+    const canJoinLiveRoom = !loading && !error && !isViewOnly && roomInfo?.status === INTERVIEW_ROOM_STATUS.ON_GOING;
+    const liveRoomId = canJoinLiveRoom ? roomId : null;
+
     // ── SignalR ──────────────────────────────────────────────────────────────
     const { connectionId, peers, sendSignal, leaveRoom, connectionState, reconnect } = useInterviewSignalR({
         roomId: loading || error || isViewOnly ? null : roomId,
@@ -252,7 +278,6 @@ function InterviewRoomPage() {
 
     // ── Code sync ────────────────────────────────────────────────────────────
     const {
-        editorRef,
         language,
         roomLanguageCodeMap,
         isRunning,
@@ -384,7 +409,7 @@ function InterviewRoomPage() {
     const { transcriptHistory, interimTranscript, addRemoteTranscript, isTranscribing, clearTranscriptHistory } =
         useTranscript({
             roomId,
-            isEnabled: !loading && !error && !isViewOnly,
+            isEnabled: canJoinLiveRoom,
             isMicOn,
             // ── Storage Stream: Mixed if Coach ────────────────
             audioStream: mixedStream,
@@ -896,7 +921,9 @@ function InterviewRoomPage() {
         return () => {
             try {
                 trackLeaveInterviewRoom(roomId);
-            } catch (err) {}
+            } catch {
+                // Analytics cleanup should never block unmount.
+            }
         };
     }, [roomId]);
 

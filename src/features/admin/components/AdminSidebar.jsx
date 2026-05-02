@@ -30,7 +30,15 @@ const adminNavItems = [
         items: [
             { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
             // { label: "Schedules", icon: Calendar, path: "/admin/schedules" },
-            { label: "Interviews", icon: Video, path: "/admin/interviews" },
+            {
+                label: "Interviews",
+                icon: Video,
+                key: "interviews",
+                children: [
+                    { label: "Overview", path: "/admin/interviews" },
+                    { label: "Types", path: "/admin/interviews/types" },
+                ],
+            },
             {
                 label: "Users",
                 icon: Users,

@@ -1,9 +1,9 @@
 import React from "react";
 import { Box, CardContent, Typography, Stack, CircularProgress, Avatar } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
-import StatusChip from "../../../../common/components/StatusChip";
 import SectionHeading from "../../../../common/components/SectionHeading";
-import { CheckCircle } from "lucide-react";
+import { Clock } from "lucide-react";
 import { AVAILABILITY_SLOTS_STATUS } from "../../../../common/constants/status";
 import { BE_BASE_URL } from "../../../../common/constants/env";
 
@@ -84,11 +84,20 @@ const getSessionName = (avail) => {
     return sessionName || "Interview Session";
 };
 
+const getRoomId = (avail) =>
+    avail.interviewRoom?.id || avail.interviewRoomId || avail.bookingRequest?.interviewRoomId || null;
+
 const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLocalTime }) => {
+    const navigate = useNavigate();
+
     const upcomingSlots = availabilities.filter(
         (a) =>
             (a.isBooked === true || a.status === AVAILABILITY_SLOTS_STATUS.BOOKED) && new Date(a.endTime) >= new Date(),
     );
+
+    const sortedUpcoming = upcomingSlots.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    const visibleSlots = sortedUpcoming.slice(0, 3);
+    const remaining = sortedUpcoming.length - visibleSlots.length;
 
     return (
         <BaseCard
@@ -101,15 +110,15 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
         >
             <CardContent sx={{ p: 2 }}>
                 <Box sx={{ mb: 1.5 }}>
-                    <SectionHeading title="Upcoming Interview Times" size="sm" disableGutters />
+                    <SectionHeading title="Upcoming Sessions" size="sm" disableGutters />
                 </Box>
 
-                <Stack spacing={1.5}>
+                <Stack spacing={1}>
                     {loading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
                             <CircularProgress size={24} />
                         </Box>
-                    ) : upcomingSlots.length === 0 ? (
+                    ) : visibleSlots.length === 0 ? (
                         <Typography
                             variant="body2"
                             sx={{ color: "text.secondary", textAlign: "center", py: 3, fontStyle: "italic" }}
@@ -117,43 +126,41 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
                             No upcoming booked slots
                         </Typography>
                     ) : (
-                        upcomingSlots
-                            .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-                            .slice(0, 5)
-                            .map((avail, index) => {
+                        <>
+                            {visibleSlots.map((avail, index) => {
                                 const candidateName = getCandidateName(avail);
                                 const candidateAvatar = normalizeImageUrl(getCandidateAvatar(avail));
                                 const sessionName = getSessionName(avail);
                                 const fallbackAvatarText = candidateName.charAt(0).toUpperCase();
+                                const roomId = getRoomId(avail);
+                                const target = roomId ? `/interview/room/${roomId}` : "/interview";
 
                                 return (
                                     <Box
                                         key={`${avail.id || "booked"}-${avail.startTime || index}`}
+                                        onClick={() => navigate(target)}
                                         sx={{
                                             border: "1px solid",
                                             borderColor: "divider",
                                             borderRadius: "8px",
-                                            p: 1.5,
+                                            p: 1.25,
+                                            cursor: "pointer",
                                             transition: "all 0.2s ease-in-out",
-                                            cursor:
-                                                avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED ? "default" : "pointer",
                                             "&:hover": {
                                                 borderColor: "primary.main",
                                                 boxShadow: "0 2px 8px rgba(15, 23, 42, 0.1)",
                                             },
                                         }}
                                     >
-                                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+                                        <Stack direction="row" spacing={1.25} alignItems="center">
                                             <Avatar
                                                 src={candidateAvatar}
                                                 alt={candidateName}
                                                 sx={{
-                                                    width: 36,
-                                                    height: 36,
-                                                    bgcolor:
-                                                        avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED
-                                                            ? "primary.light"
-                                                            : "grey.100",
+                                                    width: 32,
+                                                    height: 32,
+                                                    bgcolor: "primary.light",
+                                                    fontSize: 14,
                                                 }}
                                             >
                                                 {fallbackAvatarText}
@@ -164,10 +171,8 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
                                                     variant="body2"
                                                     sx={{
                                                         fontWeight: 600,
-                                                        color:
-                                                            avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED
-                                                                ? "text.primary"
-                                                                : "text.secondary",
+                                                        color: "text.primary",
+                                                        lineHeight: 1.3,
                                                     }}
                                                     noWrap
                                                 >
@@ -176,46 +181,55 @@ const UpcomingSessionBlog = ({ availabilities, loading, parseLocalDate, parseLoc
 
                                                 <Typography
                                                     variant="caption"
-                                                    sx={{ color: "text.secondary", display: "block", fontWeight: 500 }}
+                                                    sx={{
+                                                        color: "text.secondary",
+                                                        display: "block",
+                                                        fontWeight: 500,
+                                                        lineHeight: 1.3,
+                                                    }}
                                                     noWrap
                                                 >
                                                     {sessionName}
                                                 </Typography>
                                             </Box>
-
-                                            <StatusChip
-                                                label={
-                                                    avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED
-                                                        ? "BOOKED"
-                                                        : avail.status === AVAILABILITY_SLOTS_STATUS.RESERVED
-                                                          ? "RESERVED"
-                                                          : "AVAILABLE"
-                                                }
-                                                color={
-                                                    avail.status === AVAILABILITY_SLOTS_STATUS.BOOKED
-                                                        ? "primary"
-                                                        : avail.status === AVAILABILITY_SLOTS_STATUS.RESERVED
-                                                          ? "warning"
-                                                          : "secondary"
-                                                }
-                                                variant="filled"
-                                                icon={<CheckCircle size={14} />}
-                                            />
                                         </Stack>
 
-                                        <Typography
-                                            variant="caption"
-                                            sx={{ color: "text.secondary", display: "block", mb: 0.5, fontWeight: 500 }}
+                                        <Stack
+                                            direction="row"
+                                            spacing={0.75}
+                                            alignItems="center"
+                                            sx={{ mt: 0.75, color: "primary.main" }}
                                         >
-                                            {parseLocalDate(avail.startTime)}
-                                        </Typography>
-
-                                        <Typography variant="body2" sx={{ color: "primary.main", fontWeight: 600, mb: 1 }}>
-                                            {parseLocalTime(avail.startTime)} - {parseLocalTime(avail.endTime)}
-                                        </Typography>
+                                            <Clock size={13} />
+                                            <Typography variant="caption" sx={{ fontWeight: 600 }} noWrap>
+                                                {parseLocalDate(avail.startTime)}
+                                                <Box component="span" sx={{ mx: 0.75, color: "text.disabled" }}>
+                                                    •
+                                                </Box>
+                                                {parseLocalTime(avail.startTime)} - {parseLocalTime(avail.endTime)}
+                                            </Typography>
+                                        </Stack>
                                     </Box>
                                 );
-                            })
+                            })}
+
+                            {remaining > 0 && (
+                                <Typography
+                                    variant="caption"
+                                    onClick={() => navigate("/interview")}
+                                    sx={{
+                                        color: "primary.main",
+                                        fontWeight: 600,
+                                        textAlign: "center",
+                                        cursor: "pointer",
+                                        py: 0.5,
+                                        "&:hover": { textDecoration: "underline" },
+                                    }}
+                                >
+                                    + {remaining} more
+                                </Typography>
+                            )}
+                        </>
                     )}
                 </Stack>
             </CardContent>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
     Container,
     Box,
@@ -10,111 +10,114 @@ import {
     Skeleton,
     ToggleButton,
     ToggleButtonGroup,
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { DownloadRounded } from '@mui/icons-material';
-import { Receipt, Banknote, CheckCircle2, Coins } from 'lucide-react';
-import {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-} from 'recharts';
-import { callApi } from '../../../common/utils/apiConnector';
-import { METHOD } from '../../../common/constants/api';
-import { adminEndPoints } from '../services/adminApi';
-import toast from 'react-hot-toast';
-import DataTable from '../../../common/components/table/DataTable';
-import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
-import BaseCard from '../../../common/components/cards/BaseCard';
-import SectionHeading from '../../../common/components/SectionHeading';
-import useTableState from '../../../hooks/useTableState';
-import StatusChip from '../../../common/components/StatusChip';
-import { MetricCard, buildMetricTrend } from '../../../common/components/cards/MetricCard';
-import { formatCurrency } from '../../../common/utils/dateFormatter';
-import './AdminDashboard.css';
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import { DownloadRounded } from "@mui/icons-material";
+import { Receipt, Banknote, CheckCircle2, Coins } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { callApi } from "../../../common/utils/apiConnector";
+import { METHOD } from "../../../common/constants/api";
+import { adminEndPoints } from "../services/adminApi";
+import toast from "react-hot-toast";
+import DataTable from "../../../common/components/table/DataTable";
+import AdminPageHeader from "../../../common/components/admin/AdminPageHeader";
+import BaseCard from "../../../common/components/cards/BaseCard";
+import SectionHeading from "../../../common/components/SectionHeading";
+import useTableState from "../../../hooks/useTableState";
+import StatusChip from "../../../common/components/StatusChip";
+import { MetricCard, buildMetricTrend } from "../../../common/components/cards/MetricCard";
+import { formatCurrency } from "../../../common/utils/dateFormatter";
+import "./AdminDashboard.css";
+import { PrimaryButton } from "../../../common/components";
 
 const STATUS_COLOR_MAP = {
-    Paid: 'success',
-    PendingPayout: 'info',
-    Created: 'warning',
-    Cancel: 'error',
+    Paid: "success",
+    PendingPayout: "info",
+    Created: "warning",
+    Cancel: "error",
 };
 
 const TYPE_COLOR_MAP = {
-    Payment: 'primary',
-    Payout: 'error',
-    Refund: 'warning',
+    Payment: "primary",
+    Payout: "error",
+    Refund: "warning",
 };
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const ANALYTICS_PAGE_SIZE = 100;
 const WINDOW_OPTIONS = [7, 30, 90];
 
-const getInitials = (name = '') =>
-    name.split(' ').filter(Boolean).slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?';
+const getInitials = (name = "") =>
+    name
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase() || "?";
 
 const parseAmount = (value) => {
-    if (typeof value === 'number') return value;
-    const normalized = Number(String(value ?? '').replace(/,/g, '').trim());
+    if (typeof value === "number") return value;
+    const normalized = Number(
+        String(value ?? "")
+            .replace(/,/g, "")
+            .trim(),
+    );
     return Number.isFinite(normalized) ? normalized : 0;
 };
 
 const toStatusLabel = (status) => {
-    if (typeof status === 'number') {
-        if (status === 1) return 'Paid';
-        if (status === 2) return 'Cancel';
-        if (status === 3) return 'PendingPayout';
-        return 'Created';
+    if (typeof status === "number") {
+        if (status === 1) return "Paid";
+        if (status === 2) return "Cancel";
+        if (status === 3) return "PendingPayout";
+        return "Created";
     }
-    if (typeof status !== 'string') return 'Created';
+    if (typeof status !== "string") return "Created";
     const normalized = status.trim();
-    if (!normalized) return 'Created';
+    if (!normalized) return "Created";
     const lower = normalized.toLowerCase();
-    if (lower === 'completed') return 'Paid';
-    if (lower === 'pending') return 'Created';
+    if (lower === "completed") return "Paid";
+    if (lower === "pending") return "Created";
     return normalized;
 };
 
 const toTypeLabel = (type) => {
-    if (typeof type === 'number') {
-        if (type === 1) return 'Payment';
-        if (type === 2) return 'Payout';
-        if (type === 3) return 'Refund';
+    if (typeof type === "number") {
+        if (type === 1) return "Payment";
+        if (type === 2) return "Payout";
+        if (type === 3) return "Refund";
         return String(type);
     }
-    return String(type || 'Unknown');
+    return String(type || "Unknown");
 };
 
 const normalizeTransaction = (item) => ({
     ...item,
-    orderCode: item?.orderCode || item?.transactionCode || item?.id || '-',
+    orderCode: item?.orderCode || item?.transactionCode || item?.id || "-",
     type: toTypeLabel(item?.type),
     status: toStatusLabel(item?.status),
-    userName: item?.userName || item?.candidateName || item?.coachName || item?.partyName || '-',
-    userEmail: item?.userEmail || item?.candidateEmail || item?.coachEmail || item?.email || '',
+    userName: item?.userName || item?.candidateName || item?.coachName || item?.partyName || "-",
+    userEmail: item?.userEmail || item?.candidateEmail || item?.coachEmail || item?.email || "",
     amount: parseAmount(item?.amount),
     createdAt: item?.createdAt || item?.createdOn || item?.createdDate || item?.transactionDate || null,
 });
 
 const getDirection = (transaction) => {
-    const type = String(transaction?.type || '').toLowerCase();
-    if (type === 'payment') return 'inbound';
-    if (type === 'refund' || type === 'payout') return 'outbound';
-    return 'unknown';
+    const type = String(transaction?.type || "").toLowerCase();
+    if (type === "payment") return "inbound";
+    if (type === "refund" || type === "payout") return "outbound";
+    return "unknown";
 };
 
 const isPaidStatus = (status) => {
-    const value = String(status || '').toLowerCase();
-    return value === 'paid' || value === 'completed' || value === 'success';
+    const value = String(status || "").toLowerCase();
+    return value === "paid" || value === "completed" || value === "success";
 };
 
 const isPaidTransaction = (transaction) => {
     const direction = getDirection(transaction);
-    return isPaidStatus(transaction?.status) && (direction === 'inbound' || direction === 'outbound');
+    return isPaidStatus(transaction?.status) && (direction === "inbound" || direction === "outbound");
 };
 
 const getDateSafe = (value) => {
@@ -131,21 +134,21 @@ const toPercentChange = (current, previous) => {
 };
 
 const formatCompactNumber = (value) =>
-    new Intl.NumberFormat('vi-VN', {
-        notation: 'compact',
+    new Intl.NumberFormat("vi-VN", {
+        notation: "compact",
         maximumFractionDigits: 1,
     }).format(value || 0);
 
 const toDateKey = (date) => {
     const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
 };
 
 export default function AdminTransactionsPage({ filterType, filterStatus, title, subtitle }) {
-    const isOutflowContext = filterType === 'Payout' || filterType === 'Refund';
-    const isEarningsContext = filterType === 'Payment';
+    const isOutflowContext = filterType === "Payout" || filterType === "Refund";
+    const isEarningsContext = filterType === "Payment";
     const theme = useTheme();
     const {
         data: transactions,
@@ -164,14 +167,17 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
     const [windowDays, setWindowDays] = useState(30);
 
-    const getQueryString = useCallback((pageValue, pageSizeValue) => {
-        const params = new URLSearchParams();
-        params.set('page', String(pageValue));
-        params.set('pageSize', String(pageSizeValue));
-        if (filterType) params.set('type', filterType);
-        if (filterStatus) params.set('status', filterStatus);
-        return params.toString();
-    }, [filterType, filterStatus]);
+    const getQueryString = useCallback(
+        (pageValue, pageSizeValue) => {
+            const params = new URLSearchParams();
+            params.set("page", String(pageValue));
+            params.set("pageSize", String(pageSizeValue));
+            if (filterType) params.set("type", filterType);
+            if (filterStatus) params.set("status", filterStatus);
+            return params.toString();
+        },
+        [filterType, filterStatus],
+    );
 
     const fetchTransactions = useCallback(async () => {
         setLoading(true);
@@ -187,7 +193,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 setTotalItems(response.data?.totalItems || 0);
             }
         } catch {
-            toast.error('Error loading transactions');
+            toast.error("Error loading transactions");
         } finally {
             setLoading(false);
         }
@@ -220,7 +226,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             setAnalyticsTransactions(all);
         } catch {
             setAnalyticsTransactions([]);
-            toast.error('Error loading analytics data');
+            toast.error("Error loading analytics data");
         } finally {
             setAnalyticsLoading(false);
         }
@@ -238,7 +244,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         const data = analyticsTransactions.length ? analyticsTransactions : transactions;
         const now = Date.now();
         const currentStart = now - windowDays * DAY_IN_MS;
-        const previousStart = now - (windowDays * 2) * DAY_IN_MS;
+        const previousStart = now - windowDays * 2 * DAY_IN_MS;
 
         const transactionCount = data.length;
         let grossValue = 0;
@@ -260,7 +266,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             d.setHours(0, 0, 0, 0);
             const key = toDateKey(d);
             trendMap.set(key, {
-                label: d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+                label: d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
                 value: 0,
             });
             return key;
@@ -268,7 +274,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
 
         data.forEach((transaction) => {
             const amount = Math.abs(transaction.amount || 0);
-            const status = transaction.status || 'Unknown';
+            const status = transaction.status || "Unknown";
             const createdAt = getDateSafe(transaction.createdAt);
             const paidTransaction = isPaidTransaction(transaction);
 
@@ -322,7 +328,9 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         const previousSuccessRate = previousCount ? (previousPaid / previousCount) * 100 : 0;
         const averagePaidValue = paidTransactionCount ? grossValue / paidTransactionCount : 0;
         const currentAveragePaidValue = currentPaidTransactionCount ? currentGross / currentPaidTransactionCount : 0;
-        const previousAveragePaidValue = previousPaidTransactionCount ? previousGross / previousPaidTransactionCount : 0;
+        const previousAveragePaidValue = previousPaidTransactionCount
+            ? previousGross / previousPaidTransactionCount
+            : 0;
         const countChange = toPercentChange(currentCount, previousCount);
         const valueChange = toPercentChange(currentGross, previousGross);
         const successDelta = toPercentChange(currentSuccessRate, previousSuccessRate);
@@ -343,32 +351,35 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
 
     const handleExportCsv = useCallback(() => {
         if (!analyticsTransactions.length) {
-            toast.error('No data to export');
+            toast.error("No data to export");
             return;
         }
 
         const rows = analyticsTransactions.map((transaction) => ({
-            orderCode: transaction.orderCode || '',
-            type: transaction.type || '',
-            status: transaction.status || '',
-            party: transaction.userName || '',
-            email: transaction.userEmail || '',
+            orderCode: transaction.orderCode || "",
+            type: transaction.type || "",
+            status: transaction.status || "",
+            party: transaction.userName || "",
+            email: transaction.userEmail || "",
             amount: transaction.amount || 0,
-            createdAt: transaction.createdAt || '',
+            createdAt: transaction.createdAt || "",
         }));
 
-        const header = ['orderCode', 'type', 'status', 'party', 'email', 'amount', 'createdAt'];
+        const header = ["orderCode", "type", "status", "party", "email", "amount", "createdAt"];
         const csv = [
-            header.join(','),
-            ...rows.map((row) => header.map((key) => `"${String(row[key] ?? '').replace(/"/g, '""')}"`).join(',')),
-        ].join('\n');
+            header.join(","),
+            ...rows.map((row) => header.map((key) => `"${String(row[key] ?? "").replace(/"/g, '""')}"`).join(",")),
+        ].join("\n");
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        const cleanTitle = String(title || 'transactions').trim().toLowerCase().replace(/\s+/g, '-');
+        const link = document.createElement("a");
+        const cleanTitle = String(title || "transactions")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, "-");
         link.href = url;
-        link.setAttribute('download', `${cleanTitle}-report.csv`);
+        link.setAttribute("download", `${cleanTitle}-report.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -378,88 +389,90 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
     const columns = useMemo(
         () => [
             {
-                field: 'orderCode',
-                headerName: 'Order Code',
+                field: "orderCode",
+                headerName: "Order Code",
                 render: (val) => (
-                    <Typography sx={{ fontSize: '12px', fontWeight: 600, color: 'text.primary', fontFamily: 'monospace' }}>
+                    <Typography
+                        sx={{ fontSize: "12px", fontWeight: 600, color: "text.primary", fontFamily: "monospace" }}
+                    >
                         #{val}
                     </Typography>
                 ),
             },
             {
-                field: 'type',
-                headerName: 'Type',
-                render: (val) => (
-                    <StatusChip label={val} color={TYPE_COLOR_MAP[val] || 'default'} />
-                ),
+                field: "type",
+                headerName: "Type",
+                render: (val) => <StatusChip label={val} color={TYPE_COLOR_MAP[val] || "default"} />,
             },
             {
-                field: 'userName',
-                headerName: 'Party',
+                field: "userName",
+                headerName: "Party",
                 render: (val, row) => (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                         <Avatar
                             sx={{
                                 width: 28,
                                 height: 28,
                                 fontSize: 11,
                                 fontWeight: 700,
-                                bgcolor: 'secondary.main',
-                                color: 'primary.main',
+                                bgcolor: "secondary.main",
+                                color: "primary.main",
                             }}
                         >
                             {getInitials(val)}
                         </Avatar>
                         <Box>
-                            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: 'text.primary', lineHeight: 1.3 }}>
-                                {val || '-'}
+                            <Typography
+                                sx={{ fontSize: "13px", fontWeight: 600, color: "text.primary", lineHeight: 1.3 }}
+                            >
+                                {val || "-"}
                             </Typography>
-                            <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
-                                {row.userEmail || ''}
+                            <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
+                                {row.userEmail || ""}
                             </Typography>
                         </Box>
                     </Box>
                 ),
             },
             {
-                field: 'amount',
-                headerName: 'Amount',
+                field: "amount",
+                headerName: "Amount",
                 render: (val, row) => {
                     const direction = getDirection(row);
-                    const prefix = direction === 'inbound' ? '+' : direction === 'outbound' ? '-' : '';
-                    const tone = direction === 'inbound'
-                        ? 'success.main'
-                        : direction === 'outbound'
-                            ? 'error.main'
-                            : 'text.primary';
+                    const prefix = direction === "inbound" ? "+" : direction === "outbound" ? "-" : "";
+                    const tone =
+                        direction === "inbound"
+                            ? "success.main"
+                            : direction === "outbound"
+                              ? "error.main"
+                              : "text.primary";
                     return (
-                        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: tone }}>
-                            {prefix ? `${prefix} ` : ''}{formatCurrency(Math.abs(val))}
+                        <Typography sx={{ fontSize: "13px", fontWeight: 700, color: tone }}>
+                            {prefix ? `${prefix} ` : ""}
+                            {formatCurrency(Math.abs(val))}
                         </Typography>
                     );
                 },
             },
             {
-                field: 'status',
-                headerName: 'Status',
-                render: (val) => (
-                    <StatusChip label={val} color={STATUS_COLOR_MAP[val] || 'default'} />
-                ),
+                field: "status",
+                headerName: "Status",
+                render: (val) => <StatusChip label={val} color={STATUS_COLOR_MAP[val] || "default"} />,
             },
             {
-                field: 'createdAt',
-                headerName: 'Date',
+                field: "createdAt",
+                headerName: "Date",
                 render: (val) => {
                     const d = getDateSafe(val);
                     return !d
-                        ? '-'
-                        : d.toLocaleString('vi-VN', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        });
+                        ? "-"
+                        : d.toLocaleString("vi-VN", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                          });
                 },
             },
         ],
@@ -471,16 +484,16 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             <AdminPageHeader
                 title={title}
                 subtitle={subtitle}
-                actionButton={(
-                    <Button
+                actionButton={
+                    <PrimaryButton
                         onClick={handleExportCsv}
                         variant="contained"
                         startIcon={<DownloadRounded />}
-                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                        sx={{ textTransform: "none", fontWeight: 600 }}
                     >
                         Export Report
-                    </Button>
-                )}
+                    </PrimaryButton>
+                }
             />
 
             <Grid container spacing={2}>
@@ -496,8 +509,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                     <MetricCard
                         icon={<Banknote />}
-                        variant={isOutflowContext ? 'rose' : 'emerald'}
-                        label={isOutflowContext ? 'Money Out' : isEarningsContext ? 'Money In' : 'Paid Value'}
+                        variant={isOutflowContext ? "rose" : "emerald"}
+                        label={isOutflowContext ? "Money Out" : isEarningsContext ? "Money In" : "Paid Value"}
                         value={formatCurrency(analytics.grossValue)}
                         trend={buildMetricTrend({ delta: analytics.valueChange, preferLower: isOutflowContext })}
                     />
@@ -525,10 +538,15 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             <Grid container spacing={2}>
                 <Grid size={{ xs: 12 }}>
                     <BaseCard sx={{ p: 2.5 }}>
-                        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={1.25}>
+                        <Stack
+                            direction={{ xs: "column", md: "row" }}
+                            justifyContent="space-between"
+                            alignItems={{ xs: "flex-start", md: "center" }}
+                            spacing={1.25}
+                        >
                             <SectionHeading
-                                title={isOutflowContext ? 'Money Out Trend' : 'Money In Trend'}
-                                description={`Using live data from current ${title?.toLowerCase() || 'tab'} (${windowDays} days)`}
+                                title={isOutflowContext ? "Money Out Trend" : "Money In Trend"}
+                                description={`Using live data from current ${title?.toLowerCase() || "tab"} (${windowDays} days)`}
                                 disableGutters
                             />
                             <ToggleButtonGroup
@@ -549,16 +567,39 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                         {analyticsLoading ? (
                             <Skeleton variant="rounded" height={320} />
                         ) : (
-                            <Box sx={{ height: 320, width: '100%' }}>
+                            <Box sx={{ height: 320, width: "100%" }}>
                                 <ResponsiveContainer>
-                                    <AreaChart data={analytics.monthlyTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                                    <AreaChart
+                                        data={analytics.monthlyTrend}
+                                        margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                                    >
                                         <defs>
                                             <linearGradient id="valueGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor={isOutflowContext ? theme.palette.error.main : theme.palette.secondary.main} stopOpacity={0.2} />
-                                                <stop offset="95%" stopColor={isOutflowContext ? theme.palette.error.main : theme.palette.secondary.main} stopOpacity={0} />
+                                                <stop
+                                                    offset="5%"
+                                                    stopColor={
+                                                        isOutflowContext
+                                                            ? theme.palette.error.main
+                                                            : theme.palette.secondary.main
+                                                    }
+                                                    stopOpacity={0.2}
+                                                />
+                                                <stop
+                                                    offset="95%"
+                                                    stopColor={
+                                                        isOutflowContext
+                                                            ? theme.palette.error.main
+                                                            : theme.palette.secondary.main
+                                                    }
+                                                    stopOpacity={0}
+                                                />
                                             </linearGradient>
                                         </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            stroke={theme.palette.divider}
+                                            vertical={false}
+                                        />
                                         <XAxis
                                             dataKey="label"
                                             axisLine={false}
@@ -584,8 +625,12 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                         <Area
                                             type="monotone"
                                             dataKey="value"
-                                            name={isOutflowContext ? 'Money Out' : 'Money In'}
-                                            stroke={isOutflowContext ? theme.palette.error.main : theme.palette.secondary.main}
+                                            name={isOutflowContext ? "Money Out" : "Money In"}
+                                            stroke={
+                                                isOutflowContext
+                                                    ? theme.palette.error.main
+                                                    : theme.palette.secondary.main
+                                            }
                                             strokeWidth={2.5}
                                             fillOpacity={1}
                                             fill="url(#valueGradient)"

@@ -9,6 +9,9 @@ const CompanyManagementPage = lazy(() => import("../../features/admin/pages/Comp
 const AdminEmptyPage = lazy(() => import("../../features/admin/pages/AdminEmptyPage"));
 const AdminTransactionsPage = lazy(() => import("../../features/admin/pages/AdminTransactionsPage"));
 const AdminInterviewsPage = lazy(() => import("../../features/admin/pages/AdminInterviewsPage"));
+const AdminInterviewTypesPage = lazy(
+    () => import("../../features/admin/pages/InterviewTypeManagement/AdminInterviewTypesPage"),
+);
 const AdminReportsPage = lazy(() => import("../../features/admin/pages/AdminReportsPage"));
 const AdminRoomReportsPage = lazy(() =>
     import("../../features/admin/pages/AdminRoomReportsPage").then((module) => ({
@@ -17,11 +20,11 @@ const AdminRoomReportsPage = lazy(() =>
 );
 const AdminQuestionBankPage = lazy(() => import("../../features/admin/pages/AdminQuestionBankPage"));
 const ProblemResolutionDetail = lazy(() => import("../../features/admin/pages/ProblemResolutionDetail"));
-const AdminPineconeManagementPage = lazy(() =>
-    import("../../features/admin/pages/AdminPineconeManagementPage/AdminPineconeManagementPage"),
+const AdminPineconeManagementPage = lazy(
+    () => import("../../features/admin/pages/AdminPineconeManagementPage/AdminPineconeManagementPage"),
 );
-const PythonServiceMonitorPage = lazy(() =>
-    import("../../features/admin/pages/PythonServiceMonitorPage/PythonServiceMonitorPage"),
+const PythonServiceMonitorPage = lazy(
+    () => import("../../features/admin/pages/PythonServiceMonitorPage/PythonServiceMonitorPage"),
 );
 const AdminBroadcastPage = lazy(() => import("../../features/admin/pages/AdminBroadcastPage"));
 const AdminPlatformSettingsPage = lazy(() => import("../../features/admin/pages/AdminPlatformSettingsPage"));
@@ -37,6 +40,7 @@ export const adminRoutes = [
     { path: "/admin/dashboard", element: renderLazy(AdminDashboard) },
     { path: "/admin/schedules", element: renderLazy(AdminEmptyPage) },
     { path: "/admin/interviews", element: renderLazy(AdminInterviewsPage) },
+    { path: "/admin/interviews/types", element: renderLazy(AdminInterviewTypesPage) },
     // Users sub-section
     { path: "/admin/users", element: <Navigate to="/admin/users/candidates" replace /> },
     { path: "/admin/users/all", element: renderLazy(UserManagementPage) },
@@ -93,4 +97,3 @@ export const adminRoutes = [
     { path: "/admin/broadcast", element: renderLazy(AdminBroadcastPage) },
     { path: "/admin/system/platform-settings", element: renderLazy(AdminPlatformSettingsPage) },
 ];
-
