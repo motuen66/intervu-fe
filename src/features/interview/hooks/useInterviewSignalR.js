@@ -51,8 +51,19 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
   const [connectionId, setConnectionId] = useState(null);
   const [peers, setPeers] = useState([]);
   const [roomState, setRoomState] = useState(null);
+  // "connecting" | "connected" | "reconnecting" | "disconnected"
+  const [connectionState, setConnectionState] = useState("connecting");
 
   const connRef = useRef(null);
+  // Guards LeaveRoom so we emit at most once per connection lifecycle.
+  const hasLeftRef = useRef(false);
+  // Set true when the user (or unmount) deliberately stops the connection so
+  // onclose can suppress the "disconnected" UI for an intentional teardown.
+  const intentionalCloseRef = useRef(false);
+  // Snapshot of the latest join args so the manual reconnect path can re-issue
+  // JoinRoom without depending on closure state inside the start effect.
+  const joinArgsRef = useRef({ roomId, userId, role, userName });
+  joinArgsRef.current = { roomId, userId, role, userName };
 
   // sendSignal is stable across re-renders because it reads connRef.current.
   const sendSignal = useCallback(async (method, ...args) => {
@@ -67,11 +78,40 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
   const leaveRoom = useCallback(() => {
     const conn = connRef.current;
     if (!conn) return;
+    if (hasLeftRef.current) return;
     const safeRole = role ?? "";
     const safeUserName = userName ?? "Unknown";
+    hasLeftRef.current = true;
+    // Mark the upcoming close as intentional so the overlay does not flash
+    // during the user-initiated leave path.
+    intentionalCloseRef.current = true;
     conn.invoke("LeaveRoom", roomId, userId, safeRole, safeUserName).catch(() => {});
     conn.stop();
   }, [roomId, userId, role, userName]);
+
+  // Manual reconnect entrypoint exposed to the UI. Re-uses the existing
+  // connection object if SignalR has stopped — `start()` is idempotent only
+  // when state is Disconnected, so guard accordingly. Re-invokes JoinRoom on
+  // success so the server-side session is rebuilt the same way the auto path
+  // (`onreconnected`) does.
+  const reconnect = useCallback(async () => {
+    const conn = connRef.current;
+    if (!conn) return;
+    if (conn.state !== signalR.HubConnectionState.Disconnected) return;
+    const { roomId: rId, userId: uId, role: r, userName: n } = joinArgsRef.current;
+    if (!rId || !uId) return;
+    intentionalCloseRef.current = false;
+    setConnectionState("reconnecting");
+    try {
+      await conn.start();
+      setConnectionId(conn.connectionId ?? null);
+      setConnectionState("connected");
+      await conn.invoke("JoinRoom", rId, uId, r ?? "", n ?? "Unknown");
+    } catch (err) {
+      console.error("[SignalR] Manual reconnect failed:", err);
+      setConnectionState("disconnected");
+    }
+  }, []);
 
   useEffect(() => {
     if (!roomId || !userId) return;
@@ -89,18 +129,31 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       .build();
 
     connRef.current = conn;
+    intentionalCloseRef.current = false;
+    hasLeftRef.current = false;
 
     // ── Connection lifecycle ───────────────────────────────────────────────
+
+    conn.onreconnecting(() => {
+      console.log("[SignalR] Reconnecting…");
+      setConnectionState("reconnecting");
+    });
 
     conn.onreconnected((newId) => {
       console.log("[SignalR] Reconnected, new id:", newId);
       setConnectionId(newId ?? null);
+      setConnectionState("connected");
       conn.invoke("JoinRoom", roomId, userId, safeRole, safeUserName).catch(console.error);
     });
 
     conn.onclose(() => {
       console.log("[SignalR] Connection closed.");
       setConnectionId(null);
+      // Only flip to "disconnected" if the close was unexpected; intentional
+      // teardown (user leave / unmount) must not surface the overlay.
+      if (!intentionalCloseRef.current) {
+        setConnectionState("disconnected");
+      }
     });
 
     // ── Peer presence ──────────────────────────────────────────────────────
@@ -112,12 +165,16 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
         return [...prev, id];
       });
       callbacks.current?.onPeerJoin?.(id);
+      // Live announcement — fires only for peers who join AFTER us, never for
+      // the initial ExistingPeers sync (which is itself a separate event).
+      callbacks.current?.onRemoteUserJoined?.(id);
     });
 
     conn.on("UserLeft", (id) => {
       tLog("SignalR", "UserLeft:", id);
       setPeers((prev) => prev.filter((x) => x !== id));
       callbacks.current?.onPeerLeave?.(id);
+      callbacks.current?.onRemoteUserLeft?.(id);
     });
 
     conn.on("ExistingPeers", (existing) => {
@@ -211,13 +268,17 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
         const id = conn.connectionId;
         tLog("SignalR", "Connected, id:", id);
         setConnectionId(id ?? null);
+        setConnectionState("connected");
         tLog("SignalR", "Invoking JoinRoom...");
         return conn.invoke("JoinRoom", roomId, userId, safeRole, safeUserName);
       })
       .then(() => {
         tLog("SignalR", "JoinRoom completed");
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setConnectionState("disconnected");
+      });
 
     return () => {
       conn.off("UserJoined");
@@ -238,7 +299,12 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       conn.off("ReceiveTranscript");
       conn.off("PreparedQuestionStatusChanged");
 
-      conn.invoke("LeaveRoom", roomId, userId, safeRole, safeUserName).catch(() => {});
+      // Cleanup is also an intentional teardown — suppress the overlay.
+      intentionalCloseRef.current = true;
+      if (!hasLeftRef.current) {
+        hasLeftRef.current = true;
+        conn.invoke("LeaveRoom", roomId, userId, safeRole, safeUserName).catch(() => {});
+      }
       conn.stop();
       connRef.current = null;
     };
@@ -251,5 +317,7 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
     roomState,
     sendSignal,
     leaveRoom,
+    connectionState,
+    reconnect,
   };
 }

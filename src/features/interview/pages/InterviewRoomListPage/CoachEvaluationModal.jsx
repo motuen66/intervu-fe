@@ -20,15 +20,17 @@ import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
 import FormTextField from "../../../../common/components/form/FormTextField";
-import { PrimaryButton } from "../../../../common/components/buttons";
+import { PrimaryButton, TextButton } from "../../../../common/components/buttons";
 import SectionHeading from "../../../../common/components/SectionHeading";
 import AppText from "../../../../common/components/AppText";
+import ConfirmModal from "../../../../common/components/ConfirmModal";
 
 function CoachEvaluationModal({
     open,
     room,
     onClose,
     onSubmitted,
+    onLeaveWithoutEvaluating,
     allowClose = false,
     showCloseButton = false,
 }) {
@@ -38,6 +40,7 @@ function CoachEvaluationModal({
     const [error, setError] = useState("");
     const [others, setOthers] = useState("");
     const [hireDecision, setHireDecision] = useState("");
+    const [emergencyConfirmOpen, setEmergencyConfirmOpen] = useState(false);
 
     const normalizeHireDecision = (value) => {
         if (value === true) return "yes";
@@ -241,6 +244,7 @@ function CoachEvaluationModal({
     };
 
     return (
+        <>
         <Modal
             open={open}
             onClose={handleClose}
@@ -390,7 +394,17 @@ function CoachEvaluationModal({
                                 {!hireDecision && !!error && <FormHelperText>Please select Yes or No.</FormHelperText>}
                             </FormControl>
                         </Box>
-                        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ pt: 1 }}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ pt: 1 }}>
+                            {onLeaveWithoutEvaluating ? (
+                                <TextButton
+                                    onClick={() => setEmergencyConfirmOpen(true)}
+                                    disabled={submitting}
+                                >
+                                    Leave without evaluating
+                                </TextButton>
+                            ) : (
+                                <Box />
+                            )}
                             <PrimaryButton
                                 disabled={submitting || items.length === 0}
                                 onClick={handleSubmit}
@@ -402,6 +416,22 @@ function CoachEvaluationModal({
                 )}
             </Box>
         </Modal>
+        {onLeaveWithoutEvaluating && (
+            <ConfirmModal
+                show={emergencyConfirmOpen}
+                title="Leave without submitting evaluation?"
+                message={"This is intended for emergencies. The candidate's evaluation will not be saved or submitted, and you will exit the room immediately."}
+                onConfirm={() => {
+                    setEmergencyConfirmOpen(false);
+                    onLeaveWithoutEvaluating();
+                }}
+                onCancel={() => setEmergencyConfirmOpen(false)}
+                confirmText="Leave anyway"
+                cancelText="Stay"
+                confirmVariant="danger"
+            />
+        )}
+        </>
     );
 }
 

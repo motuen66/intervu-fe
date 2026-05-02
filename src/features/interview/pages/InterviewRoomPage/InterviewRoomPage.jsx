@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback, lazy, Suspense, memo } from "react";
-import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack } from "@mui/material";
+import { Box, CircularProgress, Typography, IconButton, Button, Avatar, Chip, Tooltip, Stack, useTheme } from "@mui/material";
 import toast from "react-hot-toast";
 
 // Icons
@@ -15,6 +15,7 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import CallEndIcon from "@mui/icons-material/CallEnd";
+import LogoutIcon from "@mui/icons-material/Logout";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FlagIcon from "@mui/icons-material/Flag";
@@ -42,7 +43,10 @@ import { useCodeSync, LANGUAGE_EXAMPLES } from "../../hooks/useCodeSync.js";
 import { useWhiteboardSync } from "../../hooks/useWhiteboardSync.js";
 import { useTranscript } from "../../hooks/useTranscript.js"; // Changed from useDeepgramTranscript
 import { getBookingRequestDetail } from "../../services/bookingRequestApi.js";
+import { resolveLocalDisplayName, resolveRemoteDisplayName } from "../../utils/displayNames.js";
+import { playJoinChime } from "../../utils/roomSounds.js";
 import CoachEvaluationModal from "../InterviewRoomListPage/CoachEvaluationModal";
+import ConfirmModal from "../../../../common/components/ConfirmModal";
 
 // Analytics
 import { trackRoomView, trackLeaveInterviewRoom } from "../../../../utils/analytics";
@@ -144,6 +148,7 @@ const TranscriptItem = memo(({ item }) => {
 // ---------------------------------------------------------------------------
 function InterviewRoomPage() {
     const user = useUser();
+    const theme = useTheme();
     const { roomId } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -263,8 +268,8 @@ function InterviewRoomPage() {
     const liveRoomId = canJoinLiveRoom ? roomId : null;
 
     // ── SignalR ──────────────────────────────────────────────────────────────
-    const { connectionId, sendSignal, leaveRoom } = useInterviewSignalR({
-        roomId: liveRoomId,
+    const { connectionId, peers, sendSignal, leaveRoom, connectionState, reconnect } = useInterviewSignalR({
+        roomId: loading || error || isViewOnly ? null : roomId,
         userId: user?.id,
         role: user?.role,
         userName: user?.fullName,
@@ -437,6 +442,56 @@ function InterviewRoomPage() {
     const [remoteCameraOn, setRemoteCameraOn] = useState(false);
     const [remoteMicOn, setRemoteMicOn] = useState(false);
     const [remoteInterim, setRemoteInterim] = useState("");
+    const [recentlyJoinedRemote, setRecentlyJoinedRemote] = useState(false);
+    const joinGlowTimerRef = useRef(null);
+    // peerId -> last-announced timestamp (ms). Suppresses repeat join toasts
+    // from the same peer during reconnect flapping; cleared on UserLeft so a
+    // genuine leave→rejoin still chimes.
+    const peerJoinAnnouncedAtRef = useRef(new Map());
+    const PEER_JOIN_DEDUP_MS = 5000;
+    // peerId -> last-announced timestamp (ms) for leave toasts.
+    // Defensive only: suppresses duplicate UserLeft events from signaling races.
+    const peerLeftAnnouncedAtRef = useRef(new Map());
+    const PEER_LEFT_DEDUP_MS = 3000;
+
+    // Remote presence state for waiting/reconnecting/left placeholder.
+    // "waiting": initial, peer never connected. "connected": at least one peer.
+    // "reconnecting": peer was here but currently absent (≤30s grace).
+    // "left": grace expired, treat as gone.
+    const [remotePresence, setRemotePresence] = useState("waiting");
+    const remoteHasJoinedRef = useRef(false);
+    const reconnectTimerRef = useRef(null);
+    const RECONNECT_GRACE_MS = 30000;
+
+    // B5 — connection overlay state. `lostWatchdogRef` holds the 30s timer that
+    // promotes a stuck "reconnecting" view to the "lost" view with a Retry CTA,
+    // even if SignalR has not yet given up. `retrying` blocks duplicate manual
+    // retries. `hasConnectedRef` suppresses the overlay during the very first
+    // connect — the room's existing loading flow already covers that case.
+    const [connectionLost, setConnectionLost] = useState(false);
+    const [retrying, setRetrying] = useState(false);
+    const lostWatchdogRef = useRef(null);
+    const hasConnectedRef = useRef(false);
+    const CONNECTION_LOST_WATCHDOG_MS = 30000;
+
+    useEffect(() => {
+        return () => {
+            if (joinGlowTimerRef.current) {
+                clearTimeout(joinGlowTimerRef.current);
+                joinGlowTimerRef.current = null;
+            }
+            if (reconnectTimerRef.current) {
+                clearTimeout(reconnectTimerRef.current);
+                reconnectTimerRef.current = null;
+            }
+            if (lostWatchdogRef.current) {
+                clearTimeout(lostWatchdogRef.current);
+                lostWatchdogRef.current = null;
+            }
+            peerJoinAnnouncedAtRef.current.clear();
+            peerLeftAnnouncedAtRef.current.clear();
+        };
+    }, []);
 
     // ── Problem / test-case state (Interviewer editing) ──────────────────────
     const [problemDescription, setProblemDescription] = useState("");
@@ -551,6 +606,59 @@ function InterviewRoomPage() {
             setRemoteMicOn(false);
             setRemoteInterim("");
         },
+        onRemoteUserJoined: (peerId) => {
+            // Per-peer dedup: suppress repeated join toasts for the same peer
+            // within PEER_JOIN_DEDUP_MS (handles ICE/SignalR reconnect flapping).
+            const now = Date.now();
+            const lastAt = peerJoinAnnouncedAtRef.current.get(peerId) ?? 0;
+            if (now - lastAt < PEER_JOIN_DEDUP_MS) return;
+            peerJoinAnnouncedAtRef.current.set(peerId, now);
+
+            const remoteRoleLabel = user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate";
+            const displayName =
+                remotePeerName && remotePeerName !== remoteRoleLabel
+                    ? remotePeerName
+                    : remoteRoleLabel;
+            toast.success(`${displayName} joined the room`, {
+                position: "top-center",
+                duration: 3000,
+            });
+            playJoinChime();
+
+            if (joinGlowTimerRef.current) clearTimeout(joinGlowTimerRef.current);
+            setRecentlyJoinedRemote(true);
+            joinGlowTimerRef.current = setTimeout(() => {
+                setRecentlyJoinedRemote(false);
+                joinGlowTimerRef.current = null;
+            }, 1200);
+        },
+        onRemoteUserLeft: (peerId) => {
+            const now = Date.now();
+            const lastLeftAt = peerLeftAnnouncedAtRef.current.get(peerId) ?? 0;
+            if (now - lastLeftAt < PEER_LEFT_DEDUP_MS) return;
+            peerLeftAnnouncedAtRef.current.set(peerId, now);
+
+            // Clear dedup entry so a genuine rejoin (after a clean leave) chimes.
+            peerJoinAnnouncedAtRef.current.delete(peerId);
+
+            const remoteRoleLabel = user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate";
+            const displayName =
+                remotePeerName && remotePeerName !== remoteRoleLabel
+                    ? remotePeerName
+                    : remoteRoleLabel;
+            toast(`${displayName} has left the room`, {
+                position: "top-center",
+                duration: 4000,
+                icon: (
+                    <LogoutIcon
+                        sx={{ color: "warning.main", fontSize: 20 }}
+                    />
+                ),
+                style: {
+                    borderLeft: `4px solid ${theme.palette.warning.main}`,
+                },
+            });
+        },
         onReceiveCode: applyExternalCode,
         onReceiveLanguage: applyExternalLanguage,
         onReceiveFullState: (state) => {
@@ -629,6 +737,76 @@ function InterviewRoomPage() {
         }
     }, [remoteStream]);
 
+    // B4 — drive remotePresence based on peers count
+    useEffect(() => {
+        if (peers.length > 0) {
+            if (reconnectTimerRef.current) {
+                clearTimeout(reconnectTimerRef.current);
+                reconnectTimerRef.current = null;
+            }
+            remoteHasJoinedRef.current = true;
+            setRemotePresence("connected");
+        } else if (remoteHasJoinedRef.current) {
+            setRemotePresence("reconnecting");
+            if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = setTimeout(() => {
+                setRemotePresence("left");
+                reconnectTimerRef.current = null;
+            }, RECONNECT_GRACE_MS);
+        } else {
+            setRemotePresence("waiting");
+        }
+    }, [peers.length]);
+
+    // B5 — react to SignalR connectionState transitions.
+    //   connected      → clear watchdog + "lost" flag + retrying flag
+    //   reconnecting   → start a 30s safety watchdog (auto-reconnect schedule
+    //                    only totals ~8s, but the watchdog covers slow paths
+    //                    and any state we somehow get stuck in)
+    //   disconnected   → auto-reconnect already gave up; surface Retry now
+    useEffect(() => {
+        if (connectionState === "connected") {
+            hasConnectedRef.current = true;
+            if (lostWatchdogRef.current) {
+                clearTimeout(lostWatchdogRef.current);
+                lostWatchdogRef.current = null;
+            }
+            setConnectionLost(false);
+            setRetrying(false);
+            return;
+        }
+        // Suppress overlay until the user has connected at least once — the
+        // initial join path is owned by other UI (loading + PrecheckModal).
+        if (!hasConnectedRef.current) return;
+
+        if (connectionState === "disconnected") {
+            if (lostWatchdogRef.current) {
+                clearTimeout(lostWatchdogRef.current);
+                lostWatchdogRef.current = null;
+            }
+            setConnectionLost(true);
+            setRetrying(false);
+            return;
+        }
+        if (connectionState === "reconnecting" || connectionState === "connecting") {
+            if (!lostWatchdogRef.current) {
+                lostWatchdogRef.current = setTimeout(() => {
+                    setConnectionLost(true);
+                    lostWatchdogRef.current = null;
+                }, CONNECTION_LOST_WATCHDOG_MS);
+            }
+        }
+    }, [connectionState]);
+
+    const handleManualReconnect = useCallback(() => {
+        if (retrying) return;
+        setRetrying(true);
+        setConnectionLost(false);
+        Promise.resolve(reconnect?.()).catch((err) => {
+            console.error("[B5] Manual reconnect error:", err);
+        });
+    }, [retrying, reconnect]);
+
     // Broadcast camera/mic state
     useEffect(() => {
         if (!connectionId || !roomId) return;
@@ -644,8 +822,21 @@ function InterviewRoomPage() {
 
     const [coachEvaluationState, setCoachEvaluationState] = useState({ open: false, room: null });
     const [isPreparingLeave, setIsPreparingLeave] = useState(false);
+    const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+    const leaveConfirmedRef = useRef(false);
 
-    const handleLeaveRoom = useCallback(async () => {
+    const performCandidateLeave = useCallback(() => {
+        leaveConfirmedRef.current = true;
+        leaveRoom();
+        try {
+            trackLeaveInterviewRoom(roomId);
+        } catch (err) {
+            console.warn("trackLeaveInterviewRoom failed", err);
+        }
+        navigate("/interview");
+    }, [leaveRoom, navigate, roomId]);
+
+    const handleLeaveRoom = useCallback(async ({ skipConfirm = false } = {}) => {
         if (isPreparingLeave) return;
 
         if (Number(user?.role) === ROLES.INTERVIEWER) {
@@ -663,17 +854,50 @@ function InterviewRoomPage() {
             return;
         }
 
+        if (!skipConfirm) {
+            setLeaveConfirmOpen(true);
+            return;
+        }
+
+        performCandidateLeave();
+    }, [isPreparingLeave, user?.role, roomInfo, performCandidateLeave]);
+
+    const handleConfirmLeave = useCallback(() => {
+        setLeaveConfirmOpen(false);
+        performCandidateLeave();
+    }, [performCandidateLeave]);
+
+    const handleCancelLeave = useCallback(() => {
+        setLeaveConfirmOpen(false);
+    }, []);
+
+    const handleCoachEmergencyLeave = useCallback(() => {
+        leaveConfirmedRef.current = true;
         leaveRoom();
         try {
             trackLeaveInterviewRoom(roomId);
         } catch (err) {
             console.warn("trackLeaveInterviewRoom failed", err);
         }
+        setCoachEvaluationState({ open: false, room: null });
         navigate("/interview");
-    }, [isPreparingLeave, leaveRoom, navigate, roomId, user?.role, roomInfo]);
+    }, [leaveRoom, navigate, roomId]);
+
+    // Native browser-tab close prompt — cheap insurance against an unexpected
+    // exit. Suppressed when the user has already confirmed via our modal.
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (leaveConfirmedRef.current) return;
+            event.preventDefault();
+            event.returnValue = "";
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, []);
 
     const handleCoachEvaluationSubmitted = () => {
         // Only call leaveRoom and navigate away AFTER submission is successful
+        leaveConfirmedRef.current = true;
         leaveRoom();
         try {
             trackLeaveInterviewRoom(roomId);
@@ -794,14 +1018,8 @@ function InterviewRoomPage() {
 
     // ── Peer info for camera widget ──────────────────────────────────────────
     const isCandidate = user?.role === ROLES.CANDIDATE;
-    const remotePeerName = roomInfo
-        ? isCandidate
-            ? roomInfo.coachName || "Coach"
-            : roomInfo.candidateName || "Candidate"
-        : "Peer";
-    const localRoleNameInRoom = isCandidate ? roomInfo?.candidateName : roomInfo?.coachName;
-    const localPeerName =
-        user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
+    const localPeerName = resolveLocalDisplayName(user, roomInfo, user?.role);
+    const remotePeerName = resolveRemoteDisplayName(roomInfo, user?.role);
     const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imagePath || user?.avatar;
     const remoteAvatar = roomInfo
         ? isCandidate
@@ -1430,6 +1648,19 @@ function InterviewRoomPage() {
                             isVisible={panelAVisible}
                             localStream={localStream}
                             remoteStream={remoteStream}
+                            recentlyJoinedRemote={recentlyJoinedRemote}
+                            remotePresence={remotePresence}
+                            remoteRoleLabel={user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate"}
+                            onEndInterview={user?.role === ROLES.INTERVIEWER ? handleLeaveRoom : undefined}
+                            connectionOverlayMode={
+                                connectionLost
+                                    ? "lost"
+                                    : hasConnectedRef.current && connectionState !== "connected"
+                                    ? "reconnecting"
+                                    : "none"
+                            }
+                            connectionRetrying={retrying}
+                            onReconnect={handleManualReconnect}
                         />
                     </Box>
                 </Box>
@@ -1911,8 +2142,21 @@ function InterviewRoomPage() {
                 room={coachEvaluationState.room}
                 onClose={handleCloseCoachEvaluation}
                 onSubmitted={handleCoachEvaluationSubmitted}
+                onLeaveWithoutEvaluating={handleCoachEmergencyLeave}
                 allowClose={true}
                 showCloseButton={true}
+            />
+
+            {/* ═══ Leave Confirmation (candidate) ═══ */}
+            <ConfirmModal
+                show={leaveConfirmOpen}
+                title="Leave the interview?"
+                message={"Your interviewer will be notified. You won't be able to rejoin once the session ends."}
+                onConfirm={handleConfirmLeave}
+                onCancel={handleCancelLeave}
+                confirmText="Leave room"
+                cancelText="Stay"
+                confirmVariant="danger"
             />
         </Box>
     );

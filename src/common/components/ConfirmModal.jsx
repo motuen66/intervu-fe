@@ -5,7 +5,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
-import { PrimaryButton, SecondaryButton } from "./buttons";
+import { PrimaryButton, SecondaryButton, DangerButton } from "./buttons";
 import { dialogStyles } from "../constants/uiStyles";
 import AppText from "./AppText";
 import SectionHeading from "./SectionHeading";
@@ -20,11 +20,13 @@ function ConfirmModal({
     confirmText = "Confirm",
     cancelText = "Cancel",
     hideCancel = false,
+    confirmVariant = "primary",
     paperSx,
     titleSx,
     contentSx,
     actionsSx,
 }) {
+    const ConfirmButton = confirmVariant === "danger" ? DangerButton : PrimaryButton;
     return (
         <Dialog open={show} onClose={onCancel} PaperProps={{ sx: { ...dialogStyles.paper, ...paperSx } }}>
             <DialogTitle
@@ -58,9 +60,9 @@ function ConfirmModal({
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, pt: 1, ...actionsSx }}>
                 {!hideCancel && <SecondaryButton onClick={onCancel}>{cancelText}</SecondaryButton>}
-                <PrimaryButton onClick={onConfirm}>
+                <ConfirmButton onClick={onConfirm}>
                     {confirmText}
-                </PrimaryButton>
+                </ConfirmButton>
             </DialogActions>
         </Dialog>
     );
