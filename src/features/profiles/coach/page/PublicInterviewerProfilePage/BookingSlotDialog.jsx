@@ -6,6 +6,7 @@ import {
     Typography,
     Stack,
     Paper,
+    TextField,
     Alert,
     Chip,
     Divider,
@@ -34,6 +35,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 const BLOCK_MINUTES = 30;
+const CANDIDATE_NOTE_MAX_LENGTH = 1000;
 
 /**
  * Given a starting block, find N consecutive blocks from the available pool.
@@ -75,6 +77,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
     const [selectedSlotData, setSelectedSlotData] = useState(null); // { startBlock, blocks }
 
     const [error, setError] = useState(null);
+    const [candidateNote, setCandidateNote] = useState("");
 
     // Data fetching
     useEffect(() => {
@@ -93,6 +96,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
             setSelectedSlotData(null);
             setCurrentMonth(new Date());
             setError(null);
+            setCandidateNote("");
         }
     }, [open, interviewerId, initialService]);
 
@@ -219,10 +223,12 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
     const handleConfirmBooking = () => {
         if (!selectedService || !selectedSlotData) return;
         if (onSlotSelected) {
+            const trimmedNote = candidateNote.trim();
             onSlotSelected({
                 slot: selectedSlotData.startBlock,
                 service: selectedService,
                 startTime: selectedSlotData.time,
+                ...(trimmedNote ? { candidateNote: trimmedNote.slice(0, CANDIDATE_NOTE_MAX_LENGTH) } : {}),
             });
         }
         onClose();
@@ -433,6 +439,40 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                     )}
                                 </Box>
                             </Stack>
+                        )}
+                        {activeStep === 1 && selectedSlotData && (
+                            <Box sx={{ pt: 3, pb: 1 }}>
+                                <Typography sx={{ fontWeight: 700, fontSize: "0.85rem", mb: 1, color: "text.primary" }}>
+                                    Note for coach{" "}
+                                    <Typography component="span" color="text.secondary" fontWeight={500} fontSize="0.8rem">
+                                        (optional)
+                                    </Typography>
+                                </Typography>
+                                <Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.5 }}>
+                                    Optional. Share goals, target role/company, topics to focus on, or anything the coach should know.
+                                </Typography>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    minRows={3}
+                                    size="small"
+                                    placeholder="Your note..."
+                                    value={candidateNote}
+                                    onChange={(e) =>
+                                        setCandidateNote(e.target.value.slice(0, CANDIDATE_NOTE_MAX_LENGTH))
+                                    }
+                                    inputProps={{ maxLength: CANDIDATE_NOTE_MAX_LENGTH }}
+                                    sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: "12px",
+                                            bgcolor: "background.default",
+                                        },
+                                    }}
+                                />
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
+                                    {candidateNote.length}/{CANDIDATE_NOTE_MAX_LENGTH}
+                                </Typography>
+                            </Box>
                         )}
                     </Box>
                 )}

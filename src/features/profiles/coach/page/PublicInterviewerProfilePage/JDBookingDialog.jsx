@@ -60,6 +60,7 @@ import "./JDBookingDialog.css";
 
 const STEPS = ["Job Details & Rounds", "Schedule Rounds"];
 const BLOCK_MINUTES = 30;
+const CANDIDATE_NOTE_MAX_LENGTH = 1000;
 
 let nextRoundId = 1;
 const createRound = () => ({
@@ -364,6 +365,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const [candidateNote, setCandidateNote] = useState("");
 
     const fetchProfileCvUrl = useCallback(async () => {
         if (!userData?.id) {
@@ -439,6 +441,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             setProfileCvUrl("");
             setLoadingProfileCv(false);
             setHasAttemptedProfileCvFetch(false);
+            setCandidateNote("");
         }
     }, [open, coachId, userData?.id, fetchProfileCvUrl]);
 
@@ -670,6 +673,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
 
         setSaving(true);
         try {
+            const trimmedNote = candidateNote.trim().slice(0, CANDIDATE_NOTE_MAX_LENGTH);
             const payload = {
                 coachId,
                 jobDescriptionUrl: form.jobDescriptionUrl.trim(),
@@ -679,6 +683,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     availabilityIds: r.availabilityIds,
                 })),
                 aimLevel: form.aimLevel === "" ? undefined : Number(form.aimLevel),
+                ...(trimmedNote ? { candidateNote: trimmedNote } : {}),
             };
             const booking = await createJDBookingRequest(payload);
             const payResult = await payBookingRequest(booking.id, {
@@ -1646,6 +1651,44 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                         </Typography>
                                                     </Box>
                                                 </Stack>
+                                            </Box>
+
+                                            <Box sx={{ mt: 2 }}>
+                                                <Typography
+                                                    variant="overline"
+                                                    color="#64748b"
+                                                    fontWeight={800}
+                                                    sx={{ letterSpacing: "0.06em", display: "block", mb: 1 }}
+                                                >
+                                                    Note for coach{" "}
+                                                    <Typography component="span" variant="caption" fontWeight={500}>
+                                                        (optional)
+                                                    </Typography>
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.25 }}>
+                                                    Optional. Share goals, target role/company, topics to focus on, or anything the coach should know.
+                                                </Typography>
+                                                <FormTextField
+                                                    fullWidth
+                                                    multiline
+                                                    minRows={3}
+                                                    size="small"
+                                                    placeholder="Your note..."
+                                                    value={candidateNote}
+                                                    onChange={(e) =>
+                                                        setCandidateNote(e.target.value.slice(0, CANDIDATE_NOTE_MAX_LENGTH))
+                                                    }
+                                                    inputProps={{ maxLength: CANDIDATE_NOTE_MAX_LENGTH }}
+                                                    sx={{
+                                                        "& .MuiOutlinedInput-root": {
+                                                            borderRadius: "12px",
+                                                            bgcolor: "rgba(255,255,255,0.06)",
+                                                        },
+                                                    }}
+                                                />
+                                                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
+                                                    {candidateNote.length}/{CANDIDATE_NOTE_MAX_LENGTH}
+                                                </Typography>
                                             </Box>
                                         </Stack>
                                     </Box>

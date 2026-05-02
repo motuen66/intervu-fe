@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, Typography, Tabs, Tab, Stack, Link, Button } from "@mui/material";
-import BusinessCenterIcon from "@mui/icons-material/BusinessCenter";
+import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
 import PersonIcon from "@mui/icons-material/Person";
 import LockIcon from "@mui/icons-material/Lock";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
@@ -86,11 +86,36 @@ function getInlineDocumentPreviewUrl(rawUrl) {
     return "";
 }
 
-export function JdCvPanel({ roomId, user, jobDescriptionUrl, cvUrl, evaluationFormRef = null }) {
+export function JdCvPanel({ roomId, user, jobDescriptionUrl, cvUrl, candidateNote = "", evaluationFormRef = null }) {
     const [tab, setTab] = useState(0);
+    const trimmedNote = (candidateNote ?? "").trim();
 
     return (
         <Box sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            {trimmedNote.length > 0 && (
+                <Box
+                    sx={{
+                        flexShrink: 0,
+                        px: 2,
+                        pt: 1.5,
+                        pb: 1,
+                        borderBottom: "1px solid #E5E7EB",
+                        bgcolor: "#FAFBFC",
+                    }}
+                >
+                    <Stack direction="row" spacing={1} alignItems="flex-start">
+                        <StickyNote2OutlinedIcon sx={{ fontSize: 18, color: "#64748b", mt: 0.25 }} />
+                        <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: "#475569", letterSpacing: "0.04em" }}>
+                                Candidate note
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: "#334155", whiteSpace: "pre-wrap", mt: 0.5, lineHeight: 1.55 }}>
+                                {trimmedNote}
+                            </Typography>
+                        </Box>
+                    </Stack>
+                </Box>
+            )}
             <Tabs
                 value={tab}
                 onChange={(_, v) => setTab(v)}

@@ -162,6 +162,7 @@ function InterviewRoomPage() {
     const [bookingDocLinks, setBookingDocLinks] = useState({
         jobDescriptionUrl: "",
         cvUrl: "",
+        candidateNote: "",
     });
 
     const checkRoomStatus = useCallback(async () => {
@@ -215,7 +216,7 @@ function InterviewRoomPage() {
     useEffect(() => {
         const bookingRequestId = roomInfo?.bookingRequestId;
         if (!bookingRequestId) {
-            setBookingDocLinks({ jobDescriptionUrl: "", cvUrl: "" });
+            setBookingDocLinks({ jobDescriptionUrl: "", cvUrl: "", candidateNote: "" });
             return;
         }
 
@@ -229,12 +230,13 @@ function InterviewRoomPage() {
                     setBookingDocLinks({
                         jobDescriptionUrl: payload?.jobDescriptionUrl ?? "",
                         cvUrl: payload?.cvUrl ?? "",
+                        candidateNote: payload?.candidateNote ?? "",
                     });
                 }
             } catch (err) {
                 console.error("Failed to load booking request links:", err);
                 if (!cancelled) {
-                    setBookingDocLinks({ jobDescriptionUrl: "", cvUrl: "" });
+                    setBookingDocLinks({ jobDescriptionUrl: "", cvUrl: "", candidateNote: "" });
                 }
             }
         };
@@ -1761,6 +1763,7 @@ function InterviewRoomPage() {
                                 user={user}
                                 jobDescriptionUrl={bookingDocLinks.jobDescriptionUrl}
                                 cvUrl={bookingDocLinks.cvUrl}
+                                candidateNote={bookingDocLinks.candidateNote}
                                 evaluationFormRef={evaluationFormRef}
                             />
                         )}
