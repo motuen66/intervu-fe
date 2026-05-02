@@ -242,7 +242,7 @@ function InterviewRoomPage() {
     const evaluationFormRef = useRef(null);
 
     // ── SignalR ──────────────────────────────────────────────────────────────
-    const { connectionId, peers, sendSignal, leaveRoom } = useInterviewSignalR({
+    const { connectionId, peers, sendSignal, leaveRoom, connectionState, reconnect } = useInterviewSignalR({
         roomId: loading || error || isViewOnly ? null : roomId,
         userId: user?.id,
         role: user?.role,
@@ -424,6 +424,10 @@ function InterviewRoomPage() {
     // genuine leave→rejoin still chimes.
     const peerJoinAnnouncedAtRef = useRef(new Map());
     const PEER_JOIN_DEDUP_MS = 5000;
+    // peerId -> last-announced timestamp (ms) for leave toasts.
+    // Defensive only: suppresses duplicate UserLeft events from signaling races.
+    const peerLeftAnnouncedAtRef = useRef(new Map());
+    const PEER_LEFT_DEDUP_MS = 3000;
 
     // Remote presence state for waiting/reconnecting/left placeholder.
     // "waiting": initial, peer never connected. "connected": at least one peer.
@@ -433,6 +437,17 @@ function InterviewRoomPage() {
     const remoteHasJoinedRef = useRef(false);
     const reconnectTimerRef = useRef(null);
     const RECONNECT_GRACE_MS = 30000;
+
+    // B5 — connection overlay state. `lostWatchdogRef` holds the 30s timer that
+    // promotes a stuck "reconnecting" view to the "lost" view with a Retry CTA,
+    // even if SignalR has not yet given up. `retrying` blocks duplicate manual
+    // retries. `hasConnectedRef` suppresses the overlay during the very first
+    // connect — the room's existing loading flow already covers that case.
+    const [connectionLost, setConnectionLost] = useState(false);
+    const [retrying, setRetrying] = useState(false);
+    const lostWatchdogRef = useRef(null);
+    const hasConnectedRef = useRef(false);
+    const CONNECTION_LOST_WATCHDOG_MS = 30000;
 
     useEffect(() => {
         return () => {
@@ -444,7 +459,12 @@ function InterviewRoomPage() {
                 clearTimeout(reconnectTimerRef.current);
                 reconnectTimerRef.current = null;
             }
+            if (lostWatchdogRef.current) {
+                clearTimeout(lostWatchdogRef.current);
+                lostWatchdogRef.current = null;
+            }
             peerJoinAnnouncedAtRef.current.clear();
+            peerLeftAnnouncedAtRef.current.clear();
         };
     }, []);
 
@@ -588,6 +608,11 @@ function InterviewRoomPage() {
             }, 1200);
         },
         onRemoteUserLeft: (peerId) => {
+            const now = Date.now();
+            const lastLeftAt = peerLeftAnnouncedAtRef.current.get(peerId) ?? 0;
+            if (now - lastLeftAt < PEER_LEFT_DEDUP_MS) return;
+            peerLeftAnnouncedAtRef.current.set(peerId, now);
+
             // Clear dedup entry so a genuine rejoin (after a clean leave) chimes.
             peerJoinAnnouncedAtRef.current.delete(peerId);
 
@@ -707,6 +732,55 @@ function InterviewRoomPage() {
             setRemotePresence("waiting");
         }
     }, [peers.length]);
+
+    // B5 — react to SignalR connectionState transitions.
+    //   connected      → clear watchdog + "lost" flag + retrying flag
+    //   reconnecting   → start a 30s safety watchdog (auto-reconnect schedule
+    //                    only totals ~8s, but the watchdog covers slow paths
+    //                    and any state we somehow get stuck in)
+    //   disconnected   → auto-reconnect already gave up; surface Retry now
+    useEffect(() => {
+        if (connectionState === "connected") {
+            hasConnectedRef.current = true;
+            if (lostWatchdogRef.current) {
+                clearTimeout(lostWatchdogRef.current);
+                lostWatchdogRef.current = null;
+            }
+            setConnectionLost(false);
+            setRetrying(false);
+            return;
+        }
+        // Suppress overlay until the user has connected at least once — the
+        // initial join path is owned by other UI (loading + PrecheckModal).
+        if (!hasConnectedRef.current) return;
+
+        if (connectionState === "disconnected") {
+            if (lostWatchdogRef.current) {
+                clearTimeout(lostWatchdogRef.current);
+                lostWatchdogRef.current = null;
+            }
+            setConnectionLost(true);
+            setRetrying(false);
+            return;
+        }
+        if (connectionState === "reconnecting" || connectionState === "connecting") {
+            if (!lostWatchdogRef.current) {
+                lostWatchdogRef.current = setTimeout(() => {
+                    setConnectionLost(true);
+                    lostWatchdogRef.current = null;
+                }, CONNECTION_LOST_WATCHDOG_MS);
+            }
+        }
+    }, [connectionState]);
+
+    const handleManualReconnect = useCallback(() => {
+        if (retrying) return;
+        setRetrying(true);
+        setConnectionLost(false);
+        Promise.resolve(reconnect?.()).catch((err) => {
+            console.error("[B5] Manual reconnect error:", err);
+        });
+    }, [retrying, reconnect]);
 
     // Broadcast camera/mic state
     useEffect(() => {
@@ -1551,6 +1625,15 @@ function InterviewRoomPage() {
                             remotePresence={remotePresence}
                             remoteRoleLabel={user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate"}
                             onEndInterview={user?.role === ROLES.INTERVIEWER ? handleLeaveRoom : undefined}
+                            connectionOverlayMode={
+                                connectionLost
+                                    ? "lost"
+                                    : hasConnectedRef.current && connectionState !== "connected"
+                                    ? "reconnecting"
+                                    : "none"
+                            }
+                            connectionRetrying={retrying}
+                            onReconnect={handleManualReconnect}
                         />
                     </Box>
                 </Box>
