@@ -60,7 +60,7 @@ const setupFields = [
     },
     {
         id: "level",
-        label: "Experience Level",
+        label: "Target Level",
         step: "2.",
         type: "single",
         options: ["Entry", "Junior", "Mid-Level", "Senior", "Staff / Lead"],

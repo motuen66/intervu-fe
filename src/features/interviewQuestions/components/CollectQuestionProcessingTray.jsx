@@ -1,6 +1,6 @@
-import { Paper, Box, Typography, IconButton, LinearProgress, Collapse } from "@mui/material";
+import { Paper, Box, Typography, IconButton, LinearProgress } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, CheckCircle, X, ChevronDown } from "lucide-react";
+import { Bot, CheckCircle, X } from "lucide-react";
 import PrimaryButton from "../../../common/components/buttons/PrimaryButton";
 import "./CollectQuestionProcessingTray.css";
 
@@ -11,8 +11,6 @@ export default function CollectQuestionProcessingTray({
     completeTitle = "Analysis Complete!",
     completeCtaLabel = "Review Now",
     isComplete = false,
-    expanded = true,
-    onToggle,
     onReview,
     onClose,
 }) {
@@ -35,14 +33,12 @@ export default function CollectQuestionProcessingTray({
             }}
         >
             <Box
-                onClick={onToggle}
                 sx={{
                     display: "flex",
                     alignItems: "center",
                     gap: 1.25,
                     px: 2,
                     py: 1.25,
-                    cursor: "pointer",
                     bgcolor: headerBg,
                     color: "primary.main",
                     transition: "background-color .4s ease",
@@ -55,14 +51,6 @@ export default function CollectQuestionProcessingTray({
                 <Typography variant="subtitle2" sx={{ flex: 1, fontWeight: 600 }}>
                     {title}
                 </Typography>
-                <Box
-                    component={motion.div}
-                    animate={{ rotate: expanded ? 0 : 180 }}
-                    transition={{ duration: 0.2 }}
-                    sx={{ display: "inline-flex", opacity: 0.85 }}
-                >
-                    <ChevronDown size={18} />
-                </Box>
                 <IconButton
                     size="small"
                     onClick={(e) => {
@@ -76,55 +64,53 @@ export default function CollectQuestionProcessingTray({
                 </IconButton>
             </Box>
 
-            <Collapse in={expanded} timeout="auto">
-                <Box sx={{ px: 2, py: 1.75 }}>
-                    <AnimatePresence mode="wait">
-                        {isComplete ? (
-                            <motion.div
-                                key="complete"
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                transition={{ duration: 0.25 }}
-                            >
-                                <Typography variant="body2" sx={{ color: "text.secondary", mb: 1.5 }}>
-                                    {completeTitle}
+            <Box sx={{ px: 2, py: 1.75 }}>
+                <AnimatePresence mode="wait">
+                    {isComplete ? (
+                        <motion.div
+                            key="complete"
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.25 }}
+                        >
+                            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1.5 }}>
+                                {completeTitle}
+                            </Typography>
+                            <PrimaryButton fullWidth onClick={onReview}>
+                                {completeCtaLabel}
+                            </PrimaryButton>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="running"
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.25 }}
+                        >
+                            <LinearProgress
+                                variant="determinate"
+                                value={progress}
+                                sx={{
+                                    height: 8,
+                                    borderRadius: 4,
+                                    mb: 1,
+                                    "& .MuiLinearProgress-bar": { bgcolor: "primary.main" },
+                                }}
+                            />
+                            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                    {status}
                                 </Typography>
-                                <PrimaryButton fullWidth onClick={onReview}>
-                                    {completeCtaLabel}
-                                </PrimaryButton>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="running"
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                transition={{ duration: 0.25 }}
-                            >
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={progress}
-                                    sx={{
-                                        height: 8,
-                                        borderRadius: 4,
-                                        mb: 1,
-                                        "& .MuiLinearProgress-bar": { bgcolor: "primary.main" },
-                                    }}
-                                />
-                                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                        {status}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                                        {Math.round(progress)}%
-                                    </Typography>
-                                </Box>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </Box>
-            </Collapse>
+                                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                                    {Math.round(progress)}%
+                                </Typography>
+                            </Box>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </Box>
         </Paper>
     );
 }

@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from "react";
+import { useTheme } from "@mui/material/styles";
 import { Background, Controls, MarkerType, MiniMap, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import RoadmapNode from "./RoadmapNode";
@@ -6,12 +7,20 @@ import RoadmapNode from "./RoadmapNode";
 const NODE_WIDTH = 280;
 const NODE_HEIGHT = 165;
 const NODE_GAP_X = 36;
+const NODE_GAP_Y = 18;
 const PHASE_PADDING_X = 24;
 const PHASE_HEADER_HEIGHT = 85;
 const PHASE_HEADER_HEIGHT_WITH_DESC = 124;
-const PHASE_BOTTOM_PADDING = 0;
+const PHASE_BOTTOM_PADDING = 24;
 const PHASE_GAP_Y = 84;
-const MIN_PHASE_WIDTH = 520;
+const PILLAR_COLUMNS = ["HARD_SKILL", "SOFT_SKILL", "LIVE_CHECKPOINT"];
+const PILLAR_LABELS = {
+    HARD_SKILL: "Hard Skills",
+    SOFT_SKILL: "Soft Skills",
+    LIVE_CHECKPOINT: "Live Checkpoint",
+};
+const MIN_PHASE_WIDTH =
+    PILLAR_COLUMNS.length * NODE_WIDTH + (PILLAR_COLUMNS.length - 1) * NODE_GAP_X + PHASE_PADDING_X * 2;
 
 const getChildSkillNames = (childSkills = []) => {
     return childSkills
@@ -64,16 +73,21 @@ function PhaseNode({ data }) {
                     {data.description}
                 </div>
             ) : null}
+            <div style={{ display: "flex", gap: "8px", marginTop: "10px", fontSize: "11px", color: "#64748b" }}>
+                {PILLAR_COLUMNS.map((pillar) => (
+                    <span key={pillar}>{PILLAR_LABELS[pillar]}</span>
+                ))}
+            </div>
         </div>
     );
 }
 
 const getEdgeVisual = (status) => {
-    if (status === "Complete") {
+    if (status === "Complete" || status === "Passed") {
         return { stroke: "#52c41a", strokeDasharray: "0", animated: false };
     }
 
-    if (status === "Weak") {
+    if (status === "Weak" || status === "Needs Improvement") {
         return { stroke: "#1677ff", strokeDasharray: "0", animated: true };
     }
 
@@ -106,6 +120,7 @@ const nodeTypes = {
 };
 
 function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, height = "100vh" }) {
+    const theme = useTheme();
     const { nodes, edges, nodeDetailsById } = useMemo(() => {
         const nodes = [];
         const edges = [];
@@ -118,23 +133,22 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
 
         const sourceRoadmap = roadmapInput;
 
-        const maxNodesPerPhase = sourceRoadmap.phases.reduce((maxCount, phase) => {
-            return Math.max(maxCount, phase.nodes.length);
-        }, 1);
-        const roadmapWidth = Math.max(
-            MIN_PHASE_WIDTH,
-            maxNodesPerPhase * NODE_WIDTH + Math.max(0, maxNodesPerPhase - 1) * NODE_GAP_X + PHASE_PADDING_X * 2,
-        );
+        const roadmapWidth = MIN_PHASE_WIDTH;
         const phaseX = -roadmapWidth / 2;
 
         let currentY = 0;
 
         sourceRoadmap.phases.forEach((phase, pIndex) => {
-            const totalNodeWidth = phase.nodes.length * NODE_WIDTH + Math.max(0, phase.nodes.length - 1) * NODE_GAP_X;
-            const nodeStartX = (roadmapWidth - totalNodeWidth) / 2;
             const phaseDescription = phase.phase_description ?? phase.description ?? "";
             const headerHeight = phaseDescription ? PHASE_HEADER_HEIGHT_WITH_DESC : PHASE_HEADER_HEIGHT;
-            const phaseHeight = headerHeight + NODE_HEIGHT + PHASE_BOTTOM_PADDING;
+            const grouped = PILLAR_COLUMNS.reduce((acc, pillar) => {
+                acc[pillar] = phase.nodes.filter((node) => (node.pillar_type ?? "HARD_SKILL") === pillar);
+                return acc;
+            }, {});
+            const maxRows = Math.max(1, ...PILLAR_COLUMNS.map((pillar) => grouped[pillar].length));
+            const phaseHeight =
+                headerHeight + maxRows * NODE_HEIGHT + Math.max(0, maxRows - 1) * NODE_GAP_Y + PHASE_BOTTOM_PADDING;
+            const isPhaseLocked = false;
 
             nodes.push({
                 id: phase.phase_id,
@@ -147,12 +161,16 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
                     phaseNumber: pIndex + 1,
                     totalSkills: phase.nodes.length,
                     description: phaseDescription,
+                    status: phase.status,
                 },
             });
 
-            phase.nodes.forEach((skill, sIndex) => {
+            phase.nodes.forEach((skill) => {
                 const skillId = skill.skill_id;
                 const childSkillNames = getChildSkillNames(skill.child_skills ?? []);
+                const pillarType = skill.pillar_type ?? "HARD_SKILL";
+                const columnIndex = Math.max(0, PILLAR_COLUMNS.indexOf(pillarType));
+                const rowIndex = grouped[pillarType]?.findIndex((node) => node.skill_id === skill.skill_id) ?? 0;
 
                 nodes.push({
                     id: skillId,
@@ -167,8 +185,14 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
                         targetLevel: skill.assessment.target_level ?? "",
                         score: Number(skill.assessment.score ?? 0),
                         childSkills: childSkillNames,
+                        pillarType,
+                        checkpoint: skill.checkpoint ?? null,
+                        locked: false,
                     },
-                    position: { x: nodeStartX + sIndex * (NODE_WIDTH + NODE_GAP_X), y: headerHeight },
+                    position: {
+                        x: PHASE_PADDING_X + columnIndex * (NODE_WIDTH + NODE_GAP_X),
+                        y: headerHeight + rowIndex * (NODE_HEIGHT + NODE_GAP_Y),
+                    },
                 });
 
                 nodeDetailsById[skillId] = {
@@ -280,11 +304,12 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
                             ariaLabel="Roadmap minimap"
                             nodeStrokeWidth={3}
                             nodeColor={(node) => {
-                                if (node.type === "phaseNode") return "#CBD5E1";
+                                if (node.type === "phaseNode") return theme.palette.divider;
                                 const status = node.data?.status;
-                                if (status === "Complete") return "#22C55E";
-                                if (status === "Weak") return "#EAB308";
-                                return "#94A3B8";
+                                if (status === "Complete" || status === "Passed") return theme.palette.success.main;
+                                if (status === "Weak" || status === "Needs Improvement")
+                                    return theme.palette.warning.main;
+                                return theme.palette.text.disabled;
                             }}
                             maskColor="rgba(15, 23, 42, 0.08)"
                             style={{ borderRadius: "8px", border: "1px solid #E2E8F0" }}

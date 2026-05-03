@@ -13,7 +13,8 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
     const [savingDraft, setSavingDraft] = useState(false);
     const [lastSaved, setLastSaved] = useState(null);
     const [error, setError] = useState(null);
-    
+    const [checkpointContext, setCheckpointContext] = useState(null);
+
     const hasUnsavedChanges = useRef(false);
 
     useEffect(() => {
@@ -31,7 +32,7 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
             if (hasUnsavedChanges.current && !savingDraft) {
                 saveDraft();
             }
-        }, 10000); 
+        }, 10000);
         return () => clearInterval(interval);
     }, [evalItems, savingDraft]);
 
@@ -45,14 +46,18 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
             const data = res?.data;
 
             // Normalize keys to ensure consistency (handles both lowercase and PascalCase from API)
-            const normalizedResults = (data?.evaluationResults || []).map(item => ({
+            const normalizedResults = (data?.evaluationResults || []).map((item) => ({
                 type: item.type || item.Type || "",
                 question: item.question || item.Question || "",
                 score: item.score ?? item.Score ?? 0,
-                answer: item.answer ?? item.Answer ?? ""
+                answer: item.answer ?? item.Answer ?? "",
             }));
 
             setEvalItems(normalizedResults);
+            setCheckpointContext({
+                roadmapNodeId: data?.roadmapNodeId ?? data?.RoadmapNodeId ?? "",
+                passThreshold: data?.checkpointPassThreshold ?? data?.CheckpointPassThreshold ?? 70,
+            });
         } catch (err) {
             console.error("Failed to load evaluation form", err);
             setError("Failed to load evaluation form.");
@@ -63,7 +68,7 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
 
     const saveDraft = async () => {
         if (!roomId || evalItems.length === 0 || savingDraft || !hasUnsavedChanges.current) return false;
-        
+
         setSavingDraft(true);
         try {
             await callApi({
@@ -91,10 +96,8 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
     const handleEvalChange = (index, field, value) => {
         setEvalItems((prev) =>
             prev.map((item, i) =>
-                i === index
-                    ? { ...item, [field]: field === "score" ? Number(value) : value }
-                    : item
-            )
+                i === index ? { ...item, [field]: field === "score" ? Number(value) : value } : item,
+            ),
         );
         hasUnsavedChanges.current = true;
     };
@@ -117,7 +120,7 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
 
     if (evalItems.length === 0) {
         return (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
                 No evaluation items found.
             </Typography>
         );
@@ -133,19 +136,33 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
                     {savingDraft ? (
                         <CircularProgress size={12} color="inherit" sx={{ opacity: 0.5 }} />
                     ) : lastSaved ? (
-                        <CheckCircleIcon sx={{ fontSize: 14, color: 'success.main', opacity: 0.7 }} />
+                        <CheckCircleIcon sx={{ fontSize: 14, color: "success.main", opacity: 0.7 }} />
                     ) : null}
-                    <Typography variant="caption" sx={{ color: "#9CA3AF", fontSize: '0.65rem' }}>
-                        {savingDraft ? "Saving..." : lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : "Not saved yet"}
+                    <Typography variant="caption" sx={{ color: "#9CA3AF", fontSize: "0.65rem" }}>
+                        {savingDraft
+                            ? "Saving..."
+                            : lastSaved
+                              ? `Last saved: ${lastSaved.toLocaleTimeString()}`
+                              : "Not saved yet"}
                     </Typography>
                 </Stack>
             </Stack>
 
-            {error && <Alert severity="error" size="small">{error}</Alert>}
+            {error && (
+                <Alert severity="error" size="small">
+                    {error}
+                </Alert>
+            )}
+
+            {checkpointContext?.roadmapNodeId ? (
+                <Alert severity="info" size="small">
+                    Live checkpoint rubric. Passing threshold: {checkpointContext.passThreshold}%.
+                </Alert>
+            ) : null}
 
             {evalItems.map((item, index) => (
-                <Box key={index} sx={{ border: "1px solid #E5E7EB", p: 2, borderRadius: 2, bgcolor: '#FAFAFA' }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700, fontSize: '0.875rem' }}>
+                <Box key={index} sx={{ border: "1px solid #E5E7EB", p: 2, borderRadius: 2, bgcolor: "#FAFAFA" }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700, fontSize: "0.875rem" }}>
                         {item.question}
                     </Typography>
                     <Slider
@@ -159,13 +176,28 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
                         sx={{ mb: 1 }}
                     />
                     <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>Very Bad</Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>Average</Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>Very Good</Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            Very Bad
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            Average
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            Very Good
+                        </Typography>
                     </Stack>
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, p: 1, bgcolor: 'white', borderRadius: 1, border: '1px solid #E5E7EB' }}>
-                        <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>{item.score}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>- {getScoreLabel(item.score)}</Typography>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        sx={{ mb: 1, p: 1, bgcolor: "white", borderRadius: 1, border: "1px solid #E5E7EB" }}
+                    >
+                        <Typography variant="h6" sx={{ color: "primary.main", fontWeight: 700, lineHeight: 1 }}>
+                            {item.score}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                            - {getScoreLabel(item.score)}
+                        </Typography>
                     </Stack>
                     <TextField
                         label="Detailed Feedback"
@@ -179,7 +211,7 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
                     />
                 </Box>
             ))}
-            
+
             <Stack alignItems="center">
                 <Button
                     variant="contained"
@@ -191,15 +223,15 @@ const EvaluationForm = forwardRef(function EvaluationForm({ roomId }, ref) {
                         ...buttonStyles.primaryCta(theme),
                         px: 4,
                         py: 1,
-                        textTransform: 'none',
-                        width: 'fit-content'
+                        textTransform: "none",
+                        width: "fit-content",
                     })}
                 >
                     {savingDraft ? "Saving..." : "Save Draft"}
                 </Button>
             </Stack>
-            
-            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontStyle: 'italic' }}>
+
+            <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", fontStyle: "italic" }}>
                 Final submission is required after leaving the room to complete the process.
             </Typography>
         </Stack>
