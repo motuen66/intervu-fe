@@ -501,7 +501,7 @@ const ResultDashboard = () => {
         if (answers?.userId) {
             setAssessmentForceRequired(answers.userId, false);
         }
-        navigate("/home");
+        navigate("/candidate");
     };
 
     return (

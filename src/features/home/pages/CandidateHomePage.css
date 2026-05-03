@@ -1,0 +1,223 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   CandidateHomePage — all colours & fonts from MUI CSS variables
+   (cssVariables: true in theme.jsx)
+   ───────────────────────────────────────────────────────────────────────── */
+
+.candidate-home {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+}
+
+/* ── Greeting ────────────────────────────────────────────────────────── */
+
+.candidate-home__greeting {
+    margin-bottom: 28px;
+}
+
+.candidate-home__greeting h1 {
+    margin: 0 0 12px;
+    font-family: var(--mui-typography-h1-fontFamily);
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    color: var(--mui-palette-text-primary);
+}
+
+.candidate-home__greeting-name {
+    color: var(--mui-palette-secondary-dark);
+}
+
+.candidate-home__greeting p {
+    margin: 0;
+    color: var(--mui-palette-primary-light);
+    font-size: clamp(14px, 1.6vw, 16px);
+    font-weight: 500;
+    line-height: 1.6;
+    max-width: 560px;
+}
+
+.candidate-home__greeting p strong {
+    color: var(--mui-palette-text-primary);
+    font-weight: 800;
+}
+
+
+/* ── Grid layout ─────────────────────────────────────────────────────── */
+
+.candidate-home__grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+    .candidate-home__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.candidate-home__col-7 { grid-column: span 7; }
+.candidate-home__col-5 { grid-column: span 5; }
+
+@media (max-width: 900px) {
+    .candidate-home__col-7,
+    .candidate-home__col-5 {
+        grid-column: span 12;
+    }
+}
+
+/* ── Card ────────────────────────────────────────────────────────────── */
+
+.candidate-home__card {
+    background: var(--mui-palette-background-paper);
+    border: 1px solid var(--mui-palette-divider);
+    border-radius: 20px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(var(--mui-palette-primary-mainChannel) / 0.06);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.candidate-home__card h3 {
+    margin: 0 0 14px;
+    font-family: var(--mui-typography-h3-fontFamily);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--mui-palette-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Icon box shared by all panel h3 headings */
+.candidate-home__card-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--mui-palette-primary-main);
+    color: var(--mui-palette-secondary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(var(--mui-palette-primary-mainChannel) / 0.28);
+}
+
+/* ── Schedule list ───────────────────────────────────────────────────── */
+
+.candidate-home__schedule-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--mui-palette-action-disabledBackground);
+    outline: none;
+}
+
+.candidate-home__schedule-item:last-child {
+    border-bottom: none;
+}
+
+.candidate-home__schedule-item:not([style*="default"]):hover .candidate-home__session-title {
+    color: var(--mui-palette-info-dark);
+}
+
+.candidate-home__schedule-arrow {
+    color: var(--mui-palette-text-disabled);
+}
+
+.candidate-home__session-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--mui-palette-text-primary);
+    margin-bottom: 4px;
+}
+
+.candidate-home__session-meta {
+    font-size: 12px;
+    color: var(--mui-palette-text-secondary);
+}
+
+/* ── Live badge ──────────────────────────────────────────────────────── */
+
+.candidate-home__live-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--mui-palette-secondary-dark);
+    color: var(--mui-palette-secondary-contrastText);
+}
+
+/* ── Question of the day ─────────────────────────────────────────────── */
+
+.candidate-home__qotd-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--mui-palette-text-primary);
+    margin: 0 0 8px;
+    line-height: 1.35;
+}
+
+.candidate-home__qotd-meta {
+    font-size: 12px;
+    color: var(--mui-palette-text-secondary);
+    margin-bottom: 12px;
+}
+
+.candidate-home__qotd-content {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.5;
+}
+
+/* ── Skills / focus ──────────────────────────────────────────────────── */
+
+.candidate-home__skills-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.candidate-home__skill-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--mui-palette-action-disabledBackground);
+    color: var(--mui-palette-primary-light);
+    border: 1px solid var(--mui-palette-divider);
+}
+
+/* ── Utility links ───────────────────────────────────────────────────── */
+
+.candidate-home__link-row {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.candidate-home__text-link {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--mui-palette-info-dark);
+    text-decoration: none;
+}
+
+.candidate-home__text-link:hover {
+    text-decoration: underline;
+}
+

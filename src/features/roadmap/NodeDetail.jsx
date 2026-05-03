@@ -389,7 +389,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
     const handleOpenCoach = (coach) => {
         const slug = coach?.profileUrl ?? coach?.slugProfileUrl ?? coach?.id;
         if (!slug) {
-            navigate("/home?smartMatch=1");
+            navigate("/coaches?smartMatch=1");
             return;
         }
         const params = new URLSearchParams({ from: "roadmap" });
@@ -406,7 +406,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
         // B2: open SmartMatch so the user lands directly in coach discovery
         const params = new URLSearchParams({ smartMatch: "1" });
         if (skillName) params.set("skill", skillName);
-        navigate(`/home?${params.toString()}`);
+        navigate(`/coaches?${params.toString()}`);
     };
 
     // Roadmap-driven booking: jump into the recommended coach's public profile with
@@ -435,7 +435,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
     // X6: discover curated learning resources for a sub-skill
     const handleExploreResources = (skillName) => {
         const query = skillName ? `?q=${encodeURIComponent(skillName)}` : "";
-        navigate(`/home${query}&smartMatch=1`.replace("?&", "?"));
+        navigate(`/coaches${query}&smartMatch=1`.replace("?&", "?"));
     };
 
     useEffect(() => {

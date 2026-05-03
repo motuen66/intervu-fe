@@ -9,7 +9,7 @@ import EmptyLayout from "../layouts/EmptyLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
 
-const HomePage = lazy(() => import("../../features/home/pages/HomePage"));
+const HomePage = lazy(() => import("../../features/home/pages/HomePage")); /* coach browse (public) */
 const LandingPage = lazy(() => import("../../features/landing/pages/LandingPage"));
 const RootPage = lazy(() => import("./RootPage"));
 const CandidateProfilePage = lazy(() => import("../../features/profiles/candidate/page/CandidateProfilePage.jsx"));

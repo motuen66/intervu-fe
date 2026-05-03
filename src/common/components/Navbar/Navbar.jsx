@@ -28,6 +28,7 @@ import {
     FileCode,
     Layers,
     Terminal,
+    Home,
 } from "lucide-react";
 import { ROLES } from "../../constants/common";
 import { setUserData } from "../../store/authSlice";
@@ -249,14 +250,15 @@ const Navbar = () => {
             // { label: "Pricing", path: "#", type: "link", icon: CreditCard, sectionLabel: "MEMBERSHIP" },
         ],
         CANDIDATE: [
-            { label: "Find Coaches", path: "/home", type: "link", icon: Search, sectionLabel: "DISCOVER" },
+            { label: "Home", path: "/candidate", type: "link", icon: Home, sectionLabel: "HUB" },
+            { label: "Find Coaches", path: "/coaches", type: "link", icon: Search, sectionLabel: "DISCOVER" },
             {
                 label: "My Journey",
                 type: "dropdown",
                 items: [
                     { label: "My Roadmap", path: "/roadmap", icon: Milestone },
                     { label: "My Interviews", path: "/interview", icon: Video },
-                    { label: "Smart Matching", path: "/home?smartMatch=1", icon: Sparkles },
+                    { label: "Smart Matching", path: "/candidate?smartMatch=1", icon: Sparkles },
                     { label: "Booking Requests", path: "/booking-requests", icon: CalendarClock },
                 ],
             },
@@ -315,12 +317,25 @@ const Navbar = () => {
             <div className="navbar-glass">
                 <div className="navbar-inner">
                     {/* Logo */}
-                    <Link to={userData ? "/home" : "/"} className="navbar-logo">
-                        <div className="logo-box">V</div>
-                        <div className="logo-text">
-                            <h1>INTERVU</h1>
-                            <span>PLATFORM</span>
-                        </div>
+                    <Link
+                        to={
+                            !userData
+                                ? "/"
+                                : userData.role === ROLES.CANDIDATE
+                                  ? "/candidate"
+                                  : userData.role === ROLES.INTERVIEWER
+                                    ? "/dashboard"
+                                    : userData.role === ROLES.ADMIN
+                                      ? "/admin/dashboard"
+                                      : "/"
+                        }
+                        className="navbar-logo"
+                    >
+                        <img
+                            src="/intervu-logo.png"
+                            alt="INTERVU"
+                            className="navbar-logo-img"
+                        />
                     </Link>
 
                     {/* Desktop Menu */}
@@ -471,7 +486,17 @@ const Navbar = () => {
                                     }}
                                 >
                                     <Link
-                                        to={userData ? "/home" : "/"}
+                                        to={
+                                            !userData
+                                                ? "/"
+                                                : userData.role === ROLES.CANDIDATE
+                                                  ? "/candidate"
+                                                  : userData.role === ROLES.INTERVIEWER
+                                                    ? "/dashboard"
+                                                    : userData.role === ROLES.ADMIN
+                                                      ? "/admin/dashboard"
+                                                      : "/"
+                                        }
                                         style={{
                                             textDecoration: "none",
                                             display: "flex",
@@ -480,48 +505,11 @@ const Navbar = () => {
                                         }}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                     >
-                                        <Box
-                                            sx={{
-                                                width: 36,
-                                                height: 36,
-                                                bgcolor: "primary.main",
-                                                color: "secondary.main",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                borderRadius: "10px",
-                                                fontWeight: 900,
-                                                fontSize: "18px",
-                                                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                                            }}
-                                        >
-                                            V
-                                        </Box>
-                                        <Box sx={{ display: "flex", flexDirection: "column" }}>
-                                            <Typography
-                                                sx={{
-                                                    fontSize: "20px",
-                                                    fontWeight: 900,
-                                                    letterSpacing: "-0.02em",
-                                                    color: "primary.main",
-                                                    lineHeight: 1,
-                                                    my: 0,
-                                                }}
-                                            >
-                                                INTERVU
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    fontSize: "10px",
-                                                    fontWeight: 700,
-                                                    color: "text.secondary",
-                                                    letterSpacing: "0.1em",
-                                                    my: 0,
-                                                }}
-                                            >
-                                                PLATFORM
-                                            </Typography>
-                                        </Box>
+                                        <img
+                                            src="/intervu-logo.png"
+                                            alt="INTERVU"
+                                            className="navbar-logo-img"
+                                        />
                                     </Link>
                                     <IconButton
                                         onClick={() => setIsMobileMenuOpen(false)}

@@ -1,0 +1,229 @@
+/* ──────────────────────────────────────────────────────────────────────
+   Feature shortcut cards — 6-up grid, prototype aesthetic
+   All semantic colours use MUI CSS variables (cssVariables: true)
+   ────────────────────────────────────────────────────────────────────── */
+
+.fcard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+@media (max-width: 900px) {
+    .fcard-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 520px) {
+    .fcard-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Card shell ───────────────────────────────────────────────────────── */
+
+.fcard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 20px 16px;
+    background: var(--mui-palette-background-paper);
+    border: 1px solid var(--mui-palette-divider);
+    border-radius: 2rem;
+    text-decoration: none;
+    color: inherit;
+    overflow: hidden;
+    box-shadow:
+        0 1px 3px rgba(var(--mui-palette-primary-mainChannel) / 0.07),
+        0 2px 8px rgba(var(--mui-palette-primary-mainChannel) / 0.04);
+    transition:
+        transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+    /* Reset default button styles */
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.fcard:hover,
+.fcard:focus-visible {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+        0 8px 24px  rgba(var(--mui-palette-primary-mainChannel) / 0.10),
+        0 20px 48px rgba(var(--mui-palette-primary-mainChannel) / 0.08),
+        0 2px 6px   rgba(var(--mui-palette-primary-mainChannel) / 0.06);
+    outline: none;
+}
+
+/* ── Ambient corner glow — per-card colour variant ───────────────────── */
+
+.fcard__glow {
+    position: absolute;
+    bottom: -30px;
+    right: -30px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    filter: blur(32px);
+    opacity: 0;
+    transform: scale(0.6);
+    pointer-events: none;
+    transition:
+        opacity 500ms ease,
+        transform 500ms ease,
+        filter 500ms ease;
+}
+
+.fcard:hover .fcard__glow,
+.fcard:focus-visible .fcard__glow {
+    opacity: 0.2;
+    transform: scale(1);
+    filter: blur(32px);
+}
+
+/* Glow colours map to theme palette where available */
+.fcard--lime   .fcard__glow { background: var(--mui-palette-secondary-dark); }
+.fcard--blue   .fcard__glow { background: var(--mui-palette-info-main); }
+.fcard--violet .fcard__glow { background: var(--mui-palette-accents-purple); }
+.fcard--amber  .fcard__glow { background: var(--mui-palette-warning-main); }
+.fcard--teal   .fcard__glow { background: var(--mui-palette-info-light); }
+.fcard--rose   .fcard__glow { background: var(--mui-palette-error-main); }
+
+/* ── Icon + status-dot row ───────────────────────────────────────────── */
+
+.fcard__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.fcard__icon-wrap {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--mui-palette-primary-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mui-palette-secondary-dark);
+    box-shadow:
+        0 4px 14px rgba(var(--mui-palette-primary-mainChannel) / 0.45),
+        0 1px 3px  rgba(var(--mui-palette-primary-mainChannel) / 0.25);
+    transition:
+        transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 300ms ease;
+    will-change: transform;
+}
+
+.fcard:hover .fcard__icon-wrap,
+.fcard:focus-visible .fcard__icon-wrap {
+    transform: rotate(-6deg) scale(1.12);
+    box-shadow:
+        0 8px 20px rgba(var(--mui-palette-primary-mainChannel) / 0.5),
+        0 2px 6px  rgba(var(--mui-palette-primary-mainChannel) / 0.3);
+}
+
+.fcard__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--mui-palette-secondary-dark);
+    box-shadow: 0 0 0 2px rgba(var(--mui-palette-secondary-darkChannel) / 0.2);
+    margin-top: 6px;
+    opacity: 0.3;
+    transition: opacity 400ms ease, box-shadow 400ms ease;
+}
+
+.fcard:hover .fcard__dot,
+.fcard:focus-visible .fcard__dot {
+    opacity: 1;
+    box-shadow:
+        0 0 0 3px rgba(var(--mui-palette-secondary-darkChannel) / 0.2),
+        0 0 8px  rgba(var(--mui-palette-secondary-darkChannel) / 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .fcard:hover .fcard__dot {
+        animation: fcard-dot-pulse 1.8s ease-in-out infinite;
+    }
+}
+
+@keyframes fcard-dot-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(var(--mui-palette-secondary-darkChannel) / 0.2); }
+    50%       { box-shadow: 0 0 0 5px rgba(var(--mui-palette-secondary-darkChannel) / 0.08),
+                            0 0 10px rgba(var(--mui-palette-secondary-darkChannel) / 0.4); }
+}
+
+/* ── Body text ───────────────────────────────────────────────────────── */
+
+.fcard__body {
+    flex: 1;
+    margin-bottom: 14px;
+}
+
+.fcard__title {
+    margin: 0 0 6px;
+    font-family: var(--mui-typography-h3-fontFamily);
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--mui-palette-text-primary);
+    line-height: 1.2;
+}
+
+.fcard__desc {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--mui-palette-text-secondary);
+    line-height: 1.5;
+}
+
+/* ── Launch button ───────────────────────────────────────────────────── */
+
+.fcard__launch {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--mui-palette-text-primary);
+    background: var(--mui-palette-action-disabledBackground);
+    text-decoration: none;
+    width: fit-content;
+    transition: background 300ms ease, color 300ms ease;
+}
+
+.fcard__launch-arrow {
+    transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fcard:hover .fcard__launch,
+.fcard:focus-visible .fcard__launch {
+    background: var(--mui-palette-secondary-dark);
+    color: var(--mui-palette-secondary-contrastText);
+}
+
+.fcard:hover .fcard__launch-arrow,
+.fcard:focus-visible .fcard__launch-arrow {
+    transform: translateX(4px);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .fcard,
+    .fcard__icon-wrap,
+    .fcard__glow,
+    .fcard__dot,
+    .fcard__launch,
+    .fcard__launch-arrow {
+        transition: none;
+        animation: none;
+    }
+    .fcard:hover { transform: none; }
+}

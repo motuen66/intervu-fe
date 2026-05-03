@@ -1,4 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import Footer from "../../common/components/Footer/Footer";
 import ScrollTopFab from "./ScrollTopFab";
 import useUser from "../../common/hooks/useUser";
 import { AppBar, Toolbar, Container, Typography, Box, CssBaseline, Avatar } from "@mui/material";
@@ -65,13 +66,7 @@ const DefaultLayout = () => {
             </Box>
 
             {/* Footer */}
-            <Box component="footer" sx={{ borderTop: 1, borderColor: "divider", bgcolor: "background.default" }}>
-                <Container maxWidth={false} sx={{ maxWidth: "1350px", py: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        © {new Date().getFullYear()} Intervu. All rights reserved.
-                    </Typography>
-                </Container>
-            </Box>
+            <Footer />
 
             <SuspendedGate />
             <ScrollTopFab />
