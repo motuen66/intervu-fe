@@ -16,6 +16,7 @@ import useNotificationHub from "../../features/notification/hooks/useNotificatio
 import SuspendedGate from "../../common/components/SuspendedGate";
 import CandidateAssessmentGate from "../../common/components/CandidateAssessmentGate";
 import Navbar from "../../common/components/Navbar/Navbar";
+import Footer from "../../common/components/Footer/Footer";
 import AdminSidebar from "../../features/admin/components/AdminSidebar";
 import usePageTracking from "../../hooks/usePageTracking";
 import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/helpers/assessmentHelper";
@@ -315,11 +316,7 @@ const MainLayout = () => {
 
                 <SuspendedGate />
 
-                <footer className="footer">
-                    <div className="footer-container">
-                        <p>&copy; 2026 Intervu. All rights reserved.</p>
-                    </div>
-                </footer>
+                <Footer />
             </div>
         </ProcessingTrayProvider>
     );
