@@ -343,11 +343,13 @@ function SessionSummary({
                             <StatusChip
                                 icon={<Clock size={12} />}
                                 label={
-                                    startingIn === "now" || room?.status === INTERVIEW_ROOM_STATUS.ON_GOING
-                                        ? "Starting now"
-                                        : `Starting in ${startingIn}`
+                                    room?.status === INTERVIEW_ROOM_STATUS.ON_GOING
+                                        ? "Live now"
+                                        : startingIn === "now"
+                                          ? "Starting now"
+                                          : `Starting in ${startingIn}`
                                 }
-                                color="warning"
+                                color={room?.status === INTERVIEW_ROOM_STATUS.ON_GOING ? "success" : "warning"}
                             />
                         </Stack>
                     )}
@@ -381,7 +383,9 @@ function SessionSummary({
                 </Stack>
             </Box>
 
-            {statusConfig && <StatusChip label={statusConfig.label} color={statusConfig.color} />}
+            {statusConfig && room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && (
+                <StatusChip label={statusConfig.label} color={statusConfig.color} />
+            )}
         </Stack>
     );
 }
@@ -461,11 +465,13 @@ function RoundRow({
                         <StatusChip
                             icon={<Clock size={12} />}
                             label={
-                                startingIn === "now" || round?.status === INTERVIEW_ROOM_STATUS.ON_GOING
-                                    ? "Starting now"
-                                    : `Starting in ${startingIn}`
+                                round?.status === INTERVIEW_ROOM_STATUS.ON_GOING
+                                    ? "Live now"
+                                    : startingIn === "now"
+                                      ? "Starting now"
+                                      : `Starting in ${startingIn}`
                             }
-                            color="warning"
+                            color={round?.status === INTERVIEW_ROOM_STATUS.ON_GOING ? "success" : "warning"}
                         />
                     )}
                 </Stack>
