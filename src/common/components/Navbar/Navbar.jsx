@@ -331,11 +331,11 @@ const Navbar = () => {
                         }
                         className="navbar-logo"
                     >
-                        <div className="logo-box">V</div>
-                        <div className="logo-text">
-                            <h1>INTERVU</h1>
-                            <span>PLATFORM</span>
-                        </div>
+                        <img
+                            src="/intervu-logo.png"
+                            alt="INTERVU"
+                            className="navbar-logo-img"
+                        />
                     </Link>
 
                     {/* Desktop Menu */}
@@ -505,48 +505,11 @@ const Navbar = () => {
                                         }}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                     >
-                                        <Box
-                                            sx={{
-                                                width: 36,
-                                                height: 36,
-                                                bgcolor: "primary.main",
-                                                color: "secondary.main",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                borderRadius: "10px",
-                                                fontWeight: 900,
-                                                fontSize: "18px",
-                                                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                                            }}
-                                        >
-                                            V
-                                        </Box>
-                                        <Box sx={{ display: "flex", flexDirection: "column" }}>
-                                            <Typography
-                                                sx={{
-                                                    fontSize: "20px",
-                                                    fontWeight: 900,
-                                                    letterSpacing: "-0.02em",
-                                                    color: "primary.main",
-                                                    lineHeight: 1,
-                                                    my: 0,
-                                                }}
-                                            >
-                                                INTERVU
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    fontSize: "10px",
-                                                    fontWeight: 700,
-                                                    color: "text.secondary",
-                                                    letterSpacing: "0.1em",
-                                                    my: 0,
-                                                }}
-                                            >
-                                                PLATFORM
-                                            </Typography>
-                                        </Box>
+                                        <img
+                                            src="/intervu-logo.png"
+                                            alt="INTERVU"
+                                            className="navbar-logo-img"
+                                        />
                                     </Link>
                                     <IconButton
                                         onClick={() => setIsMobileMenuOpen(false)}

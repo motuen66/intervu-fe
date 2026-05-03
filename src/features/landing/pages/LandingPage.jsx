@@ -15,7 +15,6 @@ import {
   Twitter,
   Users,
   Video,
-  Zap
 } from 'lucide-react';
 import {
   Avatar,
@@ -753,18 +752,20 @@ function LandingPage() {
 
               {/* Brand + social */}
               <Box sx={{ flex: '1 1 240px', maxWidth: 320 }}>
-                <Stack direction="row" alignItems="center" gap={1.2} mb={1.5}>
+                <Box sx={{ mb: 1.5 }}>
                   <Box sx={{
-                    width: 30, height: 30, borderRadius: 1.5,
-                    bgcolor: 'primary.main', color: 'secondary.dark',
-                    display: 'grid', placeItems: 'center', flexShrink: 0,
+                    display: 'inline-block',
+                    bgcolor: 'primary.dark',
+                    borderRadius: 2,
+                    px: 1.2, py: 0.6,
                   }}>
-                    <Zap size={15} />
+                    <img
+                      src="/intervu-logo.png"
+                      alt="INTERVU"
+                      style={{ height: 28, display: 'block' }}
+                    />
                   </Box>
-                  <Typography sx={{ fontSize: 17, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontStyle: 'italic', color: 'text.primary' }}>
-                    Intervu
-                  </Typography>
-                </Stack>
+                </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, mb: 2 }}>
                   Redefining technical interview preparation through AI and expert human guidance.
                 </Typography>
