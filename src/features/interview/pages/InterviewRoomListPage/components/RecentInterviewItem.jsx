@@ -1,11 +1,17 @@
 import { Box, Avatar, Stack, Tooltip } from "@mui/material";
 import { MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { ROLES } from "../../../../../common/constants/common";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import { SecondaryButton } from "../../../../../common/components/buttons";
 import AppText from "../../../../../common/components/AppText";
 
 function RecentInterviewItem({ room, user, onClick }) {
+    const navigate = useNavigate();
+    const bookingId = room?.bookingRequestId || room?.sessionId;
+    const handleRowClick = () => {
+        if (bookingId) navigate(`/booking-requests/${bookingId}`);
+    };
 
     const getParticipantName = () => {
         if (user?.role === ROLES.CANDIDATE) return room.coachName || "Coach";
@@ -53,6 +59,7 @@ function RecentInterviewItem({ room, user, onClick }) {
 
     return (
         <Box
+            onClick={handleRowClick}
             sx={{
                 display: "flex",
                 flexDirection: { xs: "column", md: "row" },
@@ -66,9 +73,11 @@ function RecentInterviewItem({ room, user, onClick }) {
                 borderColor: "divider",
                 transition: "box-shadow 0.2s ease, transform 0.2s ease",
                 gap: { xs: 2, md: 0 },
+                cursor: bookingId ? "pointer" : "default",
                 "&:hover": {
-                    boxShadow: "0px 6px 16px rgba(0,0,0,0.06)",
-                    transform: "translateY(-1px)",
+                    boxShadow: bookingId ? "0px 6px 20px rgba(0,0,0,0.09)" : "0px 6px 16px rgba(0,0,0,0.06)",
+                    transform: bookingId ? "translateY(-2px)" : "translateY(-1px)",
+                    borderColor: bookingId ? "primary.light" : "divider",
                 },
             }}
         >

@@ -12,6 +12,7 @@ import {
     FileText,
     CircleCheck,
     Users,
+    ExternalLink,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../../common/components/cards/BaseCard";
@@ -555,6 +556,7 @@ export default function SessionCard({
     highlightedRoundId = null,
     highlightedRoundIndex = null,
 }) {
+    const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
     const [participantAvatarUrl, setParticipantAvatarUrl] = useState(null);
     const [nowTs, setNowTs] = useState(() => Date.now());
@@ -787,6 +789,27 @@ export default function SessionCard({
                     justifyContent="flex-end"
                     sx={{ width: { xs: "100%", md: "auto" } }}
                 >
+                    {room.bookingRequestId && (
+                        <Tooltip title="View booking details" arrow>
+                            <IconButton
+                                aria-label="View booking details"
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/booking-requests/${room.bookingRequestId}`);
+                                }}
+                                sx={(theme) => ({
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    borderRadius: 99,
+                                    alignSelf: { xs: "flex-end", md: "center" },
+                                    color: "text.secondary",
+                                    "&:hover": { color: "primary.main", borderColor: "primary.main", bgcolor: "action.hover" },
+                                })}
+                            >
+                                <ExternalLink size={16} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     <Tooltip title={expanded ? "Hide rounds" : "Show rounds"} arrow>
                         <IconButton
                             aria-label={expanded ? "Collapse rounds" : "Expand rounds"}
