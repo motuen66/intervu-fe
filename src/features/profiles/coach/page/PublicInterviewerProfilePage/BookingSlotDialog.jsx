@@ -370,109 +370,114 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                 </Typography>
                             </Box>
                         ) : (
-                            <Stack direction={{ xs: "column", md: "row" }} spacing={0} sx={{ minHeight: 420 }}>
-                                {/* Left: Calendar */}
-                                <Box sx={{ flex: "0 0 auto", width: { xs: "100%", md: 470 }, pr: { md: 4 }, pb: { xs: 3, md: 0 }, borderRight: { md: "1px solid" }, borderColor: { md: "divider" } }}>
-                                    <CalendlyCalendar
-                                        currentMonth={currentMonth}
-                                        onPrevMonth={() => setCurrentMonth((m) => addMonths(m, -1))}
-                                        onNextMonth={() => setCurrentMonth((m) => addMonths(m, 1))}
-                                        selectedDate={selectedDate}
-                                        onDateSelect={handleDateSelect}
-                                        availableDates={availableDates}
-                                    />
+                            <>
+                                {/* Calendar + Slots row — stable height via fixed slot-list */}
+                                <Stack direction={{ xs: "column", md: "row" }} spacing={0} sx={{ minHeight: 380 }}>
+                                    {/* Left: Calendar */}
+                                    <Box sx={{ flex: "0 0 auto", width: { xs: "100%", md: 470 }, pr: { md: 4 }, pb: { xs: 3, md: 0 }, borderRight: { md: "1px solid" }, borderColor: { md: "divider" } }}>
+                                        <CalendlyCalendar
+                                            currentMonth={currentMonth}
+                                            onPrevMonth={() => setCurrentMonth((m) => addMonths(m, -1))}
+                                            onNextMonth={() => setCurrentMonth((m) => addMonths(m, 1))}
+                                            selectedDate={selectedDate}
+                                            onDateSelect={handleDateSelect}
+                                            availableDates={availableDates}
+                                        />
 
-                                    {/* Timezone */}
-                                    <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
-                                        <Typography sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.secondary", mb: 0.5 }}>
-                                            Time zone
-                                        </Typography>
-                                        <Stack direction="row" alignItems="center" spacing={0.75}>
-                                            <LanguageIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                                            <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary" }}>
-                                                {userTimezone.name}
+                                        {/* Timezone */}
+                                        <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
+                                            <Typography sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.secondary", mb: 0.5 }}>
+                                                Time zone
                                             </Typography>
-                                        </Stack>
-                                    </Box>
-                                </Box>
-
-                                {/* Right: Time slots */}
-                                <Box sx={{ flex: 1, pl: { md: 4 }, minWidth: 0 }}>
-                                    {!selectedDate ? (
-                                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 300 }}>
-                                            <Typography sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.95rem" }}>
-                                                Select a date to see available times
-                                            </Typography>
+                                            <Stack direction="row" alignItems="center" spacing={0.75}>
+                                                <LanguageIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                                                <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.primary" }}>
+                                                    {userTimezone.name}
+                                                </Typography>
+                                            </Stack>
                                         </Box>
-                                    ) : (
-                                        <>
-                                            <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary", mb: 2.5 }}>
-                                                {format(selectedDate, "EEEE, MMMM d")}
-                                            </Typography>
-                                            {dayTimeBlocks.length === 0 ? (
-                                                <Box sx={{ textAlign: "center", py: 6 }}>
-                                                    <Typography color="text.secondary" fontSize="0.9rem">
-                                                        No available 30-minute slots on this date.
-                                                    </Typography>
-                                                </Box>
-                                            ) : (
-                                                <Box className="calendly-timeslot-list">
-                                                    {dayTimeBlocks.map((slot) => {
-                                                        const isSelected = selectedBlockIds.has(String(slot.id));
-                                                        const startTime = new Date(slot.startTime);
-                                                        const endTime = new Date(slot.endTime);
-                                                        return (
-                                                            <Box
-                                                                key={slot.id}
-                                                                className={`calendly-timeslot ${isSelected ? "selected" : ""}`}
-                                                                onClick={() => handleTimeSelect(slot)}
-                                                            >
-                                                                <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>
-                                                                    {format(startTime, "HH:mm")} — {format(endTime, "HH:mm")}
-                                                                </Typography>
-                                                            </Box>
-                                                        );
-                                                    })}
-                                                </Box>
-                                            )}
-                                        </>
-                                    )}
-                                </Box>
-                            </Stack>
-                        )}
-                        {activeStep === 1 && selectedSlotData && (
-                            <Box sx={{ pt: 3, pb: 1 }}>
-                                <Typography sx={{ fontWeight: 700, fontSize: "0.85rem", mb: 1, color: "text.primary" }}>
-                                    Note for coach{" "}
-                                    <Typography component="span" color="text.secondary" fontWeight={500} fontSize="0.8rem">
-                                        (optional)
+                                    </Box>
+
+                                    {/* Right: Time slots — fixed height area, scroll internally */}
+                                    <Box sx={{ flex: 1, pl: { md: 4 }, minWidth: 0 }}>
+                                        {!selectedDate ? (
+                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 300 }}>
+                                                <Typography sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.95rem" }}>
+                                                    Select a date to see available times
+                                                </Typography>
+                                            </Box>
+                                        ) : (
+                                            <>
+                                                <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary", mb: 2.5 }}>
+                                                    {format(selectedDate, "EEEE, MMMM d")}
+                                                </Typography>
+                                                {dayTimeBlocks.length === 0 ? (
+                                                    <Box sx={{ textAlign: "center", py: 6 }}>
+                                                        <Typography color="text.secondary" fontSize="0.9rem">
+                                                            No available 30-minute slots on this date.
+                                                        </Typography>
+                                                    </Box>
+                                                ) : (
+                                                    <Box className="calendly-timeslot-list">
+                                                        {dayTimeBlocks.map((slot) => {
+                                                            const isSelected = selectedBlockIds.has(String(slot.id));
+                                                            const startTime = new Date(slot.startTime);
+                                                            const endTime = new Date(slot.endTime);
+                                                            return (
+                                                                <Box
+                                                                    key={slot.id}
+                                                                    className={`calendly-timeslot ${isSelected ? "selected" : ""}`}
+                                                                    onClick={() => handleTimeSelect(slot)}
+                                                                >
+                                                                    <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>
+                                                                        {format(startTime, "HH:mm")} — {format(endTime, "HH:mm")}
+                                                                    </Typography>
+                                                                </Box>
+                                                            );
+                                                        })}
+                                                    </Box>
+                                                )}
+                                            </>
+                                        )}
+                                    </Box>
+                                </Stack>
+
+                                {/* Note for coach — full width, always rendered below the row */}
+                                <Box sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: "0.85rem", mb: 0.5, color: "text.primary" }}>
+                                        Note for coach{" "}
+                                        <Typography component="span" color="text.secondary" fontWeight={500} fontSize="0.8rem">
+                                            (optional)
+                                        </Typography>
                                     </Typography>
-                                </Typography>
-                                <Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.5 }}>
-                                    Optional. Share goals, target role/company, topics to focus on, or anything the coach should know.
-                                </Typography>
-                                <TextField
-                                    fullWidth
-                                    multiline
-                                    minRows={3}
-                                    size="small"
-                                    placeholder="Your note..."
-                                    value={candidateNote}
-                                    onChange={(e) =>
-                                        setCandidateNote(e.target.value.slice(0, CANDIDATE_NOTE_MAX_LENGTH))
-                                    }
-                                    inputProps={{ maxLength: CANDIDATE_NOTE_MAX_LENGTH }}
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: "12px",
-                                            bgcolor: "background.default",
-                                        },
-                                    }}
-                                />
-                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
-                                    {candidateNote.length}/{CANDIDATE_NOTE_MAX_LENGTH}
-                                </Typography>
-                            </Box>
+                                    <Typography sx={{ fontSize: "0.75rem", color: "text.secondary", mb: 1.5 }}>
+                                        Share goals, target role/company, topics to focus on, or anything the coach should know.
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        multiline
+                                        rows={3}
+                                        size="small"
+                                        placeholder={selectedSlotData ? "Your note..." : "Select a time slot above first"}
+                                        value={candidateNote}
+                                        disabled={!selectedSlotData}
+                                        onChange={(e) =>
+                                            setCandidateNote(e.target.value.slice(0, CANDIDATE_NOTE_MAX_LENGTH))
+                                        }
+                                        inputProps={{ maxLength: CANDIDATE_NOTE_MAX_LENGTH }}
+                                        sx={{
+                                            "& .MuiOutlinedInput-root": {
+                                                borderRadius: "12px",
+                                                bgcolor: selectedSlotData ? "background.default" : "action.disabledBackground",
+                                                transition: "background-color 0.2s",
+                                            },
+                                        }}
+                                    />
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75, textAlign: "right" }}>
+                                        {candidateNote.length}/{CANDIDATE_NOTE_MAX_LENGTH}
+                                    </Typography>
+                                </Box>
+                            </>
                         )}
                     </Box>
                 )}
