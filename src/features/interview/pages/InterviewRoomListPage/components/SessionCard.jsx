@@ -12,6 +12,7 @@ import {
     FileText,
     CircleCheck,
     Users,
+    ExternalLink,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../../common/components/cards/BaseCard";
@@ -342,11 +343,13 @@ function SessionSummary({
                             <StatusChip
                                 icon={<Clock size={12} />}
                                 label={
-                                    startingIn === "now" || room?.status === INTERVIEW_ROOM_STATUS.ON_GOING
-                                        ? "Starting now"
-                                        : `Starting in ${startingIn}`
+                                    room?.status === INTERVIEW_ROOM_STATUS.ON_GOING
+                                        ? "Live now"
+                                        : startingIn === "now"
+                                          ? "Starting now"
+                                          : `Starting in ${startingIn}`
                                 }
-                                color="warning"
+                                color={room?.status === INTERVIEW_ROOM_STATUS.ON_GOING ? "success" : "warning"}
                             />
                         </Stack>
                     )}
@@ -380,7 +383,9 @@ function SessionSummary({
                 </Stack>
             </Box>
 
-            {statusConfig && <StatusChip label={statusConfig.label} color={statusConfig.color} />}
+            {statusConfig && room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && (
+                <StatusChip label={statusConfig.label} color={statusConfig.color} />
+            )}
         </Stack>
     );
 }
@@ -460,11 +465,13 @@ function RoundRow({
                         <StatusChip
                             icon={<Clock size={12} />}
                             label={
-                                startingIn === "now" || round?.status === INTERVIEW_ROOM_STATUS.ON_GOING
-                                    ? "Starting now"
-                                    : `Starting in ${startingIn}`
+                                round?.status === INTERVIEW_ROOM_STATUS.ON_GOING
+                                    ? "Live now"
+                                    : startingIn === "now"
+                                      ? "Starting now"
+                                      : `Starting in ${startingIn}`
                             }
-                            color="warning"
+                            color={round?.status === INTERVIEW_ROOM_STATUS.ON_GOING ? "success" : "warning"}
                         />
                     )}
                 </Stack>
@@ -555,6 +562,7 @@ export default function SessionCard({
     highlightedRoundId = null,
     highlightedRoundIndex = null,
 }) {
+    const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
     const [participantAvatarUrl, setParticipantAvatarUrl] = useState(null);
     const [nowTs, setNowTs] = useState(() => Date.now());
@@ -787,6 +795,27 @@ export default function SessionCard({
                     justifyContent="flex-end"
                     sx={{ width: { xs: "100%", md: "auto" } }}
                 >
+                    {room.bookingRequestId && (
+                        <Tooltip title="View booking details" arrow>
+                            <IconButton
+                                aria-label="View booking details"
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/booking-requests/${room.bookingRequestId}`);
+                                }}
+                                sx={(theme) => ({
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    borderRadius: 99,
+                                    alignSelf: { xs: "flex-end", md: "center" },
+                                    color: "text.secondary",
+                                    "&:hover": { color: "primary.main", borderColor: "primary.main", bgcolor: "action.hover" },
+                                })}
+                            >
+                                <ExternalLink size={16} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     <Tooltip title={expanded ? "Hide rounds" : "Show rounds"} arrow>
                         <IconButton
                             aria-label={expanded ? "Collapse rounds" : "Expand rounds"}

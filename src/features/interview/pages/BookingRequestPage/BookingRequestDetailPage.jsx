@@ -636,6 +636,22 @@ export default function BookingRequestDetailPage() {
                     </Stack>
                 </SectionCard>
 
+                {(detail.candidateNote || "").trim().length > 0 && (
+                    <SectionCard title="Candidate note" icon={AssignmentIcon} sx={{ mb: 0, p: 4 }}>
+                        <AppText
+                            variant="body"
+                            sx={{
+                                color: "#334155",
+                                whiteSpace: "pre-wrap",
+                                lineHeight: 1.65,
+                                fontWeight: 500,
+                            }}
+                        >
+                            {detail.candidateNote.trim()}
+                        </AppText>
+                    </SectionCard>
+                )}
+
                 {/* Documents — compact horizontal bar below Session Details */}
                 {(detail.jobDescriptionUrl?.length > 4 || detail.cvUrl?.length > 4) && (
                     <Box

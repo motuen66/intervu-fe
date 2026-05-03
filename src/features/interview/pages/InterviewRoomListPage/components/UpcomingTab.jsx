@@ -1,5 +1,6 @@
 import { Box, Stack, Pagination, CircularProgress } from "@mui/material";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import SessionCard from "./SessionCard";
 import { INTERVIEW_ROOM_STATUS } from "../../../../../common/constants/status";
 import AppText from "../../../../../common/components/AppText";
@@ -23,6 +24,7 @@ function UpcomingTab({
     highlightedRoundId = null,
     highlightedRoundIndex = null,
 }) {
+    const navigate = useNavigate();
     const getSessionKey = (room) => room?.sessionId || room?.bookingRequestId || room?.id || null;
 
     const hasPendingRescheduleRequest = (room) => {
@@ -35,26 +37,19 @@ function UpcomingTab({
     };
 
     const handleCardClick = (room) => {
-        if (room.status === INTERVIEW_ROOM_STATUS.ON_GOING) {
-            return;
-        }
+        if (room.status === INTERVIEW_ROOM_STATUS.ON_GOING) return;
 
         if (room.status === INTERVIEW_ROOM_STATUS.COMPLETED) {
-            if (onViewFeedback) {
-                onViewFeedback(room);
-                return;
-            }
+            if (onViewFeedback) { onViewFeedback(room); return; }
             if (!room.score) {
-                toast("No feedback available yet.", {
-                    style: {
-                        borderRadius: "10px",
-                        background: "#333",
-                        color: "#fff",
-                    },
-                });
+                toast("No feedback available yet.", { style: { borderRadius: "10px", background: "#333", color: "#fff" } });
                 return;
             }
         }
+
+        // Navigate to booking detail for all other statuses (SCHEDULED, CANCELLED, PENDING, etc.)
+        const bookingId = room.bookingRequestId || room.sessionId;
+        if (bookingId) navigate(`/booking-requests/${bookingId}`);
     };
 
     if (loading) {
