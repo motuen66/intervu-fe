@@ -69,7 +69,15 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     const roundLabel = item.round != null ? ROUNDS.find((r) => r.value === item.round)?.label : null;
 
     const metaChips = [
-        roleLabel && { label: roleLabel, color: "secondary" },
+        roleLabel && {
+            label: roleLabel,
+            color: "default",
+            sx: {
+                color: "text.primary",
+                bgcolor: "grey.50",
+                borderColor: "grey.300",
+            },
+        },
         categoryLabel && { label: categoryLabel, color: "default" },
         levelLabel && { label: levelLabel, color: "info" },
         roundLabel && { label: roundLabel, color: "warning" },
@@ -289,14 +297,14 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                     {/* Metadata chips: role / category / level / round */}
                     {metaChips.length > 0 && (
                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6, mb: 1.5 }}>
-                            {metaChips.map(({ label, color }) => (
+                            {metaChips.map(({ label, color, sx }) => (
                                 <Tag
                                     key={label}
                                     label={label}
                                     size="sm"
                                     color={color}
                                     variant="outlined"
-                                    sx={{ fontSize: 11, height: 22 }}
+                                    sx={{ fontSize: 11, height: 22, ...sx }}
                                 />
                             ))}
                         </Box>
