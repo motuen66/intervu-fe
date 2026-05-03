@@ -86,7 +86,7 @@
 .fcard--blue   .fcard__glow { background: var(--mui-palette-info-main); }
 .fcard--violet .fcard__glow { background: var(--mui-palette-accents-purple); }
 .fcard--amber  .fcard__glow { background: var(--mui-palette-warning-main); }
-.fcard--teal   .fcard__glow { background: #14b8a6; } /* teal — no MUI token */
+.fcard--teal   .fcard__glow { background: var(--mui-palette-info-light); }
 .fcard--rose   .fcard__glow { background: var(--mui-palette-error-main); }
 
 /* ── Icon + status-dot row ───────────────────────────────────────────── */

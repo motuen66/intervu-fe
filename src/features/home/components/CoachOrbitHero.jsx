@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
-import { Users, CheckCircle2, ArrowRight } from "lucide-react";
+import { Users, CheckCircle2, ArrowRight, Trophy } from "lucide-react";
 import "./CoachOrbitHero.css";
 
 const ORBIT_COUNT = 5;
@@ -58,7 +58,10 @@ export default function CoachOrbitHero({ coaches = [], totalCoachCount, onFindMa
         <div className={`coach-orbit-hero${reduceMotion ? " coach-orbit-hero--reduced-motion" : ""}`}>
             <div className="coach-orbit-hero__left">
                 <div className="coach-orbit-hero__badges">
-                    <span className="coach-orbit-hero__badge">Top coaches on INTERVU</span>
+                    <span className="coach-orbit-hero__badge">
+                        <Trophy size={11} strokeWidth={2.5} aria-hidden />
+                        Top coaches on INTERVU
+                    </span>
                     <span className="coach-orbit-hero__badge-muted">
                         <span className="dot" aria-hidden />
                         Available now
@@ -71,7 +74,7 @@ export default function CoachOrbitHero({ coaches = [], totalCoachCount, onFindMa
                 </h2>
                 <div className="coach-orbit-hero__stats">
                     <div className="coach-orbit-hero__stat">
-                        <div className="coach-orbit-hero__stat-icon" aria-hidden>
+                        <div className="coach-orbit-hero__stat-icon coach-orbit-hero__stat-icon--lime" aria-hidden>
                             <Users size={18} />
                         </div>
                         <div>
@@ -80,7 +83,7 @@ export default function CoachOrbitHero({ coaches = [], totalCoachCount, onFindMa
                         </div>
                     </div>
                     <div className="coach-orbit-hero__stat">
-                        <div className="coach-orbit-hero__stat-icon" aria-hidden>
+                        <div className="coach-orbit-hero__stat-icon coach-orbit-hero__stat-icon--success" aria-hidden>
                             <CheckCircle2 size={18} />
                         </div>
                         <div>
@@ -116,25 +119,31 @@ export default function CoachOrbitHero({ coaches = [], totalCoachCount, onFindMa
                                 style={{ "--slot-angle": `${index * SLOT_STEP}deg` }}
                             >
                                 <div className="coach-orbit-hero__avatar-wrap">
-                                    {coach?.slugProfileUrl ? (
-                                        <Link
-                                            className="coach-orbit-hero__avatar-link"
-                                            to={`/profile/${coach.slugProfileUrl}`}
-                                            aria-label={`View coach profile: ${coach.name}`}
-                                        >
-                                            <Avatar
-                                                src={coach.avatarUrl || undefined}
-                                                alt={coach.name}
-                                                sx={{ width: "100%", height: "100%", fontSize: "1.1rem" }}
+                                    {/* cancel the static slot-angle offset so avatar stays upright */}
+                                    <div
+                                        className="coach-orbit-hero__avatar-derotate"
+                                        style={{ transform: `rotate(calc(-1 * ${index * SLOT_STEP}deg))` }}
+                                    >
+                                        {coach?.slugProfileUrl ? (
+                                            <Link
+                                                className="coach-orbit-hero__avatar-link"
+                                                to={`/profile/${coach.slugProfileUrl}`}
+                                                aria-label={`View coach profile: ${coach.name}`}
                                             >
-                                                {coach.name?.charAt(0)?.toUpperCase()}
-                                            </Avatar>
-                                        </Link>
-                                    ) : (
-                                        <span className="coach-orbit-hero__avatar-link coach-orbit-hero__avatar-link--empty">
-                                            <Avatar sx={{ width: "100%", height: "100%", fontSize: "1rem" }} />
-                                        </span>
-                                    )}
+                                                <Avatar
+                                                    src={coach.avatarUrl || undefined}
+                                                    alt={coach.name}
+                                                    sx={{ width: "100%", height: "100%", fontSize: "1.1rem" }}
+                                                >
+                                                    {coach.name?.charAt(0)?.toUpperCase()}
+                                                </Avatar>
+                                            </Link>
+                                        ) : (
+                                            <span className="coach-orbit-hero__avatar-link coach-orbit-hero__avatar-link--empty">
+                                                <Avatar sx={{ width: "100%", height: "100%", fontSize: "1rem" }} />
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}

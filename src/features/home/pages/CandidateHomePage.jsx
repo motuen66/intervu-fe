@@ -11,9 +11,15 @@ import { METHOD } from "../../../common/constants/api";
 import { homeEndPoints } from "../services/homeApi";
 import { interviewQuestionEndPoints } from "../../interviewQuestions/service/interviewQuestionApi";
 import { candidateProfileEndPoints } from "../../profiles/candidate/service/candidateProfileApi";
+import {
+    getAssessmentState,
+    ASSESSMENT_DATA_STATE,
+} from "../../profiles/candidate/candidate-assessment/helpers/assessmentHelper";
+import { assessmentEndPoints } from "../../profiles/candidate/candidate-assessment/services/assessmentApi";
 import SmartMatchModal from "../../smartSearch/components/SmartMatchModal";
 import CoachOrbitHero from "../components/CoachOrbitHero";
 import FeatureCards from "../components/FeatureCards";
+import PrepJourney from "../components/PrepJourney";
 import "./CandidateHomePage.css";
 
 const UPCOMING_STATUSES = [INTERVIEW_ROOM_STATUS.SCHEDULED, INTERVIEW_ROOM_STATUS.ON_GOING];
@@ -128,6 +134,13 @@ export default function CandidateHomePage() {
     const [qotdLoading, setQotdLoading] = useState(true);
 
     const [skills, setSkills] = useState([]);
+
+    const [journeyFlags, setJourneyFlags] = useState({
+        profileComplete: false,
+        assessmentDone: false,
+        roadmapExists: false,
+        loading: true,
+    });
 
     useEffect(() => {
         setSmartMatchOpen(searchParams.get("smartMatch") === "1");
@@ -253,18 +266,54 @@ export default function CandidateHomePage() {
         let cancelled = false;
         const load = async () => {
             try {
-                const endpoint = candidateProfileEndPoints.VIEW_OWN_CANDIDATE_PROFILE.replace("{id}", userData.id);
-                const res = await callApi({ method: METHOD.GET, endpoint, useGlobalLoading: false });
+                const profileEndpoint = candidateProfileEndPoints.VIEW_OWN_CANDIDATE_PROFILE.replace(
+                    "{id}",
+                    userData.id,
+                );
+                const [profileResult, assessmentResult, roadmapResult] = await Promise.allSettled([
+                    callApi({ method: METHOD.GET, endpoint: profileEndpoint, useGlobalLoading: false }),
+                    getAssessmentState(userData.id),
+                    callApi({
+                        method: METHOD.GET,
+                        endpoint: assessmentEndPoints.GET_ROADMAP(userData.id),
+                        useGlobalLoading: false,
+                    }),
+                ]);
                 if (cancelled) return;
-                const profile = res?.data ?? res ?? {};
+
+                const profile =
+                    profileResult.status === "fulfilled"
+                        ? (profileResult.value?.data ?? profileResult.value ?? {})
+                        : {};
+
                 const rawSkills = profile.skills ?? profile.Skills ?? [];
                 const names = (Array.isArray(rawSkills) ? rawSkills : [])
                     .map((s) => (typeof s === "string" ? s : s?.name ?? s?.Name))
                     .filter(Boolean)
                     .slice(0, 12);
                 setSkills(names);
+
+                const profileComplete = Boolean(
+                    (profile.bio ?? profile.Bio)?.trim() &&
+                        names.length > 0 &&
+                        (profile.user?.fullName ?? profile.fullName ?? userData?.fullName)?.trim(),
+                );
+
+                const assessmentDone =
+                    assessmentResult.status === "fulfilled" &&
+                    assessmentResult.value?.status === ASSESSMENT_DATA_STATE.HAS_DATA;
+
+                const roadmapData =
+                    roadmapResult.status === "fulfilled"
+                        ? (roadmapResult.value?.data ?? roadmapResult.value)
+                        : null;
+                const roadmapExists = Boolean(
+                    roadmapData && (Array.isArray(roadmapData) ? roadmapData.length > 0 : true),
+                );
+
+                setJourneyFlags({ profileComplete, assessmentDone, roadmapExists, loading: false });
             } catch {
-                if (!cancelled) setSkills([]);
+                if (!cancelled) setJourneyFlags((f) => ({ ...f, loading: false }));
             }
         };
         load();
@@ -278,6 +327,45 @@ export default function CandidateHomePage() {
         if (!n) return "";
         return n.split(/\s+/)[0];
     }, [userData?.fullName]);
+
+    const hasBooked = useMemo(
+        () => completedCount > 0 || scheduleSessions.length > 0,
+        [completedCount, scheduleSessions],
+    );
+
+    const journeySteps = useMemo(
+        () => [
+            {
+                id: "profile",
+                label: "Complete Profile",
+                actionLabel: "Set up now",
+                to: "/candidate/profile",
+                done: journeyFlags.profileComplete,
+            },
+            {
+                id: "assessment",
+                label: "Finish Assessment",
+                actionLabel: "Resume task",
+                to: "/assessment",
+                done: journeyFlags.assessmentDone,
+            },
+            {
+                id: "roadmap",
+                label: "Review Roadmap",
+                actionLabel: "Open roadmap",
+                to: "/roadmap",
+                done: journeyFlags.roadmapExists,
+            },
+            {
+                id: "booking",
+                label: "Book First Session",
+                actionLabel: "Find a coach",
+                to: "/coaches",
+                done: hasBooked,
+            },
+        ],
+        [journeyFlags, hasBooked],
+    );
 
     const handleJoinRoom = (e, session) => {
         e.stopPropagation();
@@ -332,7 +420,9 @@ export default function CandidateHomePage() {
                 <div className="candidate-home__col-7">
                     <div className="candidate-home__card">
                         <h3>
-                            <Calendar size={18} />
+                            <span className="candidate-home__card-icon" aria-hidden>
+                                <Calendar size={16} strokeWidth={2} />
+                            </span>
                             Schedule
                         </h3>
                         {sessionsLoading ? (
@@ -399,25 +489,10 @@ export default function CandidateHomePage() {
 
                 <div className="candidate-home__col-5">
                     <div className="candidate-home__card">
-                        <h3>Get ready</h3>
-                        <ul className="candidate-home__checklist">
-                            <li>
-                                <span>1.</span>
-                                <Link to="/candidate/profile">Complete your candidate profile</Link>
-                            </li>
-                            <li>
-                                <span>2.</span>
-                                <Link to="/assessment">Finish skills assessment</Link>
-                            </li>
-                            <li>
-                                <span>3.</span>
-                                <Link to="/roadmap">Review your roadmap</Link>
-                            </li>
-                            <li>
-                                <span>4.</span>
-                                <Link to="/booking-requests">Track booking requests</Link>
-                            </li>
-                        </ul>
+                        <PrepJourney
+                            steps={journeySteps}
+                            loading={journeyFlags.loading || sessionsLoading}
+                        />
                     </div>
                 </div>
             </div>
@@ -426,7 +501,9 @@ export default function CandidateHomePage() {
                 <div className="candidate-home__col-7">
                     <div className="candidate-home__card">
                         <h3>
-                            <BookOpen size={18} />
+                            <span className="candidate-home__card-icon" aria-hidden>
+                                <BookOpen size={16} strokeWidth={2} />
+                            </span>
                             Question of the day
                         </h3>
                         {qotdLoading ? (
@@ -461,7 +538,9 @@ export default function CandidateHomePage() {
                 <div className="candidate-home__col-5">
                     <div className="candidate-home__card">
                         <h3>
-                            <Map size={18} />
+                            <span className="candidate-home__card-icon" aria-hidden>
+                                <Map size={16} strokeWidth={2} />
+                            </span>
                             Your focus
                         </h3>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
