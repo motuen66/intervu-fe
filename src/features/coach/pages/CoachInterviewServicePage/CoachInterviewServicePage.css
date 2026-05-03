@@ -33,10 +33,26 @@
     justify-content: space-between;
 }
 
+.coach-service-card-unavailable {
+    border-color: color-mix(in srgb, var(--mui-palette-error-main) 30%, transparent);
+    background: linear-gradient(
+        180deg,
+        var(--mui-palette-background-paper) 0%,
+        color-mix(in srgb, var(--mui-palette-error-main) 6%, var(--mui-palette-background-paper)) 100%
+    );
+}
+
 .coach-service-card-header {
     display: flex;
     justify-content: space-between;
     gap: 12px;
+}
+
+.coach-service-card-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
 }
 
 .coach-service-card-title {
@@ -69,6 +85,12 @@
     background: rgba(148, 163, 184, 0.1);
     color: var(--mui-palette-primary-main);
     border-color: var(--mui-palette-primary-main);
+}
+
+.coach-service-card-actions .MuiIconButton-root.Mui-disabled {
+    color: var(--mui-palette-action-disabled);
+    border-color: var(--mui-palette-action-disabledBackground);
+    background: var(--mui-palette-action-hover);
 }
 
 .coach-service-card-actions .MuiIconButton-root.delete-btn:hover {

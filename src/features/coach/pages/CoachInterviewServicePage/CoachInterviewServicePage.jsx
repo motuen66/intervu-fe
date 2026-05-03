@@ -6,13 +6,28 @@ import { METHOD } from "../../../../common/constants/api";
 import CreateCoachServiceDialog from "./CreateCoachServiceDialog";
 import UpdateCoachServiceDialog from "./UpdateCoachServiceDialog";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
-import { Box, CircularProgress, IconButton } from "@mui/material";
+import { Box, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import toast from "react-hot-toast";
 import "./CoachInterviewServicePage.css";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import PageHeader from "../../../../common/components/PageHeader";
+import StatusChip from "../../../../common/components/StatusChip";
+
+const INTERVIEW_TYPE_STATUS = {
+    DEPRECATED: 3,
+};
+
+const getUnavailableLabel = (service) =>
+    Number(service?.interviewTypeStatus) === INTERVIEW_TYPE_STATUS.DEPRECATED
+        ? "Deprecated / unavailable"
+        : "Unavailable";
+
+const getServiceSubtitle = (service, isUnavailable) => {
+    if (isUnavailable) return "This service is hidden from candidates and cannot be edited.";
+    return service.isCoding ? "Includes coding exercises" : "Non-coding interview";
+};
 
 export default function CoachInterviewServicePage() {
     const [items, setItems] = useState([]);
@@ -113,48 +128,77 @@ export default function CoachInterviewServicePage() {
                     </Box>
                 ) : (
                     <Box className="coach-service-grid">
-                        {items.map((it) => (
-                            <div key={it.id} className="coach-service-card">
-                                <div className="coach-service-card-header">
-                                    <div>
-                                        <div className="coach-service-card-title">{it.interviewTypeName}</div>
-                                        <div className="coach-service-card-subtitle">
-                                            {it.isCoding ? "Includes coding exercises" : "Non-coding interview"}
+                        {items.map((it) => {
+                            const isUnavailable = it.isBookable === false;
+
+                            return (
+                                <div
+                                    key={it.id}
+                                    className={`coach-service-card ${isUnavailable ? "coach-service-card-unavailable" : ""}`}
+                                >
+                                    <div className="coach-service-card-header">
+                                        <div>
+                                            <div className="coach-service-card-title-row">
+                                                <div className="coach-service-card-title">{it.interviewTypeName}</div>
+                                                {isUnavailable && (
+                                                    <StatusChip
+                                                        label={getUnavailableLabel(it)}
+                                                        color="error"
+                                                        size="sm"
+                                                        variant="filled"
+                                                    />
+                                                )}
+                                            </div>
+                                            <div className="coach-service-card-subtitle">
+                                                {getServiceSubtitle(it, isUnavailable)}
+                                            </div>
+                                        </div>
+                                        <div className="coach-service-card-actions">
+                                            <Tooltip
+                                                title={isUnavailable ? "Unavailable services cannot be edited" : ""}
+                                            >
+                                                <span>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleUpdateClick(it)}
+                                                        disabled={isUnavailable}
+                                                        aria-label="Edit interview service"
+                                                    >
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                            <IconButton
+                                                size="small"
+                                                className="delete-btn"
+                                                onClick={() => handleDeleteClick(it.id)}
+                                                aria-label="Delete interview service"
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
                                         </div>
                                     </div>
-                                    <div className="coach-service-card-actions">
-                                        <IconButton size="small" onClick={() => handleUpdateClick(it)}>
-                                            <EditIcon fontSize="small" />
-                                        </IconButton>
-                                        <IconButton
-                                            size="small"
-                                            className="delete-btn"
-                                            onClick={() => handleDeleteClick(it.id)}
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
+                                    <div className="coach-service-card-meta">
+                                        <div className="meta-item">
+                                            <span className="meta-label">Price</span>
+                                            <span className="meta-value">{it.price?.toLocaleString()} ₫</span>
+                                        </div>
+                                        <div className="meta-item">
+                                            <span className="meta-label">Duration</span>
+                                            <span className="meta-value">{it.durationMinutes} min</span>
+                                        </div>
+                                        <div className="meta-item">
+                                            <span className="meta-label">Type</span>
+                                            <span
+                                                className={`meta-pill ${it.isCoding ? "pill-coding" : "pill-non-coding"}`}
+                                            >
+                                                {it.isCoding ? "Coding" : "Non-Coding"}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="coach-service-card-meta">
-                                    <div className="meta-item">
-                                        <span className="meta-label">Price</span>
-                                        <span className="meta-value">{it.price?.toLocaleString()} ₫</span>
-                                    </div>
-                                    <div className="meta-item">
-                                        <span className="meta-label">Duration</span>
-                                        <span className="meta-value">{it.durationMinutes} min</span>
-                                    </div>
-                                    <div className="meta-item">
-                                        <span className="meta-label">Type</span>
-                                        <span
-                                            className={`meta-pill ${it.isCoding ? "pill-coding" : "pill-non-coding"}`}
-                                        >
-                                            {it.isCoding ? "Coding" : "Non-Coding"}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </Box>
                 )}
             </div>

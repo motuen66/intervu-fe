@@ -184,22 +184,10 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
                         <Box
                             sx={{
                                 display: "grid",
-                                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                                gridTemplateColumns: "1fr",
                                 gap: 2.5,
                             }}
                         >
-                            <FormControl fullWidth required>
-                                <InputLabel id="status-label">Status</InputLabel>
-                                <FormSelect
-                                    labelId="status-label"
-                                    label="Status"
-                                    value={form.status}
-                                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                                >
-                                    <MenuItem value={1}>Active</MenuItem>
-                                    <MenuItem value={0}>Inactive</MenuItem>
-                                </FormSelect>
-                            </FormControl>
                             <FormControl fullWidth required>
                                 <InputLabel id="duration-label">Suggested Duration</InputLabel>
                                 <FormSelect
