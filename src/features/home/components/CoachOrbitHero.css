@@ -1,0 +1,284 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   CoachOrbitHero — dark hero card, double-rotation orbit
+   All colours derived from MUI CSS variables (cssVariables: true in theme.jsx)
+   ───────────────────────────────────────────────────────────────────────── */
+
+.coach-orbit-hero {
+    /* Lime alias — maps to secondary.dark from theme */
+    --orbit-lime:         var(--mui-palette-secondary-dark);
+    --orbit-lime-dim:     rgba(var(--mui-palette-secondary-darkChannel, 190 242 100) / 0.32);
+    --orbit-lime-glow:    rgba(var(--mui-palette-secondary-darkChannel, 190 242 100) / 0.14);
+    /* Dark surface — primary scale from theme.
+       White-channel fallback (255 255 255) ensures glass effects render
+       even if --mui-palette-common-whiteChannel is not injected. */
+    --orbit-dark:         var(--mui-palette-primary-dark);
+    --orbit-text:         var(--mui-palette-primary-contrastText, #fff);
+    --orbit-white:        255 255 255;   /* structural overlay channel, not a brand token */
+    --orbit-muted:        rgba(var(--orbit-white) / 0.45);
+    --orbit-radius:       clamp(96px, 30vw, 148px);
+
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr minmax(260px, 420px);
+    gap: clamp(16px, 3vw, 36px);
+    align-items: center;
+    /* Reduced top/bottom ~10% versus previous clamp(24px…40px) */
+    padding: clamp(18px, 3vw, 36px) clamp(24px, 4vw, 44px);
+    border-radius: 28px;
+    background: linear-gradient(
+        135deg,
+        var(--mui-palette-primary-dark)   0%,
+        var(--mui-palette-primary-main)   55%,
+        var(--mui-palette-primary-dark)   100%
+    );
+    border: 1px solid rgba(var(--orbit-white) / 0.07);
+    overflow: hidden;
+    /* Set base text colour so all children default to white on dark bg */
+    color: var(--orbit-text);
+}
+
+@media (max-width: 860px) {
+    .coach-orbit-hero {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Left content ────────────────────────────────────────────────────── */
+
+.coach-orbit-hero__left {
+    position: relative;
+    z-index: 2;
+}
+
+.coach-orbit-hero__badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.coach-orbit-hero__badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--orbit-lime);
+    color: var(--orbit-lime);
+    background: var(--orbit-lime-glow);
+}
+
+.coach-orbit-hero__badge-muted {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--orbit-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.coach-orbit-hero__badge-muted span.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--mui-palette-success-main);
+    box-shadow: 0 0 8px var(--mui-palette-success-main);
+    animation: orbit-dot-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes orbit-dot-pulse {
+    0%, 100% { box-shadow: 0 0 0 0   rgba(var(--mui-palette-success-mainChannel) / 0.5); }
+    50%       { box-shadow: 0 0 0 4px rgba(var(--mui-palette-success-mainChannel) / 0);   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .coach-orbit-hero__badge-muted span.dot { animation: none; }
+}
+
+/* Title */
+.coach-orbit-hero__title {
+    margin: 0;
+    font-family: var(--mui-typography-h2-fontFamily);
+    font-size: clamp(1.45rem, 2.6vw, 2rem);
+    font-weight: 800;
+    line-height: 1.18;
+    color: var(--orbit-text);
+    letter-spacing: -0.02em;
+}
+
+.coach-orbit-hero__title em {
+    font-style: italic;
+    color: var(--orbit-lime);
+}
+
+/* Stats row */
+.coach-orbit-hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 28px;
+    margin: 20px 0 24px;
+}
+
+.coach-orbit-hero__stat {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.coach-orbit-hero__stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(var(--orbit-white) / 0.07);
+    border: 1px solid rgba(var(--orbit-white) / 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--orbit-muted);
+    flex-shrink: 0;
+}
+
+.coach-orbit-hero__stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--orbit-muted);
+    margin-bottom: 3px;
+}
+
+.coach-orbit-hero__stat-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--orbit-text);
+    letter-spacing: -0.01em;
+}
+
+
+/* ── Orbit stage ─────────────────────────────────────────────────────── */
+
+.coach-orbit-hero__stage-wrap {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0.62;
+    transition: opacity 350ms ease;
+}
+
+.coach-orbit-hero:hover .coach-orbit-hero__stage-wrap {
+    opacity: 1;
+}
+
+.coach-orbit-hero__stage {
+    position: relative;
+    width: min(100%, 400px);
+    aspect-ratio: 1;
+    max-width: 400px;
+    --orbit-translate: var(--orbit-radius);
+}
+
+.coach-orbit-hero__glow {
+    position: absolute;
+    inset: 22%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--orbit-lime-glow) 0%, transparent 68%);
+    pointer-events: none;
+}
+
+.coach-orbit-hero__ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(var(--orbit-white) / 0.05);
+    pointer-events: none;
+}
+
+.coach-orbit-hero__ring--1 { inset: 6%; }
+.coach-orbit-hero__ring--2 { inset: 17%; opacity: 0.7; }
+.coach-orbit-hero__ring--3 { inset: 28%; opacity: 0.45; }
+
+.coach-orbit-hero__orbit {
+    position: absolute;
+    inset: 0;
+    animation: coach-orbit-spin 50s linear infinite;
+    transform-origin: 50% 50%;
+}
+
+.coach-orbit-hero--reduced-motion .coach-orbit-hero__orbit {
+    animation: none;
+}
+
+@keyframes coach-orbit-spin {
+    to { transform: rotate(360deg); }
+}
+
+.coach-orbit-hero__orbit-slot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    transform: rotate(var(--slot-angle, 0deg)) translateY(calc(-1 * var(--orbit-translate)));
+}
+
+.coach-orbit-hero__avatar-wrap {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 58px;
+    height: 58px;
+    margin: -29px 0 0 -29px;
+    animation: coach-orbit-counter-spin 50s linear infinite;
+    transform-origin: center;
+}
+
+.coach-orbit-hero--reduced-motion .coach-orbit-hero__avatar-wrap {
+    animation: none;
+}
+
+@keyframes coach-orbit-counter-spin {
+    to { transform: rotate(-360deg); }
+}
+
+.coach-orbit-hero__avatar-link {
+    display: block;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    text-decoration: none;
+    border: 2px solid rgba(var(--orbit-white) / 0.14);
+    box-shadow:
+        0 4px 16px rgba(0 0 0 / 0.5),
+        0 0 0 4px   rgba(0 0 0 / 0.25);
+    overflow: hidden;
+    filter: grayscale(0.3) brightness(0.9);
+    transition:
+        transform 250ms ease,
+        box-shadow 250ms ease,
+        border-color 250ms ease,
+        filter 250ms ease;
+}
+
+.coach-orbit-hero__avatar-link:hover,
+.coach-orbit-hero__avatar-link:focus-visible {
+    transform: scale(1.14);
+    border-color: var(--orbit-lime);
+    box-shadow:
+        0 0 0 3px var(--orbit-lime-dim),
+        0 14px 36px var(--orbit-lime-dim);
+    filter: none;
+    outline: none;
+}
+
+/* Avatar image & fallback letter handled by MUI Avatar (theme sets lime bg + navy text) */
+
+.coach-orbit-hero__avatar-link--empty {
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.4;
+}

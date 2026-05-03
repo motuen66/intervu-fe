@@ -89,7 +89,8 @@ const MainLayout = () => {
         () => [
             // ROLE: CANDIDATE
             [
-                { label: "Home", path: "/home" },
+                { label: "Home", path: "/candidate" },
+                { label: "Browse coaches", path: "/coaches" },
                 { label: "Questions", path: "/questions" },
                 { label: "Interview", path: "/interview" },
                 { label: "Roadmap", path: "/roadmap" },

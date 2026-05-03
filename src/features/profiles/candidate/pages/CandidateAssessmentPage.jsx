@@ -108,12 +108,12 @@ const CandidateAssessmentPage = () => {
             setOpenPrompt(false);
 
             toast.info("Welcome back! You can complete your assessment anytime from the dashboard.");
-            navigate("/home", { replace: true });
+            navigate("/candidate", { replace: true });
         } catch (error) {
             // Silently fail and still try to go home if possible,
             // or just ensure we don't crash
             setAssessmentForceRequired(userData.id, false);
-            navigate("/home", { replace: true });
+            navigate("/candidate", { replace: true });
         } finally {
             setIsSkipping(false);
         }
