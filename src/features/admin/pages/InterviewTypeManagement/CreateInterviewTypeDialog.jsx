@@ -27,6 +27,7 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
         name: "",
         description: "",
         isCoding: false,
+        requiresCandidateCv: false,
         suggestedDurationMinutes: 30,
         minPrice: "",
         maxPrice: "",
@@ -45,6 +46,7 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
             name: "",
             description: "",
             isCoding: false,
+            requiresCandidateCv: false,
             suggestedDurationMinutes: 30,
             minPrice: "",
             maxPrice: "",
@@ -250,7 +252,22 @@ export default function CreateInterviewTypeDialog({ open, onClose, onCreated }) 
                                 label="Coding interview"
                                 sx={{
                                     m: 0,
-                                    "& .MuiFormControlLabel-label": { color: "#111827" },
+                                    "& .MuiFormControlLabel-label": { color: "text.primary" },
+                                }}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={form.requiresCandidateCv}
+                                        onChange={handleChange("requiresCandidateCv")}
+                                    />
+                                }
+                                label="Candidate must attach a CV when booking"
+                                sx={{
+                                    m: 0,
+                                    display: "block",
+                                    mt: 0.5,
+                                    "& .MuiFormControlLabel-label": { color: "text.primary" },
                                 }}
                             />
                         </Box>

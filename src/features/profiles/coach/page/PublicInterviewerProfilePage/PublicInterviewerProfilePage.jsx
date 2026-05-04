@@ -197,10 +197,11 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
         setBookingDialogOpen(true);
     };
 
-    const handleBooking = async ({ slot, service, startTime, candidateNote }) => {
+    const handleBooking = async ({ slot, service, startTime, candidateNote, cvUrl }) => {
         const returnUrl = window.location.origin + "/booking-requests";
         const trimmedNote =
             typeof candidateNote === "string" ? candidateNote.trim().slice(0, 1000) : "";
+        const trimmedCv = typeof cvUrl === "string" ? cvUrl.trim() : "";
         // try {
         const { data } = await callApi({
             method: METHOD.POST,
@@ -213,6 +214,7 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                 returnUrl: returnUrl,
                 roadmapNodeId: roadmapNodeId || null,
                 ...(trimmedNote ? { candidateNote: trimmedNote } : {}),
+                ...(trimmedCv ? { cvUrl: trimmedCv } : {}),
             },
         });
 
@@ -782,6 +784,7 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                     setSelectedService(null);
                 }}
                 interviewerId={profile?.user?.id}
+                candidateUserId={userData?.id}
                 onSlotSelected={handleBooking}
                 initialService={selectedService}
             />

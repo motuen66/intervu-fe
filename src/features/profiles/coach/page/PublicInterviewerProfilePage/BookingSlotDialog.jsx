@@ -28,6 +28,7 @@ import { getCoachInterviewServices } from "../../../../coach/services/coachInter
 import toast from "react-hot-toast";
 import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 import CalendlyCalendar from "../../../../../common/components/CalendlyCalendar";
+import CandidateCvPicker from "../../../../../common/components/CandidateCvPicker";
 import "./BookingSlotDialog.css";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -36,6 +37,16 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 
 const BLOCK_MINUTES = 30;
 const CANDIDATE_NOTE_MAX_LENGTH = 1000;
+
+function isValidCvHttpUrl(s) {
+    if (!s?.trim()) return false;
+    try {
+        const u = new URL(s.trim());
+        return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+        return false;
+    }
+}
 
 /**
  * Given a starting block, find N consecutive blocks from the available pool.
@@ -61,7 +72,7 @@ function findConsecutiveBlocks(startBlock, requiredCount, availableBlocks) {
     return chain.length === requiredCount ? chain : null;
 }
 
-const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initialService = null }) => {
+const BookingSlotDialog = ({ open, onClose, interviewerId, candidateUserId, onSlotSelected, initialService = null }) => {
     const [activeStep, setActiveStep] = useState(0);
 
     // Step 1 - Service selection
@@ -78,6 +89,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
 
     const [error, setError] = useState(null);
     const [candidateNote, setCandidateNote] = useState("");
+    const [bookingCvUrl, setBookingCvUrl] = useState("");
+    const [bookingCvError, setBookingCvError] = useState("");
 
     // Data fetching
     useEffect(() => {
@@ -97,6 +110,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
             setCurrentMonth(new Date());
             setError(null);
             setCandidateNote("");
+            setBookingCvUrl("");
+            setBookingCvError("");
         }
     }, [open, interviewerId, initialService]);
 
@@ -185,6 +200,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
         setSelectedService(service);
         setSelectedDate(null);
         setSelectedSlotData(null);
+        setBookingCvUrl("");
+        setBookingCvError("");
     };
 
     const handleNextStep = () => {
@@ -196,6 +213,8 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
             setActiveStep(0);
             setSelectedDate(null);
             setSelectedSlotData(null);
+            setBookingCvUrl("");
+            setBookingCvError("");
         }
     };
 
@@ -222,13 +241,30 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
 
     const handleConfirmBooking = () => {
         if (!selectedService || !selectedSlotData) return;
+        if (selectedService.requiresCandidateCv) {
+            const t = bookingCvUrl.trim();
+            if (!t) {
+                setBookingCvError("Please add a CV link, upload a file, or use your profile CV.");
+                return;
+            }
+            if (!isValidCvHttpUrl(t)) {
+                setBookingCvError("Please enter a valid http(s) URL for your CV.");
+                return;
+            }
+        } else if (bookingCvUrl.trim() && !isValidCvHttpUrl(bookingCvUrl)) {
+            setBookingCvError("Please enter a valid http(s) URL for your CV.");
+            return;
+        }
+        setBookingCvError("");
         if (onSlotSelected) {
             const trimmedNote = candidateNote.trim();
+            const trimmedCv = bookingCvUrl.trim();
             onSlotSelected({
                 slot: selectedSlotData.startBlock,
                 service: selectedService,
                 startTime: selectedSlotData.time,
                 ...(trimmedNote ? { candidateNote: trimmedNote.slice(0, CANDIDATE_NOTE_MAX_LENGTH) } : {}),
+                ...(trimmedCv ? { cvUrl: trimmedCv } : {}),
             });
         }
         onClose();
@@ -259,7 +295,12 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
         return new Set(selectedSlotData.blocks.map((b) => String(b.id)));
     }, [selectedSlotData]);
 
-    const canConfirm = selectedService && selectedSlotData;
+    const needsCv = !!(selectedService?.requiresCandidateCv);
+    const canConfirm =
+        selectedService &&
+        selectedSlotData &&
+        (!needsCv || isValidCvHttpUrl(bookingCvUrl)) &&
+        (!bookingCvUrl.trim() || isValidCvHttpUrl(bookingCvUrl));
 
     return (
         <Dialog
@@ -335,6 +376,9 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                                     {service.interviewTypeName || "Interview"}
                                                     {service.isCoding && (
                                                         <Chip label="CODING" size="small" sx={{ height: 18, fontSize: "9px", fontWeight: 800, bgcolor: "primary.main", color: "primary.contrastText", ml: 1.5 }} />
+                                                    )}
+                                                    {service.requiresCandidateCv && (
+                                                        <Chip label="CV" size="small" sx={{ height: 18, fontSize: "9px", fontWeight: 800, bgcolor: "info.main", color: "info.contrastText", ml: 1.5 }} />
                                                     )}
                                                 </Typography>
                                                 <Box className="service-meta-row">
@@ -441,6 +485,19 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                         )}
                                     </Box>
                                 </Stack>
+
+                                {selectedService?.requiresCandidateCv && (
+                                    <CandidateCvPicker
+                                        candidateUserId={candidateUserId}
+                                        value={bookingCvUrl}
+                                        onChange={(v) => {
+                                            setBookingCvUrl(v);
+                                            if (bookingCvError) setBookingCvError("");
+                                        }}
+                                        error={bookingCvError}
+                                        disabled={!selectedSlotData}
+                                    />
+                                )}
 
                                 {/* Note for coach — full width, always rendered below the row */}
                                 <Box sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>

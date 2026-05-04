@@ -27,6 +27,7 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
         name: "",
         description: "",
         isCoding: false,
+        requiresCandidateCv: false,
         suggestedDurationMinutes: 30,
         minPrice: "",
         maxPrice: "",
@@ -46,6 +47,7 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                 name: item.name || "",
                 description: item.description || "",
                 isCoding: !!item.isCoding,
+                requiresCandidateCv: !!item.requiresCandidateCv,
                 suggestedDurationMinutes: item.suggestedDurationMinutes || 30,
                 minPrice: item.minPrice ?? "",
                 maxPrice: item.maxPrice ?? "",
@@ -261,7 +263,24 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                                 label="Coding interview"
                                 sx={{
                                     m: 0,
-                                    "& .MuiFormControlLabel-label": { color: "#111827" },
+                                    "& .MuiFormControlLabel-label": { color: "text.primary" },
+                                }}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={form.requiresCandidateCv}
+                                        onChange={(e) =>
+                                            setForm({ ...form, requiresCandidateCv: e.target.checked })
+                                        }
+                                    />
+                                }
+                                label="Candidate must attach a CV when booking"
+                                sx={{
+                                    m: 0,
+                                    display: "block",
+                                    mt: 0.5,
+                                    "& .MuiFormControlLabel-label": { color: "text.primary" },
                                 }}
                             />
                         </Box>
