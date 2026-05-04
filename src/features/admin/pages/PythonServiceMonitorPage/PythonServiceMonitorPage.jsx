@@ -294,7 +294,7 @@ function LegendSwatch({ color, label, textColor }) {
 }
 
 export default function PythonServiceMonitorPage() {
-    const [timeframe, setTimeframe] = useState("24h");
+    const [timeframe, setTimeframe] = useState("7d");
     const [provider, setProvider] = useState("");
     const [useCaseFilter, setUseCaseFilter] = useState("");
     const [fromDate, setFromDate] = useState("");
