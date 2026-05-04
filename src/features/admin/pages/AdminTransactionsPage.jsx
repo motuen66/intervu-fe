@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
     Container,
     Box,
@@ -166,6 +166,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
     const [analyticsTransactions, setAnalyticsTransactions] = useState([]);
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
     const [windowDays, setWindowDays] = useState(30);
+    const transactionsRequestRef = useRef(0);
+    const analyticsRequestRef = useRef(0);
 
     const getQueryString = useCallback(
         (pageValue, pageSizeValue) => {
@@ -180,6 +182,8 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
     );
 
     const fetchTransactions = useCallback(async () => {
+        const requestId = transactionsRequestRef.current + 1;
+        transactionsRequestRef.current = requestId;
         setLoading(true);
         try {
             const response = await callApi({
@@ -188,19 +192,26 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 useGlobalLoading: false,
             });
 
-            if (response?.success) {
+            if (response?.success && requestId === transactionsRequestRef.current) {
                 setTransactions((response.data?.items || []).map(normalizeTransaction));
                 setTotalItems(response.data?.totalItems || 0);
             }
         } catch {
-            toast.error("Error loading transactions");
+            if (requestId === transactionsRequestRef.current) {
+                toast.error("Error loading transactions");
+            }
         } finally {
-            setLoading(false);
+            if (requestId === transactionsRequestRef.current) {
+                setLoading(false);
+            }
         }
     }, [getQueryString, page, pageSize, setLoading, setTotalItems, setTransactions]);
 
     const fetchAnalyticsTransactions = useCallback(async () => {
+        const requestId = analyticsRequestRef.current + 1;
+        analyticsRequestRef.current = requestId;
         setAnalyticsLoading(true);
+        setAnalyticsTransactions([]);
         try {
             const all = [];
             let currentPage = 1;
@@ -223,12 +234,18 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 currentPage += 1;
             }
 
-            setAnalyticsTransactions(all);
+            if (requestId === analyticsRequestRef.current) {
+                setAnalyticsTransactions(all);
+            }
         } catch {
-            setAnalyticsTransactions([]);
-            toast.error("Error loading analytics data");
+            if (requestId === analyticsRequestRef.current) {
+                setAnalyticsTransactions([]);
+                toast.error("Error loading analytics data");
+            }
         } finally {
-            setAnalyticsLoading(false);
+            if (requestId === analyticsRequestRef.current) {
+                setAnalyticsLoading(false);
+            }
         }
     }, [getQueryString]);
 
@@ -240,8 +257,14 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         fetchAnalyticsTransactions();
     }, [fetchAnalyticsTransactions]);
 
+    useEffect(() => {
+        setTransactions([]);
+        setTotalItems(0);
+        setAnalyticsTransactions([]);
+    }, [filterType, filterStatus, setTotalItems, setTransactions]);
+
     const analytics = useMemo(() => {
-        const data = analyticsTransactions.length ? analyticsTransactions : transactions;
+        const data = analyticsTransactions;
         const now = Date.now();
         const currentStart = now - windowDays * DAY_IN_MS;
         const previousStart = now - windowDays * 2 * DAY_IN_MS;
@@ -303,13 +326,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 }
 
                 const monthData = trendMap.get(toDateKey(createdAt));
-                if (monthData && paidTransaction) {
-                    monthData.value += amount;
-                }
-            } else {
-                const latestKey = trendKeys[trendKeys.length - 1];
-                const monthData = trendMap.get(latestKey);
-                if (monthData && paidTransaction) {
+                if (monthData) {
                     monthData.value += amount;
                 }
             }
@@ -347,7 +364,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             averagePaidValueDelta,
             monthlyTrend,
         };
-    }, [analyticsTransactions, transactions, windowDays]);
+    }, [analyticsTransactions, windowDays]);
 
     const handleExportCsv = useCallback(() => {
         if (!analyticsTransactions.length) {
