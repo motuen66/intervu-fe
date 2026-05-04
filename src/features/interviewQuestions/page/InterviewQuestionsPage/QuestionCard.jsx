@@ -27,10 +27,12 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     const navigate = useNavigate();
     const currentUser = useSelector((state) => state.auth.userData);
 
-    const [likeCount, setLikeCount] = useState(item.likeCount ?? item.vote ?? 0);
+    const [likeCount, setLikeCount] = useState(
+        item.likeCount ?? item.likesCount ?? item.voteCount ?? item.vote ?? item.totalLikes ?? 0,
+    );
     const [liked, setLiked] = useState(item.isLikedByUser ?? false);
     const [saved, setSaved] = useState(item.isSavedByUser ?? false);
-    const [saveCount, setSaveCount] = useState(item.saveCount ?? 0);
+    const [saveCount, setSaveCount] = useState(item.saveCount ?? item.savedCount ?? item.bookmarkCount ?? 0);
     const [commentCount, setCommentCount] = useState(null);
 
     /* ── Normalized fields from QuestionListItemDto ── */
@@ -50,7 +52,8 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         return item.hottestAnswer ?? item.topAnswer ?? null;
     })();
     // console.log("Items:", item);
-    const answerCount = item.commentCount ?? 0;
+    const answerCount =
+        item.commentCount ?? item.commentsCount ?? item.answerCount ?? item.answersCount ?? item.totalComments ?? 0;
     const viewCount = item.viewCount ?? 0;
     const isHot = isHotProp ?? item.isHot ?? false;
 
@@ -89,10 +92,10 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     const needsTruncate = answerText.length > PREVIEW_CHAR_LIMIT;
 
     useEffect(() => {
-        setLikeCount(item?.likeCount ?? item?.vote ?? 0);
+        setLikeCount(item?.likeCount ?? item?.likesCount ?? item?.voteCount ?? item?.vote ?? item?.totalLikes ?? 0);
         setLiked(item?.isLikedByUser ?? false);
         setSaved(item?.isSavedByUser ?? false);
-        setSaveCount(item?.saveCount ?? 0);
+        setSaveCount(item?.saveCount ?? item?.savedCount ?? item?.bookmarkCount ?? 0);
     }, [item]);
 
     useEffect(() => {
@@ -195,8 +198,8 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                     state: {
                         linkedQuestion: {
                             id: item.id,
-                            content: item.title,
-                            title: item.title,
+                            content: item.content ?? item.title,
+                            title: item.title ?? item.content,
                             companyId: item.companyIds?.[0] ?? item.companyId ?? null,
                             roles: item.roles,
                             tags: item.tags,
@@ -291,7 +294,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                             "&:hover": { color: "primary.main" },
                         }}
                     >
-                        {item.content}
+                        {item.title ?? item.content}
                     </Typography>
 
                     {/* Metadata chips: role / category / level / round */}
