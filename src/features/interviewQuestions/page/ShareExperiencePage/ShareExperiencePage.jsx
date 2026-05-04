@@ -49,7 +49,7 @@ export default function ShareExperiencePage() {
             return [
                 {
                     type: linked.category ?? "",
-                    question: linked.content ?? linked.title ?? "",
+                    question: linked.title ?? linked.content ?? "",
                     answer: "",
                     linkedQuestion: linked,
                     preLinked: true,
@@ -115,6 +115,13 @@ export default function ShareExperiencePage() {
             return;
         }
 
+        if (isQuillEmpty(process)) {
+            toast.error("Please provide interview process details");
+            return;
+        }
+
+        const interviewProcessText = htmlToPlainText(process)?.trim();
+
         const filledQuestions = questions.filter(
             (q) => q.question?.trim() || q.linkedQuestion || !isQuillEmpty(q.answer),
         );
@@ -126,8 +133,8 @@ export default function ShareExperiencePage() {
 
         const payloadQuestions = filledQuestions.map((q) => ({
             linkedQuestionId: q.linkedQuestion?.id ?? null,
-            title: (q.linkedQuestion?.content ?? q.question?.trim()) || undefined,
-            content: (q.linkedQuestion?.content ?? q.question?.trim()) || undefined,
+            title: (q.linkedQuestion?.title ?? q.linkedQuestion?.content ?? q.question?.trim()) || undefined,
+            content: interviewProcessText || undefined,
             level: level || undefined,
             round: lastRound || undefined,
             category: q.type || undefined,
@@ -148,7 +155,7 @@ export default function ShareExperiencePage() {
                     role,
                     level: level || null,
                     lastRoundCompleted: lastRound,
-                    interviewProcess: htmlToPlainText(process),
+                    interviewProcess: interviewProcessText,
                     isInterestedInContact: allowContact,
                     questions: payloadQuestions,
                 },

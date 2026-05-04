@@ -125,6 +125,21 @@ const normalizeCoachProfile = (data) => ({
     bankAccountNumber: data?.bankAccountNumber || "",
 });
 
+const normalizeSavedQuestionItem = (item) => {
+    const likeCount = item?.vote ?? item?.likeCount ?? 0;
+    const saveCount = item?.saveCount ?? 0;
+    const commentCount = item?.commentCount ?? 0;
+    return {
+        ...item,
+        likeCount,
+        vote: item?.vote ?? likeCount,
+        saveCount,
+        commentCount,
+        answerCount: commentCount,
+        viewCount: item?.viewCount ?? 0,
+    };
+};
+
 const formatMonthYear = (value) => {
     if (!value) return "Present";
     const parsed = new Date(value);
@@ -364,7 +379,7 @@ function InterviewerProfilePage() {
             .then(({ data }) => {
                 const payload = data ?? {};
                 const items = Array.isArray(payload) ? payload : (payload.items ?? payload.data ?? []);
-                setSavedQuestions(items);
+                setSavedQuestions((items ?? []).map(normalizeSavedQuestionItem));
             })
             .catch(() => setSavedQuestions([]))
             .finally(() => setLoadingSaved(false));
@@ -1582,17 +1597,11 @@ function InterviewerProfilePage() {
                                         No saved questions yet.
                                     </Typography>
                                 ) : (
-                                    <Box
-                                        sx={{
-                                            display: "grid",
-                                            gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-                                            gap: 2,
-                                        }}
-                                    >
+                                    <Stack spacing={1.5}>
                                         {savedQuestions.map((q) => (
                                             <QuestionCard key={q.id} item={q} />
                                         ))}
-                                    </Box>
+                                    </Stack>
                                 )}
                             </Box>
                         )}
