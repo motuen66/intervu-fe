@@ -17,6 +17,13 @@ export const PREPARED_QUESTION_STATUS = {
     Asked: 2,
 };
 
+/** Coding item with no saved test cases (coach may still send to the in-room editor). */
+export function isPreparedCodingMissingTestCases(item) {
+    if (!item || item.interactionType !== PREPARED_QUESTION_INTERACTION_TYPE.Coding) return false;
+    const tc = item.testCases;
+    return !Array.isArray(tc) || tc.length === 0;
+}
+
 /**
  * Backend QuestionCategory enum (Intervu.Domain.Entities.Constants.QuestionConstants).
  * Only the values the bank returns are relevant here; we map them into the binary

@@ -13,6 +13,7 @@ import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import {
     PREPARED_QUESTION_INTERACTION_TYPE,
     PREPARED_QUESTION_STATUS,
+    isPreparedCodingMissingTestCases,
 } from "../../services/preparedQuestionApi";
 import AppText from "../../../../common/components/AppText";
 
@@ -29,7 +30,7 @@ function PlainPreview({ html, maxLength = 160 }) {
 function SelectedRow({ item, onEdit, onRemove, onReorder, index, total }) {
     const isCoding = item.interactionType === PREPARED_QUESTION_INTERACTION_TYPE.Coding;
     const isAsked = item.status === PREPARED_QUESTION_STATUS.Asked;
-    const isIncomplete = isCoding && !item.isReadyForEditor;
+    const testCasesMissing = isPreparedCodingMissingTestCases(item);
 
     return (
         <Box
@@ -90,12 +91,12 @@ function SelectedRow({ item, onEdit, onRemove, onReorder, index, total }) {
                             sx={{ height: 20, fontSize: "0.65rem" }}
                         />
                     )}
-                    {isIncomplete && (
-                        <Tooltip title="Add a function name and at least one test case before sending to the editor">
+                    {testCasesMissing && (
+                        <Tooltip title="You can send from the room without tests and add them live if needed.">
                             <Chip
                                 size="small"
                                 icon={<WarningAmberRoundedIcon sx={{ fontSize: "0.9rem !important" }} />}
-                                label="Incomplete"
+                                label="Test cases missing"
                                 color="warning"
                                 variant="outlined"
                                 sx={{ height: 20, fontSize: "0.65rem" }}
