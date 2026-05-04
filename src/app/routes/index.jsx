@@ -8,6 +8,7 @@ import { candidateRoutes } from "./candidateRoutes.jsx";
 import EmptyLayout from "../layouts/EmptyLayout";
 import ProtectedRoute from "../../common/components/ProtectedRoute";
 import { ROLES } from "../../common/constants/common";
+import ErrorPage from "../../common/components/ErrorPage";
 
 const HomePage = lazy(() => import("../../features/home/pages/HomePage")); /* coach browse (public) */
 const LandingPage = lazy(() => import("../../features/landing/pages/LandingPage"));
@@ -170,4 +171,11 @@ export const routes = [
         ),
         children: interviewerRoutes,
     },
+
+    // Error pages
+    { path: "/404", element: <ErrorPage statusCode={404} /> },
+    { path: "/403", element: <ErrorPage statusCode={403} /> },
+
+    // Catch-all route for undefined paths
+    { path: "*", element: <ErrorPage statusCode={404} /> },
 ];

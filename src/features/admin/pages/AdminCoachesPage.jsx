@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Container, Box, Avatar, Typography } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { callApi } from '../../../common/utils/apiConnector';
 import { METHOD } from '../../../common/constants/api';
 import { adminEndPoints } from '../services/adminApi';
 import toast from 'react-hot-toast';
+import UserFormModal from '../components/UserFormModal';
 import DataTable from '../../../common/components/table/DataTable';
+import { PrimaryButton } from '../../../common/components/buttons';
 import AdminPageHeader from '../../../common/components/admin/AdminPageHeader';
 import SearchInput from '../../../common/components/inputs/SearchInput';
 import useTableState from '../../../hooks/useTableState';
@@ -34,6 +37,8 @@ export default function AdminCoachesPage() {
     } = useTableState(10);
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [openFormModal, setOpenFormModal] = useState(false);
+    const [formMode, setFormMode] = useState('create');
 
     useEffect(() => {
         fetchCoaches();
@@ -68,6 +73,35 @@ export default function AdminCoachesPage() {
     const handleSearchChange = (value) => {
         setSearchTerm(value);
         setPage(0);
+    };
+
+    const handleCreateCoach = () => {
+        setFormMode('create');
+        setOpenFormModal(true);
+    };
+
+    const handleFormSubmit = async (formData, onError) => {
+        try {
+            const response = await callApi({
+                method: METHOD.POST,
+                endpoint: adminEndPoints.CREATE_USER,
+                arg: { ...formData, role: 1 }, // Force Coach role
+            });
+
+            if (response?.success) {
+                toast.success('Coach created successfully!');
+                setOpenFormModal(false);
+                fetchCoaches();
+            } else {
+                const message = response?.message || 'An error occurred';
+                onError?.(message);
+                toast.error(message);
+            }
+        } catch (error) {
+            const message = error?.response?.data?.message || error?.message || 'Save failed';
+            onError?.(message);
+            toast.error(message);
+        }
     };
 
     const columns = useMemo(() => [
@@ -135,6 +169,11 @@ export default function AdminCoachesPage() {
             <AdminPageHeader
                 title="Coaches"
                 subtitle="View and monitor all coach profiles on the platform."
+                actionButton={
+                    <PrimaryButton size="md" startIcon={<AddIcon />} onClick={handleCreateCoach}>
+                        Add Coach
+                    </PrimaryButton>
+                }
             />
 
             <Box className="admin-card">
@@ -164,6 +203,20 @@ export default function AdminCoachesPage() {
                     actions={false}
                 />
             </Box>
+
+            <UserFormModal
+                open={openFormModal}
+                onClose={() => setOpenFormModal(false)}
+                onSubmit={handleFormSubmit}
+                user={null}
+                mode={formMode}
+                defaultRole={1}
+                showPhoneNumber={false}
+                showRoleSelect={false}
+                includeCoachProfileFields={true}
+                title="Create coach"
+                description="Add a coach account and optionally fill some profile details now."
+            />
         </Container>
     );
 }
