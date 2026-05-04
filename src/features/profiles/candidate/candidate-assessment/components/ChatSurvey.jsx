@@ -1771,7 +1771,7 @@ const ChatSurvey = () => {
                                     Assessment Conversation
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    Your setup is locked. Use Previous if you need to adjust chapter 1.
+                                    This step is read-only. Use Previous if you need to adjust chapter 1.
                                 </Typography>
                             </Box>
 

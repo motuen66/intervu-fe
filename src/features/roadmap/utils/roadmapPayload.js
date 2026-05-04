@@ -13,6 +13,22 @@ export const getChildSkillNames = (childSkills = []) =>
         })
         .filter(Boolean);
 
+const HIDDEN_PHASE_STATUS = new Set(["Unlocked", "Locked"]);
+
+/** Empty when status is generic — no status chip on roadmap phases. */
+const sanitizePhaseStatusForUi = (raw) => {
+    const t = String(raw ?? "").trim();
+    if (!t || HIDDEN_PHASE_STATUS.has(t)) return "";
+    return t;
+};
+
+/** Skill row: avoid Unlocked/Locked labels in UI (maps to Not Started). */
+const sanitizeSkillAssessmentStatus = (raw) => {
+    const t = String(raw ?? "").trim();
+    if (t === "Unlocked" || t === "Locked") return "Not Started";
+    return t || "Missing";
+};
+
 export const normalizeRoadmapPayload = (rawRoadmap) => {
     if (!rawRoadmap) {
         return null;
@@ -35,7 +51,7 @@ export const normalizeRoadmapPayload = (rawRoadmap) => {
             phase_id: phase.phase_id ?? phase.phaseId ?? phase.PhaseId ?? `phase_${phaseIndex + 1}`,
             phase_name: phase.phase_name ?? phase.phaseName ?? phase.PhaseName ?? `Phase ${phaseIndex + 1}`,
             phase_description: phase.phase_description ?? phase.phaseDescription ?? phase.PhaseDescription ?? "",
-            status: phase.status ?? phase.Status ?? "Unlocked",
+            status: sanitizePhaseStatusForUi(phase.status ?? phase.Status ?? ""),
             is_unlocked: phase.is_unlocked ?? phase.isUnlocked ?? phase.IsUnlocked ?? true,
             unlocked_at: phase.unlocked_at ?? phase.unlockedAt ?? phase.UnlockedAt ?? null,
             passed_at: phase.passed_at ?? phase.passedAt ?? phase.PassedAt ?? null,
@@ -101,7 +117,7 @@ export const normalizeRoadmapPayload = (rawRoadmap) => {
                               target_level:
                                   assessment.target_level ?? assessment.targetLevel ?? assessment.TargetLevel ?? "",
                               sfia_level: assessment.sfia_level ?? assessment.sfiaLevel ?? assessment.SfiaLevel ?? 0,
-                              status: assessment.status ?? assessment.Status ?? "Missing",
+                              status: sanitizeSkillAssessmentStatus(assessment.status ?? assessment.Status ?? "Missing"),
                               progress: assessment.progress ?? assessment.Progress ?? 0,
                               score: assessment.score ?? assessment.Score ?? 0,
                           },

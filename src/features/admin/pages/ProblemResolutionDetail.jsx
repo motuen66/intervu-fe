@@ -539,8 +539,8 @@ function ProblemResolutionDetail() {
                                 <DetailRow label="Payment Status" value={reportDetail?.financial?.paymentStatus} />
                                 <DetailRow label="PayOS Code" value={reportDetail?.financial?.payOsCode} />
                                 <DetailRow
-                                    label="Payout Lock"
-                                    value={reportDetail?.financial?.payoutLocked ? "Processed/Locked" : "Not Processed"}
+                                    label="Payout status"
+                                    value={reportDetail?.financial?.payoutLocked ? "Processed" : "Not Processed"}
                                 />
                             </SectionCard>
                         </Stack>

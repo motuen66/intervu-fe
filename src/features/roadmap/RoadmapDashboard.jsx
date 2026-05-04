@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import { Alert, Box, CardActionArea, Chip, LinearProgress, Stack, Typography, alpha } from "@mui/material";
+import { Alert, Avatar, Box, CardActionArea, Chip, LinearProgress, Stack, Typography, alpha } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { Check, Layers3, PlayCircle, RefreshCw, Sparkles, Target, TrendingUp, UserRound } from "lucide-react";
+import { Check, Layers3, PlayCircle, RefreshCw, Sparkles, Star, Target, TrendingUp, UserRound } from "lucide-react";
 import RoadmapSkeleton from "./RoadmapSkeleton";
 import { METHOD } from "../../common/constants/api";
 import { callApi } from "../../common/utils/apiConnector";
@@ -207,13 +207,15 @@ function PhaseOverviewCard({ phase, index, onOpen, isLast, currentPhaseIndex }) 
                                 </Typography>
                             ) : null}
                         </Box>
-                        <Chip
-                            size="small"
-                            label={phase.status || "Unlocked"}
-                            color={passed ? "success" : needsImprovement ? "warning" : "primary"}
-                            variant="filled"
-                            sx={{ fontWeight: 700 }}
-                        />
+                        {phase.status ? (
+                            <Chip
+                                size="small"
+                                label={phase.status}
+                                color={passed ? "success" : needsImprovement ? "warning" : "primary"}
+                                variant="filled"
+                                sx={{ fontWeight: 700 }}
+                            />
+                        ) : null}
                     </Stack>
 
                     <Box>
@@ -251,6 +253,226 @@ function PhaseOverviewCard({ phase, index, onOpen, isLast, currentPhaseIndex }) 
                     </Stack>
                 </Stack>
             </CardActionArea>
+        </Box>
+    );
+}
+
+function mergePhaseCoachesForAside(phase) {
+    if (!phase) return [];
+    const out = [];
+    const seen = new Set();
+    const push = (raw) => {
+        if (!raw) return;
+        const id = String(raw.id ?? raw.Id ?? "").trim();
+        const slug =
+            raw.slug_profile_url ?? raw.slugProfileUrl ?? raw.SlugProfileUrl ?? raw.profileUrl ?? id ?? "";
+        const key = id || slug;
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        out.push({
+            id: id || key,
+            name: raw.name ?? raw.Name ?? "Coach",
+            role: raw.role ?? raw.Role ?? "",
+            rating: Number(raw.rating ?? raw.Rating ?? 0) || 0,
+            photo: raw.avatar_url ?? raw.avatarUrl ?? raw.AvatarUrl ?? raw.avatar ?? raw.Avatar ?? "",
+            slug: slug || id,
+        });
+    };
+    push(phase.recommended_coach);
+    (phase.recommended_coaches ?? []).forEach(push);
+    return out;
+}
+
+function RoadmapOverviewAside({
+    focusPhase,
+    focusPhaseIndex,
+    totalPhases,
+    roadmapMetadata,
+    totalProgress,
+    onOpenPhase,
+    onOpenCoachProfile,
+}) {
+    const theme = useTheme();
+    if (!focusPhase) return null;
+
+    const progress = getPhaseProgress(focusPhase);
+    const phaseBarSx = getLinearProgressSxForPercent(theme, progress);
+    const passed = focusPhase.status === "Passed";
+    const needsImprovement = focusPhase.status === "Needs Improvement";
+    const coaches = mergePhaseCoachesForAside(focusPhase);
+
+    return (
+        <Box
+            component="aside"
+            sx={{
+                width: { xs: "100%", lg: 320 },
+                flexShrink: 0,
+                bgcolor: "background.paper",
+                border: 1,
+                borderColor: "divider",
+                borderRadius: 3,
+                p: { xs: 2.25, md: 2.5 },
+                alignSelf: { lg: "stretch" },
+            }}
+        >
+            <Stack spacing={2.25}>
+                <Box>
+                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 900, display: "block" }}>
+                        Current phase
+                    </Typography>
+                    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1} sx={{ mt: 0.75 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.3 }}>
+                            {focusPhase.phase_name}
+                        </Typography>
+                        {focusPhase.status ? (
+                            <Chip
+                                size="small"
+                                label={focusPhase.status}
+                                color={passed ? "success" : needsImprovement ? "warning" : "primary"}
+                                variant="filled"
+                                sx={{ fontWeight: 700, flexShrink: 0 }}
+                            />
+                        ) : null}
+                    </Stack>
+                    {focusPhase.phase_description ? (
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                                mt: 1,
+                                display: "-webkit-box",
+                                WebkitBoxOrient: "vertical",
+                                WebkitLineClamp: 3,
+                                overflow: "hidden",
+                                lineHeight: 1.55,
+                            }}
+                        >
+                            {focusPhase.phase_description}
+                        </Typography>
+                    ) : null}
+                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 1.25, mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                            Progress
+                        </Typography>
+                        <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 800, color: getProgressPercentCaptionSxColor(progress) }}
+                        >
+                            {progress}%
+                        </Typography>
+                    </Stack>
+                    <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        sx={{
+                            height: 7,
+                            borderRadius: 999,
+                            ...phaseBarSx,
+                            "& .MuiLinearProgress-bar": {
+                                borderRadius: 999,
+                                ...phaseBarSx["& .MuiLinearProgress-bar"],
+                            },
+                        }}
+                    />
+                    <PrimaryButton size="sm" fullWidth sx={{ mt: 1.5 }} onClick={() => onOpenPhase(focusPhase.phase_id)}>
+                        View phase
+                    </PrimaryButton>
+                </Box>
+
+                <Box sx={{ borderTop: 1, borderColor: "divider", pt: 2 }}>
+                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 900, display: "block", mb: 1 }}>
+                        Recommended coaches
+                    </Typography>
+                    {coaches.length === 0 ? (
+                        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                            No coaches linked for this phase yet.
+                        </Typography>
+                    ) : (
+                        <Stack spacing={1}>
+                            {coaches.map((coach) => (
+                                <CardActionArea
+                                    key={coach.id}
+                                    component="button"
+                                    type="button"
+                                    disabled={!coach.slug}
+                                    onClick={() => coach.slug && onOpenCoachProfile(coach.slug)}
+                                    sx={{
+                                        borderRadius: 2,
+                                        border: 1,
+                                        borderColor: "divider",
+                                        bgcolor: "background.default",
+                                        p: 1.25,
+                                        textAlign: "left",
+                                        "&.Mui-disabled": { opacity: 0.55 },
+                                    }}
+                                >
+                                    <Stack direction="row" spacing={1.25} alignItems="center">
+                                        <Avatar
+                                            src={coach.photo || undefined}
+                                            alt=""
+                                            sx={{ width: 40, height: 40, bgcolor: "action.hover" }}
+                                        >
+                                            {coach.name?.charAt(0) ?? "?"}
+                                        </Avatar>
+                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 800 }} noWrap>
+                                                {coach.name}
+                                            </Typography>
+                                            {coach.role ? (
+                                                <Typography variant="caption" color="text.secondary" noWrap>
+                                                    {coach.role}
+                                                </Typography>
+                                            ) : null}
+                                            {coach.rating > 0 ? (
+                                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
+                                                    <Star size={12} color={theme.palette.warning.main} fill={theme.palette.warning.main} />
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {coach.rating.toFixed(1)}
+                                                    </Typography>
+                                                </Stack>
+                                            ) : null}
+                                        </Box>
+                                    </Stack>
+                                </CardActionArea>
+                            ))}
+                        </Stack>
+                    )}
+                </Box>
+
+                <Box sx={{ borderTop: 1, borderColor: "divider", pt: 2 }}>
+                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 900, display: "block", mb: 1 }}>
+                        Roadmap
+                    </Typography>
+                    <Stack spacing={0.75}>
+                        <Typography variant="body2" color="text.secondary">
+                            <Typography component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Role:
+                            </Typography>{" "}
+                            {roadmapMetadata.target_role || "—"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <Typography component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Level:
+                            </Typography>{" "}
+                            {roadmapMetadata.target_level || "—"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <Typography component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Focus:
+                            </Typography>{" "}
+                            Phase {focusPhaseIndex + 1} of {totalPhases}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <Typography component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Overall:
+                            </Typography>{" "}
+                            <Typography component="span" sx={{ color: getProgressPercentCaptionSxColor(totalProgress) }}>
+                                {totalProgress}%
+                            </Typography>
+                        </Typography>
+                    </Stack>
+                </Box>
+            </Stack>
         </Box>
     );
 }
@@ -502,6 +724,15 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
         (phaseId) => {
             if (phaseId) {
                 navigate(`/roadmap/phase/${encodeURIComponent(phaseId)}`);
+            }
+        },
+        [navigate],
+    );
+
+    const handleOpenCoachProfile = useCallback(
+        (slug) => {
+            if (slug) {
+                navigate(`/profile/${encodeURIComponent(slug)}`);
             }
         },
         [navigate],
@@ -770,63 +1001,86 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                         p: { xs: 2, md: 3 },
                     }}
                 >
-                    <Stack spacing={2.5}>
-                        <Box>
-                            <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
-                                        Roadmap phases
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Review each phase at a glance. Open a phase to work through its hard skills,
-                                        soft skills, and live checkpoint.
-                                    </Typography>
-                                </Box>
-                                <Box sx={{ minWidth: { xs: "100%", md: 220 } }}>
-                                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
-                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
-                                            Overall progress
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            sx={{
-                                                fontWeight: 800,
-                                                color: getProgressPercentCaptionSxColor(totalProgress),
-                                            }}
-                                        >
-                                            {totalProgress}%
-                                        </Typography>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", lg: "row" },
+                            alignItems: "flex-start",
+                            gap: { xs: 2.5, lg: 3 },
+                        }}
+                    >
+                        <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
+                            <Stack spacing={2.5}>
+                                <Box>
+                                    <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+                                                Roadmap phases
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Review each phase at a glance. Open a phase to work through its hard skills,
+                                                soft skills, and live checkpoint.
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ minWidth: { xs: "100%", md: 220 } }}>
+                                            <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                                                    Overall progress
+                                                </Typography>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        color: getProgressPercentCaptionSxColor(totalProgress),
+                                                    }}
+                                                >
+                                                    {totalProgress}%
+                                                </Typography>
+                                            </Stack>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={totalProgress}
+                                                sx={{
+                                                    height: 10,
+                                                    borderRadius: 999,
+                                                    ...overallProgressBarSx,
+                                                    "& .MuiLinearProgress-bar": {
+                                                        borderRadius: 999,
+                                                        ...overallProgressBarSx["& .MuiLinearProgress-bar"],
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
                                     </Stack>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={totalProgress}
-                                        sx={{
-                                            height: 10,
-                                            borderRadius: 999,
-                                            ...overallProgressBarSx,
-                                            "& .MuiLinearProgress-bar": {
-                                                borderRadius: 999,
-                                                ...overallProgressBarSx["& .MuiLinearProgress-bar"],
-                                            },
-                                        }}
-                                    />
                                 </Box>
+
+                                <Stack spacing={3}>
+                                    {sourceRoadmap.phases.map((phase, index) => (
+                                        <PhaseOverviewCard
+                                            key={phase.phase_id}
+                                            phase={phase}
+                                            index={index}
+                                            isLast={index === sourceRoadmap.phases.length - 1}
+                                            currentPhaseIndex={currentPhaseIndex}
+                                            onOpen={handleOpenPhase}
+                                        />
+                                    ))}
+                                </Stack>
                             </Stack>
                         </Box>
 
-                        <Stack spacing={3}>
-                            {sourceRoadmap.phases.map((phase, index) => (
-                                <PhaseOverviewCard
-                                    key={phase.phase_id}
-                                    phase={phase}
-                                    index={index}
-                                    isLast={index === sourceRoadmap.phases.length - 1}
-                                    currentPhaseIndex={currentPhaseIndex}
-                                    onOpen={handleOpenPhase}
-                                />
-                            ))}
-                        </Stack>
-                    </Stack>
+                        <RoadmapOverviewAside
+                            focusPhase={
+                                sourceRoadmap.phases[currentPhaseIndex] ?? sourceRoadmap.phases[0] ?? null
+                            }
+                            focusPhaseIndex={currentPhaseIndex}
+                            totalPhases={sourceRoadmap.phases.length}
+                            roadmapMetadata={roadmapMetadata}
+                            totalProgress={totalProgress}
+                            onOpenPhase={handleOpenPhase}
+                            onOpenCoachProfile={handleOpenCoachProfile}
+                        />
+                    </Box>
                 </Box>
             )}
         </Box>

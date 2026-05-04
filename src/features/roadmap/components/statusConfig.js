@@ -33,14 +33,6 @@ export const SKILL_STATUS_CONFIG = {
         border: "#FDE68A",
         icon: AlertTriangle,
     },
-    Unlocked: {
-        key: "Unlocked",
-        label: "Unlocked",
-        color: "#2563EB",
-        bg: "#DBEAFE",
-        border: "#BFDBFE",
-        icon: CheckCircle2,
-    },
     "Not Started": {
         key: "Not Started",
         label: "Not Started",
@@ -59,4 +51,9 @@ export const SKILL_STATUS_CONFIG = {
     },
 };
 
-export const getStatusConfig = (status) => SKILL_STATUS_CONFIG[status] ?? SKILL_STATUS_CONFIG.Missing;
+export const getStatusConfig = (status) => {
+    if (status === "Unlocked" || status === "Locked") {
+        return SKILL_STATUS_CONFIG["Not Started"];
+    }
+    return SKILL_STATUS_CONFIG[status] ?? SKILL_STATUS_CONFIG.Missing;
+};
