@@ -24,9 +24,9 @@ function normalizeCoach(c) {
  * @param {object} props
  * @param {Array} props.coaches - up to 5 spotlight coaches from API
  * @param {number} [props.totalCoachCount] - optional platform coach count for stat
- * @param {(e?: import("react").SyntheticEvent) => void} props.onFindMatch
+ * @param {string} [props.findCoachTo] — route for primary CTA (browse coaches)
  */
-export default function CoachOrbitHero({ coaches = [], totalCoachCount, onFindMatch }) {
+export default function CoachOrbitHero({ coaches = [], totalCoachCount, findCoachTo = "/coaches" }) {
     const [reduceMotion, setReduceMotion] = useState(false);
 
     useEffect(() => {
@@ -93,14 +93,15 @@ export default function CoachOrbitHero({ coaches = [], totalCoachCount, onFindMa
                     </div>
                 </div>
                 <Button
+                    component={Link}
+                    to={findCoachTo}
                     variant="contained"
                     color="secondary"
                     size="large"
                     endIcon={<ArrowRight size={18} strokeWidth={2.5} />}
-                    onClick={onFindMatch}
                     sx={{ mt: 0.5, fontWeight: 800 }}
                 >
-                    Find My Match
+                    Find My Coach
                 </Button>
             </div>
 

@@ -21,6 +21,7 @@ import {
     sendPreparedQuestionToEditor,
     PREPARED_QUESTION_INTERACTION_TYPE,
     PREPARED_QUESTION_STATUS,
+    isPreparedCodingMissingTestCases,
 } from "../../services/preparedQuestionApi";
 import { PrimaryButton, SecondaryButton, SuccessButton } from "../../../../common/components/buttons";
 import AppText from "../../../../common/components/AppText";
@@ -42,7 +43,7 @@ function stripHtml(html, maxLength = 220) {
 function QuestionCard({ item, busyAction, onMark, onUnmark, onSend }) {
     const isCoding = item.interactionType === PREPARED_QUESTION_INTERACTION_TYPE.Coding;
     const isAsked = item.status === PREPARED_QUESTION_STATUS.Asked;
-    const isIncomplete = isCoding && !item.isReadyForEditor;
+    const testCasesMissing = isPreparedCodingMissingTestCases(item);
 
     return (
         <Box
@@ -76,12 +77,12 @@ function QuestionCard({ item, busyAction, onMark, onUnmark, onSend }) {
                         sx={{ height: 20, fontSize: "0.65rem" }}
                     />
                 )}
-                {isIncomplete && (
-                    <Tooltip title="Add a function name and at least one test case before sending to the editor">
+                {testCasesMissing && (
+                    <Tooltip title="You can still send to the editor and add tests in the room.">
                         <Chip
                             size="small"
                             icon={<WarningAmberRoundedIcon sx={{ fontSize: "0.9rem !important" }} />}
-                            label="Incomplete"
+                            label="Test cases missing"
                             color="warning"
                             variant="outlined"
                             sx={{ height: 20, fontSize: "0.65rem" }}
@@ -102,7 +103,7 @@ function QuestionCard({ item, busyAction, onMark, onUnmark, onSend }) {
                     <PrimaryButton
                         size="sm"
                         startIcon={<SendRoundedIcon />}
-                        disabled={isIncomplete || busyAction === "send"}
+                        disabled={busyAction === "send"}
                         onClick={() => onSend(item)}
                     >
                         {isAsked ? "Resend to editor" : "Send to editor"}
