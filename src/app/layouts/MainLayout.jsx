@@ -21,6 +21,7 @@ import AdminSidebar from "../../features/admin/components/AdminSidebar";
 import usePageTracking from "../../hooks/usePageTracking";
 import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/helpers/assessmentHelper";
 import { ProcessingTrayProvider } from "../../common/context/ProcessingTrayContext";
+import { resetNotifications } from "../../features/notification/store/notificationSlice";
 
 const MainLayout = () => {
     // automatic SPA page tracking for routes rendered inside MainLayout
@@ -81,6 +82,7 @@ const MainLayout = () => {
             console.error("Logout error:", error);
         } finally {
             localStorage.clear();
+            dispatch(resetNotifications());
             navigate("/login");
         }
     };

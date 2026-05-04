@@ -36,6 +36,7 @@ import { authEndPoints } from "../../../features/auth/services/authApi";
 import { callApi } from "../../utils/apiConnector";
 import { METHOD } from "../../constants/api";
 import NotificationDropdown from "../../../features/notification/components/NotificationDropdown";
+import { resetNotifications } from "../../../features/notification/store/notificationSlice";
 import { Avatar, Drawer, Box, Typography, IconButton, Divider, Fade } from "@mui/material";
 import "./Navbar.css";
 
@@ -205,6 +206,7 @@ const Navbar = () => {
             console.error("Logout error:", error);
         } finally {
             localStorage.clear();
+            dispatch(resetNotifications());
             navigate("/login");
         }
     };

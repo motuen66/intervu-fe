@@ -5,6 +5,7 @@ import useUser from "../../common/hooks/useUser";
 import { AppBar, Toolbar, Container, Typography, Box, CssBaseline, Avatar } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { setToken, setUserData } from "../../common/store/authSlice";
+import { resetNotifications } from "../../features/notification/store/notificationSlice";
 import { callApi } from "../../common/utils/apiConnector";
 import { METHOD } from "../../common/constants/api";
 import { authEndPoints } from "../../features/auth/services/authApi";
@@ -28,6 +29,7 @@ const DefaultLayout = () => {
             localStorage.clear();
             dispatch(setUserData(null));
             dispatch(setToken(null));
+            dispatch(resetNotifications());
             navigate("/");
         }
     };

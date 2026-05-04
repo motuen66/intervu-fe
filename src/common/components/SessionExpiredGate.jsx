@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { resetNotifications } from "../../features/notification/store/notificationSlice";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography } from "@mui/material";
 import { Clock, LogIn } from "lucide-react";
 import { PrimaryButton } from "./buttons";
@@ -9,14 +11,20 @@ import SectionHeading from "./SectionHeading";
 const SessionExpiredGate = () => {
     const [countdown, setCountdown] = useState(5);
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+
+    const clearSessionAndGoLogin = useCallback(() => {
+        localStorage.clear();
+        dispatch(resetNotifications());
+        navigate("/login");
+    }, [dispatch, navigate]);
 
     useEffect(() => {
         const timer = setInterval(() => {
             setCountdown((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    localStorage.clear();
-                    navigate("/login");
+                    clearSessionAndGoLogin();
                     return 0;
                 }
                 return prev - 1;
@@ -24,7 +32,7 @@ const SessionExpiredGate = () => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [navigate]);
+    }, [clearSessionAndGoLogin]);
 
     return (
         <Dialog
@@ -86,10 +94,7 @@ const SessionExpiredGate = () => {
             </DialogContent>
             <DialogActions sx={{ p: 3, pt: 1 }}>
                 <PrimaryButton
-                    onClick={() => {
-                        localStorage.clear();
-                        navigate("/login");
-                    }}
+                    onClick={clearSessionAndGoLogin}
                     fullWidth
                     startIcon={<LogIn size={18} />}
                 >

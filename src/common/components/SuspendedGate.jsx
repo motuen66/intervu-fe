@@ -5,6 +5,7 @@ import { callApi } from "../utils/apiConnector";
 import { METHOD } from "../constants/api";
 import { authEndPoints } from "../../features/auth/services/authApi";
 import { setUserData, setToken } from "../store/authSlice";
+import { resetNotifications } from "../../features/notification/store/notificationSlice";
 import { DangerButton } from "./buttons";
 import AppText from "./AppText";
 import SectionHeading from "./SectionHeading";
@@ -26,6 +27,7 @@ const SuspendedGate = ({ children }) => {
             localStorage.clear();
             dispatch(setUserData(null));
             dispatch(setToken(null));
+            dispatch(resetNotifications());
             navigate("/login");
         }
     };
