@@ -24,16 +24,9 @@ import { PrimaryButton, TextButton } from "../../../../common/components/buttons
 import SectionHeading from "../../../../common/components/SectionHeading";
 import AppText from "../../../../common/components/AppText";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
+import toast from "react-hot-toast";
 
-function CoachEvaluationModal({
-    open,
-    room,
-    onClose,
-    onSubmitted,
-    onLeaveWithoutEvaluating,
-    allowClose = false,
-    showCloseButton = false,
-}) {
+function CoachEvaluationModal({ open, room, onClose, onSubmitted, onLeaveWithoutEvaluating, allowClose = false }) {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [items, setItems] = useState([]);
@@ -41,6 +34,7 @@ function CoachEvaluationModal({
     const [others, setOthers] = useState("");
     const [hireDecision, setHireDecision] = useState("");
     const [emergencyConfirmOpen, setEmergencyConfirmOpen] = useState(false);
+    const [checkpointContext, setCheckpointContext] = useState(null);
 
     const normalizeHireDecision = (value) => {
         if (value === true) return "yes";
@@ -55,12 +49,16 @@ function CoachEvaluationModal({
     };
 
     const parseEvaluationStructure = (data) => {
-        const raw = data?.evaluationStructureJson ?? data?.EvaluationStructureJson ?? data?.evaluationStructure ?? data?.EvaluationStructure;
+        const raw =
+            data?.evaluationStructureJson ??
+            data?.EvaluationStructureJson ??
+            data?.evaluationStructure ??
+            data?.EvaluationStructure;
         if (!raw) return null;
         if (typeof raw === "string") {
             try {
                 return JSON.parse(raw);
-            } catch (err) {
+            } catch {
                 return null;
             }
         }
@@ -79,7 +77,7 @@ function CoachEvaluationModal({
             });
             const endLabel = end?.toLocaleTimeString(undefined, { timeStyle: "short" });
             return endLabel ? `${startLabel} - ${endLabel}` : startLabel;
-        } catch (err) {
+        } catch {
             return "";
         }
     }, [room]);
@@ -104,23 +102,24 @@ function CoachEvaluationModal({
                     evaluationStructure?.evaluationResults ||
                     evaluationStructure?.results ||
                     []
-                ).map(item => ({
+                ).map((item) => ({
                     type: item.type || item.Type || "",
                     question: item.question || item.Question || "",
                     score: item.score ?? item.Score ?? 0,
-                    answer: item.answer ?? item.Answer ?? ""
+                    answer: item.answer ?? item.Answer ?? "",
                 }));
 
                 setItems(normalizedResults);
                 setOthers(data?.others ?? data?.Others ?? evaluationStructure?.others ?? "");
                 setHireDecision(
                     normalizeHireDecision(
-                        data?.hireDecision ??
-                        data?.isHire ??
-                        evaluationStructure?.hireDecision ??
-                        "",
+                        data?.hireDecision ?? data?.isHire ?? evaluationStructure?.hireDecision ?? "",
                     ),
                 );
+                setCheckpointContext({
+                    roadmapNodeId: data?.roadmapNodeId ?? data?.RoadmapNodeId ?? "",
+                    passThreshold: data?.checkpointPassThreshold ?? data?.CheckpointPassThreshold ?? 70,
+                });
             } catch (err) {
                 setError(err?.response?.data?.message || "Failed to load evaluation form.");
             } finally {
@@ -136,9 +135,9 @@ function CoachEvaluationModal({
             prev.map((item, i) =>
                 i === index
                     ? {
-                        ...item,
-                        [field]: field === "score" ? Number(value) : value,
-                    }
+                          ...item,
+                          [field]: field === "score" ? Number(value) : value,
+                      }
                     : item,
             ),
         );
@@ -188,9 +187,10 @@ function CoachEvaluationModal({
                     evaluationStructure: evaluationStructureJson,
                     evaluationStructureJson,
                 },
-                displaySuccessMessage: true,
+                displaySuccessMessage: false,
                 alertErrorMessage: true,
             });
+            toast.success("Score submitted. Roadmap checkpoint is updating.");
             if (onSubmitted) {
                 onSubmitted();
             }
@@ -201,13 +201,14 @@ function CoachEvaluationModal({
         }
     };
 
-    const handleClose = (event, reason) => {
+    const handleClose = () => {
         if (!allowClose) {
             return;
         }
         setItems([]);
         setOthers("");
         setHireDecision("");
+        setCheckpointContext(null);
         setError("");
         if (onClose) {
             onClose();
@@ -245,192 +246,199 @@ function CoachEvaluationModal({
 
     return (
         <>
-        <Modal
-            open={open}
-            onClose={handleClose}
-            aria-labelledby="coach-evaluation-modal"
-            disableEscapeKeyDown={!allowClose}
-        >
-            <Box
-                sx={(theme) => ({
-                    ...dialogStyles.paper(theme),
-                    width: 800,
-                    maxWidth: "90vw",
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    p: 3,
-                })}
+            <Modal
+                open={open}
+                onClose={handleClose}
+                aria-labelledby="coach-evaluation-modal"
+                disableEscapeKeyDown={!allowClose}
             >
-                <SectionHeading
-                    title="Incomplete Mock Interview Evaluation"
-                    as="h2"
-                    disableGutters
-                />
-                {room?.candidateName && (
-                    <AppText variant="muted" sx={{ mb: 0.5 }}>
-                        Candidate: <strong>{room.candidateName}</strong>
-                    </AppText>
-                )}
-                {interviewLabel && (
-                    <AppText variant="muted" sx={{ mb: 2 }}>
-                        {interviewLabel}
-                    </AppText>
-                )}
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                        {error}
-                    </Alert>
-                )}
-                {loading ? (
-                    <Stack alignItems="center" sx={{ py: 4 }}>
-                        <CircularProgress size={28} />
-                        <AppText variant="muted" sx={{ mt: 1 }}>
-                            Loading evaluation form...
+                <Box
+                    sx={(theme) => ({
+                        ...dialogStyles.paper(theme),
+                        width: 800,
+                        maxWidth: "90vw",
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        p: 3,
+                    })}
+                >
+                    <SectionHeading title="Incomplete Mock Interview Evaluation" as="h2" disableGutters />
+                    {room?.candidateName && (
+                        <AppText variant="muted" sx={{ mb: 0.5 }}>
+                            Candidate: <strong>{room.candidateName}</strong>
                         </AppText>
-                    </Stack>
-                ) : (
-                    <Stack spacing={2} sx={{ maxHeight: "60vh", overflowY: "auto", pr: 1 }}>
-                        {items.length === 0 ? (
-                            <AppText variant="muted">No evaluation items configured.</AppText>
-                        ) : (
-                            items.map((item, index) => (
-                                <Box
-                                    key={`${item.type}-${index}`}
-                                    sx={{
-                                        border: "1px solid",
-                                        borderColor: "divider",
-                                        borderRadius: 2,
-                                        p: 2,
-                                    }}
-                                >
-                                    <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
-                                        {item.question}
-                                    </AppText>
-                                    <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 0.5 }}>
-                                        <Box sx={{ flex: 1 }}>
-                                            <Slider
-                                                value={item.score}
-                                                min={0}
-                                                max={10}
-                                                step={1}
-                                                marks
-                                                valueLabelDisplay="auto"
-                                                onChange={(_, val) => handleItemChange(index, "score", val)}
-                                            />
-                                            <Stack direction="row" justifyContent="space-between" sx={{ mt: -1 }}>
-                                                <AppText variant="caption">Very Bad</AppText>
-                                                <AppText variant="caption">Average</AppText>
-                                                <AppText variant="caption">Very Good</AppText>
-                                            </Stack>
-                                        </Box>
-                                        <Box sx={{ width: 80, textAlign: "right" }}>
-                                            <Typography variant="h6" color={getScoreColor(item.score)} sx={{ fontWeight: 700, lineHeight: 1 }}>
-                                                {item.score}
-                                            </Typography>
-                                            <AppText variant="caption">
-                                                {getScoreLabel(item.score)}
-                                            </AppText>
-                                        </Box>
-                                    </Stack>
-                                    <FormTextField
-                                        label="Feedback"
-                                        value={item.answer || ""}
-                                        onChange={(e) => handleItemChange(index, "answer", e.target.value)}
-                                        multiline
-                                        minRows={2}
-                                        fullWidth
-                                        sx={(theme) => fieldStyles.outlinedFocus(theme)}
-                                        margin="dense"
-                                    />
-                                </Box>
-                            ))
-                        )}
-                        <Box
-                            sx={{
-                                border: "1px solid",
-                                borderColor: "divider",
-                                borderRadius: 2,
-                                p: 2,
-                            }}
-                        >
-                            <AppText variant="bodyStrong" sx={{ mb: 1 }}>
-                                Others
+                    )}
+                    {interviewLabel && (
+                        <AppText variant="muted" sx={{ mb: 2 }}>
+                            {interviewLabel}
+                        </AppText>
+                    )}
+                    {checkpointContext?.roadmapNodeId && (
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                            Roadmap live checkpoint. Passing threshold: {checkpointContext.passThreshold}%.
+                        </Alert>
+                    )}
+                    {error && (
+                        <Alert severity="error" sx={{ mb: 2 }}>
+                            {error}
+                        </Alert>
+                    )}
+                    {loading ? (
+                        <Stack alignItems="center" sx={{ py: 4 }}>
+                            <CircularProgress size={28} />
+                            <AppText variant="muted" sx={{ mt: 1 }}>
+                                Loading evaluation form...
                             </AppText>
-                            <FormTextField
-                                label="Additional notes"
-                                value={others}
-                                onChange={handleOthersChange}
-                                multiline
-                                minRows={3}
-                                fullWidth
-                                sx={(theme) => fieldStyles.outlinedFocus(theme)}
-                                error={othersWordCount > 300}
-                                helperText={`${othersWordCount}/300 words`}
-                            />
-                        </Box>
-
-                        <Box
-                            sx={{
-                                border: "1px solid",
-                                borderColor: "divider",
-                                borderRadius: 2,
-                                p: 2,
-                            }}
-                        >
-                            <FormControl required error={!hireDecision && !!error}>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                    Hire Decision
-                                </Typography>
-                                <RadioGroup
-                                    row
-                                    value={hireDecision}
-                                    onChange={(e) => setHireDecision(e.target.value)}
-                                >
-                                    <FormControlLabel value="yes" control={<Radio />} label="Yes" />
-                                    <FormControlLabel value="no" control={<Radio />} label="No" />
-                                </RadioGroup>
-                                {!hireDecision && !!error && <FormHelperText>Please select Yes or No.</FormHelperText>}
-                            </FormControl>
-                        </Box>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ pt: 1 }}>
-                            {onLeaveWithoutEvaluating ? (
-                                <TextButton
-                                    onClick={() => setEmergencyConfirmOpen(true)}
-                                    disabled={submitting}
-                                >
-                                    Leave without evaluating
-                                </TextButton>
-                            ) : (
-                                <Box />
-                            )}
-                            <PrimaryButton
-                                disabled={submitting || items.length === 0}
-                                onClick={handleSubmit}
-                            >
-                                {submitting ? "Submitting..." : "Submit"}
-                            </PrimaryButton>
                         </Stack>
-                    </Stack>
-                )}
-            </Box>
-        </Modal>
-        {onLeaveWithoutEvaluating && (
-            <ConfirmModal
-                show={emergencyConfirmOpen}
-                title="Leave without submitting evaluation?"
-                message={"This is intended for emergencies. The candidate's evaluation will not be saved or submitted, and you will exit the room immediately."}
-                onConfirm={() => {
-                    setEmergencyConfirmOpen(false);
-                    onLeaveWithoutEvaluating();
-                }}
-                onCancel={() => setEmergencyConfirmOpen(false)}
-                confirmText="Leave anyway"
-                cancelText="Stay"
-                confirmVariant="danger"
-            />
-        )}
+                    ) : (
+                        <Stack spacing={2} sx={{ maxHeight: "60vh", overflowY: "auto", pr: 1 }}>
+                            {items.length === 0 ? (
+                                <AppText variant="muted">No evaluation items configured.</AppText>
+                            ) : (
+                                items.map((item, index) => (
+                                    <Box
+                                        key={`${item.type}-${index}`}
+                                        sx={{
+                                            border: "1px solid",
+                                            borderColor: "divider",
+                                            borderRadius: 2,
+                                            p: 2,
+                                        }}
+                                    >
+                                        <AppText variant="bodyStrong" sx={{ mb: 0.5 }}>
+                                            {item.question}
+                                        </AppText>
+                                        <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 0.5 }}>
+                                            <Box sx={{ flex: 1 }}>
+                                                <Slider
+                                                    value={item.score}
+                                                    min={0}
+                                                    max={10}
+                                                    step={1}
+                                                    marks
+                                                    valueLabelDisplay="auto"
+                                                    onChange={(_, val) => handleItemChange(index, "score", val)}
+                                                />
+                                                <Stack direction="row" justifyContent="space-between" sx={{ mt: -1 }}>
+                                                    <AppText variant="caption">Very Bad</AppText>
+                                                    <AppText variant="caption">Average</AppText>
+                                                    <AppText variant="caption">Very Good</AppText>
+                                                </Stack>
+                                            </Box>
+                                            <Box sx={{ width: 80, textAlign: "right" }}>
+                                                <Typography
+                                                    variant="h6"
+                                                    color={getScoreColor(item.score)}
+                                                    sx={{ fontWeight: 700, lineHeight: 1 }}
+                                                >
+                                                    {item.score}
+                                                </Typography>
+                                                <AppText variant="caption">{getScoreLabel(item.score)}</AppText>
+                                            </Box>
+                                        </Stack>
+                                        <FormTextField
+                                            label="Feedback"
+                                            value={item.answer || ""}
+                                            onChange={(e) => handleItemChange(index, "answer", e.target.value)}
+                                            multiline
+                                            minRows={2}
+                                            fullWidth
+                                            sx={(theme) => fieldStyles.outlinedFocus(theme)}
+                                            margin="dense"
+                                        />
+                                    </Box>
+                                ))
+                            )}
+                            <Box
+                                sx={{
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    borderRadius: 2,
+                                    p: 2,
+                                }}
+                            >
+                                <AppText variant="bodyStrong" sx={{ mb: 1 }}>
+                                    Others
+                                </AppText>
+                                <FormTextField
+                                    label="Additional notes"
+                                    value={others}
+                                    onChange={handleOthersChange}
+                                    multiline
+                                    minRows={3}
+                                    fullWidth
+                                    sx={(theme) => fieldStyles.outlinedFocus(theme)}
+                                    error={othersWordCount > 300}
+                                    helperText={`${othersWordCount}/300 words`}
+                                />
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    borderRadius: 2,
+                                    p: 2,
+                                }}
+                            >
+                                <FormControl required error={!hireDecision && !!error}>
+                                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                        Hire Decision
+                                    </Typography>
+                                    <RadioGroup
+                                        row
+                                        value={hireDecision}
+                                        onChange={(e) => setHireDecision(e.target.value)}
+                                    >
+                                        <FormControlLabel value="yes" control={<Radio />} label="Yes" />
+                                        <FormControlLabel value="no" control={<Radio />} label="No" />
+                                    </RadioGroup>
+                                    {!hireDecision && !!error && (
+                                        <FormHelperText>Please select Yes or No.</FormHelperText>
+                                    )}
+                                </FormControl>
+                            </Box>
+                            <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                spacing={1}
+                                sx={{ pt: 1 }}
+                            >
+                                {onLeaveWithoutEvaluating ? (
+                                    <TextButton onClick={() => setEmergencyConfirmOpen(true)} disabled={submitting}>
+                                        Leave without evaluating
+                                    </TextButton>
+                                ) : (
+                                    <Box />
+                                )}
+                                <PrimaryButton disabled={submitting || items.length === 0} onClick={handleSubmit}>
+                                    {submitting ? "Submitting..." : "Submit"}
+                                </PrimaryButton>
+                            </Stack>
+                        </Stack>
+                    )}
+                </Box>
+            </Modal>
+            {onLeaveWithoutEvaluating && (
+                <ConfirmModal
+                    show={emergencyConfirmOpen}
+                    title="Leave without submitting evaluation?"
+                    message={
+                        "This is intended for emergencies. The candidate's evaluation will not be saved or submitted, and you will exit the room immediately."
+                    }
+                    onConfirm={() => {
+                        setEmergencyConfirmOpen(false);
+                        onLeaveWithoutEvaluating();
+                    }}
+                    onCancel={() => setEmergencyConfirmOpen(false)}
+                    confirmText="Leave anyway"
+                    cancelText="Stay"
+                    confirmVariant="danger"
+                />
+            )}
         </>
     );
 }

@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Alert, Box, Chip, Stack, Typography, alpha } from "@mui/material";
+import toast from "react-hot-toast";
+import { Alert, Avatar, Box, CardActionArea, Chip, LinearProgress, Stack, Typography, alpha } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { Check, Layers3, Link2, RefreshCw, Sparkles, Target, TrendingUp, UserRound } from "lucide-react";
-import Roadmap from "./Roadmap";
-import NodeDetail from "./NodeDetail";
+import { Check, Layers3, PlayCircle, RefreshCw, Sparkles, Star, Target, TrendingUp, UserRound } from "lucide-react";
 import RoadmapSkeleton from "./RoadmapSkeleton";
 import { METHOD } from "../../common/constants/api";
 import { callApi } from "../../common/utils/apiConnector";
@@ -13,6 +12,14 @@ import { assessmentEndPoints } from "../profiles/candidate/candidate-assessment/
 import { PrimaryButton, SecondaryButton } from "../../common/components/buttons";
 import useGlobalLoading from "../../common/hooks/useGlobalLoading";
 import { getMonthlyWins, recordRoadmapSnapshot } from "./utils/roadmapSnapshots";
+import {
+    countNodesByPillar,
+    extractRoadmapFromResponse,
+    getPhaseProgress,
+    hasRoadmapContent,
+    normalizeRoadmapPayload,
+} from "./utils/roadmapPayload";
+import { getLinearProgressSxForPercent, getProgressPercentCaptionSxColor } from "./utils/roadmapProgressColors";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 const REGENERATE_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -25,170 +32,7 @@ const PROGRESS_STEPS = [
     "Finalizing your roadmap…",
 ];
 const PROGRESS_STEP_INTERVAL_MS = 2800;
-
-const getChildSkillNames = (childSkills = []) => {
-    return childSkills
-        .map((childSkill) => {
-            if (typeof childSkill === "string") {
-                return childSkill;
-            }
-
-            if (childSkill && typeof childSkill === "object") {
-                return childSkill.name ?? childSkill.Name ?? "";
-            }
-
-            return "";
-        })
-        .filter(Boolean);
-};
-
-const normalizeRoadmapPayload = (rawRoadmap) => {
-    if (!rawRoadmap) {
-        return null;
-    }
-
-    const metadataSource =
-        rawRoadmap.roadmap_metadata ?? rawRoadmap.roadmapMetadata ?? rawRoadmap.RoadmapMetadata ?? {};
-    const phasesSource = rawRoadmap.phases ?? rawRoadmap.Phases ?? [];
-
-    if (!Array.isArray(phasesSource) || phasesSource.length === 0) {
-        return null;
-    }
-
-    const normalizedPhases = phasesSource.map((phase, phaseIndex) => {
-        const nodesSource = phase.nodes ?? phase.Nodes ?? [];
-        const coachesSource = phase.recommended_coaches ?? phase.recommendedCoaches ?? phase.RecommendedCoaches ?? [];
-        const mockHistorySource = phase.mock_history ?? phase.mockHistory ?? phase.MockHistory ?? [];
-
-        return {
-            phase_id: phase.phase_id ?? phase.phaseId ?? phase.PhaseId ?? `phase_${phaseIndex + 1}`,
-            phase_name: phase.phase_name ?? phase.phaseName ?? phase.PhaseName ?? `Phase ${phaseIndex + 1}`,
-            recommended_coaches: coachesSource.map((coach, coachIndex) => ({
-                id: coach.id ?? coach.Id ?? `coach_${phaseIndex}_${coachIndex}`,
-                name: coach.name ?? coach.Name ?? "Unknown Coach",
-                role: coach.role ?? coach.Role ?? "",
-                rating: coach.rating ?? coach.Rating ?? 0,
-                avatar: coach.avatar ?? coach.Avatar ?? "",
-                profileUrl:
-                    coach.profileUrl ?? coach.ProfileUrl ?? coach.slugProfileUrl ?? coach.SlugProfileUrl ?? null,
-            })),
-            mock_history: mockHistorySource.map((mock, mockIndex) => ({
-                mock_id: mock.mock_id ?? mock.mockId ?? mock.MockId ?? `mock_${phaseIndex}_${mockIndex}`,
-                mock_title: mock.mock_title ?? mock.mockTitle ?? mock.MockTitle ?? "Mock Session",
-                interview_type: mock.interview_type ?? mock.interviewType ?? mock.InterviewType ?? "",
-                coach_name: mock.coach_name ?? mock.coachName ?? mock.CoachName ?? "",
-                interviewed_at: mock.interviewed_at ?? mock.interviewedAt ?? mock.InterviewedAt ?? "",
-                evaluation: mock.evaluation ?? mock.Evaluation ?? [],
-            })),
-            nodes: Array.isArray(nodesSource)
-                ? nodesSource.map((node, nodeIndex) => {
-                      const assessment = node.assessment ?? node.Assessment ?? {};
-                      const childSkills = node.child_skills ?? node.childSkills ?? node.ChildSkills ?? [];
-                      const recommendedCoachSource =
-                          node.recommended_coach ?? node.recommendedCoach ?? node.RecommendedCoach ?? null;
-
-                      const interviewDrillsSource =
-                          node.interview_drills ?? node.interviewDrills ?? node.InterviewDrills ?? [];
-
-                      return {
-                          skill_id: node.skill_id ?? node.skillId ?? node.SkillId ?? `skill_${phaseIndex}_${nodeIndex}`,
-                          skill_name: node.skill_name ?? node.skillName ?? node.SkillName ?? "Skill",
-                          mentor_note: node.mentor_note ?? node.mentorNote ?? node.MentorNote ?? "",
-                          interview_drills: Array.isArray(interviewDrillsSource)
-                              ? interviewDrillsSource
-                                    .map((drill) =>
-                                        typeof drill === "string" ? drill : (drill?.text ?? drill?.label ?? ""),
-                                    )
-                                    .filter(Boolean)
-                              : [],
-                          assessment: {
-                              current_level:
-                                  assessment.current_level ?? assessment.currentLevel ?? assessment.CurrentLevel ?? "",
-                              target_level:
-                                  assessment.target_level ?? assessment.targetLevel ?? assessment.TargetLevel ?? "",
-                              sfia_level: assessment.sfia_level ?? assessment.sfiaLevel ?? assessment.SfiaLevel ?? 0,
-                              status: assessment.status ?? assessment.Status ?? "Missing",
-                              progress: assessment.progress ?? assessment.Progress ?? 0,
-                              score: assessment.score ?? assessment.Score ?? 0,
-                          },
-                          child_skills: Array.isArray(childSkills)
-                              ? childSkills.map((childSkill) => {
-                                    if (typeof childSkill === "string") {
-                                        return childSkill;
-                                    }
-
-                                    const questions = childSkill.questions ?? childSkill.Questions ?? [];
-                                    return {
-                                        name: childSkill.name ?? childSkill.Name ?? "",
-                                        questions: Array.isArray(questions)
-                                            ? questions.map((question, questionIndex) => ({
-                                                  id: question.id ?? question.Id ?? `${questionIndex}`,
-                                                  title: question.title ?? question.Title ?? "",
-                                                  difficulty: question.difficulty ?? question.Difficulty ?? "",
-                                              }))
-                                            : [],
-                                    };
-                                })
-                              : [],
-                          recommended_coach: recommendedCoachSource
-                              ? {
-                                    id: recommendedCoachSource.id ?? recommendedCoachSource.Id ?? "",
-                                    name: recommendedCoachSource.name ?? recommendedCoachSource.Name ?? "",
-                                    slug_profile_url:
-                                        recommendedCoachSource.slug_profile_url ??
-                                        recommendedCoachSource.slugProfileUrl ??
-                                        recommendedCoachSource.SlugProfileUrl ??
-                                        "",
-                                    avatar_url:
-                                        recommendedCoachSource.avatar_url ??
-                                        recommendedCoachSource.avatarUrl ??
-                                        recommendedCoachSource.AvatarUrl ??
-                                        "",
-                                }
-                              : null,
-                      };
-                  })
-                : [],
-        };
-    });
-
-    const masteredSource =
-        rawRoadmap.mastered_summary ?? rawRoadmap.masteredSummary ?? rawRoadmap.MasteredSummary ?? [];
-
-    return {
-        roadmap_metadata: {
-            target_role: metadataSource.target_role ?? metadataSource.targetRole ?? metadataSource.TargetRole ?? "",
-            target_level: metadataSource.target_level ?? metadataSource.targetLevel ?? metadataSource.TargetLevel ?? "",
-            total_phases:
-                metadataSource.total_phases ??
-                metadataSource.totalPhases ??
-                metadataSource.TotalPhases ??
-                normalizedPhases.length,
-        },
-        phases: normalizedPhases,
-        // Phase 3 backend surfaces the skills the candidate has already met
-        // their target on. The roadmap itself doesn't list them as nodes (so
-        // they don't add UI clutter); we render them as a separate badge so
-        // the candidate sees what's already done.
-        mastered_summary: Array.isArray(masteredSource)
-            ? masteredSource
-                  .map((item) => ({
-                      skill_id: item.skill_id ?? item.skillId ?? item.SkillId ?? "",
-                      skill_name: item.skill_name ?? item.skillName ?? item.SkillName ?? item.skill_id ?? "",
-                      current_level: item.current_level ?? item.currentLevel ?? item.CurrentLevel ?? 0,
-                      target_level: item.target_level ?? item.targetLevel ?? item.TargetLevel ?? 0,
-                  }))
-                  .filter((item) => item.skill_name)
-            : [],
-    };
-};
-
-const extractRoadmapFromResponse = (response) => response?.data?.roadmap ?? response?.data?.Roadmap ?? null;
-
-const hasRoadmapContent = (value) => {
-    const normalized = normalizeRoadmapPayload(value);
-    return Boolean(normalized?.phases?.length);
-};
+const CHECKPOINT_TOAST_PREFIX = "roadmap:checkpointToast:";
 
 const getCooldownKey = (userId) => `${REGENERATE_STORAGE_PREFIX}${userId}`;
 
@@ -260,6 +104,379 @@ function HeroStat({ icon: Icon, label, value }) {
     );
 }
 
+/** Matches timeline markers on RoadmapPhaseDetailPage (phase steps). */
+function PhaseTimelineMarker({ state }) {
+    const theme = useTheme();
+    const icon = state === "done" ? <Check size={16} /> : <PlayCircle size={17} />;
+
+    return (
+        <Box
+            sx={{
+                width: 42,
+                height: 42,
+                borderRadius: "50%",
+                display: "grid",
+                placeItems: "center",
+                border: 1,
+                borderColor:
+                    state === "done" ? "success.light" : alpha(theme.palette.primary.main, 0.4),
+                bgcolor:
+                    state === "done"
+                        ? alpha(theme.palette.success.main, 0.14)
+                        : alpha(theme.palette.primary.main, 0.12),
+                color: state === "done" ? "success.main" : "primary.main",
+                zIndex: 1,
+            }}
+        >
+            {icon}
+        </Box>
+    );
+}
+
+function PhaseOverviewCard({ phase, index, onOpen, isLast, currentPhaseIndex }) {
+    const theme = useTheme();
+    const progress = getPhaseProgress(phase);
+    const phaseProgressBarSx = getLinearProgressSxForPercent(theme, progress);
+    const counts = countNodesByPillar(phase);
+    const passed = phase.status === "Passed";
+    const needsImprovement = phase.status === "Needs Improvement";
+    const checkpointScore = phase.checkpoint_evaluation?.total_percentage;
+    const isCurrent = index === currentPhaseIndex && !passed;
+    const markerState = passed ? "done" : "current";
+
+    let borderColor = "primary.light";
+    if (isCurrent) borderColor = alpha(theme.palette.primary.main, 0.5);
+    else if (passed) borderColor = "success.light";
+    else if (needsImprovement) borderColor = "warning.light";
+
+    return (
+        <Box sx={{ display: "grid", gridTemplateColumns: "48px minmax(0, 1fr)", gap: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", position: "relative" }}>
+                <PhaseTimelineMarker state={markerState} />
+                {!isLast ? (
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            top: 42,
+                            bottom: -28,
+                            width: "max(2px, 0.05rem)",
+                            bgcolor: (t) => alpha(t.palette.divider, 0.55),
+                        }}
+                    />
+                ) : null}
+            </Box>
+
+            <CardActionArea
+                component="button"
+                type="button"
+                onClick={() => onOpen(phase.phase_id)}
+                sx={{
+                    textAlign: "left",
+                    borderRadius: 3,
+                    border: 1,
+                    borderColor,
+                    bgcolor: "background.paper",
+                    p: 2.25,
+                    boxShadow: isCurrent
+                        ? `0 14px 34px ${alpha(theme.palette.primary.main, 0.14)}`
+                        : `0 12px 32px ${alpha(theme.palette.primary.main, 0.08)}`,
+                }}
+            >
+                <Stack spacing={1.5}>
+                    <Stack direction="row" alignItems="flex-start" spacing={1.5}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 800 }}>
+                                Phase {index + 1}
+                            </Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.15 }}>
+                                {phase.phase_name}
+                            </Typography>
+                            {phase.phase_description ? (
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                        mt: 0.75,
+                                        display: "-webkit-box",
+                                        WebkitBoxOrient: "vertical",
+                                        WebkitLineClamp: 2,
+                                        overflow: "hidden",
+                                    }}
+                                >
+                                    {phase.phase_description}
+                                </Typography>
+                            ) : null}
+                        </Box>
+                        {phase.status ? (
+                            <Chip
+                                size="small"
+                                label={phase.status}
+                                color={passed ? "success" : needsImprovement ? "warning" : "primary"}
+                                variant="filled"
+                                sx={{ fontWeight: 700 }}
+                            />
+                        ) : null}
+                    </Stack>
+
+                    <Box>
+                        <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                                Phase Progress
+                            </Typography>
+                            <Typography
+                                variant="caption"
+                                sx={{ fontWeight: 700, color: getProgressPercentCaptionSxColor(progress) }}
+                            >
+                                {progress}%
+                            </Typography>
+                        </Stack>
+                        <LinearProgress
+                            variant="determinate"
+                            value={progress}
+                            sx={{
+                                height: 8,
+                                borderRadius: 999,
+                                ...phaseProgressBarSx,
+                                "& .MuiLinearProgress-bar": {
+                                    borderRadius: 999,
+                                    ...phaseProgressBarSx["& .MuiLinearProgress-bar"],
+                                },
+                            }}
+                        />
+                    </Box>
+
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
+                        <Chip size="small" label={`${counts.HARD_SKILL} hard`} />
+                        <Chip size="small" label={`${counts.SOFT_SKILL} soft`} />
+                        <Chip size="small" label={`${counts.LIVE_CHECKPOINT} checkpoint`} />
+                        {checkpointScore != null ? <Chip size="small" label={`Checkpoint ${checkpointScore}%`} /> : null}
+                    </Stack>
+                </Stack>
+            </CardActionArea>
+        </Box>
+    );
+}
+
+function mergePhaseCoachesForAside(phase) {
+    if (!phase) return [];
+    const out = [];
+    const seen = new Set();
+    const push = (raw) => {
+        if (!raw) return;
+        const id = String(raw.id ?? raw.Id ?? "").trim();
+        const slug =
+            raw.slug_profile_url ?? raw.slugProfileUrl ?? raw.SlugProfileUrl ?? raw.profileUrl ?? id ?? "";
+        const key = id || slug;
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        out.push({
+            id: id || key,
+            name: raw.name ?? raw.Name ?? "Coach",
+            role: raw.role ?? raw.Role ?? "",
+            rating: Number(raw.rating ?? raw.Rating ?? 0) || 0,
+            photo: raw.avatar_url ?? raw.avatarUrl ?? raw.AvatarUrl ?? raw.avatar ?? raw.Avatar ?? "",
+            slug: slug || id,
+        });
+    };
+    push(phase.recommended_coach);
+    (phase.recommended_coaches ?? []).forEach(push);
+    return out;
+}
+
+function RoadmapOverviewAside({
+    focusPhase,
+    focusPhaseIndex,
+    totalPhases,
+    roadmapMetadata,
+    totalProgress,
+    onOpenPhase,
+    onOpenCoachProfile,
+}) {
+    const theme = useTheme();
+    if (!focusPhase) return null;
+
+    const progress = getPhaseProgress(focusPhase);
+    const phaseBarSx = getLinearProgressSxForPercent(theme, progress);
+    const passed = focusPhase.status === "Passed";
+    const needsImprovement = focusPhase.status === "Needs Improvement";
+    const coaches = mergePhaseCoachesForAside(focusPhase);
+
+    return (
+        <Box
+            component="aside"
+            sx={{
+                width: { xs: "100%", lg: 320 },
+                flexShrink: 0,
+                bgcolor: "background.paper",
+                border: 1,
+                borderColor: "divider",
+                borderRadius: 3,
+                p: { xs: 2.25, md: 2.5 },
+                alignSelf: { lg: "stretch" },
+            }}
+        >
+            <Stack spacing={2.25}>
+                <Box>
+                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 900, display: "block" }}>
+                        Current phase
+                    </Typography>
+                    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1} sx={{ mt: 0.75 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.3 }}>
+                            {focusPhase.phase_name}
+                        </Typography>
+                        {focusPhase.status ? (
+                            <Chip
+                                size="small"
+                                label={focusPhase.status}
+                                color={passed ? "success" : needsImprovement ? "warning" : "primary"}
+                                variant="filled"
+                                sx={{ fontWeight: 700, flexShrink: 0 }}
+                            />
+                        ) : null}
+                    </Stack>
+                    {focusPhase.phase_description ? (
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                                mt: 1,
+                                display: "-webkit-box",
+                                WebkitBoxOrient: "vertical",
+                                WebkitLineClamp: 3,
+                                overflow: "hidden",
+                                lineHeight: 1.55,
+                            }}
+                        >
+                            {focusPhase.phase_description}
+                        </Typography>
+                    ) : null}
+                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 1.25, mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                            Progress
+                        </Typography>
+                        <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 800, color: getProgressPercentCaptionSxColor(progress) }}
+                        >
+                            {progress}%
+                        </Typography>
+                    </Stack>
+                    <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        sx={{
+                            height: 7,
+                            borderRadius: 999,
+                            ...phaseBarSx,
+                            "& .MuiLinearProgress-bar": {
+                                borderRadius: 999,
+                                ...phaseBarSx["& .MuiLinearProgress-bar"],
+                            },
+                        }}
+                    />
+                    <PrimaryButton size="sm" fullWidth sx={{ mt: 1.5 }} onClick={() => onOpenPhase(focusPhase.phase_id)}>
+                        View phase
+                    </PrimaryButton>
+                </Box>
+
+                <Box sx={{ borderTop: 1, borderColor: "divider", pt: 2 }}>
+                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 900, display: "block", mb: 1 }}>
+                        Recommended coaches
+                    </Typography>
+                    {coaches.length === 0 ? (
+                        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                            No coaches linked for this phase yet.
+                        </Typography>
+                    ) : (
+                        <Stack spacing={1}>
+                            {coaches.map((coach) => (
+                                <CardActionArea
+                                    key={coach.id}
+                                    component="button"
+                                    type="button"
+                                    disabled={!coach.slug}
+                                    onClick={() => coach.slug && onOpenCoachProfile(coach.slug)}
+                                    sx={{
+                                        borderRadius: 2,
+                                        border: 1,
+                                        borderColor: "divider",
+                                        bgcolor: "background.default",
+                                        p: 1.25,
+                                        textAlign: "left",
+                                        "&.Mui-disabled": { opacity: 0.55 },
+                                    }}
+                                >
+                                    <Stack direction="row" spacing={1.25} alignItems="center">
+                                        <Avatar
+                                            src={coach.photo || undefined}
+                                            alt=""
+                                            sx={{ width: 40, height: 40, bgcolor: "action.hover" }}
+                                        >
+                                            {coach.name?.charAt(0) ?? "?"}
+                                        </Avatar>
+                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 800 }} noWrap>
+                                                {coach.name}
+                                            </Typography>
+                                            {coach.role ? (
+                                                <Typography variant="caption" color="text.secondary" noWrap>
+                                                    {coach.role}
+                                                </Typography>
+                                            ) : null}
+                                            {coach.rating > 0 ? (
+                                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
+                                                    <Star size={12} color={theme.palette.warning.main} fill={theme.palette.warning.main} />
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {coach.rating.toFixed(1)}
+                                                    </Typography>
+                                                </Stack>
+                                            ) : null}
+                                        </Box>
+                                    </Stack>
+                                </CardActionArea>
+                            ))}
+                        </Stack>
+                    )}
+                </Box>
+
+                <Box sx={{ borderTop: 1, borderColor: "divider", pt: 2 }}>
+                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 900, display: "block", mb: 1 }}>
+                        Roadmap
+                    </Typography>
+                    <Stack spacing={0.75}>
+                        <Typography variant="body2" color="text.secondary">
+                            <Typography component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Role:
+                            </Typography>{" "}
+                            {roadmapMetadata.target_role || "—"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <Typography component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Level:
+                            </Typography>{" "}
+                            {roadmapMetadata.target_level || "—"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <Typography component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Focus:
+                            </Typography>{" "}
+                            Phase {focusPhaseIndex + 1} of {totalPhases}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <Typography component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                Overall:
+                            </Typography>{" "}
+                            <Typography component="span" sx={{ color: getProgressPercentCaptionSxColor(totalProgress) }}>
+                                {totalProgress}%
+                            </Typography>
+                        </Typography>
+                    </Stack>
+                </Box>
+            </Stack>
+        </Box>
+    );
+}
+
 function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly = false }) {
     const navigate = useNavigate();
     const theme = useTheme();
@@ -271,6 +488,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
     const [error, setError] = useState(null);
     const [progressStepIndex, setProgressStepIndex] = useState(0);
     const [cooldownTick, setCooldownTick] = useState(0);
+    // eslint-disable-next-line no-unused-vars
     const [shareCopied, setShareCopied] = useState(false);
     const progressTimerRef = useRef(null);
 
@@ -340,7 +558,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
         } finally {
             setIsLoadingRoadmap(false);
         }
-    }, [effectiveUserId, isLoadingRoadmap, regenerateBlocked, runGenerate]);
+    }, [effectiveUserId, isLoadingRoadmap, runGenerate]);
 
     const handleGenerateFirstTime = useCallback(async () => {
         if (!effectiveUserId || effectiveUserId === EMPTY_GUID || isLoadingRoadmap) return;
@@ -442,12 +660,37 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
         }
     }, [readOnly, effectiveUserId, sourceRoadmap]);
 
+    useEffect(() => {
+        if (readOnly || !sourceRoadmap) return;
+
+        const latestEvaluation = sourceRoadmap.phases
+            ?.map((phase) => ({
+                phaseName: phase.phase_name,
+                evaluation: phase.checkpoint_evaluation,
+            }))
+            .filter((entry) => entry.evaluation?.interview_room_id)
+            .sort((a, b) => new Date(b.evaluation.submitted_at || 0) - new Date(a.evaluation.submitted_at || 0))[0];
+
+        if (!latestEvaluation) return;
+
+        const key = `${CHECKPOINT_TOAST_PREFIX}${latestEvaluation.evaluation.interview_room_id}`;
+        if (sessionStorage.getItem(key)) return;
+        sessionStorage.setItem(key, "1");
+
+        if (latestEvaluation.evaluation.status === "Passed") {
+            toast.success(`Phase passed: ${latestEvaluation.phaseName}`);
+        } else if (latestEvaluation.evaluation.status === "Needs Improvement") {
+            toast.error("Checkpoint needs improvement. Review your focus areas.");
+        }
+    }, [readOnly, sourceRoadmap]);
+
     const monthlyWins = useMemo(() => {
         if (readOnly) return null;
         return getMonthlyWins(effectiveUserId, sourceRoadmap);
     }, [readOnly, effectiveUserId, sourceRoadmap]);
 
     // B4: copy a public link to the clipboard
+    // eslint-disable-next-line no-unused-vars
     const handleShare = useCallback(async () => {
         if (!effectiveUserId) return;
         const shareUrl = `${window.location.origin}/roadmap/public/${effectiveUserId}`;
@@ -460,96 +703,46 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
         }
     }, [effectiveUserId]);
 
-    const { phaseDetailsById, nodeDetailsById } = useMemo(() => {
-        const phaseMap = {};
-        const nodeMap = {};
-
-        (sourceRoadmap?.phases ?? []).forEach((phase) => {
-            const normalizedNodes = phase.nodes.map((node) => {
-                const rawChildSkills = node.child_skills ?? [];
-                return {
-                    ...node,
-                    // X6: keep the structured form so NodeDetail can surface per-skill questions
-                    child_skills: rawChildSkills,
-                    child_skill_names: getChildSkillNames(rawChildSkills),
-                    phase_id: phase.phase_id,
-                    phase_name: phase.phase_name,
-                };
-            });
-
-            phaseMap[phase.phase_id] = {
-                ...phase,
-                nodes: normalizedNodes,
-            };
-
-            normalizedNodes.forEach((node) => {
-                nodeMap[node.skill_id] = node;
-            });
-        });
-
-        return {
-            phaseDetailsById: phaseMap,
-            nodeDetailsById: nodeMap,
-        };
+    const totalProgress = useMemo(() => {
+        const phases = sourceRoadmap?.phases ?? [];
+        if (!phases.length) return 0;
+        return Math.round(phases.reduce((sum, phase) => sum + getPhaseProgress(phase), 0) / phases.length);
     }, [sourceRoadmap]);
 
-    const [selection, setSelection] = useState(() => {
-        const firstPhase = sourceRoadmap?.phases?.[0];
-        return {
-            phase_id: firstPhase?.phase_id ?? null,
-            skill_id: firstPhase?.nodes?.[0]?.skill_id ?? null,
-        };
-    });
-
-    // X4: Preserve selection across roadmap refetches when the IDs still exist
-    useEffect(() => {
-        if (!sourceRoadmap) {
-            return;
-        }
-        setSelection((prev) => {
-            const phaseStillExists = prev.phase_id && phaseDetailsById[prev.phase_id];
-            const skillStillExists = prev.skill_id && nodeDetailsById[prev.skill_id];
-            if (phaseStillExists && skillStillExists) {
-                return prev;
-            }
-            const firstPhase = sourceRoadmap.phases?.[0];
-            return {
-                phase_id: firstPhase?.phase_id ?? null,
-                skill_id: firstPhase?.nodes?.[0]?.skill_id ?? null,
-            };
-        });
-    }, [sourceRoadmap, phaseDetailsById, nodeDetailsById]);
-
-    const handleRoadmapSelect = useCallback(
-        (nextSelection) => {
-            if (!nextSelection) {
-                return;
-            }
-
-            setSelection((prevSelection) => {
-                const phaseId = nextSelection.phase_id ?? prevSelection.phase_id;
-                const fallbackSkillId = phaseDetailsById[phaseId]?.nodes?.[0]?.skill_id ?? null;
-                const requestedSkillId = nextSelection.skill_id ?? prevSelection.skill_id;
-
-                const skillBelongsToPhase = requestedSkillId && nodeDetailsById[requestedSkillId]?.phase_id === phaseId;
-                const skillId = skillBelongsToPhase ? requestedSkillId : fallbackSkillId;
-
-                return {
-                    phase_id: phaseId,
-                    skill_id: skillId,
-                };
-            });
-        },
-        [nodeDetailsById, phaseDetailsById],
+    const overallProgressBarSx = useMemo(
+        () => getLinearProgressSxForPercent(theme, totalProgress),
+        [theme, totalProgress],
     );
 
-    const selectedPhase = selection.phase_id ? (phaseDetailsById[selection.phase_id] ?? null) : null;
-    const selectedSkill = selection.skill_id ? (nodeDetailsById[selection.skill_id] ?? null) : null;
+    const currentPhaseIndex = useMemo(() => {
+        const phases = sourceRoadmap?.phases ?? [];
+        const active = phases.findIndex((p) => p.status !== "Passed");
+        return active >= 0 ? active : Math.max(phases.length - 1, 0);
+    }, [sourceRoadmap]);
+
+    const handleOpenPhase = useCallback(
+        (phaseId) => {
+            if (phaseId) {
+                navigate(`/roadmap/phase/${encodeURIComponent(phaseId)}`);
+            }
+        },
+        [navigate],
+    );
+
+    const handleOpenCoachProfile = useCallback(
+        (slug) => {
+            if (slug) {
+                navigate(`/profile/${encodeURIComponent(slug)}`);
+            }
+        },
+        [navigate],
+    );
 
     const heroGradient = `linear-gradient(110deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 56%, ${alpha(
         theme.palette.primary.light,
         0.85,
     )} 100%)`;
+    // eslint-disable-next-line no-unused-vars
     const regenerateTitle = regenerateBlocked
         ? `Available again in ${formatRemaining(cooldownRemainingMs)}`
         : "Regenerate your roadmap from scratch";
@@ -560,7 +753,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                 display: "flex",
                 flexDirection: "column",
                 width: "100%",
-                height: "100vh",
+                minHeight: "100vh",
                 p: 2.5,
                 boxSizing: "border-box",
                 gap: 2,
@@ -652,7 +845,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
             </Box>
 
             {/* B3: progress wins banner */}
-            {!readOnly && monthlyWins && (monthlyWins.completedThisMonth > 0 || monthlyWins.improvedThisMonth > 0) ? (
+            {/* {!readOnly && monthlyWins && (monthlyWins.completedThisMonth > 0 || monthlyWins.improvedThisMonth > 0) ? (
                 <Box
                     sx={{
                         display: "flex",
@@ -676,7 +869,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                             : ""}
                     </Typography>
                 </Box>
-            ) : null}
+            ) : null} */}
 
             {/* Phase 5.3: skills the candidate already meets target on. Backend
                 surfaces these via mastered_summary so the FE can show "credit
@@ -726,7 +919,7 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
             ) : null}
 
             {isLoadingRoadmap && !resolvedRoadmap ? (
-                <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>
+                <Stack spacing={1.5} sx={{ py: 1 }}>
                     <Box
                         sx={{
                             display: "flex",
@@ -752,12 +945,12 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                             Step {progressStepIndex + 1} of {PROGRESS_STEPS.length}
                         </Typography>
                     </Box>
-                    <Box sx={{ flex: 1, minHeight: 0 }}>
+                    <Box>
                         <RoadmapSkeleton />
                     </Box>
                 </Stack>
             ) : error && !resolvedRoadmap ? (
-                <Stack alignItems="center" justifyContent="center" spacing={2} sx={{ flex: 1, p: { xs: 3, md: 5 } }}>
+                <Stack alignItems="center" justifyContent="center" spacing={2} sx={{ py: { xs: 5, md: 8 }, px: { xs: 3, md: 5 } }}>
                     <Alert
                         severity="error"
                         onClose={() => setError(null)}
@@ -776,8 +969,8 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                     justifyContent="center"
                     spacing={1.25}
                     sx={{
-                        flex: 1,
-                        p: { xs: 3, md: 5 },
+                        py: { xs: 5, md: 8 },
+                        px: { xs: 3, md: 5 },
                         color: "text.secondary",
                         textAlign: "center",
                     }}
@@ -802,36 +995,91 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
             ) : (
                 <Box
                     sx={{
-                        display: "grid",
-                        // U5: Stack graph above detail panel on narrow screens
-                        gridTemplateColumns: { xs: "1fr", md: "minmax(0, 2fr) minmax(380px, 1fr)" },
-                        gridTemplateRows: { xs: "minmax(320px, 55vh) minmax(0, 1fr)", md: "1fr" },
-                        flex: 1,
-                        minHeight: 0,
-                        overflow: "hidden",
                         bgcolor: "background.default",
                         borderRadius: "18px",
                         border: `1px solid ${theme.palette.divider}`,
+                        p: { xs: 2, md: 3 },
                     }}
                 >
                     <Box
                         sx={{
-                            borderRight: { xs: "none", md: `1px solid ${theme.palette.divider}` },
-                            borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: "none" },
-                            minWidth: 0,
-                            minHeight: 0,
+                            display: "flex",
+                            flexDirection: { xs: "column", lg: "row" },
+                            alignItems: "flex-start",
+                            gap: { xs: 2.5, lg: 3 },
                         }}
                     >
-                        <Roadmap
-                            roadmapData={sourceRoadmap}
-                            onSelectNode={handleRoadmapSelect}
-                            showHeader={false}
-                            height="100%"
-                        />
-                    </Box>
+                        <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
+                            <Stack spacing={2.5}>
+                                <Box>
+                                    <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+                                                Roadmap phases
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Review each phase at a glance. Open a phase to work through its hard skills,
+                                                soft skills, and live checkpoint.
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ minWidth: { xs: "100%", md: 220 } }}>
+                                            <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                                                    Overall progress
+                                                </Typography>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        color: getProgressPercentCaptionSxColor(totalProgress),
+                                                    }}
+                                                >
+                                                    {totalProgress}%
+                                                </Typography>
+                                            </Stack>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={totalProgress}
+                                                sx={{
+                                                    height: 10,
+                                                    borderRadius: 999,
+                                                    ...overallProgressBarSx,
+                                                    "& .MuiLinearProgress-bar": {
+                                                        borderRadius: 999,
+                                                        ...overallProgressBarSx["& .MuiLinearProgress-bar"],
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+                                    </Stack>
+                                </Box>
 
-                    <Box sx={{ bgcolor: "background.paper", minWidth: 0, minHeight: 0, overflow: "auto" }}>
-                        <NodeDetail phase={selectedPhase} node={selectedSkill} readOnly={readOnly} />
+                                <Stack spacing={3}>
+                                    {sourceRoadmap.phases.map((phase, index) => (
+                                        <PhaseOverviewCard
+                                            key={phase.phase_id}
+                                            phase={phase}
+                                            index={index}
+                                            isLast={index === sourceRoadmap.phases.length - 1}
+                                            currentPhaseIndex={currentPhaseIndex}
+                                            onOpen={handleOpenPhase}
+                                        />
+                                    ))}
+                                </Stack>
+                            </Stack>
+                        </Box>
+
+                        <RoadmapOverviewAside
+                            focusPhase={
+                                sourceRoadmap.phases[currentPhaseIndex] ?? sourceRoadmap.phases[0] ?? null
+                            }
+                            focusPhaseIndex={currentPhaseIndex}
+                            totalPhases={sourceRoadmap.phases.length}
+                            roadmapMetadata={roadmapMetadata}
+                            totalProgress={totalProgress}
+                            onOpenPhase={handleOpenPhase}
+                            onOpenCoachProfile={handleOpenCoachProfile}
+                        />
                     </Box>
                 </Box>
             )}

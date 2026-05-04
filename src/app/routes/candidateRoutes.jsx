@@ -4,6 +4,7 @@ const Test = lazy(() => import("../../features/test/pages/Test"));
 const CoachBrowsePage = lazy(() => import("../../features/home/pages/CoachBrowsePage"));
 const CandidateHomePage = lazy(() => import("../../features/home/pages/CandidateHomePage"));
 const RoadmapDashboard = lazy(() => import("../../features/roadmap/RoadmapDashboard"));
+const RoadmapPhaseDetailPage = lazy(() => import("../../features/roadmap/RoadmapPhaseDetailPage"));
 const CandidateAssessmentPage = lazy(() => import("../../features/profiles/candidate/pages/CandidateAssessmentPage"));
 
 const renderLazy = (LazyComponent) => (
@@ -18,4 +19,5 @@ export const candidateRoutes = [
     { path: "/coaches", element: renderLazy(CoachBrowsePage) },
     { path: "/assessment", element: renderLazy(CandidateAssessmentPage) },
     { path: "/roadmap", element: renderLazy(RoadmapDashboard) },
+    { path: "/roadmap/phase/:phaseId", element: renderLazy(RoadmapPhaseDetailPage) },
 ];

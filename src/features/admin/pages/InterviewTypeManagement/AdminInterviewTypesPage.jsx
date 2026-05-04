@@ -3,7 +3,6 @@ import { Box, Container, Tooltip, Typography } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import toast from "react-hot-toast";
 
 import AdminPageHeader from "../../../../common/components/admin/AdminPageHeader";
@@ -11,7 +10,6 @@ import SearchInput from "../../../../common/components/inputs/SearchInput";
 import DataTable from "../../../../common/components/table/DataTable";
 import TableActionsMenu from "../../../../common/components/table/TableActionsMenu";
 import StatusChip from "../../../../common/components/StatusChip";
-import ConfirmModal from "../../../../common/components/ConfirmModal";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import useTableState from "../../../../hooks/useTableState";
 import { callApi } from "../../../../common/utils/apiConnector";
@@ -21,9 +19,22 @@ import CreateInterviewTypeDialog from "./CreateInterviewTypeDialog";
 import UpdateInterviewTypeDialog from "./UpdateInterviewTypeDialog";
 import "../AdminDashboard.css";
 
+/** Matches backend InterviewTypeStatus; FE no longer allows selecting Inactive, but may display existing records. */
 const getStatusLabel = (value) => {
-    if (value === 1 || value === "1" || value === true) return "Active";
-    return "Inactive";
+    const n = Number(value);
+    if (Number.isNaN(n)) return String(value ?? "-");
+    switch (n) {
+        case 0:
+            return "Draft";
+        case 1:
+            return "Active";
+        case 2:
+            return "Inactive";
+        case 3:
+            return "Deprecated";
+        default:
+            return `Unknown (${n})`;
+    }
 };
 
 export default function AdminInterviewTypesPage() {
@@ -45,8 +56,6 @@ export default function AdminInterviewTypesPage() {
     const [openCreate, setOpenCreate] = useState(false);
     const [openUpdate, setOpenUpdate] = useState(false);
     const [activeItem, setActiveItem] = useState(null);
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [deletingId, setDeletingId] = useState(null);
 
     useEffect(() => {
         fetchItems();
@@ -61,7 +70,7 @@ export default function AdminInterviewTypesPage() {
             params.set("pageSize", String(pageSize));
             if (searchTerm) params.set("q", searchTerm);
 
-            const url = `${interviewTypeEndPoints.GET_ALL_TYPES}?${params.toString()}`;
+            const url = `${interviewTypeEndPoints.GET_ALL_TYPES_ADMIN}?${params.toString()}`;
             const response = await callApi({
                 method: METHOD.GET,
                 endpoint: url,
@@ -99,28 +108,6 @@ export default function AdminInterviewTypesPage() {
         setOpenUpdate(false);
         setActiveItem(null);
         fetchItems();
-    };
-
-    const handleDeleteClick = (id) => {
-        setDeletingId(id);
-        setConfirmOpen(true);
-    };
-
-    const handleConfirmDelete = async () => {
-        setConfirmOpen(false);
-        if (!deletingId) return;
-        try {
-            await callApi({
-                method: METHOD.DELETE,
-                endpoint: interviewTypeEndPoints.DELETE_TYPE(deletingId),
-                displaySuccessMessage: true,
-            });
-            fetchItems();
-        } catch (error) {
-            toast.error(error?.response?.data?.message || "Failed to delete interview type");
-        } finally {
-            setDeletingId(null);
-        }
     };
 
     const columns = useMemo(
@@ -188,7 +175,9 @@ export default function AdminInterviewTypesPage() {
                 headerName: "Status",
                 render: (value) => {
                     const label = getStatusLabel(value);
-                    return <StatusChip label={label} color={label === "Active" ? "success" : "default"} />;
+                    const color =
+                        label === "Active" ? "success" : label === "Draft" ? "warning" : label === "Deprecated" ? "error" : "default";
+                    return <StatusChip label={label} color={color} />;
                 },
             },
             {
@@ -202,12 +191,6 @@ export default function AdminInterviewTypesPage() {
                                     label: "Edit",
                                     icon: <EditIcon fontSize="small" />,
                                     onClick: () => handleUpdateClick(row),
-                                },
-                                {
-                                    label: "Delete",
-                                    icon: <DeleteIcon fontSize="small" sx={{ color: "error.main" }} />,
-                                    onClick: () => handleDeleteClick(row.id),
-                                    color: "error.main",
                                 },
                             ]}
                         />
@@ -277,16 +260,6 @@ export default function AdminInterviewTypesPage() {
                 onClose={() => setOpenUpdate(false)}
                 item={activeItem}
                 onUpdated={handleUpdateSuccess}
-            />
-
-            <ConfirmModal
-                show={confirmOpen}
-                title="Delete interview type"
-                message="Are you sure you want to delete this interview type? This action cannot be undone."
-                onConfirm={handleConfirmDelete}
-                onCancel={() => setConfirmOpen(false)}
-                confirmText="Delete"
-                cancelText="Cancel"
             />
         </Container>
     );

@@ -1,15 +1,22 @@
 import React from "react";
 import { useTheme } from "@mui/material/styles";
 import { Handle, Position } from "@xyflow/react";
+import { RadioTower, ShieldCheck } from "lucide-react";
 import SkillStatusBadge from "./components/SkillStatusBadge";
 import SkillProgressBar from "./components/SkillProgressBar";
 import { getStatusConfig } from "./components/statusConfig";
+
+const PILLAR_LABELS = {
+    HARD_SKILL: "Hard Skill",
+    SOFT_SKILL: "Soft Skill",
+    LIVE_CHECKPOINT: "Live Checkpoint",
+};
 
 const RoadmapNode = ({ data, selected }) => {
     const theme = useTheme();
     const status = data.status ?? "Missing";
     const config = getStatusConfig(status);
-    const isLocked = status === "Missing";
+    const pillarType = data.pillarType ?? "HARD_SKILL";
     const childSkillPreview = (data.childSkills ?? []).slice(0, 2);
     const hiddenSkillCount = Math.max((data.childSkills ?? []).length - childSkillPreview.length, 0);
     const progress = Number(data.progress) || 0;
@@ -31,7 +38,7 @@ const RoadmapNode = ({ data, selected }) => {
                 background: "#fff",
                 border: selected
                     ? `2px solid ${theme.palette.secondary.main}`
-                    : `1px solid ${isLocked ? "#F1F5F9" : "#E2E8F0"}`,
+                    : `1px solid #E2E8F0`,
                 boxShadow: "0 4px 12px rgba(15,23,42,0.05)",
                 width: "280px",
                 fontFamily: "sans-serif",
@@ -41,14 +48,20 @@ const RoadmapNode = ({ data, selected }) => {
             <Handle type="target" position={Position.Top} style={{ background: "#64748B" }} />
 
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                <SkillStatusBadge status={status} iconOnly />
+                {pillarType === "LIVE_CHECKPOINT" ? (
+                    <RadioTower size={18} color={theme.palette.warning.main} />
+                ) : pillarType === "SOFT_SKILL" ? (
+                    <ShieldCheck size={18} color={theme.palette.info.main} />
+                ) : (
+                    <SkillStatusBadge status={status} iconOnly />
+                )}
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                         style={{
                             fontWeight: 600,
                             fontSize: "14px",
-                            color: isLocked ? "#64748B" : "#0F172A",
+                            color: "#0F172A",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -58,7 +71,11 @@ const RoadmapNode = ({ data, selected }) => {
                         {data.label}
                     </div>
                     <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>
-                        <span style={{ fontWeight: 600, color: config.color }}>{config.label}</span>
+                        <span style={{ fontWeight: 600, color: config.color }}>
+                            {PILLAR_LABELS[pillarType] ?? "Hard Skill"}
+                        </span>
+                        <span aria-hidden="true"> • </span>
+                        <span>{config.label}</span>
                         <span aria-hidden="true"> • {progress}% complete</span>
                     </div>
                 </div>

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import SkillStatusBadge from "./components/SkillStatusBadge";
 import SkillProgressBar from "./components/SkillProgressBar";
+import RubricRadarChart from "./components/RubricRadarChart";
 
 const PHASE_TABS = {
     RECOMMENDATIONS: "recommendations",
@@ -290,6 +291,10 @@ function MockCard({ mock, initiallyOpen }) {
                     <div style={{ marginTop: "10px", marginBottom: "10px", color: "#64748B", fontSize: "12px" }}>
                         Reviewed: {reviewedItems.length}/{evaluationItems.length || 0}
                     </div>
+                    <RubricRadarChart
+                        evaluation={{ items: evaluationItems }}
+                        title="Target Standard vs Current Level"
+                    />
                     <div style={{ display: "grid", gap: "8px" }}>
                         {evaluationItems.map((item) => (
                             <EvaluationRow key={`${mock.mock_id}-${item.id}`} item={item} />
@@ -386,6 +391,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
     const [showAllMocks, setShowAllMocks] = useState(false);
 
     // Funnel into the public coach profile (same entry point CoachCard uses for booking)
+    // eslint-disable-next-line no-unused-vars
     const handleOpenCoach = (coach) => {
         const slug = coach?.profileUrl ?? coach?.slugProfileUrl ?? coach?.id;
         if (!slug) {
@@ -413,7 +419,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
     // the node id + pre-selected service pre-filled in the query string so the booking
     // payload can propagate RoadmapNodeId through to the InterviewRoom.
     const handleScheduleWithRecommended = (nodeSkillId) => {
-        const coach = selectedSkill?.recommended_coach;
+        const coach = selectedSkill?.recommended_coach ?? phase?.recommended_coach ?? phase?.recommended_coaches?.[0];
         const slug = coach?.slug_profile_url ?? coach?.slugProfileUrl ?? coach?.id;
         if (!slug) return;
 
@@ -423,6 +429,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
     };
 
     // X6: jump straight to a specific interview question
+    // eslint-disable-next-line no-unused-vars
     const handleOpenQuestion = (question, childSkillName) => {
         if (question?.id) {
             navigate(`/questions/${encodeURIComponent(question.id)}`);
@@ -433,6 +440,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
     };
 
     // X6: discover curated learning resources for a sub-skill
+    // eslint-disable-next-line no-unused-vars
     const handleExploreResources = (skillName) => {
         const query = skillName ? `?q=${encodeURIComponent(skillName)}` : "";
         navigate(`/coaches${query}&smartMatch=1`.replace("?&", "?"));
@@ -469,6 +477,7 @@ function NodeDetail({ phase, node, readOnly = false }) {
         () => extractChildSkillDetails(selectedSkill?.child_skills ?? []),
         [selectedSkill?.child_skills],
     );
+    // eslint-disable-next-line no-unused-vars
     const hasChildQuestions = childSkillDetails.some((child) => child.questions.length > 0);
 
     if (!phase) {
@@ -497,11 +506,18 @@ function NodeDetail({ phase, node, readOnly = false }) {
 
     const status = selectedSkill?.assessment?.status ?? "Missing";
     const progress = selectedSkill?.assessment?.progress ?? 0;
+    // eslint-disable-next-line no-unused-vars
     const recommendedCoaches = phase.recommended_coaches ?? [];
-    const nodeCoach = selectedSkill?.recommended_coach ?? null;
+    const nodeCoach = selectedSkill?.recommended_coach ?? phase?.recommended_coach ?? null;
     const visibleMocks = showAllMocks ? sortedMockHistory : sortedMockHistory.slice(0, RECENT_MOCKS_EXPANDED);
     const hiddenMockCount = Math.max(0, sortedMockHistory.length - RECENT_MOCKS_EXPANDED);
     const overallScoreStyle = overallMockAverage != null ? getScoreStyle(overallMockAverage) : null;
+    const checkpointEvaluation =
+        selectedSkill?.checkpoint?.rubric_evaluation ??
+        selectedSkill?.checkpoint?.rubricEvaluation ??
+        phase?.checkpoint_evaluation ??
+        phase?.checkpointEvaluation ??
+        null;
 
     return (
         <div
@@ -891,6 +907,8 @@ function NodeDetail({ phase, node, readOnly = false }) {
                         <div style={{ marginBottom: "16px" }}>
                             <SkillProgressBar progress={progress} status={status} height={8} showLabel />
                         </div>
+
+                        <RubricRadarChart evaluation={checkpointEvaluation} />
 
                         {/* X8: feedback loop — capture sentiment to tune future LLM output */}
                         {/* {!readOnly ? (

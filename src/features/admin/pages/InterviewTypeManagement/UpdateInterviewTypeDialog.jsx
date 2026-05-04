@@ -21,6 +21,11 @@ import FormSelect from "../../../../common/components/form/FormSelect";
 import { FormControl, InputLabel } from "@mui/material";
 
 const DURATION_OPTIONS = Array.from({ length: 10 }, (_, i) => (i + 1) * 30);
+const INTERVIEW_TYPE_STATUS_OPTIONS = [
+    { value: 0, label: "Draft" },
+    { value: 1, label: "Active" },
+    { value: 3, label: "Deprecated" },
+];
 
 export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdated }) {
     const [form, setForm] = useState({
@@ -112,6 +117,7 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                     ...form,
                     minPrice: Number(form.minPrice || 0),
                     maxPrice: Number(form.maxPrice || 0),
+                    status: Number(form.status),
                     evaluationStructure,
                 },
                 displaySuccessMessage: true,
@@ -200,10 +206,13 @@ export default function UpdateInterviewTypeDialog({ open, onClose, item, onUpdat
                                     labelId="status-label"
                                     label="Status"
                                     value={form.status}
-                                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                                    onChange={(e) => setForm({ ...form, status: Number(e.target.value) })}
                                 >
-                                    <MenuItem value={1}>Active</MenuItem>
-                                    <MenuItem value={0}>Inactive</MenuItem>
+                                    {INTERVIEW_TYPE_STATUS_OPTIONS.map((status) => (
+                                        <MenuItem key={status.value} value={status.value}>
+                                            {status.label}
+                                        </MenuItem>
+                                    ))}
                                 </FormSelect>
                             </FormControl>
                             <FormControl fullWidth required>
