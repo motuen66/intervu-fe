@@ -3,18 +3,11 @@ import {
     Alert,
     Box,
     CircularProgress,
-    FormControl,
-    FormControlLabel,
-    FormHelperText,
-    IconButton,
     Modal,
-    Radio,
-    RadioGroup,
     Slider,
     Stack,
     Typography,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
@@ -39,20 +32,7 @@ function CoachEvaluationModal({
     const [items, setItems] = useState([]);
     const [error, setError] = useState("");
     const [others, setOthers] = useState("");
-    const [hireDecision, setHireDecision] = useState("");
     const [emergencyConfirmOpen, setEmergencyConfirmOpen] = useState(false);
-
-    const normalizeHireDecision = (value) => {
-        if (value === true) return "yes";
-        if (value === false) return "no";
-        if (typeof value === "string") {
-            const normalized = value.trim().toLowerCase();
-            if (normalized === "yes" || normalized === "no") return normalized;
-            if (normalized === "true") return "yes";
-            if (normalized === "false") return "no";
-        }
-        return "";
-    };
 
     const parseEvaluationStructure = (data) => {
         const raw = data?.evaluationStructureJson ?? data?.EvaluationStructureJson ?? data?.evaluationStructure ?? data?.EvaluationStructure;
@@ -113,14 +93,6 @@ function CoachEvaluationModal({
 
                 setItems(normalizedResults);
                 setOthers(data?.others ?? data?.Others ?? evaluationStructure?.others ?? "");
-                setHireDecision(
-                    normalizeHireDecision(
-                        data?.hireDecision ??
-                        data?.isHire ??
-                        evaluationStructure?.hireDecision ??
-                        "",
-                    ),
-                );
             } catch (err) {
                 setError(err?.response?.data?.message || "Failed to load evaluation form.");
             } finally {
@@ -156,10 +128,6 @@ function CoachEvaluationModal({
             setError("Others must be 300 words or fewer.");
             return;
         }
-        if (!hireDecision) {
-            setError("Please choose a hire decision.");
-            return;
-        }
         setSubmitting(true);
         try {
             const cleanedOthers = others.trim();
@@ -173,8 +141,6 @@ function CoachEvaluationModal({
                 results: items,
                 evaluationResults: pascalCaseResults,
                 others: cleanedOthers,
-                hireDecision,
-                hideDecision: hireDecision,
             };
             const evaluationStructureJson = JSON.stringify(evaluationStructurePayload);
 
@@ -184,7 +150,6 @@ function CoachEvaluationModal({
                 arg: {
                     results: items,
                     others: cleanedOthers,
-                    hireDecision,
                     evaluationStructure: evaluationStructureJson,
                     evaluationStructureJson,
                 },
@@ -207,7 +172,6 @@ function CoachEvaluationModal({
         }
         setItems([]);
         setOthers("");
-        setHireDecision("");
         setError("");
         if (onClose) {
             onClose();
@@ -371,29 +335,6 @@ function CoachEvaluationModal({
                             />
                         </Box>
 
-                        <Box
-                            sx={{
-                                border: "1px solid",
-                                borderColor: "divider",
-                                borderRadius: 2,
-                                p: 2,
-                            }}
-                        >
-                            <FormControl required error={!hireDecision && !!error}>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                    Hire Decision
-                                </Typography>
-                                <RadioGroup
-                                    row
-                                    value={hireDecision}
-                                    onChange={(e) => setHireDecision(e.target.value)}
-                                >
-                                    <FormControlLabel value="yes" control={<Radio />} label="Yes" />
-                                    <FormControlLabel value="no" control={<Radio />} label="No" />
-                                </RadioGroup>
-                                {!hireDecision && !!error && <FormHelperText>Please select Yes or No.</FormHelperText>}
-                            </FormControl>
-                        </Box>
                         <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ pt: 1 }}>
                             {onLeaveWithoutEvaluating ? (
                                 <TextButton

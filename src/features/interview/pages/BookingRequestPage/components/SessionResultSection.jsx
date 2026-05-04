@@ -133,13 +133,6 @@ const RoundResultItem = ({ round, highlightFeedback = false }) => {
     const evaluationStructure = parseEvaluationStructure(evaluation || {});
     const rawResults = evaluation?.evaluationResults || evaluationStructure?.results || [];
     const resolvedOthers = evaluation?.others ?? evaluationStructure?.others;
-    const resolvedHireDecision =
-        evaluation?.hireDecision ??
-        evaluation?.hideDecision ??
-        evaluation?.isHire ??
-        evaluation?.IsHire ??
-        evaluationStructure?.hireDecision ??
-        evaluationStructure?.hideDecision;
     const skills = rawResults.map((result, i) => ({
         name: result?.question || result?.criterion || result?.name || `Criteria ${i + 1}`,
         score: typeof result?.score === "number" ? result.score : null,
@@ -312,29 +305,14 @@ const RoundResultItem = ({ round, highlightFeedback = false }) => {
                             </Grid>
                         ))}
                     </Grid>
-                    {(resolvedHireDecision !== undefined || resolvedOthers) && (
+                    {resolvedOthers && (
                         <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid #f1f5f9" }}>
-                            {resolvedOthers && (
-                                <AppText
-                                    variant="bodyStrong"
-                                    sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6, color: "#0f172a" }}
-                                >
-                                    <strong>Others:</strong> {resolvedOthers}
-                                </AppText>
-                            )}
-                            {resolvedHireDecision !== undefined && (
-                                <AppText variant="bodyStrong" sx={{ color: "#0f172a", mb: resolvedOthers ? 1 : 0 }}>
-                                    Hire Decision:{" "}
-                                    {typeof resolvedHireDecision === "boolean"
-                                        ? resolvedHireDecision
-                                            ? "Yes"
-                                            : "No"
-                                        : String(resolvedHireDecision).toLowerCase() === "yes" ||
-                                            String(resolvedHireDecision).toLowerCase() === "true"
-                                          ? "Yes"
-                                          : "No"}
-                                </AppText>
-                            )}
+                            <AppText
+                                variant="bodyStrong"
+                                sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6, color: "#0f172a" }}
+                            >
+                                <strong>Others:</strong> {resolvedOthers}
+                            </AppText>
                         </Box>
                     )}
 
