@@ -6,7 +6,6 @@ import {
     Calendar,
     Video,
     Users,
-    Building2,
     HelpCircle,
     CircleDollarSign,
     BarChart2,
@@ -48,7 +47,6 @@ const adminNavItems = [
                     { label: "Coaches", path: "/admin/users/coaches" },
                 ],
             },
-            { label: "Company", icon: Building2, path: "/admin/companies" },
             { label: "Question Bank", icon: HelpCircle, path: "/admin/question-bank" },
             {
                 label: "Income",
