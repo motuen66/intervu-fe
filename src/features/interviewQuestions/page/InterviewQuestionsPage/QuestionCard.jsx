@@ -189,26 +189,27 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         {
             icon: <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />,
             label: `${viewCount}`,
-        },
-        {
-            icon: <AddCircleOutlineIcon sx={{ fontSize: 16 }} />,
-            label: "I was asked this",
-            onClick: () =>
-                navigate("/questions/share", {
-                    state: {
-                        linkedQuestion: {
-                            id: item.id,
-                            content: item.content ?? item.title,
-                            title: item.title ?? item.content,
-                            companyId: item.companyIds?.[0] ?? item.companyId ?? null,
-                            roles: item.roles,
-                            tags: item.tags,
-                            category: item.category ?? item.questionType,
-                            answerCount: item.answerCount,
-                        },
-                    },
-                }),
-        },
+        }
+        // ,
+        // {
+        //     icon: <AddCircleOutlineIcon sx={{ fontSize: 16 }} />,
+        //     label: "I was asked this",
+        //     onClick: () =>
+        //         navigate("/questions/share", {
+        //             state: {
+        //                 linkedQuestion: {
+        //                     id: item.id,
+        //                     content: item.content ?? item.title,
+        //                     title: item.title ?? item.content,
+        //                     companyId: item.companyIds?.[0] ?? item.companyId ?? null,
+        //                     roles: item.roles,
+        //                     tags: item.tags,
+        //                     category: item.category ?? item.questionType,
+        //                     answerCount: item.answerCount,
+        //                 },
+        //             },
+        //         }),
+        // },
     ];
 
     return (
