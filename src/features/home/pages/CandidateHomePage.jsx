@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
-import { Calendar, ArrowRight, BookOpen, Map } from "lucide-react";
+import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import { Calendar, CalendarDays, ArrowRight, BookOpen, Map, Sparkles } from "lucide-react";
 import { CompanyLogo } from "../../../common/utils/logoImageGenerator";
 import { getSessions } from "../../interview/services/interviewRoomApi";
 import { INTERVIEW_ROOM_STATUS } from "../../../common/constants/status";
@@ -407,7 +407,7 @@ export default function CandidateHomePage() {
             <FeatureCards onSmartMatch={openSmartMatch} />
 
             <Box sx={{ mb: 3 }}>
-                <CoachOrbitHero coaches={topCoaches} onFindMatch={openSmartMatch} />
+                <CoachOrbitHero coaches={topCoaches} />
                 {topCoachesLoading && (
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
                         Loading spotlight coaches…
@@ -430,17 +430,70 @@ export default function CandidateHomePage() {
                                 <CircularProgress size={28} />
                             </Box>
                         ) : scheduleSessions.length === 0 ? (
-                            <Typography variant="body2" color="text.secondary">
-                                No upcoming sessions.{" "}
-                                <Link className="candidate-home__text-link" to="/coaches">
-                                    Find a coach
-                                </Link>{" "}
-                                or open{" "}
-                                <button type="button" className="candidate-home__text-link" onClick={openSmartMatch}>
-                                    Smart match
-                                </button>
-                                .
-                            </Typography>
+                            <Box
+                                className="candidate-home__schedule-empty"
+                                sx={{
+                                    flex: 1,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    textAlign: "center",
+                                    gap: 1.5,
+                                    minHeight: { xs: 200, sm: 240 },
+                                    py: { xs: 2, sm: 1 },
+                                    px: 1,
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 52,
+                                        height: 52,
+                                        borderRadius: 2.5,
+                                        bgcolor: "action.hover",
+                                        color: "primary.main",
+                                        display: "grid",
+                                        placeItems: "center",
+                                        border: "1px solid",
+                                        borderColor: "divider",
+                                    }}
+                                    aria-hidden
+                                >
+                                    <CalendarDays size={26} strokeWidth={1.75} />
+                                </Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", mt: 0.5 }}>
+                                    No upcoming sessions
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 320, lineHeight: 1.65, mb: 0.5 }}>
+                                    Book a coach when you&apos;re ready, or use Smart match to get suggestions from your profile.
+                                </Typography>
+                                <Stack
+                                    direction={{ xs: "column", sm: "row" }}
+                                    spacing={1.25}
+                                    sx={{ width: "100%", maxWidth: 340, justifyContent: "center", mt: 0.5 }}
+                                >
+                                    <Button
+                                        component={Link}
+                                        to="/coaches"
+                                        variant="contained"
+                                        color="primary"
+                                        size="medium"
+                                        sx={{ fontWeight: 800 }}
+                                    >
+                                        Find a coach
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        size="medium"
+                                        startIcon={<Sparkles size={18} strokeWidth={2} />}
+                                        onClick={openSmartMatch}
+                                        sx={{ fontWeight: 700, borderWidth: 2, "&:hover": { borderWidth: 2 } }}
+                                    >
+                                        Smart match
+                                    </Button>
+                                </Stack>
+                            </Box>
                         ) : (
                             <>
                                 {scheduleSessions.map((session) => {
