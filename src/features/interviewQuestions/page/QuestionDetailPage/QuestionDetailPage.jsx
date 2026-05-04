@@ -520,26 +520,26 @@ export default function QuestionDetailPage() {
             tooltip: "",
             show: !isAdmin,
         },
-        {
-            icon: <AddCircleOutlineIcon sx={{ fontSize: 15 }} />,
-            label: "I was asked this",
-            tooltip: "",
-            onClick: () =>
-                navigate("/questions/share", {
-                    state: {
-                        linkedQuestion: {
-                            id: data.id,
-                            content: data.content,
-                            companyIds: data.companyIds?.[0] ?? data.companyId ?? null,
-                            roles: data.roles ?? [],
-                            tags: data.tags ?? [],
-                            category: data.category ?? data.questionType,
-                            answerCount: data.answerCount,
-                        },
-                    },
-                }),
-            show: !isAdmin,
-        },
+        // {
+        //     icon: <AddCircleOutlineIcon sx={{ fontSize: 15 }} />,
+        //     label: "I was asked this",
+        //     tooltip: "",
+        //     onClick: () =>
+        //         navigate("/questions/share", {
+        //             state: {
+        //                 linkedQuestion: {
+        //                     id: data.id,
+        //                     content: data.content,
+        //                     companyIds: data.companyIds?.[0] ?? data.companyId ?? null,
+        //                     roles: data.roles ?? [],
+        //                     tags: data.tags ?? [],
+        //                     category: data.category ?? data.questionType,
+        //                     answerCount: data.answerCount,
+        //                 },
+        //             },
+        //         }),
+        //     show: !isAdmin,
+        // },
         {
             icon: <ShareIcon sx={{ fontSize: 15 }} />,
             label: "Share",
