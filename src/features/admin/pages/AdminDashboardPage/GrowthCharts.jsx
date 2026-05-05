@@ -1,10 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Skeleton from "@mui/material/Skeleton";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import SectionHeading from "../../../../common/components/SectionHeading";
 import { useTheme } from "@mui/material/styles";
@@ -31,6 +29,12 @@ const parseDateLike = (value) => {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const clampToStartOfDay = (date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+};
+
 const toDayKey = (date) => {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -54,14 +58,16 @@ const getNumeric = (item, keys) => {
     return 0;
 };
 
-const normalizeDailySeries = ({ rawSeries, days, valueResolver, locale = "vi-VN" }) => {
+const normalizeDailySeries = ({ rawSeries, days, valueResolver, locale = "vi-VN", rangeStart = null, rangeEnd = null }) => {
     const now = Date.now();
+    const startDate = rangeStart ? clampToStartOfDay(rangeStart) : new Date(now - (days - 1) * DAY_IN_MS);
+    const endDate = rangeEnd ? clampToStartOfDay(rangeEnd) : clampToStartOfDay(new Date(now));
+    const computedDays = Math.max(1, Math.floor((endDate - startDate) / DAY_IN_MS) + 1);
     const points = [];
     const map = new Map();
 
-    for (let i = 0; i < days; i += 1) {
-        const d = new Date(now - (days - 1 - i) * DAY_IN_MS);
-        d.setHours(0, 0, 0, 0);
+    for (let i = 0; i < computedDays; i += 1) {
+        const d = new Date(startDate.getTime() + i * DAY_IN_MS);
         const key = toDayKey(d);
         const point = {
             xLabel: d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" }),
@@ -73,7 +79,6 @@ const normalizeDailySeries = ({ rawSeries, days, valueResolver, locale = "vi-VN"
         map.set(key, point);
     }
 
-    const unknownDateItems = [];
     (Array.isArray(rawSeries) ? rawSeries : []).forEach((item) => {
         const itemDate =
             parseDateLike(item?.date) ||
@@ -81,40 +86,31 @@ const normalizeDailySeries = ({ rawSeries, days, valueResolver, locale = "vi-VN"
             parseDateLike(item?.time) ||
             parseDateLike(item?.timestamp) ||
             parseDateLike(item?.createdAt);
-        if (!itemDate) {
-            unknownDateItems.push(item);
-            return;
-        }
+        if (!itemDate) return;
+        if (rangeStart && itemDate < rangeStart) return;
+        if (rangeEnd && itemDate > rangeEnd) return;
+
         const bucket = map.get(toDayKey(itemDate));
         if (!bucket) return;
+
         const values = valueResolver(item);
         Object.keys(values).forEach((k) => {
             bucket[k] += Number(values[k] || 0);
         });
     });
 
-    if (unknownDateItems.length) {
-        const startIndex = Math.max(0, points.length - unknownDateItems.length);
-        unknownDateItems.forEach((item, index) => {
-            const bucket = points[startIndex + index];
-            if (!bucket) return;
-            const values = valueResolver(item);
-            Object.keys(values).forEach((k) => {
-                bucket[k] += Number(values[k] || 0);
-            });
-        });
-    }
-
     return points;
 };
 
-const normalizeHourlySeries = ({ rawSeries, valueResolver, locale = "vi-VN" }) => {
+const normalizeHourlySeries = ({ rawSeries, valueResolver, locale = "vi-VN", rangeStart = null, rangeEnd = null }) => {
     const now = Date.now();
-    const start = now - 23 * HOUR_IN_MS;
+    const start = rangeStart ? rangeStart.getTime() : now - 23 * HOUR_IN_MS;
+    const end = rangeEnd ? rangeEnd.getTime() : now;
+    const totalHours = Math.max(1, Math.floor((end - start) / HOUR_IN_MS) + 1);
     const points = [];
     const map = new Map();
 
-    for (let i = 0; i < 24; i += 1) {
+    for (let i = 0; i < totalHours; i += 1) {
         const d = new Date(start + i * HOUR_IN_MS);
         d.setMinutes(0, 0, 0);
         const key = toHourKey(d);
@@ -136,10 +132,14 @@ const normalizeHourlySeries = ({ rawSeries, valueResolver, locale = "vi-VN" }) =
             parseDateLike(item?.timestamp) ||
             parseDateLike(item?.createdAt);
         if (!itemDate) return;
+        if (rangeStart && itemDate < rangeStart) return;
+        if (rangeEnd && itemDate > rangeEnd) return;
+
         const d = new Date(itemDate);
         d.setMinutes(0, 0, 0);
         const bucket = map.get(toHourKey(d));
         if (!bucket) return;
+
         const values = valueResolver(item);
         Object.keys(values).forEach((k) => {
             bucket[k] += Number(values[k] || 0);
@@ -209,9 +209,12 @@ const isPaidPayout = (transaction) => {
 const getTransactionDate = (item) =>
     parseDateLike(item?.createdAt || item?.createdOn || item?.createdDate || item?.transactionDate || item?.date);
 
-const buildRevenueSeriesFromTransactions = (transactions, view, commissionRate) => {
+const buildRevenueSeriesFromTransactions = (transactions, view, commissionRate, fromDate, toDate) => {
     const safeTransactions = Array.isArray(transactions) ? transactions : [];
     const hasPayoutData = safeTransactions.some(isPaidPayout);
+    const customRangeActive = Boolean(fromDate || toDate);
+    const rangeStart = fromDate ? new Date(fromDate) : null;
+    const rangeEnd = toDate ? new Date(toDate) : null;
 
     const mapped = safeTransactions
         .map((item) => {
@@ -221,27 +224,26 @@ const buildRevenueSeriesFromTransactions = (transactions, view, commissionRate) 
             const amount = Math.abs(parseAmount(item?.amount));
             if (!amount) return null;
 
-            if (isPaidInbound(item)) {
-                // Preferred: net by real records (earning - payout)
-                return { createdAt, value: amount };
-            }
-            if (isPaidPayout(item)) {
-                return { createdAt, value: -amount };
-            }
+            if (isPaidInbound(item)) return { createdAt, value: amount };
+            if (isPaidPayout(item)) return { createdAt, value: -amount };
             return null;
         })
         .filter(Boolean);
 
     const aggregate =
-        view === "24h"
+        !customRangeActive && view === "24h"
             ? normalizeHourlySeries({
                   rawSeries: mapped,
                   valueResolver: (item) => ({ value: Number(item?.value || 0) }),
+                  rangeStart,
+                  rangeEnd,
               })
             : normalizeDailySeries({
                   rawSeries: mapped,
                   days: RANGE_DAY_MAP[view] || 7,
                   valueResolver: (item) => ({ value: Number(item?.value || 0) }),
+                  rangeStart,
+                  rangeEnd,
               });
 
     if (hasPayoutData) {
@@ -256,24 +258,42 @@ const buildRevenueSeriesFromTransactions = (transactions, view, commissionRate) 
     return aggregate.map((item) => ({ ...item, value: Math.max(0, Number(item?.value || 0)) }));
 };
 
-export default function GrowthCharts({ data, platformTransactions, commissionRate, loading }) {
+export default function GrowthCharts({
+    data,
+    platformTransactions,
+    commissionRate,
+    timeframe = "7d",
+    fromDate = "",
+    toDate = "",
+    loading,
+}) {
     const theme = useTheme();
-    const [revenueView, setRevenueView] = useState("7d");
-    const [userGrowthView, setUserGrowthView] = useState("7d");
+    const customRangeActive = Boolean(fromDate || toDate);
+    const rangeStart = fromDate ? new Date(fromDate) : null;
+    const rangeEnd = toDate ? new Date(toDate) : null;
 
-    const revenueSeries = useMemo(() => {
-        return buildRevenueSeriesFromTransactions(platformTransactions, revenueView, commissionRate);
-    }, [platformTransactions, revenueView, commissionRate]);
+    const revenueSeries = useMemo(
+        () => buildRevenueSeriesFromTransactions(platformTransactions, timeframe, commissionRate, fromDate, toDate),
+        [platformTransactions, timeframe, commissionRate, fromDate, toDate],
+    );
 
     const userGrowthSeries = useMemo(() => {
-        const source = pickSourceByView(data, userGrowthView, "userGrowth");
+        const source = pickSourceByView(data, timeframe, "userGrowth");
         const resolver = (item) => ({
             candidates: getNumeric(item, ["candidates", "candidate", "candidateCount"]),
             coaches: getNumeric(item, ["coaches", "coach", "coachCount"]),
         });
-        if (userGrowthView === "24h") return normalizeHourlySeries({ rawSeries: source, valueResolver: resolver });
-        return normalizeDailySeries({ rawSeries: source, days: RANGE_DAY_MAP[userGrowthView] || 7, valueResolver: resolver });
-    }, [data, userGrowthView]);
+        if (!customRangeActive && timeframe === "24h") {
+            return normalizeHourlySeries({ rawSeries: source, valueResolver: resolver });
+        }
+        return normalizeDailySeries({
+            rawSeries: source,
+            days: RANGE_DAY_MAP[timeframe] || 7,
+            valueResolver: resolver,
+            rangeStart,
+            rangeEnd,
+        });
+    }, [data, timeframe, customRangeActive, rangeStart, rangeEnd]);
 
     if (loading && !data) {
         return (
@@ -292,13 +312,8 @@ export default function GrowthCharts({ data, platformTransactions, commissionRat
         <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6 }}>
                 <BaseCard sx={{ p: 3, height: 400 }}>
-                    <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                    <Box sx={{ mb: 2 }}>
                         <SectionHeading title="Revenue Trend" size="sm" />
-                        <ToggleButtonGroup size="small" exclusive value={revenueView} onChange={(_, v) => v && setRevenueView(v)}>
-                            <ToggleButton value="24h">24h</ToggleButton>
-                            <ToggleButton value="7d">7 days</ToggleButton>
-                            <ToggleButton value="30d">30 days</ToggleButton>
-                        </ToggleButtonGroup>
                     </Box>
                     <Box sx={{ height: 300, width: "100%" }}>
                         <ResponsiveContainer>
@@ -324,24 +339,19 @@ export default function GrowthCharts({ data, platformTransactions, commissionRat
 
             <Grid size={{ xs: 12, md: 6 }}>
                 <BaseCard sx={{ p: 3, height: 400 }}>
-                    <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                    <Box sx={{ mb: 2 }}>
                         <SectionHeading title="User Growth" size="sm" />
-                        <ToggleButtonGroup size="small" exclusive value={userGrowthView} onChange={(_, v) => v && setUserGrowthView(v)}>
-                            <ToggleButton value="24h">24h</ToggleButton>
-                            <ToggleButton value="7d">7 days</ToggleButton>
-                            <ToggleButton value="30d">30 days</ToggleButton>
-                        </ToggleButtonGroup>
                     </Box>
                     <Box sx={{ height: 300, width: "100%" }}>
                         <ResponsiveContainer>
-                            <AreaChart data={userGrowthSeries}>
+                            <BarChart data={userGrowthSeries}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
                                 <XAxis dataKey="xLabel" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} minTickGap={20} />
                                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
                                 <Tooltip />
-                                <Area type="monotone" dataKey="candidates" name="Candidates" stroke={theme.palette.info.main} strokeWidth={2.5} fillOpacity={0.15} fill={theme.palette.info.main} />
-                                <Area type="monotone" dataKey="coaches" name="Coaches" stroke={theme.palette.success.main} strokeWidth={2.5} fillOpacity={0.15} fill={theme.palette.success.main} />
-                            </AreaChart>
+                                <Bar dataKey="candidates" stackId="a" name="Candidates" fill={theme.palette.info.main} radius={[0, 0, 0, 0]} barSize={26} />
+                                <Bar dataKey="coaches" stackId="a" name="Coaches" fill={theme.palette.success.main} radius={[4, 4, 0, 0]} barSize={26} />
+                            </BarChart>
                         </ResponsiveContainer>
                     </Box>
                 </BaseCard>
