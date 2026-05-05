@@ -108,8 +108,6 @@ function FilterBar({ onOpenSmartMatch }) {
   const PRICE_MAX = 2000000;
   const PRICE_STEP = 10000;
 
-  const formatVnd = (value) => new Intl.NumberFormat('vi-VN').format(value);
-
   const applySearch = () => {
     // Sync local filters to Redux
     dispatch(setFilters(localFilters));
@@ -333,7 +331,7 @@ function FilterBar({ onOpenSmartMatch }) {
                     maxValue={displayPriceMax}
                     onMinChange={(next) => handleLocalFilterChange('minPrice', Math.min(next, displayPriceMax))}
                     onMaxChange={(next) => handleLocalFilterChange('maxPrice', Math.max(next, displayPriceMin))}
-                    formatValue={(v) => `${formatVnd(v)} đ`}
+                    formatValue={(v) => formatCurrency(v)}
                   />
                 </Box> */}
 

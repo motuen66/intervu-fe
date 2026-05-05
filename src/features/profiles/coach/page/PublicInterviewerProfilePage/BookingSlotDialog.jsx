@@ -27,6 +27,7 @@ import { METHOD } from "../../../../../common/constants/api";
 import { getCoachInterviewServices } from "../../../../coach/services/coachInterviewServiceApi";
 import toast from "react-hot-toast";
 import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
+import { formatCurrency } from "../../../../../common/utils/dateFormatter";
 import CalendlyCalendar from "../../../../../common/components/CalendlyCalendar";
 import "./BookingSlotDialog.css";
 
@@ -499,7 +500,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                         <Box className="price-summary-box">
                             <span className="price-label">Total Price</span>
                             <span className="price-amount">
-                                {(selectedService.price || 0).toLocaleString()} VND
+                                {formatCurrency(selectedService.price || 0)}
                             </span>
                         </Box>
                     )}

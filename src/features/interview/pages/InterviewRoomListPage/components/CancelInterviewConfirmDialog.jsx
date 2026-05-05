@@ -18,6 +18,7 @@ import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 import { PrimaryButton, DangerButton } from "../../../../../common/components/buttons";
 import StatusChip from "../../../../../common/components/StatusChip";
 import AppText from "../../../../../common/components/AppText";
+import { formatCurrency } from "../../../../../common/utils/dateFormatter";
 
 function CancelInterviewConfirmDialog({
     open,
@@ -38,12 +39,11 @@ function CancelInterviewConfirmDialog({
             ? "Unable to calculate refund preview."
             : `${previewRefundPercent}% of the paid amount`;
 
-    const formatCurrency = (amount) => {
-        if (typeof amount !== "number" || Number.isNaN(amount)) return "Unable to calculate refund amount.";
-        return `${amount.toLocaleString("vi-VN")} VND`;
-    };
-
     const displaySubtitle = subtitle || message || "Are you sure you want to cancel this session?";
+    const previewRefundLabel =
+        typeof previewRefundAmount !== "number" || Number.isNaN(previewRefundAmount)
+            ? "Unable to calculate refund amount."
+            : formatCurrency(previewRefundAmount);
     const refundPercentBadge = previewRefundPercent === null ? "Unknown" : `${previewRefundPercent}% of paid amount`;
     const previewRefundColor =
         previewRefundPercent === null
@@ -163,7 +163,7 @@ function CancelInterviewConfirmDialog({
                         <Typography
                             sx={{ color: "text.primary", fontWeight: 900, fontSize: "2.2rem", lineHeight: 1.1 }}
                         >
-                            {formatCurrency(previewRefundAmount)}
+                            {previewRefundLabel}
                         </Typography>
                     </Box>
 

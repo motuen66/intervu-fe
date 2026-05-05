@@ -5,6 +5,7 @@ import Skeleton from "@mui/material/Skeleton";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import SectionHeading from "../../../../common/components/SectionHeading";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 import { useTheme } from "@mui/material/styles";
 
 const HOUR_IN_MS = 60 * 60 * 1000;
@@ -208,13 +209,6 @@ const parseAmount = (value) => {
     const normalized = Number(String(value ?? "").replace(/,/g, "").trim());
     return Number.isFinite(normalized) ? normalized : 0;
 };
-
-const formatCurrency = (value) =>
-    new Intl.NumberFormat("vi-VN", {
-        style: "currency",
-        currency: "VND",
-        maximumFractionDigits: 0,
-    }).format(Number(value || 0));
 
 const toStatusLabel = (status) => {
     if (typeof status === "number") {
