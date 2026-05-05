@@ -1,6 +1,18 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
+import toast from "react-hot-toast";
 import { BE_BASE_URL } from "../../../common/constants/env";
+
+function readStoredAccessToken() {
+  try {
+    const raw = localStorage.getItem("token");
+    if (!raw) return "";
+    const parsed = JSON.parse(raw);
+    return typeof parsed === "string" ? parsed : "";
+  } catch {
+    return "";
+  }
+}
 
 // Timeline diagnostic — module-level T0 for relative timestamps
 const T0 = Date.now();
@@ -120,10 +132,10 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
     const safeUserName = userName ?? "Unknown";
 
     const conn = new signalR.HubConnectionBuilder()
-      .withUrl(
-        `${BE_BASE_URL}/hubs/interviewroom?userId=${userId}&role=${safeRole}`,
-        { withCredentials: false }
-      )
+      .withUrl(`${BE_BASE_URL}/hubs/interviewroom?userId=${userId}&role=${safeRole}`, {
+        withCredentials: false,
+        accessTokenFactory: () => readStoredAccessToken(),
+      })
       .withAutomaticReconnect([0, 1000, 2000, 5000])
       .configureLogging(signalR.LogLevel.Warning)
       .build();
@@ -261,6 +273,12 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       callbacks.current?.onPreparedQuestionStatusChanged?.(dto);
     });
 
+    conn.on("RoomSessionReplaced", () => {
+      toast.error("This session was opened elsewhere. Closing connection.");
+      intentionalCloseRef.current = true;
+      conn.stop().catch(() => {});
+    });
+
     // ── Start the connection ───────────────────────────────────────────────
     conn
       .start()
@@ -298,6 +316,7 @@ export function useInterviewSignalR({ roomId, userId, role, userName, callbacks 
       conn.off("ReceiveWhiteboardState");
       conn.off("ReceiveTranscript");
       conn.off("PreparedQuestionStatusChanged");
+      conn.off("RoomSessionReplaced");
 
       // Cleanup is also an intentional teardown — suppress the overlay.
       intentionalCloseRef.current = true;
