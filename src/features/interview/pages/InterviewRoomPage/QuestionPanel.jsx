@@ -174,14 +174,48 @@ function QuestionPanel({
                     <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
                         {problemTab === 0 && (
                             problemData ? (
-                                <Box className="ql-snow">
-                                    <Box className="ql-editor" sx={{ p: 0, whiteSpace: "pre-wrap", fontFamily: "body" }}>
-                                        <div
-                                            dangerouslySetInnerHTML={{
-                                                __html: DOMPurify.sanitize(problemData.description),
-                                            }}
-                                        />
-                                    </Box>
+                                <Box
+                                    sx={(theme) => ({
+                                        p: 0,
+                                        fontFamily: theme.typography.fontFamily,
+                                        fontSize: theme.typography.body2.fontSize,
+                                        lineHeight: 1.7,
+                                        color: theme.palette.text.primary,
+                                        "& p": { margin: "0 0 0.5em 0", fontFamily: "inherit" },
+                                        "& ul, & ol": { pl: "1.5em", my: "0.5em" },
+                                        "& li": { mb: "0.25em" },
+                                        "& strong": { fontWeight: 700 },
+                                        "& em": { fontStyle: "italic" },
+                                        "& code": {
+                                            fontFamily: "monospace",
+                                            bgcolor: theme.palette.action.hover,
+                                            px: "4px",
+                                            borderRadius: "4px",
+                                            fontSize: "0.85em",
+                                        },
+                                        "& pre": {
+                                            fontFamily: "monospace",
+                                            bgcolor: theme.palette.action.hover,
+                                            p: 1,
+                                            borderRadius: 1,
+                                            overflowX: "auto",
+                                            fontSize: "0.85em",
+                                        },
+                                        "& h1, & h2, & h3": { fontFamily: "inherit", fontWeight: 700, mt: "0.75em", mb: "0.25em" },
+                                        "& blockquote": {
+                                            borderLeft: `3px solid ${theme.palette.divider}`,
+                                            pl: 1.5,
+                                            ml: 0,
+                                            color: theme.palette.text.secondary,
+                                            fontStyle: "italic",
+                                        },
+                                    })}
+                                >
+                                    <div
+                                        dangerouslySetInnerHTML={{
+                                            __html: DOMPurify.sanitize(problemData.description),
+                                        }}
+                                    />
                                 </Box>
                             ) : (
                                 <Stack alignItems="center" justifyContent="center" spacing={1.5} sx={{ py: 6, color: "#9CA3AF" }}>
