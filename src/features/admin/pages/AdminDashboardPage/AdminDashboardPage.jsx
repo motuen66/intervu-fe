@@ -14,17 +14,60 @@ export default function AdminDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState(null);
     const [charts, setCharts] = useState(null);
+    const [platformTransactions, setPlatformTransactions] = useState([]);
+    const [commissionRate, setCommissionRate] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
     const [attentionQueue, setAttentionQueue] = useState([]);
 
     useEffect(() => {
+        const fetchTransactionsByType = async (type) => {
+            const all = [];
+            let currentPage = 1;
+            let totalItems = Number.POSITIVE_INFINITY;
+            const pageSize = 100;
+
+            while (all.length < totalItems) {
+                const params = new URLSearchParams();
+                params.set("page", String(currentPage));
+                params.set("pageSize", String(pageSize));
+                params.set("type", type);
+                params.set("status", "Paid");
+
+                const response = await callApi({
+                    method: METHOD.GET,
+                    endpoint: `${adminEndPoints.GET_TRANSACTIONS}?${params.toString()}`,
+                    useGlobalLoading: false,
+                });
+
+                if (!response?.success) break;
+                const items = response.data?.items || [];
+                if (!items.length) break;
+
+                all.push(...items);
+                totalItems = Number(response.data?.totalItems) || all.length;
+                currentPage += 1;
+            }
+
+            return all;
+        };
+
+        const fetchPlatformTransactions = async () => {
+            const [payments, payouts] = await Promise.all([
+                fetchTransactionsByType("Payment"),
+                fetchTransactionsByType("Payout"),
+            ]);
+            return [...payments, ...payouts];
+        };
+
         const fetchData = async () => {
             try {
-                const [statsRes, chartsRes, leaderboardRes, queueRes] = await Promise.allSettled([
+                const [statsRes, chartsRes, leaderboardRes, queueRes, platformTxRes, commissionRes] = await Promise.allSettled([
                     callApi({ method: METHOD.GET, endpoint: adminEndPoints.GET_DASHBOARD_STATS }),
                     callApi({ method: METHOD.GET, endpoint: adminEndPoints.GET_DASHBOARD_CHARTS }),
                     callApi({ method: METHOD.GET, endpoint: `${adminEndPoints.GET_TOP_COACHES}?count=3` }),
                     callApi({ method: METHOD.GET, endpoint: adminEndPoints.GET_ATTENTION_QUEUE }),
+                    fetchPlatformTransactions(),
+                    callApi({ method: METHOD.GET, endpoint: adminEndPoints.GET_COMMISSION_RATE }),
                 ]);
 
                 if (statsRes.status === "fulfilled" && statsRes.value?.success) {
@@ -43,6 +86,15 @@ export default function AdminDashboardPage() {
 
                 if (queueRes.status === "fulfilled" && queueRes.value?.success) {
                     setAttentionQueue(Array.isArray(queueRes.value.data) ? queueRes.value.data : []);
+                }
+
+                if (platformTxRes.status === "fulfilled") {
+                    setPlatformTransactions(Array.isArray(platformTxRes.value) ? platformTxRes.value : []);
+                }
+
+                if (commissionRes.status === "fulfilled" && commissionRes.value?.success) {
+                    const rate = Number(commissionRes.value.data?.commissionRate);
+                    setCommissionRate(Number.isFinite(rate) ? rate : null);
                 }
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
@@ -66,7 +118,12 @@ export default function AdminDashboardPage() {
 
             <Grid container spacing={3} sx={{ mt: 1 }}>
                 <Grid size={{ xs: 12 }}>
-                    <GrowthCharts data={charts} loading={loading} />
+                    <GrowthCharts
+                        data={charts}
+                        platformTransactions={platformTransactions}
+                        commissionRate={commissionRate}
+                        loading={loading}
+                    />
                 </Grid>
 
                 <Grid size={{ xs: 12, lg: 4 }}>

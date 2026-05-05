@@ -112,7 +112,8 @@ const MainLayout = () => {
             [
                 { label: "Dashboard", path: "/admin/dashboard" },
                 { label: "Users", path: "/admin/users" },
-                { label: "Reports", path: "/admin/reports" },
+                { label: "Interviews", path: "/admin/interviews" },
+                { label: "Questions", path: "/admin/question-bank" },
             ],
         ],
         [],
@@ -168,8 +169,6 @@ const MainLayout = () => {
             <ProcessingTrayProvider>
                 <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
                     <AdminSidebar
-                        userData={userData}
-                        remoteAvatar={remoteAvatar}
                         onLogout={handleLogout}
                         mobileOpen={mobileOpen}
                         onMobileClose={() => setMobileOpen(false)}
