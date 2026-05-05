@@ -12,7 +12,7 @@ import { callApi } from "../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../common/constants/api";
 import { adminEndPoints } from "../../services/adminApi";
 import SystemOverviewRow from "./SystemOverviewRow";
-import GrowthCharts from "./GrowthCharts";
+import GrowthCharts, { buildRevenueSeriesFromTransactions } from "./GrowthCharts";
 import NeedsAttentionTable from "./NeedsAttentionTable";
 import TopCoachesLeaderboard from "./TopCoachesLeaderboard";
 import BaseCard from "../../../../common/components/cards/BaseCard";
@@ -215,30 +215,22 @@ export default function AdminDashboardPage() {
             );
         });
 
-        const paymentSum = paidPayments.reduce((sum, item) => sum + amountOf(item?.amount), 0);
+        const revenueSeries = buildRevenueSeriesFromTransactions(
+            platformTransactions,
+            timeframe,
+            commissionRate,
+            fromDate,
+            toDate,
+        );
+        const paymentSum = revenueSeries.reduce((sum, item) => sum + Number(item?.value || 0), 0);
         const refundRate = paidPayments.length ? (paidRefunds.length / paidPayments.length) * 100 : 0;
-
-        const userGrowthRange =
-            charts?.userGrowthRanges?.[timeframe] ||
-            charts?.userGrowthByRange?.[timeframe] ||
-            charts?.userGrowthRange?.[timeframe] ||
-            charts?.[`userGrowth${timeframe}`] ||
-            charts?.userGrowth ||
-            [];
-        const activeUsersFromRange = (Array.isArray(userGrowthRange) ? userGrowthRange : [])
-            .filter((item) => {
-                const d = item?.date || item?.label || item?.time || item?.timestamp || item?.createdAt;
-                return d ? isInRange(d) : true;
-            })
-            .reduce((sum, item) => sum + Number(item?.candidates || 0) + Number(item?.coaches || 0), 0);
 
         return {
             ...base,
             totalRevenue: paymentSum,
             refundRate: Number(refundRate.toFixed(1)),
-            activeUsers30D: activeUsersFromRange,
         };
-    }, [stats, platformTransactions, charts, timeframe, fromDate, toDate, customRangeActive]);
+    }, [stats, platformTransactions, timeframe, fromDate, toDate, commissionRate, customRangeActive]);
 
     return (
         <Box sx={{ p: { xs: 2, md: 4 } }}>

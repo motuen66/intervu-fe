@@ -11,6 +11,33 @@ const HOUR_IN_MS = 60 * 60 * 1000;
 const DAY_IN_MS = 24 * HOUR_IN_MS;
 const RANGE_DAY_MAP = { "24h": 1, "7d": 7, "30d": 30 };
 
+const MONTH_INDEX = {
+    jan: 0,
+    january: 0,
+    feb: 1,
+    february: 1,
+    mar: 2,
+    march: 2,
+    apr: 3,
+    april: 3,
+    may: 4,
+    jun: 5,
+    june: 5,
+    jul: 6,
+    july: 6,
+    aug: 7,
+    august: 7,
+    sep: 8,
+    sept: 8,
+    september: 8,
+    oct: 9,
+    october: 9,
+    nov: 10,
+    november: 10,
+    dec: 11,
+    december: 11,
+};
+
 const parseDateLike = (value) => {
     if (!value) return null;
     if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
@@ -23,6 +50,13 @@ const parseDateLike = (value) => {
         const now = new Date();
         const parsedDdMm = new Date(now.getFullYear(), Number(mStr) - 1, Number(dStr), 0, 0, 0, 0);
         if (!Number.isNaN(parsedDdMm.getTime())) return parsedDdMm;
+    }
+
+    const monthOnly = raw.toLowerCase();
+    if (MONTH_INDEX[monthOnly] !== undefined) {
+        const now = new Date();
+        const parsedMonth = new Date(now.getFullYear(), MONTH_INDEX[monthOnly], 1, 0, 0, 0, 0);
+        if (!Number.isNaN(parsedMonth.getTime())) return parsedMonth;
     }
 
     const parsed = new Date(raw);
@@ -50,6 +84,13 @@ const toHourKey = (date) => {
     return d.toISOString();
 };
 
+const toMonthKey = (date) => {
+    const d = new Date(date);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+};
+
 const getNumeric = (item, keys) => {
     for (const key of keys) {
         const value = Number(item?.[key]);
@@ -58,10 +99,22 @@ const getNumeric = (item, keys) => {
     return 0;
 };
 
+// const pickSourceByView = (data, view, baseKey) => {
+//     const ranges = data?.[`${baseKey}Ranges`] || data?.[`${baseKey}ByRange`] || data?.[`${baseKey}Range`];
+//     if (ranges && typeof ranges === "object" && Array.isArray(ranges[view])) return ranges[view];
+//     if (view === "24h" && Array.isArray(data?.[`${baseKey}24h`])) return data[`${baseKey}24h`];
+//     if (view === "7d" && Array.isArray(data?.[`${baseKey}7d`])) return data[`${baseKey}7d`];
+//     if (view === "30d" && Array.isArray(data?.[`${baseKey}30d`])) return data[`${baseKey}30d`];
+//     return data?.[baseKey] || [];
+// };
+
+
 const normalizeDailySeries = ({ rawSeries, days, valueResolver, locale = "vi-VN", rangeStart = null, rangeEnd = null }) => {
     const now = Date.now();
-    const startDate = rangeStart ? clampToStartOfDay(rangeStart) : new Date(now - (days - 1) * DAY_IN_MS);
     const endDate = rangeEnd ? clampToStartOfDay(rangeEnd) : clampToStartOfDay(new Date(now));
+    const startDate = rangeStart
+        ? clampToStartOfDay(rangeStart)
+        : clampToStartOfDay(new Date(endDate.getTime() - (days - 1) * DAY_IN_MS));
     const computedDays = Math.max(1, Math.floor((endDate - startDate) / DAY_IN_MS) + 1);
     const points = [];
     const map = new Map();
@@ -149,14 +202,6 @@ const normalizeHourlySeries = ({ rawSeries, valueResolver, locale = "vi-VN", ran
     return points;
 };
 
-const pickSourceByView = (data, view, baseKey) => {
-    const ranges = data?.[`${baseKey}Ranges`] || data?.[`${baseKey}ByRange`] || data?.[`${baseKey}Range`];
-    if (ranges && typeof ranges === "object" && Array.isArray(ranges[view])) return ranges[view];
-    if (view === "24h" && Array.isArray(data?.[`${baseKey}24h`])) return data[`${baseKey}24h`];
-    if (view === "7d" && Array.isArray(data?.[`${baseKey}7d`])) return data[`${baseKey}7d`];
-    if (view === "30d" && Array.isArray(data?.[`${baseKey}30d`])) return data[`${baseKey}30d`];
-    return data?.[baseKey] || [];
-};
 
 const parseAmount = (value) => {
     if (typeof value === "number") return value;
@@ -209,7 +254,7 @@ const isPaidPayout = (transaction) => {
 const getTransactionDate = (item) =>
     parseDateLike(item?.createdAt || item?.createdOn || item?.createdDate || item?.transactionDate || item?.date);
 
-const buildRevenueSeriesFromTransactions = (transactions, view, commissionRate, fromDate, toDate) => {
+export const buildRevenueSeriesFromTransactions = (transactions, view, commissionRate, fromDate, toDate) => {
     const safeTransactions = Array.isArray(transactions) ? transactions : [];
     const hasPayoutData = safeTransactions.some(isPaidPayout);
     const customRangeActive = Boolean(fromDate || toDate);
@@ -268,32 +313,78 @@ export default function GrowthCharts({
     loading,
 }) {
     const theme = useTheme();
-    const customRangeActive = Boolean(fromDate || toDate);
-    const rangeStart = fromDate ? new Date(fromDate) : null;
-    const rangeEnd = toDate ? new Date(toDate) : null;
-
     const revenueSeries = useMemo(
         () => buildRevenueSeriesFromTransactions(platformTransactions, timeframe, commissionRate, fromDate, toDate),
         [platformTransactions, timeframe, commissionRate, fromDate, toDate],
     );
 
     const userGrowthSeries = useMemo(() => {
-        const source = pickSourceByView(data, timeframe, "userGrowth");
-        const resolver = (item) => ({
-            candidates: getNumeric(item, ["candidates", "candidate", "candidateCount"]),
-            coaches: getNumeric(item, ["coaches", "coach", "coachCount"]),
+        const raw = Array.isArray(data?.userGrowth) ? data.userGrowth : [];
+        const mapped = raw.map((item) => {
+            const label =
+                item?.date ||
+                item?.label ||
+                item?.time ||
+                item?.timestamp ||
+                item?.createdAt ||
+                "";
+            const parsed = parseDateLike(label);
+            return {
+                ...item,
+                xLabel: String(label || "").trim(),
+                parsedDate: parsed ? parsed.getTime() : null,
+                candidates: getNumeric(item, ["candidates", "candidate", "candidateCount"]),
+                coaches: getNumeric(item, ["coaches", "coach", "coachCount"]),
+            };
         });
-        if (!customRangeActive && timeframe === "24h") {
-            return normalizeHourlySeries({ rawSeries: source, valueResolver: resolver });
+
+        const monthMap = new Map();
+        mapped.forEach((item) => {
+            if (!Number.isFinite(item.parsedDate)) return;
+            monthMap.set(toMonthKey(item.parsedDate), item);
+        });
+
+        const now = new Date();
+        const monthStarts = [];
+        for (let i = 5; i >= 0; i -= 1) {
+            monthStarts.push(new Date(now.getFullYear(), now.getMonth() - i, 1, 0, 0, 0, 0));
         }
-        return normalizeDailySeries({
-            rawSeries: source,
-            days: RANGE_DAY_MAP[timeframe] || 7,
-            valueResolver: resolver,
-            rangeStart,
-            rangeEnd,
+
+        const ensured = monthStarts.map((monthStart) => {
+            const key = toMonthKey(monthStart);
+            const existing = monthMap.get(key);
+            if (existing) return existing;
+            return {
+                xLabel: monthStart.toLocaleDateString("en-US", { month: "short" }),
+                parsedDate: monthStart.getTime(),
+                candidates: 0,
+                coaches: 0,
+            };
         });
-    }, [data, timeframe, customRangeActive, rangeStart, rangeEnd]);
+
+        return ensured;
+    }, [data]);
+
+    // const customRangeActive = Boolean(fromDate || toDate);
+    // const rangeStart = fromDate ? new Date(fromDate) : null;
+    // const rangeEnd = toDate ? new Date(toDate) : null;
+    // const userGrowthSeries = useMemo(() => {
+    //     const source = pickSourceByView(data, timeframe, "userGrowth");
+    //     const resolver = (item) => ({
+    //         candidates: getNumeric(item, ["candidates", "candidate", "candidateCount"]),
+    //         coaches: getNumeric(item, ["coaches", "coach", "coachCount"]),
+    //     });
+    //     if (!customRangeActive && timeframe === "24h") {
+    //         return normalizeHourlySeries({ rawSeries: source, valueResolver: resolver });
+    //     }
+    //     return normalizeDailySeries({
+    //         rawSeries: source,
+    //         days: RANGE_DAY_MAP[timeframe] || 7,
+    //         valueResolver: resolver,
+    //         rangeStart,
+    //         rangeEnd,
+    //     });
+    // }, [data, timeframe, customRangeActive, rangeStart, rangeEnd]);
 
     if (loading && !data) {
         return (
