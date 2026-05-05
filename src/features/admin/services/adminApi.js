@@ -44,6 +44,7 @@ export const adminEndPoints = {
     // Platform Settings Endpoints
     GET_COMMISSION_RATE: `${ADMIN_BASE_URL}/platform-settings/commission`,
     UPDATE_COMMISSION_RATE: `${ADMIN_BASE_URL}/platform-settings/commission`,
+    GET_PAYOUT_ACCOUNT_BALANCE: `${ADMIN_BASE_URL}/payout-account/balance`,
 
     // System Management Endpoints
     GET_PINECONE_STATS: `${ADMIN_BASE_URL}/system/pinecone-stats`,
