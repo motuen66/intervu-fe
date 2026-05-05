@@ -569,11 +569,11 @@ export default function PythonServiceMonitorPage() {
 
                     <Grid size={{ xs: 12, lg: 1 }}>
                         <Stack direction="row" spacing={1} sx={{ justifyContent: { xs: "flex-start", lg: "flex-end" } }}>
-                            {customRangeActive && (
+                            {/* {customRangeActive && (
                                 <SecondaryButton onClick={handleClearRange} size="sm">
                                     Clear
                                 </SecondaryButton>
-                            )}
+                            )} */}
                             <SecondaryButton
                                 onClick={handleRefresh}
                                 disabled={loading}

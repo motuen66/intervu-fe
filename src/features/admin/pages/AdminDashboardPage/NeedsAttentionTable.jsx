@@ -20,6 +20,16 @@ export default function NeedsAttentionTable({ data, loading }) {
     if (loading && !data) {
         return <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 4 }} />;
     }
+    const issues = Array.isArray(data) ? data : [];
+    const toTime = (item) => {
+        const raw = item?.createdAt || item?.createdOn || item?.createdDate || item?.updatedAt || item?.reportedAt;
+        if (!raw) return 0;
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    };
+    const sortedIssues = [...issues].sort((a, b) => toTime(b) - toTime(a));
+    const visibleIssues = sortedIssues.slice(0, 3);
+    const remainingCount = Math.max(0, sortedIssues.length - visibleIssues.length);
 
     const getIcon = (type) => {
         switch (type) {
@@ -43,7 +53,7 @@ export default function NeedsAttentionTable({ data, loading }) {
         <BaseCard sx={{ p: 0 }}>
             <Box sx={{ px: 2.5, py: 1.5, borderBottom: 1, borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <SectionHeading title="Needs Attention" size="sm" disableGutters />
-                <Chip label={`${data?.length || 0} Issues`} size="small" variant="outlined" />
+                <Chip label={`${issues.length} Issues`} size="small" variant="outlined" />
             </Box>
             <TableContainer>
                 <Table>
@@ -57,7 +67,7 @@ export default function NeedsAttentionTable({ data, loading }) {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {!data || data.length === 0 ? (
+                        {visibleIssues.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'text.secondary' }}>
@@ -81,7 +91,7 @@ export default function NeedsAttentionTable({ data, loading }) {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            data.map((item) => (
+                            visibleIssues.map((item) => (
                                 <TableRow key={item.id} hover>
                                     <TableCell>
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -125,6 +135,13 @@ export default function NeedsAttentionTable({ data, loading }) {
                     </TableBody>
                 </Table>
             </TableContainer>
+            {remainingCount > 0 && (
+                <Box sx={{ px: 2.5, py: 1.25, borderTop: 1, borderColor: "divider" }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                        +{remainingCount} more
+                    </Typography>
+                </Box>
+            )}
         </BaseCard>
     );
 }

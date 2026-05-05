@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Drawer, Box, Typography, IconButton, Divider, Avatar, Collapse } from "@mui/material";
+import { Drawer, Box, Typography, IconButton, Divider, Collapse } from "@mui/material";
 import {
     LayoutDashboard,
-    Calendar,
     Video,
     Users,
     HelpCircle,
     CircleDollarSign,
-    BarChart2,
     Monitor,
     LogOut,
     Settings,
@@ -28,14 +26,14 @@ const adminNavItems = [
         sectionLabel: "MENU",
         items: [
             { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
-            // { label: "Schedules", icon: Calendar, path: "/admin/schedules" },
             {
                 label: "Interviews",
                 icon: Video,
                 key: "interviews",
                 children: [
-                    { label: "Overview", path: "/admin/interviews" },
-                    { label: "Types", path: "/admin/interviews/types" },
+                    // { label: "Overview", path: "/admin/interviews" },
+                    { label: "Interview Types", path: "/admin/interviews/types" },
+                    { label: "Interview Reports", path: "/admin/reports/room" },
                 ],
             },
             {
@@ -47,7 +45,15 @@ const adminNavItems = [
                     { label: "Coaches", path: "/admin/users/coaches" },
                 ],
             },
-            { label: "Question Bank", icon: HelpCircle, path: "/admin/question-bank" },
+            {
+                label: "Questions",
+                icon: HelpCircle,
+                key: "questions",
+                children: [
+                    { label: "Question Bank", path: "/admin/question-bank" },
+                    { label: "Question Reports", path: "/admin/reports/question" },
+                ],
+            },
             {
                 label: "Income",
                 icon: CircleDollarSign,
@@ -57,15 +63,6 @@ const adminNavItems = [
                     { label: "Refunds", path: "/admin/income/refunds" },
                     { label: "Payouts", path: "/admin/income/payouts" },
                     { label: "Withdrawal Requests", path: "/admin/income/withdrawals" },
-                ],
-            },
-            {
-                label: "Reports",
-                icon: BarChart2,
-                key: "reports",
-                children: [
-                    { label: "Room Report", path: "/admin/reports/room" },
-                    { label: "Question Report", path: "/admin/reports/question" },
                 ],
             },
             {
@@ -304,7 +301,7 @@ const SidebarGroupItem = ({ item, openGroups, onToggleGroup, location, onNavigat
     );
 };
 
-export default function AdminSidebar({ userData, remoteAvatar, onLogout, mobileOpen, onMobileClose }) {
+export default function AdminSidebar({ onLogout, mobileOpen, onMobileClose }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [openGroups, setOpenGroups] = useState(() => getInitialOpenGroups());
@@ -410,44 +407,6 @@ export default function AdminSidebar({ userData, remoteAvatar, onLogout, mobileO
                     </IconButton>
                 </Box>
             </Box>
-
-            {/* User Info Card
-            {userData && (
-                <Box
-                    sx={{
-                        bgcolor: "action.disabledBackground",
-                        borderRadius: "14px",
-                        p: 1.5,
-                        mb: 2,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                    }}
-                >
-                    <Avatar
-                        src={remoteAvatar ?? userData?.profilePicture}
-                        alt={userData?.fullName || "Admin"}
-                        sx={{ width: 36, height: 36 }}
-                    >
-                        {!(remoteAvatar ?? userData?.profilePicture) &&
-                            (userData?.fullName?.charAt(0) || "A")}
-                    </Avatar>
-                    <Box>
-                        <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "text.primary" }}>
-                            {userData?.fullName}
-                        </Typography>
-                        <Typography
-                            sx={{
-                                fontSize: "10px",
-                                fontWeight: 500,
-                                color: "text.disabled",
-                            }}
-                        >
-                            {userData?.email}
-                        </Typography>
-                    </Box>
-                </Box>
-            )} */}
 
             {/* Menu Items */}
             <Box sx={{ flex: 1 }}>
