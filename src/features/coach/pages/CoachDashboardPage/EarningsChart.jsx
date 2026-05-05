@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../common/components/cards/BaseCard";
 import TextButton from "../../../../common/components/buttons/TextButton";
 import SectionHeading from "../../../../common/components/SectionHeading";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 import { DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function EarningsChart({ data, growthPercent }) {
@@ -74,7 +75,7 @@ export default function EarningsChart({ data, growthPercent }) {
                             borderRadius: 8,
                             boxShadow: theme.shadows[2],
                         }}
-                        formatter={(value) => [`$${value}`, "Earnings"]}
+                        formatter={(value) => [formatCurrency(value), "Earnings"]}
                     />
                     <Area
                         type="monotone"

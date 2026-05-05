@@ -15,6 +15,7 @@ import { useSelector } from "react-redux";
 import { ROLES } from "../../../../../common/constants/common";
 import { CompanyLogo } from "../../../../../common/utils/logoImageGenerator";
 import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
+import { formatCurrency } from "../../../../../common/utils/dateFormatter";
 
 const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
     const navigate = useNavigate();
@@ -658,7 +659,7 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                                                 {svc.isCoding ? <FileText size={20} /> : <Briefcase size={20} />}
                                             </div>
                                             <div className="ep-service-price">
-                                                <span>{svc.price?.toLocaleString()} ₫</span>
+                                                <span>{formatCurrency(svc.price ?? 0)}</span>
                                             </div>
                                         </div>
                                         <h4>{svc.interviewTypeName}</h4>

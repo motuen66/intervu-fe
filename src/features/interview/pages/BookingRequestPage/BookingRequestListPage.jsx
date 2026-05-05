@@ -29,6 +29,7 @@ import FormTextField from "../../../../common/components/form/FormTextField";
 import StatusChip from "../../../../common/components/StatusChip";
 import PageHeader from "../../../../common/components/PageHeader";
 import AppText from "../../../../common/components/AppText";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 
 const STATUS_COLOR_MAP = {
     [BOOKING_REQUEST_STATUS.PENDING]: "warning",
@@ -205,7 +206,7 @@ export default function BookingRequestListPage() {
                                         </TableCell>
                                         <TableCell>
                                             <AppText variant="bodyStrong" sx={{ fontSize: 14, color: "#4F46E5" }}>
-                                                {req.totalAmount?.toLocaleString()} ₫
+                                                {formatCurrency(req.totalAmount ?? 0)}
                                             </AppText>
                                         </TableCell>
                                         <TableCell>

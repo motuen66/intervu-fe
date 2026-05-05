@@ -18,6 +18,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import StatusChip from '../../components/StatusChip';
 import { commonMenuProps } from '../form/FormSelect';
+import { formatCurrency } from '../../utils/dateFormatter';
 
 export default function DataTable({
     title,
@@ -84,7 +85,7 @@ export default function DataTable({
         }
 
         if (column.type === 'currency') {
-            return `$${parseFloat(value || 0).toLocaleString()}`;
+            return formatCurrency(value ?? 0);
         }
 
         if (column.type === 'date') {

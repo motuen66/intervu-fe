@@ -1,6 +1,7 @@
 import Grid from "@mui/material/Grid";
 import { CheckCircle2, DollarSign, Star, Users } from "lucide-react";
 import { MetricCard, buildMetricTrend } from "../../../../common/components/cards/MetricCard";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 import { DASHBOARD_LAYOUT } from "./dashboardTokens";
 
 export default function KpiCardsRow({ stats }) {
@@ -11,7 +12,7 @@ export default function KpiCardsRow({ stats }) {
             icon: <DollarSign />,
             variant: "emerald",
             label: "Total Earnings",
-            value: `$${stats.totalEarnings?.toLocaleString() ?? 0}`,
+            value: formatCurrency(stats.totalEarnings ?? 0),
             growthPercent: stats.earningsGrowthPercent,
         },
         {

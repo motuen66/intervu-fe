@@ -24,6 +24,7 @@ import toast from "react-hot-toast";
 import FormTextField from "../../../../../common/components/form/FormTextField";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
 import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
+import { formatCurrency } from "../../../../../common/utils/dateFormatter";
 
 /**
  * Flow B: Candidate requests an external session (outside coach's available slots)
@@ -158,7 +159,7 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                                     {services.map((svc) => (
                                         <MenuItem key={svc.id} value={svc.id}>
                                             {svc.interviewTypeName}
-                                            {svc.isCoding ? " (Coding)" : ""} — {svc.price?.toLocaleString()} ₫ ·{" "}
+                                            {svc.isCoding ? " (Coding)" : ""} — {formatCurrency(svc.price ?? 0)} ·{" "}
                                             {svc.durationMinutes} min
                                         </MenuItem>
                                     ))}
@@ -177,7 +178,7 @@ export default function ExternalBookingDialog({ open, onClose, coachId }) {
                                         }}
                                     >
                                         {selectedService.interviewTypeName} · {selectedService.durationMinutes} min ·{" "}
-                                        {selectedService.price?.toLocaleString()} ₫
+                                        {formatCurrency(selectedService.price ?? 0)}
                                     </Box>
                                 </Grid>
                             )}

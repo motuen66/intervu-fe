@@ -56,6 +56,7 @@ import StatusChip from "../../../../../common/components/StatusChip";
 import FormSelect from "../../../../../common/components/form/FormSelect";
 import FormTextField from "../../../../../common/components/form/FormTextField";
 import { PrimaryButton, SecondaryButton, TextButton } from "../../../../../common/components/buttons";
+import { formatCurrency } from "../../../../../common/utils/dateFormatter";
 import "./JDBookingDialog.css";
 
 const STEPS = ["Job Details & Rounds", "Schedule Rounds"];
@@ -1633,21 +1634,8 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                         </Typography>
                                                     </Box>
                                                     <Box sx={{ textAlign: "right" }}>
-                                                        <Typography
-                                                            variant="h4"
-                                                            className="price-vibrant"
-                                                            sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}
-                                                        >
-                                                            {getTotalPrice().toLocaleString()}{" "}
-                                                            <span
-                                                                style={{
-                                                                    fontSize: "0.8rem",
-                                                                    fontWeight: 900,
-                                                                    color: "#d4ff3d",
-                                                                }}
-                                                            >
-                                                                VND
-                                                            </span>
+                                                        <Typography variant="h4" className="price-vibrant">
+                                                            {formatCurrency(getTotalPrice())}
                                                         </Typography>
                                                     </Box>
                                                 </Stack>

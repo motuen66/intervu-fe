@@ -1,6 +1,7 @@
 import Grid from "@mui/material/Grid";
 import { Undo2, UserCircle2, Users, TrendingUp } from "lucide-react";
 import { MetricCard, MetricCardSkeleton, buildMetricTrend } from "../../../../common/components/cards/MetricCard";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 
 export default function SystemOverviewRow({ stats, loading }) {
     if (loading && !stats) {
@@ -34,7 +35,7 @@ export default function SystemOverviewRow({ stats, loading }) {
             icon: <TrendingUp />,
             variant: "emerald",
             label: "Total Revenue",
-            value: `${stats?.totalRevenue?.toLocaleString() || "0"} ₫`,
+            value: formatCurrency(stats?.totalRevenue ?? 0),
             growthPercent: stats?.revenueGrowth,
         },
         {

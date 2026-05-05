@@ -48,6 +48,7 @@ import { userEndPoints } from "../../../../common/services/userApi";
 import CancelInterviewConfirmDialog from "../InterviewRoomListPage/components/CancelInterviewConfirmDialog";
 import "./BookingRequestPage.css";
 import { trackInitiatePayment, trackCreateBooking, trackServiceUsed } from "../../../../utils/analytics";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 import AppText from "../../../../common/components/AppText";
 import SectionHeading from "../../../../common/components/SectionHeading";
 import StatusChip from "../../../../common/components/StatusChip";
@@ -599,7 +600,7 @@ export default function BookingRequestDetailPage() {
                         <Stack direction="row" spacing={1.5}>
                             {isPending && (
                                 <PrimaryButton onClick={handlePay} loading={paying}>
-                                    Pay {detail.totalAmount?.toLocaleString()} ₫
+                                    Pay {formatCurrency(detail.totalAmount ?? 0)}
                                 </PrimaryButton>
                             )}
                             {(isPending || isAccepted) && (
@@ -909,7 +910,7 @@ export default function BookingRequestDetailPage() {
                                                     variant="bodyStrong"
                                                     sx={{ color: "#0f172a", fontSize: "1.125rem", fontWeight: 700 }}
                                                 >
-                                                    {r.price?.toLocaleString()} ₫
+                                                    {formatCurrency(r.price ?? 0)}
                                                 </AppText>
                                             </Box>
 

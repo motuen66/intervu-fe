@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import "./CoachInterviewServicePage.css";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import PageHeader from "../../../../common/components/PageHeader";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 
 export default function CoachInterviewServicePage() {
     const [items, setItems] = useState([]);
@@ -138,7 +139,7 @@ export default function CoachInterviewServicePage() {
                                 <div className="coach-service-card-meta">
                                     <div className="meta-item">
                                         <span className="meta-label">Price</span>
-                                        <span className="meta-value">{it.price?.toLocaleString()} ₫</span>
+                                        <span className="meta-value">{formatCurrency(it.price ?? 0)}</span>
                                     </div>
                                     <div className="meta-item">
                                         <span className="meta-label">Duration</span>

@@ -350,8 +350,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                                 </Box>
                                             </Box>
                                             <Typography className="service-price-tag">
-                                                {(service.price || 0).toLocaleString()}{" "}
-                                                <span style={{ fontSize: "14px", fontWeight: 600 }}>VND</span>
+                                                {formatCurrency(service.price || 0)}
                                             </Typography>
                                         </Box>
                                     );

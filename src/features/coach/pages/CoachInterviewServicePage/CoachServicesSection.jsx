@@ -6,6 +6,7 @@ import SectionHeading from "../../../../common/components/SectionHeading";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CodeIcon from "@mui/icons-material/Code";
 import { getCoachInterviewServices } from "../../services/coachInterviewServiceApi";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 
 /**
  * Displays the list of interview services a coach offers.
@@ -91,7 +92,7 @@ export default function CoachServicesSection({ coachId }) {
                                     </Stack>
                                 </Box>
                                 <Typography fontWeight={700} fontSize="1rem" sx={{ color: "#4F46E5" }}>
-                                    {svc.price?.toLocaleString()} ₫
+                                    {formatCurrency(svc.price ?? 0)}
                                 </Typography>
                             </Stack>
                         </CardContent>

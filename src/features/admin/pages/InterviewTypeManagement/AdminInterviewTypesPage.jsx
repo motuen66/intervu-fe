@@ -15,6 +15,7 @@ import ConfirmModal from "../../../../common/components/ConfirmModal";
 import { PrimaryButton } from "../../../../common/components/buttons";
 import useTableState from "../../../../hooks/useTableState";
 import { callApi } from "../../../../common/utils/apiConnector";
+import { formatCurrency } from "../../../../common/utils/dateFormatter";
 import { METHOD } from "../../../../common/constants/api";
 import { interviewTypeEndPoints } from "../../services/interviewTypeApi";
 import CreateInterviewTypeDialog from "./CreateInterviewTypeDialog";
@@ -176,7 +177,8 @@ export default function AdminInterviewTypesPage() {
             {
                 field: "minPrice",
                 headerName: "Price Range",
-                render: (_, row) => `${row?.minPrice ?? 0} - ${row?.maxPrice ?? 0}`,
+                render: (_, row) =>
+                    `${formatCurrency(row?.minPrice ?? 0)} – ${formatCurrency(row?.maxPrice ?? 0)}`,
             },
             {
                 field: "isCoding",
