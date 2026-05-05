@@ -4,7 +4,6 @@ import {
     Typography,
     Avatar,
     IconButton,
-    CircularProgress,
 } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import PersonIcon from "@mui/icons-material/Person";
@@ -123,76 +122,7 @@ function RemotePlaceholder({
     );
 }
 
-// B5 — translucent overlay for SignalR drops. Two states:
-//   "reconnecting" → spinner + "Reconnecting…" copy (auto-recovery)
-//   "lost"         → "Connection lost" copy + Retry button (after the
-//                    hub gives up or the watchdog elapses)
-// The overlay is purely visual; all state and the retry side-effect live in
-// the parent (InterviewRoomPage). Spinner respects prefers-reduced-motion.
-function ConnectionOverlay({
-    mode,
-    onRetry,
-    retrying,
-    compact = false,
-    prefersReducedMotion = false,
-}) {
-    if (mode === "none") return null;
-    const isLost = mode === "lost";
-    const titleSize = compact ? "0.72rem" : "0.95rem";
-    const bodySize = compact ? "0.62rem" : "0.78rem";
-    return (
-        <Box
-            role="status"
-            aria-live="polite"
-            sx={{
-                position: "absolute",
-                inset: 0,
-                zIndex: 50,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: compact ? 0.75 : 1.25,
-                px: compact ? 1 : 2,
-                textAlign: "center",
-                bgcolor: "rgba(17, 24, 39, 0.78)",
-                backdropFilter: "blur(2px)",
-                color: "common.white",
-            }}
-        >
-            {!isLost && (
-                <CircularProgress
-                    size={compact ? 18 : 28}
-                    thickness={4}
-                    color="inherit"
-                    // Reduce visual weight when motion is disabled — keep the
-                    // ring but the MUI animation is already paused via CSS
-                    // (CircularProgress respects prefers-reduced-motion in the
-                    // browser via animation, but we drop opacity as a hint).
-                    sx={{ opacity: prefersReducedMotion ? 0.6 : 1 }}
-                />
-            )}
-            <Typography sx={{ fontSize: titleSize, fontWeight: 700, lineHeight: 1.25 }}>
-                {isLost ? "Connection lost" : "Reconnecting…"}
-            </Typography>
-            {isLost && (
-                <>
-                    <Typography sx={{ fontSize: bodySize, opacity: 0.8, lineHeight: 1.3 }}>
-                        We couldn't restore the connection automatically.
-                    </Typography>
-                    <TextButton
-                        size={compact ? "sm" : "md"}
-                        onClick={onRetry}
-                        disabled={retrying}
-                        sx={{ color: "common.white", border: "1px solid rgba(255,255,255,0.4)" }}
-                    >
-                        {retrying ? "Retrying…" : "Retry"}
-                    </TextButton>
-                </>
-            )}
-        </Box>
-    );
-}
+
 
 export function CameraWidget({
     localVideoRef,
@@ -215,9 +145,7 @@ export function CameraWidget({
     remotePresence = "connected",
     remoteRoleLabel = "Peer",
     onEndInterview,
-    connectionOverlayMode = "none",
-    connectionRetrying = false,
-    onReconnect,
+
 }) {
     const prefersReducedMotion =
         typeof window !== "undefined" &&
@@ -701,14 +629,7 @@ export function CameraWidget({
                             </>
                         )}
                     </Box>
-                    {/* B5 — connection overlay (last child = top of stack) */}
-                    <ConnectionOverlay
-                        mode={connectionOverlayMode}
-                        onRetry={onReconnect}
-                        retrying={connectionRetrying}
-                        compact={mode === MODE_COMPACT}
-                        prefersReducedMotion={prefersReducedMotion}
-                    />
+
                 </Box>
             </Box>
 
@@ -827,13 +748,7 @@ export function CameraWidget({
                     >
                         <CloseIcon />
                     </IconButton>
-                    {/* B5 — connection overlay covers the fullscreen video too */}
-                    <ConnectionOverlay
-                        mode={connectionOverlayMode}
-                        onRetry={onReconnect}
-                        retrying={connectionRetrying}
-                        prefersReducedMotion={prefersReducedMotion}
-                    />
+
                 </Box>
             )}
         </>

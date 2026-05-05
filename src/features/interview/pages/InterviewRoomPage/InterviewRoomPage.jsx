@@ -268,7 +268,7 @@ function InterviewRoomPage() {
     const liveRoomId = canJoinLiveRoom ? roomId : null;
 
     // ── SignalR ──────────────────────────────────────────────────────────────
-    const { connectionId, peers, sendSignal, leaveRoom, connectionState, reconnect } = useInterviewSignalR({
+    const { connectionId, peers, sendSignal, leaveRoom, connectionState } = useInterviewSignalR({
         roomId: loading || error || isViewOnly ? null : roomId,
         userId: user?.id,
         role: user?.role,
@@ -463,16 +463,7 @@ function InterviewRoomPage() {
     const reconnectTimerRef = useRef(null);
     const RECONNECT_GRACE_MS = 30000;
 
-    // B5 — connection overlay state. `lostWatchdogRef` holds the 30s timer that
-    // promotes a stuck "reconnecting" view to the "lost" view with a Retry CTA,
-    // even if SignalR has not yet given up. `retrying` blocks duplicate manual
-    // retries. `hasConnectedRef` suppresses the overlay during the very first
-    // connect — the room's existing loading flow already covers that case.
-    const [connectionLost, setConnectionLost] = useState(false);
-    const [retrying, setRetrying] = useState(false);
-    const lostWatchdogRef = useRef(null);
-    const hasConnectedRef = useRef(false);
-    const CONNECTION_LOST_WATCHDOG_MS = 30000;
+
 
     useEffect(() => {
         return () => {
@@ -483,10 +474,6 @@ function InterviewRoomPage() {
             if (reconnectTimerRef.current) {
                 clearTimeout(reconnectTimerRef.current);
                 reconnectTimerRef.current = null;
-            }
-            if (lostWatchdogRef.current) {
-                clearTimeout(lostWatchdogRef.current);
-                lostWatchdogRef.current = null;
             }
             peerJoinAnnouncedAtRef.current.clear();
             peerLeftAnnouncedAtRef.current.clear();
@@ -758,54 +745,7 @@ function InterviewRoomPage() {
         }
     }, [peers.length]);
 
-    // B5 — react to SignalR connectionState transitions.
-    //   connected      → clear watchdog + "lost" flag + retrying flag
-    //   reconnecting   → start a 30s safety watchdog (auto-reconnect schedule
-    //                    only totals ~8s, but the watchdog covers slow paths
-    //                    and any state we somehow get stuck in)
-    //   disconnected   → auto-reconnect already gave up; surface Retry now
-    useEffect(() => {
-        if (connectionState === "connected") {
-            hasConnectedRef.current = true;
-            if (lostWatchdogRef.current) {
-                clearTimeout(lostWatchdogRef.current);
-                lostWatchdogRef.current = null;
-            }
-            setConnectionLost(false);
-            setRetrying(false);
-            return;
-        }
-        // Suppress overlay until the user has connected at least once — the
-        // initial join path is owned by other UI (loading + PrecheckModal).
-        if (!hasConnectedRef.current) return;
 
-        if (connectionState === "disconnected") {
-            if (lostWatchdogRef.current) {
-                clearTimeout(lostWatchdogRef.current);
-                lostWatchdogRef.current = null;
-            }
-            setConnectionLost(true);
-            setRetrying(false);
-            return;
-        }
-        if (connectionState === "reconnecting" || connectionState === "connecting") {
-            if (!lostWatchdogRef.current) {
-                lostWatchdogRef.current = setTimeout(() => {
-                    setConnectionLost(true);
-                    lostWatchdogRef.current = null;
-                }, CONNECTION_LOST_WATCHDOG_MS);
-            }
-        }
-    }, [connectionState]);
-
-    const handleManualReconnect = useCallback(() => {
-        if (retrying) return;
-        setRetrying(true);
-        setConnectionLost(false);
-        Promise.resolve(reconnect?.()).catch((err) => {
-            console.error("[B5] Manual reconnect error:", err);
-        });
-    }, [retrying, reconnect]);
 
     // Broadcast camera/mic state
     useEffect(() => {
@@ -1652,15 +1592,7 @@ function InterviewRoomPage() {
                             remotePresence={remotePresence}
                             remoteRoleLabel={user?.role === ROLES.CANDIDATE ? "Coach" : "Candidate"}
                             onEndInterview={user?.role === ROLES.INTERVIEWER ? handleLeaveRoom : undefined}
-                            connectionOverlayMode={
-                                connectionLost
-                                    ? "lost"
-                                    : hasConnectedRef.current && connectionState !== "connected"
-                                    ? "reconnecting"
-                                    : "none"
-                            }
-                            connectionRetrying={retrying}
-                            onReconnect={handleManualReconnect}
+                            connectionOverlayMode="none"
                         />
                     </Box>
                 </Box>
