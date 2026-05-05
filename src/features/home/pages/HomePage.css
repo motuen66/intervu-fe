@@ -81,13 +81,15 @@
   color: var(--mui-palette-text-secondary);
 }
 
-/* Hero Visual - Right Side */
+/* Hero Visual - Right Side (auto height so browser-card + orbit are not clipped) */
 .hero-visual {
   position: relative;
-  height: 400px;
+  min-height: 400px;
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-block: 12px;
 }
 
 .visual-placeholder {
@@ -679,7 +681,9 @@
   }
 
   .hero-visual {
-    height: 300px;
+    min-height: 320px;
+    height: auto;
+    padding-block: 16px;
   }
 
   .floating-card {

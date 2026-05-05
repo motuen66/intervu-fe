@@ -5,7 +5,12 @@ import { Box, CircularProgress } from "@mui/material";
 import { fetchInterviewers, fetchCompanies, fetchSkills, setPage } from "../store/homeSlice";
 import FilterBar from "../components/FilterBar";
 import CoachCar from "../components/CoachCard";
+import CoachOrbitHero from "../components/CoachOrbitHero";
+import CoachOrbitBrowserCard from "../components/CoachOrbitBrowserCard";
 import SmartMatchModal from "../../smartSearch/components/SmartMatchModal";
+import { callApi } from "../../../common/utils/apiConnector";
+import { METHOD } from "../../../common/constants/api";
+import { homeEndPoints } from "../services/homeApi";
 import { Star, ArrowRight, Search } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -19,6 +24,7 @@ function CoachBrowsePage() {
     const browseSectionRef = useRef(null);
     const hasFetchedInterviewersRef = useRef(false);
     const [smartMatchOpen, setSmartMatchOpen] = useState(false);
+    const [topCoaches, setTopCoaches] = useState([]);
     const [searchParams, setSearchParams] = useSearchParams();
     const { interviewers, loading, error, filters, pagination } = useSelector((state) => state.home);
 
@@ -46,6 +52,29 @@ function CoachBrowsePage() {
             dispatch(fetchSkills({ useGlobalLoading: true })),
         ]);
     }, [dispatch]);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await callApi({
+                    method: METHOD.GET,
+                    endpoint: homeEndPoints.GET_TOP_COACHES,
+                    arg: { count: 5 },
+                    useGlobalLoading: false,
+                });
+                if (cancelled) return;
+                const raw = res?.data;
+                setTopCoaches(Array.isArray(raw) ? raw : []);
+            } catch (e) {
+                console.error(e);
+                if (!cancelled) setTopCoaches([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         const sections = document.querySelectorAll(
@@ -233,20 +262,9 @@ function CoachBrowsePage() {
                         </div>
                     </div>
                     <div className="hero-visual">
-                        <div className="visual-placeholder">
-                            <div className="floating-card card-1">
-                                <div className="card-avatar"></div>
-                                <div className="card-text"></div>
-                            </div>
-                            <div className="floating-card card-2">
-                                <div className="card-avatar"></div>
-                                <div className="card-text"></div>
-                            </div>
-                            <div className="floating-card card-3">
-                                <div className="card-avatar"></div>
-                                <div className="card-text"></div>
-                            </div>
-                        </div>
+                        <CoachOrbitBrowserCard>
+                            <CoachOrbitHero coaches={topCoaches} findCoachTo="/coaches" />
+                        </CoachOrbitBrowserCard>
                     </div>
                 </div>
             </section>

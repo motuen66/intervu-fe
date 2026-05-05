@@ -1,0 +1,153 @@
+.coach-orbit-browser-card {
+    width: 100%;
+    max-width: 450px;
+    margin-inline: auto;
+    border-radius: 22px;
+    background: linear-gradient(165deg, rgb(41 53 73) 0%, rgb(22 30 46) 48%, rgb(17 24 39) 100%);
+    border: 1px solid rgba(255 255 255 / 0.09);
+    box-shadow:
+        0 4px 6px rgb(0 0 0 / 0.08),
+        0 22px 48px rgb(15 23 42 / 0.35),
+        inset 0 1px 0 rgb(255 255 255 / 0.06);
+    overflow: hidden;
+    animation: coach-orbit-browser-card-sway 8s ease-in-out infinite;
+    transform-origin: center;
+}
+
+@keyframes coach-orbit-browser-card-sway {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(0); }
+    75% { transform: translateX(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .coach-orbit-browser-card {
+        animation: none;
+    }
+}
+
+.coach-orbit-browser-card__titlebar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px 7px;
+    border-bottom: 1px solid rgb(0 0 0 / 0.35);
+    background: rgb(0 0 0 / 0.22);
+}
+
+.coach-orbit-browser-card__traffic {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.coach-orbit-browser-card__dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    box-shadow:
+        inset 0 -1px 1px rgb(0 0 0 / 0.35),
+        0 1px 1px rgb(255 255 255 / 0.08);
+}
+
+.coach-orbit-browser-card__dot--close {
+    background: radial-gradient(circle at 30% 30%, #ff8f88, #e74c4c 55%, #b03530);
+}
+
+.coach-orbit-browser-card__dot--min {
+    background: radial-gradient(circle at 30% 30%, #ffe08a, #e8b029 55%, #b8891c);
+}
+
+.coach-orbit-browser-card__dot--max {
+    background: radial-gradient(circle at 30% 30%, #8fe8a0, #34c759 52%, #268440);
+}
+
+.coach-orbit-browser-card__skeleton {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-top: 0;
+}
+
+.coach-orbit-browser-card__bar {
+    display: block;
+    height: 7px;
+    border-radius: 999px;
+}
+
+.coach-orbit-browser-card__bar--long {
+    width: 72%;
+    background: rgb(255 255 255 / 0.1);
+}
+
+.coach-orbit-browser-card__bar--short {
+    width: 46%;
+    background: rgba(var(--mui-palette-secondary-mainChannel, 130 210 90) / 0.22);
+}
+
+.coach-orbit-browser-card__viewport {
+    padding: clamp(18px, 3.6vw, 27px) clamp(16px, 3.2vw, 24px) clamp(20px, 3.6vw, 28px);
+    background: linear-gradient(
+        135deg,
+        var(--mui-palette-primary-dark) 0%,
+        var(--mui-palette-primary-main) 55%,
+        var(--mui-palette-primary-dark) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 282px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .coach-orbit-browser-card__viewport {
+        min-height: 266px;
+        padding: 14px 12px 18px;
+    }
+}
+
+/* Smaller orbit + cap stage — same inset rings / glow layering as CoachOrbitHero (z-index in CoachOrbitHero.css). */
+.coach-orbit-browser-card__viewport .coach-orbit-hero {
+    width: 100%;
+    max-width: 305px;
+    margin-inline: auto;
+    display: block;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    overflow: visible;
+}
+
+.coach-orbit-browser-card__viewport .coach-orbit-hero__left {
+    display: none;
+}
+
+.coach-orbit-browser-card__viewport .coach-orbit-hero__stage-wrap {
+    opacity: 1;
+}
+
+.coach-orbit-browser-card__viewport .coach-orbit-hero__stage {
+    width: min(100%, 305px);
+    max-width: 305px;
+}
+
+/* Force ring visibility on browse panel (does not affect candidate home hero). */
+.coach-orbit-browser-card__viewport .coach-orbit-hero__ring {
+    border-color: rgba(255 255 255 / 0.16);
+    border-width: 1px;
+}
+
+.coach-orbit-browser-card__viewport .coach-orbit-hero__ring--2 {
+    opacity: 0.72;
+    border-color: rgba(255 255 255 / 0.12);
+}
+
+.coach-orbit-browser-card__viewport .coach-orbit-hero__ring--3 {
+    opacity: 0.56;
+    border-color: rgba(255 255 255 / 0.09);
+}

@@ -1,9 +1,11 @@
 /* ─────────────────────────────────────────────────────────────────────────
    CoachOrbitHero — dark hero card, double-rotation orbit
    All colours derived from MUI CSS variables (cssVariables: true in theme.jsx)
+   Orbit tokens must live on any root that wraps the stage (hero card or standalone stage).
    ───────────────────────────────────────────────────────────────────────── */
 
-.coach-orbit-hero {
+.coach-orbit-hero,
+.coach-orbit-stage-root {
     /* Lime alias — maps to secondary.dark from theme */
     --orbit-lime:         var(--mui-palette-secondary-dark);
     --orbit-lime-dim:     rgba(var(--mui-palette-secondary-darkChannel, 190 242 100) / 0.32);
@@ -16,7 +18,9 @@
     --orbit-white:        255 255 255;   /* structural overlay channel, not a brand token */
     --orbit-muted:        rgba(var(--orbit-white) / 0.45);
     --orbit-radius:       clamp(96px, 30vw, 148px);
+}
 
+.coach-orbit-hero {
     position: relative;
     display: grid;
     grid-template-columns: 1fr minmax(260px, 420px);
@@ -197,6 +201,23 @@
     opacity: 1;
 }
 
+/* Standalone orbit (e.g. browse coach hero): no parent card hover — keep stage visible */
+.coach-orbit-stage-root .coach-orbit-hero__stage-wrap {
+    opacity: 1;
+}
+
+.coach-orbit-stage-root {
+    width: 100%;
+    max-width: 400px;
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+}
+
+/* Orbit inside browser viewport: same rings/glow as CoachOrbitHero (dark gradient surface). */
+
 .coach-orbit-hero__stage {
     position: relative;
     width: min(100%, 400px);
@@ -211,6 +232,7 @@
     border-radius: 50%;
     background: radial-gradient(circle, var(--orbit-lime-glow) 0%, transparent 68%);
     pointer-events: none;
+    z-index: 0;
 }
 
 .coach-orbit-hero__ring {
@@ -218,6 +240,7 @@
     border-radius: 50%;
     border: 1px solid rgba(var(--orbit-white) / 0.05);
     pointer-events: none;
+    z-index: 1;
 }
 
 .coach-orbit-hero__ring--1 { inset: 6%; }
@@ -229,6 +252,7 @@
     inset: 0;
     animation: coach-orbit-spin 50s linear infinite;
     transform-origin: 50% 50%;
+    z-index: 2;
 }
 
 .coach-orbit-hero--reduced-motion .coach-orbit-hero__orbit {
