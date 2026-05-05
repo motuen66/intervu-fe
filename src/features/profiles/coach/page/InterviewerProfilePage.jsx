@@ -366,6 +366,14 @@ function InterviewerProfilePage() {
     const companiesDisplay = (profile?.companies || [])
         .map((c) => (typeof c === "object" ? c?.name : c))
         .filter(Boolean);
+    const companiesFromWE = Array.from(
+        new Set(
+            (profile?.workExperiences || [])
+                .map((w) => (w?.companyName || w?.company || "").trim())
+                .filter(Boolean),
+        ),
+    );
+    const companiesCount = companiesDisplay.length > 0 ? companiesDisplay.length : companiesFromWE.length;
     const averageRating = Number(coachRating ?? profile?.rating ?? 0);
     const totalRatings = Number(coachRatingCount ?? profile?.ratingCount ?? 0);
     const isSelf = !routeId || String(routeId) === String(user?.id);
@@ -820,7 +828,7 @@ function InterviewerProfilePage() {
                                                 color: "text.primary",
                                             }}
                                         >
-                                            {companiesDisplay.length}
+                                            {companiesCount}
                                         </Typography>
                                         <Typography
                                             sx={{
