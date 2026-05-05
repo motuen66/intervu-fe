@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Container, Tab, Tabs, Tooltip, Typography } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -18,6 +18,7 @@ import useTableState from "../../../hooks/useTableState";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
+import { CATEGORIES, LEVELS, ROUNDS, ROLES } from "../../../common/constants/types";
 import "./AdminDashboard.css";
 
 // Backend QuestionStatus: Pending=1, Approved=2, Rejected=3, Removed=4
@@ -33,10 +34,20 @@ const TAB_KEYS = {
     PENDING: "pending",
 };
 
-const formatEnumLabel = (value) => {
+const formatEnumLabel = (value, options) => {
     if (value === null || value === undefined || value === "") return "-";
+    
+    if (options && typeof value === "number") {
+        const option = options.find(o => o.value === value);
+        if (option) return option.label;
+    }
+
     if (typeof value === "number") return `${value}`;
-    const text = String(value).replace(/_/g, " ").trim();
+    
+    const text = String(value)
+        .replace(/_/g, " ")
+        .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+        .trim();
     return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
@@ -91,16 +102,16 @@ export default function AdminQuestionBankPage() {
         }
     };
 
-    const handleTabChange = (_, nextTab) => {
+    const handleTabChange = useCallback((_, nextTab) => {
         if (!nextTab || nextTab === tab) return;
         setTab(nextTab);
         setPage(0);
-    };
+    }, [tab, setTab, setPage]);
 
-    const handleSearchChange = (val) => {
+    const handleSearchChange = useCallback((val) => {
         setSearchTerm(val);
         setPage(0);
-    };
+    }, [setSearchTerm, setPage]);
 
     const openModerationModal = (row, action) => {
         if (!row?.id) return;
@@ -181,25 +192,30 @@ export default function AdminQuestionBankPage() {
                     field: "roles",
                     headerName: "Roles",
                     width: 160,
-                    render: (value) => (Array.isArray(value) && value.length ? value.join(", ") : "-"),
+                    render: (value) => {
+                        if (!Array.isArray(value) || !value.length) return "-";
+                        return value
+                            .map(v => formatEnumLabel(v, ROLES))
+                            .join(", ");
+                    },
                 },
                 {
                     field: "category",
                     headerName: "Category",
                     width: 130,
-                    render: (value) => formatEnumLabel(value),
+                    render: (value) => formatEnumLabel(value, CATEGORIES),
                 },
                 {
                     field: "level",
                     headerName: "Level",
                     width: 100,
-                    render: (value) => formatEnumLabel(value),
+                    render: (value) => formatEnumLabel(value, LEVELS),
                 },
                 {
                     field: "round",
                     headerName: "Round",
                     width: 100,
-                    render: (value) => formatEnumLabel(value),
+                    render: (value) => formatEnumLabel(value, ROUNDS),
                 },
             ];
 

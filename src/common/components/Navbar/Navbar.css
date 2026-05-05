@@ -32,38 +32,17 @@
 .navbar-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
     text-decoration: none;
     cursor: pointer;
 }
 
-.logo-box {
-    width: 36px;
-    height: 36px;
-    background: var(--mui-palette-primary-main);
-    color: var(--mui-palette-secondary-main);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    font-weight: 900;
-    font-size: 18px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.logo-text h1 {
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    color: var(--mui-palette-primary-main);
-    line-height: 1;
-}
-
-.logo-text span {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--mui-palette-text-secondary);
-    letter-spacing: 0.1em;
+.navbar-logo-img {
+    height: 34px;
+    width: auto;
+    display: block;
+    background: var(--mui-palette-primary-dark, #0a1929);
+    border-radius: 8px;
+    padding: 4px 10px;
 }
 
 /* Menu Items */
@@ -446,7 +425,8 @@
         height: 64px;
     }
 
-    .logo-text {
-        display: none;
+    .navbar-logo-img {
+        height: 28px;
+        padding: 3px 8px;
     }
 }

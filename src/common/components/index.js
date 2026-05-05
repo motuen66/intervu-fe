@@ -15,3 +15,4 @@ export {
     TextButton,
     GhostButton,
 } from "./buttons";
+export { default as ErrorPage } from "./ErrorPage";

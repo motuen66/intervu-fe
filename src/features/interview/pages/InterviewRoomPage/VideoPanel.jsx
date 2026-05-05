@@ -14,6 +14,7 @@ import { ROLES } from "../../../../common/constants/common.js";
 import { useEffect, useState } from "react";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
+import { resolveLocalDisplayName, resolveRemoteDisplayName } from "../../utils/displayNames.js";
 
 function VideoPanel({
     myId,
@@ -34,7 +35,7 @@ function VideoPanel({
     roomInfo,
 }) {
     const isCandidate = user?.role === ROLES.CANDIDATE;
-    const remotePeerName = roomInfo ? (isCandidate ? roomInfo.coachName || "Coach" : roomInfo.candidateName || "Candidate") : "Peer";
+    const remotePeerName = resolveRemoteDisplayName(roomInfo, user?.role);
     const remotePeerRole = isCandidate ? "Coach" : "Candidate";
 
     const [fetchedRemoteAvatar, setFetchedRemoteAvatar] = useState(null);
@@ -56,8 +57,7 @@ function VideoPanel({
         : (roomInfo.candidateAvatar || roomInfo.candidateProfilePicture || roomInfo.candidate?.profilePicture || roomInfo.candidate?.avatarUrl || roomInfo.candidate?.avatar)
     ) : null);
 
-    const localRoleNameInRoom = isCandidate ? roomInfo?.candidateName : roomInfo?.coachName;
-    const localPeerName = user?.name || user?.firstName || user?.userName || user?.displayName || localRoleNameInRoom || "You";
+    const localPeerName = resolveLocalDisplayName(user, roomInfo, user?.role);
     const localAvatar = user?.profilePicture || user?.avatarUrl || user?.imagePath || user?.avatar;
 
     return (

@@ -292,6 +292,10 @@ export default function AdminCandidatesPage() {
                 onSubmit={handleFormSubmit}
                 user={selectedUser}
                 mode={formMode}
+                defaultRole={0}
+                showRoleSelect={false}
+                title="Create candidate"
+                description="Add a candidate account. Role is fixed to Candidate."
             />
 
             <ConfirmModal

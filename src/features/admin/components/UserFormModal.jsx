@@ -38,13 +38,30 @@ const roleTextToNumber = {
     Admin: 2,
 };
 
-export default function UserFormModal({ open, onClose, onSubmit, user, mode = "create" }) {
+export default function UserFormModal({
+    open,
+    onClose,
+    onSubmit,
+    user,
+    mode = "create",
+    defaultRole = 0,
+    showPhoneNumber = true,
+    showRoleSelect = true,
+    includeCoachProfileFields = false,
+    title,
+    description,
+}) {
     const [formData, setFormData] = useState({
         fullName: "",
         email: "",
         phoneNumber: "",
         password: "",
-        role: 0,
+        role: defaultRole,
+        profilePicture: "",
+        portfolioUrl: "",
+        experienceYears: "",
+        currentJobTitle: "",
+        bio: "",
     });
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
@@ -58,6 +75,11 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                 phoneNumber: user.phoneNumber || "",
                 password: "", // Không hiển thị password cũ
                 role: typeof user.role === "number" ? user.role : roleTextToNumber[user.role] || 0,
+                profilePicture: user.profilePicture || "",
+                portfolioUrl: user.portfolioUrl || "",
+                experienceYears: user.experienceYears ?? "",
+                currentJobTitle: user.currentJobTitle || "",
+                bio: user.bio || "",
             });
         } else if (mode === "create") {
             setFormData({
@@ -65,12 +87,17 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                 email: "",
                 phoneNumber: "",
                 password: "",
-                role: 0,
+                role: defaultRole,
+                profilePicture: "",
+                portfolioUrl: "",
+                experienceYears: "",
+                currentJobTitle: "",
+                bio: "",
             });
         }
         setErrors({});
         setSubmitError("");
-    }, [user, mode, open]);
+    }, [user, mode, open, defaultRole]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -113,18 +140,34 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
 
         if (mode === 'create' && !formData.password.trim()) {
             newErrors.password = 'Password is required.';
-        } else if (formData.password && formData.password.length < 6) {
-            newErrors.password = "Password must be at least 6 characters.";
+        } else if (formData.password && formData.password.length < 8) {
+            newErrors.password = "Password must be at least 8 characters.";
         }
 
-        if (!formData.phoneNumber.trim()) {
-            newErrors.phoneNumber = "Phone number is required.";
-        } else if (!/^[0-9+\-\s]{8,15}$/.test(formData.phoneNumber.trim())) {
-            newErrors.phoneNumber = "Please enter a valid phone number.";
+        if (showPhoneNumber) {
+            if (!formData.phoneNumber.trim()) {
+                newErrors.phoneNumber = "Phone number is required.";
+            } else if (!/^[0-9+\-\s]{8,15}$/.test(formData.phoneNumber.trim())) {
+                newErrors.phoneNumber = "Please enter a valid phone number.";
+            }
         }
 
-        if (formData.role === "" || formData.role === null) {
+        if (showRoleSelect && (formData.role === "" || formData.role === null)) {
             newErrors.role = "Role is required.";
+        }
+
+        if (includeCoachProfileFields) {
+            if (formData.profilePicture && !/^https?:\/\//i.test(formData.profilePicture.trim())) {
+                newErrors.profilePicture = "Please enter a valid URL.";
+            }
+
+            if (formData.portfolioUrl && !/^https?:\/\//i.test(formData.portfolioUrl.trim())) {
+                newErrors.portfolioUrl = "Please enter a valid URL.";
+            }
+
+            if (formData.experienceYears !== "" && (Number.isNaN(Number(formData.experienceYears)) || Number(formData.experienceYears) < 0)) {
+                newErrors.experienceYears = "Please enter a valid experience value.";
+            }
         }
 
         setErrors(newErrors);
@@ -138,7 +181,14 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
             return;
         }
 
-        const dataToSubmit = { ...formData };
+        const dataToSubmit = {
+            ...formData,
+            profilePicture: formData.profilePicture.trim() || null,
+            portfolioUrl: formData.portfolioUrl.trim() || null,
+            experienceYears: formData.experienceYears === "" ? null : Number(formData.experienceYears),
+            currentJobTitle: formData.currentJobTitle.trim() || null,
+            bio: formData.bio.trim() || null,
+        };
 
         onSubmit(dataToSubmit, (error) => {
             if (error) {
@@ -153,7 +203,12 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
             email: "",
             phoneNumber: "",
             password: "",
-            role: "CANDIDATE",
+            role: defaultRole,
+            profilePicture: "",
+            portfolioUrl: "",
+            experienceYears: "",
+            currentJobTitle: "",
+            bio: "",
         });
         setErrors({});
         onClose();
@@ -183,10 +238,10 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
             >
                 <Box>
                     <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#111827" }}>
-                        {mode === "create" ? "Create user" : "Edit user"}
+                        {title || (mode === "create" ? "Create user" : "Edit user")}
                     </Typography>
                     <Typography sx={{ fontSize: "0.85rem", color: "#6b7280", mt: 0.5 }}>
-                        {mode === "create" ? "Add a new account to the system." : "Update user profile details."}
+                        {description || (mode === "create" ? "Add a new account to the system." : "Update user profile details.")}
                     </Typography>
                 </Box>
                 <IconButton
@@ -241,19 +296,21 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                             />
                         </Grid>
 
-                        <Grid item xs={12} sx={{ width: "100%" }}>
-                            <FormTextField
-                                fullWidth
-                                label="Phone number"
-                                name="phoneNumber"
-                                value={formData.phoneNumber}
-                                onChange={handleChange}
-                                error={!!errors.phoneNumber}
-                                helperText={errors.phoneNumber}
-                                required
-                                inputProps={{ maxLength: 20 }}
-                            />
-                        </Grid>
+                        {showPhoneNumber && (
+                            <Grid item xs={12} sx={{ width: "100%" }}>
+                                <FormTextField
+                                    fullWidth
+                                    label="Phone number"
+                                    name="phoneNumber"
+                                    value={formData.phoneNumber}
+                                    onChange={handleChange}
+                                    error={!!errors.phoneNumber}
+                                    helperText={errors.phoneNumber}
+                                    required
+                                    inputProps={{ maxLength: 20 }}
+                                />
+                            </Grid>
+                        )}
 
                         <Grid item xs={12} sx={{ width: "100%" }}>
                             <FormTextField
@@ -283,25 +340,104 @@ export default function UserFormModal({ open, onClose, onSubmit, user, mode = "c
                             />
                         </Grid>
 
-                        <Grid item xs={12} sx={{ width: "100%" }}>
-                            <FormControl fullWidth error={!!errors.role} required>
-                                <InputLabel id="role-label">Role</InputLabel>
-                                <FormSelect
-                                    labelId="role-label"
-                                    label="Role"
-                                    name="role"
-                                    value={formData.role}
-                                    onChange={handleChange}
-                                >
-                                    {USER_ROLES.map((role) => (
-                                        <MenuItem key={role.value} value={role.value}>
-                                            {role.label}
-                                        </MenuItem>
-                                    ))}
-                                </FormSelect>
-                                {errors.role && <FormHelperText>{errors.role}</FormHelperText>}
-                            </FormControl>
-                        </Grid>
+                        {showRoleSelect && (
+                            <Grid item xs={12} sx={{ width: "100%" }}>
+                                <FormControl fullWidth error={!!errors.role} required>
+                                    <InputLabel id="role-label">Role</InputLabel>
+                                    <FormSelect
+                                        labelId="role-label"
+                                        label="Role"
+                                        name="role"
+                                        value={formData.role}
+                                        onChange={handleChange}
+                                    >
+                                        {USER_ROLES.map((role) => (
+                                            <MenuItem key={role.value} value={role.value}>
+                                                {role.label}
+                                            </MenuItem>
+                                        ))}
+                                    </FormSelect>
+                                    {errors.role && <FormHelperText>{errors.role}</FormHelperText>}
+                                </FormControl>
+                            </Grid>
+                        )}
+
+                        {includeCoachProfileFields && (
+                            <>
+                                <Grid item xs={12} sx={{ width: "100%", pt: 1 }}>
+                                    <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#111827" }}>
+                                        Optional coach profile details
+                                    </Typography>
+                                    <Typography sx={{ fontSize: "0.8rem", color: "#6b7280", mt: 0.5 }}>
+                                        Admin can fill these now or leave them for the coach to complete later.
+                                    </Typography>
+                                </Grid>
+
+                                <Grid item xs={12} sx={{ width: "100%" }}>
+                                    <FormTextField
+                                        fullWidth
+                                        label="Profile picture URL"
+                                        name="profilePicture"
+                                        value={formData.profilePicture}
+                                        onChange={handleChange}
+                                        error={!!errors.profilePicture}
+                                        helperText={errors.profilePicture}
+                                        inputProps={{ maxLength: 1000 }}
+                                    />
+                                </Grid>
+
+                                <Grid item xs={12} sx={{ width: "100%" }}>
+                                    <FormTextField
+                                        fullWidth
+                                        label="Portfolio URL"
+                                        name="portfolioUrl"
+                                        value={formData.portfolioUrl}
+                                        onChange={handleChange}
+                                        error={!!errors.portfolioUrl}
+                                        helperText={errors.portfolioUrl}
+                                        inputProps={{ maxLength: 1000 }}
+                                    />
+                                </Grid>
+
+                                <Grid item xs={12} sx={{ width: "100%" }}>
+                                    <FormTextField
+                                        fullWidth
+                                        label="Experience years"
+                                        name="experienceYears"
+                                        type="number"
+                                        value={formData.experienceYears}
+                                        onChange={handleChange}
+                                        error={!!errors.experienceYears}
+                                        helperText={errors.experienceYears}
+                                        inputProps={{ min: 0, max: 80 }}
+                                    />
+                                </Grid>
+
+                                <Grid item xs={12} sx={{ width: "100%" }}>
+                                    <FormTextField
+                                        fullWidth
+                                        label="Current job title"
+                                        name="currentJobTitle"
+                                        value={formData.currentJobTitle}
+                                        onChange={handleChange}
+                                        inputProps={{ maxLength: 200 }}
+                                    />
+                                </Grid>
+
+                                <Grid item xs={12} sx={{ width: "100%" }}>
+                                    <FormTextField
+                                        fullWidth
+                                        label="Bio"
+                                        name="bio"
+                                        value={formData.bio}
+                                        onChange={handleChange}
+                                        multiline
+                                        minRows={3}
+                                        inputProps={{ maxLength: 4000 }}
+                                    />
+                                </Grid>
+                            </>
+                        )}
                     </Grid>
                 </DialogContent>
 

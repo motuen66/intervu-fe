@@ -99,10 +99,9 @@ function persistableJob(job) {
     };
 }
 
-export function ProcessingTrayProvider({ children }) {
+function ProcessingTrayProviderRoot({ children }) {
     const navigate = useNavigate();
     const [visible, setVisible] = useState(false);
-    const [expanded, setExpanded] = useState(true);
     const [progress, setProgress] = useState(0);
     const [job, setJob] = useState(null); // { kind, titles, statusBuckets, completeCta*, completeNotificationType, referenceId }
 
@@ -159,7 +158,6 @@ export function ProcessingTrayProvider({ children }) {
             setJob(nextJob);
             setProgress(nextJob.autoComplete ? 100 : 0);
             setVisible(true);
-            setExpanded(true);
             writePersisted({ job: persistableJob(nextJob), startedAt: Date.now() });
             if (nextJob.autoComplete) {
                 playTing();
@@ -205,7 +203,6 @@ export function ProcessingTrayProvider({ children }) {
         setJob(persisted.job);
         setProgress(resumedProgress);
         setVisible(true);
-        setExpanded(true);
         if (resumedProgress < MOCK_CAP) startTicker();
     }, [startTicker, navigate]);
 
@@ -348,14 +345,22 @@ export function ProcessingTrayProvider({ children }) {
                     completeTitle={job.completeTitle}
                     completeCtaLabel={job.completeCtaLabel}
                     isComplete={progress >= 100}
-                    expanded={expanded}
-                    onToggle={() => setExpanded((v) => !v)}
                     onReview={handleReview}
                     onClose={hideTray}
                 />
             )}
         </ProcessingTrayContext.Provider>
     );
+}
+
+export function ProcessingTrayProvider({ children }) {
+    const parentTray = useContext(ProcessingTrayContext);
+
+    if (parentTray) {
+        return children;
+    }
+
+    return <ProcessingTrayProviderRoot>{children}</ProcessingTrayProviderRoot>;
 }
 
 export function useProcessingTray() {

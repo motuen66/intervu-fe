@@ -57,8 +57,8 @@ function LoginPage() {
                 return;
             }
 
-            // Candidates
-            navigate("/home");
+            // Candidates — hub (not coach browse)
+            navigate("/candidate");
         },
         [dispatch, navigate],
     );

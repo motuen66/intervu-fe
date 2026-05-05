@@ -3,32 +3,27 @@ import {
     Alert,
     Box,
     CircularProgress,
-    FormControl,
-    FormControlLabel,
-    FormHelperText,
-    IconButton,
     Modal,
-    Radio,
-    RadioGroup,
     Slider,
     Stack,
     Typography,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import { callApi } from "../../../../common/utils/apiConnector.js";
 import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { dialogStyles, fieldStyles } from "../../../../common/constants/uiStyles";
 import FormTextField from "../../../../common/components/form/FormTextField";
-import { PrimaryButton } from "../../../../common/components/buttons";
+import { PrimaryButton, TextButton } from "../../../../common/components/buttons";
 import SectionHeading from "../../../../common/components/SectionHeading";
 import AppText from "../../../../common/components/AppText";
+import ConfirmModal from "../../../../common/components/ConfirmModal";
 
 function CoachEvaluationModal({
     open,
     room,
     onClose,
     onSubmitted,
+    onLeaveWithoutEvaluating,
     allowClose = false,
     showCloseButton = false,
 }) {
@@ -37,19 +32,7 @@ function CoachEvaluationModal({
     const [items, setItems] = useState([]);
     const [error, setError] = useState("");
     const [others, setOthers] = useState("");
-    const [hireDecision, setHireDecision] = useState("");
-
-    const normalizeHireDecision = (value) => {
-        if (value === true) return "yes";
-        if (value === false) return "no";
-        if (typeof value === "string") {
-            const normalized = value.trim().toLowerCase();
-            if (normalized === "yes" || normalized === "no") return normalized;
-            if (normalized === "true") return "yes";
-            if (normalized === "false") return "no";
-        }
-        return "";
-    };
+    const [emergencyConfirmOpen, setEmergencyConfirmOpen] = useState(false);
 
     const parseEvaluationStructure = (data) => {
         const raw = data?.evaluationStructureJson ?? data?.EvaluationStructureJson ?? data?.evaluationStructure ?? data?.EvaluationStructure;
@@ -110,14 +93,6 @@ function CoachEvaluationModal({
 
                 setItems(normalizedResults);
                 setOthers(data?.others ?? data?.Others ?? evaluationStructure?.others ?? "");
-                setHireDecision(
-                    normalizeHireDecision(
-                        data?.hireDecision ??
-                        data?.isHire ??
-                        evaluationStructure?.hireDecision ??
-                        "",
-                    ),
-                );
             } catch (err) {
                 setError(err?.response?.data?.message || "Failed to load evaluation form.");
             } finally {
@@ -153,10 +128,6 @@ function CoachEvaluationModal({
             setError("Others must be 300 words or fewer.");
             return;
         }
-        if (!hireDecision) {
-            setError("Please choose a hire decision.");
-            return;
-        }
         setSubmitting(true);
         try {
             const cleanedOthers = others.trim();
@@ -170,8 +141,6 @@ function CoachEvaluationModal({
                 results: items,
                 evaluationResults: pascalCaseResults,
                 others: cleanedOthers,
-                hireDecision,
-                hideDecision: hireDecision,
             };
             const evaluationStructureJson = JSON.stringify(evaluationStructurePayload);
 
@@ -181,7 +150,6 @@ function CoachEvaluationModal({
                 arg: {
                     results: items,
                     others: cleanedOthers,
-                    hireDecision,
                     evaluationStructure: evaluationStructureJson,
                     evaluationStructureJson,
                 },
@@ -204,7 +172,6 @@ function CoachEvaluationModal({
         }
         setItems([]);
         setOthers("");
-        setHireDecision("");
         setError("");
         if (onClose) {
             onClose();
@@ -241,6 +208,7 @@ function CoachEvaluationModal({
     };
 
     return (
+        <>
         <Modal
             open={open}
             onClose={handleClose}
@@ -367,30 +335,17 @@ function CoachEvaluationModal({
                             />
                         </Box>
 
-                        <Box
-                            sx={{
-                                border: "1px solid",
-                                borderColor: "divider",
-                                borderRadius: 2,
-                                p: 2,
-                            }}
-                        >
-                            <FormControl required error={!hireDecision && !!error}>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                    Hire Decision
-                                </Typography>
-                                <RadioGroup
-                                    row
-                                    value={hireDecision}
-                                    onChange={(e) => setHireDecision(e.target.value)}
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ pt: 1 }}>
+                            {onLeaveWithoutEvaluating ? (
+                                <TextButton
+                                    onClick={() => setEmergencyConfirmOpen(true)}
+                                    disabled={submitting}
                                 >
-                                    <FormControlLabel value="yes" control={<Radio />} label="Yes" />
-                                    <FormControlLabel value="no" control={<Radio />} label="No" />
-                                </RadioGroup>
-                                {!hireDecision && !!error && <FormHelperText>Please select Yes or No.</FormHelperText>}
-                            </FormControl>
-                        </Box>
-                        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ pt: 1 }}>
+                                    Leave without evaluating
+                                </TextButton>
+                            ) : (
+                                <Box />
+                            )}
                             <PrimaryButton
                                 disabled={submitting || items.length === 0}
                                 onClick={handleSubmit}
@@ -402,6 +357,22 @@ function CoachEvaluationModal({
                 )}
             </Box>
         </Modal>
+        {onLeaveWithoutEvaluating && (
+            <ConfirmModal
+                show={emergencyConfirmOpen}
+                title="Leave without submitting evaluation?"
+                message={"This is intended for emergencies. The candidate's evaluation will not be saved or submitted, and you will exit the room immediately."}
+                onConfirm={() => {
+                    setEmergencyConfirmOpen(false);
+                    onLeaveWithoutEvaluating();
+                }}
+                onCancel={() => setEmergencyConfirmOpen(false)}
+                confirmText="Leave anyway"
+                cancelText="Stay"
+                confirmVariant="danger"
+            />
+        )}
+        </>
     );
 }
 

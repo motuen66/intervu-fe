@@ -50,6 +50,16 @@ const notificationSlice = createSlice({
         setLoading(state, action) {
             state.loading = action.payload;
         },
+        resetNotifications() {
+            return {
+                items: [],
+                unreadCount: 0,
+                totalCount: 0,
+                page: 1,
+                pageSize: 20,
+                loading: false,
+            };
+        },
     },
 });
 
@@ -61,6 +71,7 @@ export const {
     markAllAsRead,
     setUnreadCount,
     setLoading,
+    resetNotifications,
 } = notificationSlice.actions;
 
 export default notificationSlice.reducer;

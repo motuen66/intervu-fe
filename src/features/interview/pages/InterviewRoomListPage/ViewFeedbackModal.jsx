@@ -113,12 +113,6 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
     const evaluationStructure = parseEvaluationStructure(feedback || {});
     const evaluationResults = feedback?.evaluationResults || evaluationStructure?.results || [];
     const resolvedOthers = feedback?.others ?? evaluationStructure?.others;
-    const resolvedHireDecision =
-        feedback?.hireDecision ??
-        feedback?.hideDecision ??
-        evaluationStructure?.hireDecision ??
-        evaluationStructure?.hideDecision;
-    const resolvedIsHire = feedback?.isHire ?? feedback?.IsHire;
 
     return (
         <Dialog
@@ -238,23 +232,6 @@ function ViewFeedbackModal({ open, onClose, interviewRoomId, user }) {
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
-                                            {(resolvedHireDecision !== undefined || resolvedIsHire !== undefined) && (
-                                                <TableRow>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Hire Decision</TableCell>
-                                                    <TableCell align="center">-</TableCell>
-                                                    <TableCell>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            {resolvedHireDecision
-                                                                ? String(resolvedHireDecision).toLowerCase() === "yes"
-                                                                    ? "Yes"
-                                                                    : "No"
-                                                                : resolvedIsHire
-                                                                  ? "Yes"
-                                                                  : "No"}
-                                                        </Typography>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
                                             {resolvedOthers && (
                                                 <TableRow>
                                                     <TableCell sx={{ fontWeight: 600 }}>Others</TableCell>

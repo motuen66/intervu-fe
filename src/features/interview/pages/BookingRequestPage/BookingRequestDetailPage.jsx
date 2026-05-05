@@ -461,12 +461,38 @@ export default function BookingRequestDetailPage() {
         const startTime = round?.startTime ? new Date(round.startTime) : null;
         const now = new Date();
 
+        let hoursBeforeInterview = null;
         if (startTime && !Number.isNaN(startTime.getTime())) {
-            const hoursBeforeInterview = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+            hoursBeforeInterview = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
             if (hoursBeforeInterview >= 24) previewRefundPercent = 100;
             else if (hoursBeforeInterview >= 12) previewRefundPercent = 50;
             else previewRefundPercent = 0;
         }
+
+        // #region agent log
+        fetch("http://127.0.0.1:7306/ingest/591499b0-95ba-42d1-a4a3-54eb1a1ebb98", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "fc5a41" },
+            body: JSON.stringify({
+                sessionId: "fc5a41",
+                runId: "post-fix",
+                hypothesisId: "H2",
+                location: "BookingRequestDetailPage.jsx:handleOpenCancelRoundConfirm",
+                message: "booking-requests tab cancel round refund preview inputs",
+                data: {
+                    roundStartTime: round?.startTime ?? null,
+                    roundScheduledTime: round?.scheduledTime ?? null,
+                    interviewRoomId: round?.interviewRoomId ?? null,
+                    startTimeMs: startTime && !Number.isNaN(startTime.getTime()) ? startTime.getTime() : null,
+                    nowMs: now.getTime(),
+                    hoursBeforeInterview,
+                    previewRefundPercent,
+                    roundNumber: round?.roundNumber ?? null,
+                },
+                timestamp: Date.now(),
+            }),
+        }).catch(() => {});
+        // #endregion
 
         const baseAmount = parseAmount(round?.price);
         const previewRefundAmount =
@@ -635,6 +661,22 @@ export default function BookingRequestDetailPage() {
                         )}
                     </Stack>
                 </SectionCard>
+
+                {(detail.candidateNote || "").trim().length > 0 && (
+                    <SectionCard title="Candidate note" icon={AssignmentIcon} sx={{ mb: 0, p: 4 }}>
+                        <AppText
+                            variant="body"
+                            sx={{
+                                color: "#334155",
+                                whiteSpace: "pre-wrap",
+                                lineHeight: 1.65,
+                                fontWeight: 500,
+                            }}
+                        >
+                            {detail.candidateNote.trim()}
+                        </AppText>
+                    </SectionCard>
+                )}
 
                 {/* Documents — compact horizontal bar below Session Details */}
                 {(detail.jobDescriptionUrl?.length > 4 || detail.cvUrl?.length > 4) && (

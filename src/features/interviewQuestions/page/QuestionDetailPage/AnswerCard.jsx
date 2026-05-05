@@ -286,7 +286,7 @@ export default function AnswerCard({
                         </TextButton>
                     </Tooltip>
                 )}
-                {!isAdmin && (
+                {/* {!isAdmin && (
                     <TextButton
                         size="sm"
                         startIcon={<FlagOutlinedIcon sx={{ fontSize: 15 }} />}
@@ -294,7 +294,7 @@ export default function AnswerCard({
                     >
                         Report
                     </TextButton>
-                )}
+                )} */}
             </Stack>
         </Paper>
     );

@@ -125,6 +125,21 @@ const normalizeCoachProfile = (data) => ({
     bankAccountNumber: data?.bankAccountNumber || "",
 });
 
+const normalizeSavedQuestionItem = (item) => {
+    const likeCount = item?.vote ?? item?.likeCount ?? 0;
+    const saveCount = item?.saveCount ?? 0;
+    const commentCount = item?.commentCount ?? 0;
+    return {
+        ...item,
+        likeCount,
+        vote: item?.vote ?? likeCount,
+        saveCount,
+        commentCount,
+        answerCount: commentCount,
+        viewCount: item?.viewCount ?? 0,
+    };
+};
+
 const formatMonthYear = (value) => {
     if (!value) return "Present";
     const parsed = new Date(value);
@@ -351,6 +366,14 @@ function InterviewerProfilePage() {
     const companiesDisplay = (profile?.companies || [])
         .map((c) => (typeof c === "object" ? c?.name : c))
         .filter(Boolean);
+    const companiesFromWE = Array.from(
+        new Set(
+            (profile?.workExperiences || [])
+                .map((w) => (w?.companyName || w?.company || "").trim())
+                .filter(Boolean),
+        ),
+    );
+    const companiesCount = companiesDisplay.length > 0 ? companiesDisplay.length : companiesFromWE.length;
     const averageRating = Number(coachRating ?? profile?.rating ?? 0);
     const totalRatings = Number(coachRatingCount ?? profile?.ratingCount ?? 0);
     const isSelf = !routeId || String(routeId) === String(user?.id);
@@ -364,7 +387,7 @@ function InterviewerProfilePage() {
             .then(({ data }) => {
                 const payload = data ?? {};
                 const items = Array.isArray(payload) ? payload : (payload.items ?? payload.data ?? []);
-                setSavedQuestions(items);
+                setSavedQuestions((items ?? []).map(normalizeSavedQuestionItem));
             })
             .catch(() => setSavedQuestions([]))
             .finally(() => setLoadingSaved(false));
@@ -805,7 +828,7 @@ function InterviewerProfilePage() {
                                                 color: "text.primary",
                                             }}
                                         >
-                                            {companiesDisplay.length}
+                                            {companiesCount}
                                         </Typography>
                                         <Typography
                                             sx={{
@@ -1582,17 +1605,11 @@ function InterviewerProfilePage() {
                                         No saved questions yet.
                                     </Typography>
                                 ) : (
-                                    <Box
-                                        sx={{
-                                            display: "grid",
-                                            gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-                                            gap: 2,
-                                        }}
-                                    >
+                                    <Stack spacing={1.5}>
                                         {savedQuestions.map((q) => (
                                             <QuestionCard key={q.id} item={q} />
                                         ))}
-                                    </Box>
+                                    </Stack>
                                 )}
                             </Box>
                         )}

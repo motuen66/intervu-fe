@@ -25,6 +25,7 @@ export const adminEndPoints = {
     UPDATE_USER: (id) => `${ADMIN_BASE_URL}/users/${id}`,
     DELETE_USER: (id) => `${ADMIN_BASE_URL}/users/${id}`,
     ACTIVATE_USER: (id) => `${ADMIN_BASE_URL}/users/${id}/activate`,
+    CREATE_COACH_PROFILE: `${BE_BASE_URL}/api/v1/coach-profile`,
 
     // Room Reports Endpoints
     GET_ROOM_REPORTS: `${ADMIN_BASE_URL}/room-reports`,

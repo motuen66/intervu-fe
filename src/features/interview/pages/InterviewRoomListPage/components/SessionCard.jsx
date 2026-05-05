@@ -12,6 +12,7 @@ import {
     FileText,
     CircleCheck,
     Users,
+    ExternalLink,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BaseCard from "../../../../../common/components/cards/BaseCard";
@@ -29,7 +30,7 @@ import PreparedQuestionsModal from "../../../components/preparedQuestions/Prepar
  * @typedef {Object} SessionCardProps
  * @property {Object} room                         Interview room. If room.rounds.length > 1, rendered as multi-round.
  * @property {Object} user                         Current user ({ role, id }) — drives participant resolution.
- * @property {(room) => void} [onClick]            Card click (feedback path handled by caller).
+ * @property {(room) => void} [onClick]            Booking/details — only wired to the explicit external-link icon when provided.
  * @property {(target) => void} [onJoin]           Receives room (single) or round (multi).
  * @property {(target) => void} [onCancel]
  * @property {(target) => void} [onReschedule]    Alias for onRequestReschedule.
@@ -337,11 +338,13 @@ function SessionSummary({
                             <StatusChip
                                 icon={<Clock size={12} />}
                                 label={
-                                    startingIn === "now" || room?.status === INTERVIEW_ROOM_STATUS.ON_GOING
-                                        ? "Starting now"
-                                        : `Starting in ${startingIn}`
+                                    room?.status === INTERVIEW_ROOM_STATUS.ON_GOING
+                                        ? "Live now"
+                                        : startingIn === "now"
+                                          ? "Starting now"
+                                          : `Starting in ${startingIn}`
                                 }
-                                color="warning"
+                                color={room?.status === INTERVIEW_ROOM_STATUS.ON_GOING ? "success" : "warning"}
                             />
                         </Stack>
                     )}
@@ -375,7 +378,9 @@ function SessionSummary({
                 </Stack>
             </Box>
 
-            {statusConfig && <StatusChip label={statusConfig.label} color={statusConfig.color} />}
+            {statusConfig && room?.status !== INTERVIEW_ROOM_STATUS.ON_GOING && (
+                <StatusChip label={statusConfig.label} color={statusConfig.color} />
+            )}
         </Stack>
     );
 }
@@ -461,11 +466,13 @@ function RoundRow({
                         <StatusChip
                             icon={<Clock size={12} />}
                             label={
-                                startingIn === "now" || round?.status === INTERVIEW_ROOM_STATUS.ON_GOING
-                                    ? "Starting now"
-                                    : `Starting in ${startingIn}`
+                                round?.status === INTERVIEW_ROOM_STATUS.ON_GOING
+                                    ? "Live now"
+                                    : startingIn === "now"
+                                      ? "Starting now"
+                                      : `Starting in ${startingIn}`
                             }
-                            color="warning"
+                            color={round?.status === INTERVIEW_ROOM_STATUS.ON_GOING ? "success" : "warning"}
                         />
                     )}
                 </Stack>
@@ -491,10 +498,8 @@ function RoundRow({
                         <Button
                             variant="contained"
                             size="small"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onPrepareQuestions(round);
-                            }}
+                            type="button"
+                            onClick={() => onPrepareQuestions(round)}
                             startIcon={isQuestionsReady ? <CircleCheck size={14} /> : undefined}
                             sx={() => ({
                                 textTransform: "none",
@@ -616,6 +621,7 @@ export default function SessionCard({
         : Number(room?.durationMinutes ?? 0) || 0;
     const jdUrl = room?.jobDescriptionUrl || room?.jdUrl || null;
     const cvUrl = room?.cvUrl || room?.candidateCvUrl || null;
+    const bookingDetailId = room?.bookingRequestId || room?.sessionId || null;
 
     // Prepare-questions affordance for single-round cards (multi-round handled in RoundRow).
     const isInterviewer = user?.role === ROLES.INTERVIEWER;
@@ -631,10 +637,17 @@ export default function SessionCard({
             ?? (typeof room?.generatedQuestionCount === "number" && room.generatedQuestionCount > 0),
     );
 
+    const bookingIconButtonSx = (theme) => ({
+        border: `1px solid ${theme.palette.divider}`,
+        borderRadius: 99,
+        alignSelf: { xs: "flex-end", md: "center" },
+        color: "text.secondary",
+        "&:hover": { color: "primary.main", borderColor: "primary.main", bgcolor: "action.hover" },
+    });
+
     if (!hasMultipleRounds) {
         return (
             <BaseCard
-                onClick={onClick ? () => onClick(room) : undefined}
                 sx={(theme) => ({
                     width: "100%",
                     border: isHighlighted ? `2px solid ${theme.palette.success.main}` : undefined,
@@ -670,20 +683,25 @@ export default function SessionCard({
                         />
                     </Box>
                     {showActions && (
-                        <Stack
-                            direction="row"
-                            spacing={1.25}
-                            alignItems="center"
-                            sx={{ width: { xs: "100%", md: "auto" } }}
-                        >
+                        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ width: { xs: "100%", md: "auto" } }}>
+                            {bookingDetailId && onClick && (
+                                <Tooltip title="Booking details" arrow>
+                                    <IconButton
+                                        aria-label="Booking details"
+                                        size="small"
+                                        onClick={() => onClick(room)}
+                                        sx={bookingIconButtonSx}
+                                    >
+                                        <ExternalLink size={16} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
                             {singleRoundCanPrepare && (
                                 <Button
                                     variant="contained"
                                     size="small"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOpenPrepare(room);
-                                    }}
+                                    type="button"
+                                    onClick={() => handleOpenPrepare(room)}
                                     startIcon={
                                         singleRoundIsQuestionsReady ? <CircleCheck size={14} /> : undefined
                                     }
@@ -753,7 +771,6 @@ export default function SessionCard({
                     },
                 }),
             })}
-            onClick={() => setExpanded((v) => !v)}
         >
             <Stack
                 direction={{ xs: "column", md: "row" }}
@@ -783,13 +800,22 @@ export default function SessionCard({
                     justifyContent="flex-end"
                     sx={{ width: { xs: "100%", md: "auto" } }}
                 >
+                    {bookingDetailId && onClick && (
+                        <Tooltip title="Booking details" arrow>
+                            <IconButton
+                                aria-label="Booking details"
+                                size="small"
+                                onClick={() => onClick(room)}
+                                sx={bookingIconButtonSx}
+                            >
+                                <ExternalLink size={16} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     <Tooltip title={expanded ? "Hide rounds" : "Show rounds"} arrow>
                         <IconButton
                             aria-label={expanded ? "Collapse rounds" : "Expand rounds"}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setExpanded((v) => !v);
-                            }}
+                            onClick={() => setExpanded((v) => !v)}
                             sx={(theme) => ({
                                 border: `1px solid ${theme.palette.divider}`,
                                 borderRadius: 99,

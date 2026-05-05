@@ -15,6 +15,7 @@ import { COACH_BOOKING_REQUESTS_ROUTE, DASHBOARD_LAYOUT } from "./dashboardToken
 
 function RequestItem({ request, onResponded }) {
     const [loading, setLoading] = useState(null);
+    const quoteText = request.candidateNote?.trim() || request.message;
 
     const handleRespond = async (isApproved) => {
         setLoading(isApproved ? "approve" : "reject");
@@ -45,7 +46,7 @@ function RequestItem({ request, onResponded }) {
                             .join(" • ")}
                     </Typography>
 
-                    {request.message && (
+                    {quoteText && (
                         <Box
                             sx={{
                                 mt: 1.5,
@@ -56,8 +57,8 @@ function RequestItem({ request, onResponded }) {
                                 borderColor: "divider",
                             }}
                         >
-                            <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                                "{request.message}"
+                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+                                "{quoteText}"
                             </Typography>
                         </Box>
                     )}

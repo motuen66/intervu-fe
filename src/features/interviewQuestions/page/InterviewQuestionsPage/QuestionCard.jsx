@@ -27,10 +27,12 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     const navigate = useNavigate();
     const currentUser = useSelector((state) => state.auth.userData);
 
-    const [likeCount, setLikeCount] = useState(item.likeCount ?? item.vote ?? 0);
+    const [likeCount, setLikeCount] = useState(
+        item.likeCount ?? item.likesCount ?? item.voteCount ?? item.vote ?? item.totalLikes ?? 0,
+    );
     const [liked, setLiked] = useState(item.isLikedByUser ?? false);
     const [saved, setSaved] = useState(item.isSavedByUser ?? false);
-    const [saveCount, setSaveCount] = useState(item.saveCount ?? 0);
+    const [saveCount, setSaveCount] = useState(item.saveCount ?? item.savedCount ?? item.bookmarkCount ?? 0);
     const [commentCount, setCommentCount] = useState(null);
 
     /* ── Normalized fields from QuestionListItemDto ── */
@@ -50,7 +52,8 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         return item.hottestAnswer ?? item.topAnswer ?? null;
     })();
     // console.log("Items:", item);
-    const answerCount = item.commentCount ?? 0;
+    const answerCount =
+        item.commentCount ?? item.commentsCount ?? item.answerCount ?? item.answersCount ?? item.totalComments ?? 0;
     const viewCount = item.viewCount ?? 0;
     const isHot = isHotProp ?? item.isHot ?? false;
 
@@ -69,7 +72,15 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     const roundLabel = item.round != null ? ROUNDS.find((r) => r.value === item.round)?.label : null;
 
     const metaChips = [
-        roleLabel && { label: roleLabel, color: "secondary" },
+        roleLabel && {
+            label: roleLabel,
+            color: "default",
+            sx: {
+                color: "text.primary",
+                bgcolor: "grey.50",
+                borderColor: "grey.300",
+            },
+        },
         categoryLabel && { label: categoryLabel, color: "default" },
         levelLabel && { label: levelLabel, color: "info" },
         roundLabel && { label: roundLabel, color: "warning" },
@@ -81,10 +92,10 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
     const needsTruncate = answerText.length > PREVIEW_CHAR_LIMIT;
 
     useEffect(() => {
-        setLikeCount(item?.likeCount ?? item?.vote ?? 0);
+        setLikeCount(item?.likeCount ?? item?.likesCount ?? item?.voteCount ?? item?.vote ?? item?.totalLikes ?? 0);
         setLiked(item?.isLikedByUser ?? false);
         setSaved(item?.isSavedByUser ?? false);
-        setSaveCount(item?.saveCount ?? 0);
+        setSaveCount(item?.saveCount ?? item?.savedCount ?? item?.bookmarkCount ?? 0);
     }, [item]);
 
     useEffect(() => {
@@ -178,26 +189,27 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         {
             icon: <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />,
             label: `${viewCount}`,
-        },
-        {
-            icon: <AddCircleOutlineIcon sx={{ fontSize: 16 }} />,
-            label: "I was asked this",
-            onClick: () =>
-                navigate("/questions/share", {
-                    state: {
-                        linkedQuestion: {
-                            id: item.id,
-                            content: item.title,
-                            title: item.title,
-                            companyId: item.companyIds?.[0] ?? item.companyId ?? null,
-                            roles: item.roles,
-                            tags: item.tags,
-                            category: item.category ?? item.questionType,
-                            answerCount: item.answerCount,
-                        },
-                    },
-                }),
-        },
+        }
+        // ,
+        // {
+        //     icon: <AddCircleOutlineIcon sx={{ fontSize: 16 }} />,
+        //     label: "I was asked this",
+        //     onClick: () =>
+        //         navigate("/questions/share", {
+        //             state: {
+        //                 linkedQuestion: {
+        //                     id: item.id,
+        //                     content: item.content ?? item.title,
+        //                     title: item.title ?? item.content,
+        //                     companyId: item.companyIds?.[0] ?? item.companyId ?? null,
+        //                     roles: item.roles,
+        //                     tags: item.tags,
+        //                     category: item.category ?? item.questionType,
+        //                     answerCount: item.answerCount,
+        //                 },
+        //             },
+        //         }),
+        // },
     ];
 
     return (
@@ -283,20 +295,20 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                             "&:hover": { color: "primary.main" },
                         }}
                     >
-                        {item.content}
+                        {item.title ?? item.content}
                     </Typography>
 
                     {/* Metadata chips: role / category / level / round */}
                     {metaChips.length > 0 && (
                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6, mb: 1.5 }}>
-                            {metaChips.map(({ label, color }) => (
+                            {metaChips.map(({ label, color, sx }) => (
                                 <Tag
                                     key={label}
                                     label={label}
                                     size="sm"
                                     color={color}
                                     variant="outlined"
-                                    sx={{ fontSize: 11, height: 22 }}
+                                    sx={{ fontSize: 11, height: 22, ...sx }}
                                 />
                             ))}
                         </Box>

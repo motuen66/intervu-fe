@@ -8,6 +8,7 @@ import {
     Alert,
     Chip,
     Autocomplete,
+    MenuItem,
 } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -27,7 +28,9 @@ import { METHOD } from "../../../../common/constants/api";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import { LEVELS } from "../../../../common/constants/types";
 import toast from "react-hot-toast";
+import FormSelect from "../../../../common/components/form/FormSelect";
 
 const springTransition = { type: "spring", damping: 25, stiffness: 200 };
 
@@ -71,7 +74,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             });
             if (res?.success) {
                 const pending = (res.data || []).filter((q) => q.status === 0);
-                
+
                 if (pending.length === 0) {
                     onClose();
                     toast("No pending questions to review for this session.", {
@@ -86,6 +89,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                         ...q,
                         localContent: q.content,
                         localTitle: q.title,
+                        localLevel: q.level ?? 0,
                         localTags: q.tags || [],
                         isCustom: false,
                         isNew: false,
@@ -129,6 +133,12 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
         );
     };
 
+    const handleLevelChange = (id, value) => {
+        setQuestions((prev) =>
+            prev.map((q) => (q.id === id ? { ...q, localLevel: value } : q))
+        );
+    };
+
     const handleDelete = (id, isNew) => {
         if (!isNew) {
             setDeletedExistingIds((prev) => [...prev, id]);
@@ -141,6 +151,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             id: crypto.randomUUID(),
             localTitle: "",
             localContent: "",
+            localLevel: 0,
             localTags: [],
             isCustom: true,
             isNew: true,
@@ -180,6 +191,7 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                 interviewRoomId: roomId,
                                 content: q.localContent,
                                 title: q.localTitle || "",
+                                level: q.localLevel,
                                 tags: q.localTags,
                             },
                         });
@@ -187,9 +199,10 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                         await callApi({
                             method: METHOD.PUT,
                             endpoint: interviewEndPoints.APPROVE_GENERATED_QUESTION(newId),
-                            arg: { 
-                                content: q.localContent, 
+                            arg: {
+                                content: q.localContent,
                                 title: q.localTitle || "",
+                                level: q.localLevel,
                                 tagIds: tagIds
                             },
                         });
@@ -197,9 +210,10 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                         await callApi({
                             method: METHOD.PUT,
                             endpoint: interviewEndPoints.APPROVE_GENERATED_QUESTION(q.id),
-                            arg: { 
-                                content: q.localContent, 
+                            arg: {
+                                content: q.localContent,
                                 title: q.localTitle || "",
+                                level: q.localLevel,
                                 tagIds: tagIds
                             },
                         });
@@ -382,6 +396,9 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             </Box>
 
             {/* Title Input */}
+            <Typography variant="caption" sx={{ display: "block", mb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", fontSize: "0.65rem" }}>
+                Title
+            </Typography>
             <FormTextField
                 fullWidth
                 size="small"
@@ -398,7 +415,35 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 }}
             />
 
+            {/* Level Select */}
+            <Typography variant="caption" sx={{ display: "block", mb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", fontSize: "0.65rem" }}>
+                Experience Level
+            </Typography>
+            <FormSelect
+                fullWidth
+                size="small"
+                value={question.localLevel}
+                onChange={(e) => handleLevelChange(question.id, e.target.value)}
+                renderValue={(v) => LEVELS.find((l) => l.value === v)?.label ?? "Select Level"}
+                sx={{
+                    mb: 1.5,
+                    "& .MuiOutlinedInput-root": {
+                        bgcolor: "white",
+                        borderRadius: "8px",
+                    }
+                }}
+            >
+                {LEVELS.filter(l => l.value !== "").map((l) => (
+                    <MenuItem key={l.value} value={l.value}>
+                        {l.label}
+                    </MenuItem>
+                ))}
+            </FormSelect>
+
             {/* Editable textarea */}
+            <Typography variant="caption" sx={{ display: "block", mb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", fontSize: "0.65rem" }}>
+                Question Content
+            </Typography>
             <Box
                 component="textarea"
                 ref={question.isNew && index === questions.length - 1 ? newCardRef : null}
@@ -427,6 +472,9 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             />
 
             {/* Tags Autocomplete */}
+            <Typography variant="caption" sx={{ display: "block", mb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", fontSize: "0.65rem" }}>
+                Tags
+            </Typography>
             <Autocomplete
                 multiple
                 id={`tags-${question.id}`}
@@ -497,307 +545,307 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 },
             }}
         >
-                {/* ===== SIDEBAR ===== */}
+            {/* ===== SIDEBAR ===== */}
+            <Box
+                sx={{
+                    width: 280,
+                    minWidth: 280,
+                    minHeight: "100%",
+                    background: "linear-gradient(180deg, var(--mui-palette-primary-main) 0%, var(--mui-palette-primary-light) 100%)",
+                    borderRadius: "20px 0 0 20px",
+                    p: 3.5,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                }}
+            >
+                {/* Badge */}
                 <Box
                     sx={{
-                        width: 280,
-                        minWidth: 280,
-                        minHeight: "100%",
-                        background: "linear-gradient(180deg, var(--mui-palette-primary-main) 0%, var(--mui-palette-primary-light) 100%)",
-                        borderRadius: "20px 0 0 20px",
-                        p: 3.5,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.75,
+                        bgcolor: "rgba(190, 242, 100, 0.15)",
+                        border: "1px solid rgba(190, 242, 100, 0.3)",
+                        borderRadius: "20px",
+                        px: 1.5,
+                        py: 0.5,
+                        mb: 1,
+                        alignSelf: "flex-start",
                     }}
                 >
-                    {/* Badge */}
-                    <Box
-                        sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.75,
-                            bgcolor: "rgba(190, 242, 100, 0.15)",
-                            border: "1px solid rgba(190, 242, 100, 0.3)",
-                            borderRadius: "20px",
-                            px: 1.5,
-                            py: 0.5,
-                            mb: 1,
-                            alignSelf: "flex-start",
-                        }}
+                    <PulsingSparkles />
+                    <Typography
+                        variant="overline"
+                        sx={{ color: "secondary.main", fontSize: "0.625rem", letterSpacing: "0.12em", fontWeight: 800 }}
                     >
-                        <PulsingSparkles />
-                        <Typography
-                            variant="overline"
-                            sx={{ color: "secondary.main", fontSize: "0.625rem", letterSpacing: "0.12em", fontWeight: 800 }}
-                        >
-                            AI EXTRACTED QUESTIONS
-                        </Typography>
-                    </Box>
-
-                    {/* Title */}
-                    <Box>
-                        <Typography variant="h4" sx={{ color: "primary.contrastText", fontWeight: 800, lineHeight: 1.2 }}>
-                            Question
-                        </Typography>
-                        <motion.div
-                            animate={{
-                                textShadow: [
-                                    "0 0 8px rgba(190, 242, 100, 0.2)",
-                                    "0 0 20px rgba(190, 242, 100, 0.45)",
-                                    "0 0 8px rgba(190, 242, 100, 0.2)",
-                                ],
-                            }}
-                            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                            style={{ display: "inline-block" }}
-                        >
-                            <Typography
-                                variant="h3"
-                                component="span"
-                                sx={{
-                                    color: "secondary.main",
-                                    fontWeight: 800,
-                                    lineHeight: 1.2,
-                                    display: "block",
-                                }}
-                            >
-                                Contribution
-                            </Typography>
-                        </motion.div>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)", mb: 2, lineHeight: 1.6 }}>
-                        Review and refine questions extracted from your interview session.
+                        AI EXTRACTED QUESTIONS
                     </Typography>
-
-                    {/* Steps */}
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: "auto" }}>
-                        <SidebarStep
-                            number="01"
-                            label="Review Questions"
-                            icon={MessageSquare}
-                            active={modalPhase === "review"}
-                            done={modalPhase === "contributing" || modalPhase === "success"}
-                        />
-
-                        <SidebarStep
-                            number="02"
-                            label="Contribute"
-                            icon={Database}
-                            active={modalPhase === "contributing" || modalPhase === "success"}
-                            done={modalPhase === "success"}
-                        />
-                    </Box>
                 </Box>
 
-                {/* ===== CONTENT AREA ===== */}
-                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            alignItems: "center",
-                            px: 2,
-                            pt: 1.5,
-                            pb: 0,
-                            flexShrink: 0,
+                {/* Title */}
+                <Box>
+                    <Typography variant="h4" sx={{ color: "primary.contrastText", fontWeight: 800, lineHeight: 1.2 }}>
+                        Question
+                    </Typography>
+                    <motion.div
+                        animate={{
+                            textShadow: [
+                                "0 0 8px rgba(190, 242, 100, 0.2)",
+                                "0 0 20px rgba(190, 242, 100, 0.45)",
+                                "0 0 8px rgba(190, 242, 100, 0.2)",
+                            ],
                         }}
+                        transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                        style={{ display: "inline-block" }}
                     >
-                        <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>
-                            <X size={20} />
-                        </IconButton>
-                    </Box>
-
-                    {/* Header */}
-                    <Box sx={{ px: 4, pt: 1, pb: 2 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary" }}>
-                            Review Extracted Questions
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-                            Verify and edit the questions before adding them to the bank.
-                        </Typography>
-                    </Box>
-
-                    {/* Main content area */}
-                    <Box
-                        sx={{
-                            flex: 1,
-                            px: 4,
-                            pb: modalPhase === "review" ? 2 : 4,
-                            overflowY: modalPhase === "review" ? "auto" : "hidden",
-                            display: modalPhase === "review" ? "block" : "flex",
-                            alignItems: modalPhase === "review" ? "stretch" : "center",
-                            justifyContent: modalPhase === "review" ? "flex-start" : "center",
-                        }}
-                    >
-                        {error && (
-                            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                                {error}
-                            </Alert>
-                        )}
-
-                        {loading ? (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={springTransition}>
-                                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-                                    <CircularProgress size={32} />
-                                </Box>
-                            </motion.div>
-                        ) : (
-                            <AnimatePresence mode="wait">
-                                {modalPhase === "review" && (
-                                    <motion.div
-                                        key="review"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={springTransition}
-                                    >
-                                        {questions.map((q, index) =>
-                                            renderQuestionCard(q, index, index === questions.length - 1)
-                                        )}
-
-                                        {/* Add custom question button */}
-                                        <Box sx={{ mt: questions.length > 0 ? 2 : 0 }}>
-                                            <SecondaryButton
-                                                onClick={handleAddCustom}
-                                                startIcon={<Plus size={16} />}
-                                                fullWidth
-                                            >
-                                                Add custom question
-                                            </SecondaryButton>
-                                        </Box>
-                                    </motion.div>
-                                )}
-
-                                {modalPhase === "contributing" && (
-                                    <motion.div
-                                        key="contributing"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={springTransition}
-                                        style={{ width: "100%", display: "flex", justifyContent: "center" }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                gap: 2,
-                                            }}
-                                        >
-                                            <Box
-                                                component={motion.div}
-                                                animate={{ scale: [1, 1.08, 1] }}
-                                                transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
-                                                sx={{
-                                                    width: 80,
-                                                    height: 80,
-                                                    borderRadius: "50%",
-                                                    bgcolor: "var(--mui-palette-primary-main)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    boxShadow: "0 0 28px rgba(190, 242, 100, 0.25)",
-                                                }}
-                                            >
-                                                <Database size={36} color="var(--mui-palette-secondary-main)" />
-                                            </Box>
-                                            <Typography variant="h6" fontWeight={800}>
-                                                Contributing to Bank
-                                            </Typography>
-                                            <Typography color="text.secondary" textAlign="center">
-                                                Syncing your verified questions with the global question bank...
-                                            </Typography>
-                                            <CircularProgress size={24} sx={{ color: "secondary.main", mt: 1 }} />
-                                        </Box>
-                                    </motion.div>
-                                )}
-
-                                {modalPhase === "success" && (
-                                    <motion.div
-                                        key="success"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={springTransition}
-                                        style={{ width: "100%", display: "flex", justifyContent: "center" }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                gap: 2,
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    width: 80,
-                                                    height: 80,
-                                                    borderRadius: "50%",
-                                                    bgcolor: "#22C55E",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    boxShadow: "0 0 24px rgba(34,197,94,0.35)",
-                                                }}
-                                            >
-                                                <CheckCircle size={40} color="white" />
-                                            </Box>
-                                            <Typography variant="h6" fontWeight={800}>
-                                                Successfully Contributed!
-                                            </Typography>
-                                            <Typography color="text.secondary" textAlign="center">
-                                                Thank you for helping the community grow.
-                                                <br />
-                                                Your questions are now live.
-                                            </Typography>
-                                        </Box>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        )}
-                    </Box>
-
-                    {/* Footer */}
-                    {modalPhase === "review" && (
-                        <Box
+                        <Typography
+                            variant="h3"
+                            component="span"
                             sx={{
-                                px: 4,
-                                py: 2,
-                                borderTop: "1px solid #E5E7EB",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
+                                color: "secondary.main",
+                                fontWeight: 800,
+                                lineHeight: 1.2,
+                                display: "block",
                             }}
                         >
-                            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                {questions.length} question{questions.length === 1 ? "" : "s"} ready to contribute
-                            </Typography>
+                            Contribution
+                        </Typography>
+                    </motion.div>
+                </Box>
+                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)", mb: 2, lineHeight: 1.6 }}>
+                    Review and refine questions extracted from your interview session.
+                </Typography>
 
-                            {/* Actions */}
-                            <Box sx={{ display: "flex", gap: 1.5 }}>
-                                <Box sx={{ minWidth: 120 }}>
-                                    <SecondaryButton fullWidth onClick={onClose}>
-                                        Discard
-                                    </SecondaryButton>
-                                </Box>
-                                <PrimaryButton
-                                    onClick={handleContribute}
-                                    disabled={!hasValidQuestions || contributing}
-                                    loading={contributing}
-                                >
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                                        Confirm & Contribute
-                                        <ChevronRight size={16} />
-                                    </Box>
-                                </PrimaryButton>
+                {/* Steps */}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: "auto" }}>
+                    <SidebarStep
+                        number="01"
+                        label="Review Questions"
+                        icon={MessageSquare}
+                        active={modalPhase === "review"}
+                        done={modalPhase === "contributing" || modalPhase === "success"}
+                    />
+
+                    <SidebarStep
+                        number="02"
+                        label="Contribute"
+                        icon={Database}
+                        active={modalPhase === "contributing" || modalPhase === "success"}
+                        done={modalPhase === "success"}
+                    />
+                </Box>
+            </Box>
+
+            {/* ===== CONTENT AREA ===== */}
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        alignItems: "center",
+                        px: 2,
+                        pt: 1.5,
+                        pb: 0,
+                        flexShrink: 0,
+                    }}
+                >
+                    <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>
+                        <X size={20} />
+                    </IconButton>
+                </Box>
+
+                {/* Header */}
+                <Box sx={{ px: 4, pt: 1, pb: 2 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary" }}>
+                        Review Extracted Questions
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                        Verify and edit the questions before adding them to the bank.
+                    </Typography>
+                </Box>
+
+                {/* Main content area */}
+                <Box
+                    sx={{
+                        flex: 1,
+                        px: 4,
+                        pb: modalPhase === "review" ? 2 : 4,
+                        overflowY: modalPhase === "review" ? "auto" : "hidden",
+                        display: modalPhase === "review" ? "block" : "flex",
+                        alignItems: modalPhase === "review" ? "stretch" : "center",
+                        justifyContent: modalPhase === "review" ? "flex-start" : "center",
+                    }}
+                >
+                    {error && (
+                        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                            {error}
+                        </Alert>
+                    )}
+
+                    {loading ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={springTransition}>
+                            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                                <CircularProgress size={32} />
                             </Box>
-                        </Box>
+                        </motion.div>
+                    ) : (
+                        <AnimatePresence mode="wait">
+                            {modalPhase === "review" && (
+                                <motion.div
+                                    key="review"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={springTransition}
+                                >
+                                    {questions.map((q, index) =>
+                                        renderQuestionCard(q, index, index === questions.length - 1)
+                                    )}
+
+                                    {/* Add custom question button */}
+                                    <Box sx={{ mt: questions.length > 0 ? 2 : 0 }}>
+                                        <SecondaryButton
+                                            onClick={handleAddCustom}
+                                            startIcon={<Plus size={16} />}
+                                            fullWidth
+                                        >
+                                            Add custom question
+                                        </SecondaryButton>
+                                    </Box>
+                                </motion.div>
+                            )}
+
+                            {modalPhase === "contributing" && (
+                                <motion.div
+                                    key="contributing"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={springTransition}
+                                    style={{ width: "100%", display: "flex", justifyContent: "center" }}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <Box
+                                            component={motion.div}
+                                            animate={{ scale: [1, 1.08, 1] }}
+                                            transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
+                                            sx={{
+                                                width: 80,
+                                                height: 80,
+                                                borderRadius: "50%",
+                                                bgcolor: "var(--mui-palette-primary-main)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                boxShadow: "0 0 28px rgba(190, 242, 100, 0.25)",
+                                            }}
+                                        >
+                                            <Database size={36} color="var(--mui-palette-secondary-main)" />
+                                        </Box>
+                                        <Typography variant="h6" fontWeight={800}>
+                                            Contributing to Bank
+                                        </Typography>
+                                        <Typography color="text.secondary" textAlign="center">
+                                            Syncing your verified questions with the global question bank...
+                                        </Typography>
+                                        <CircularProgress size={24} sx={{ color: "secondary.main", mt: 1 }} />
+                                    </Box>
+                                </motion.div>
+                            )}
+
+                            {modalPhase === "success" && (
+                                <motion.div
+                                    key="success"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={springTransition}
+                                    style={{ width: "100%", display: "flex", justifyContent: "center" }}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                width: 80,
+                                                height: 80,
+                                                borderRadius: "50%",
+                                                bgcolor: "#22C55E",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                boxShadow: "0 0 24px rgba(34,197,94,0.35)",
+                                            }}
+                                        >
+                                            <CheckCircle size={40} color="white" />
+                                        </Box>
+                                        <Typography variant="h6" fontWeight={800}>
+                                            Successfully Contributed!
+                                        </Typography>
+                                        <Typography color="text.secondary" textAlign="center">
+                                            Thank you for helping the community grow.
+                                            <br />
+                                            Your questions are now live.
+                                        </Typography>
+                                    </Box>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     )}
                 </Box>
+
+                {/* Footer */}
+                {modalPhase === "review" && (
+                    <Box
+                        sx={{
+                            px: 4,
+                            py: 2,
+                            borderTop: "1px solid #E5E7EB",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            {questions.length} question{questions.length === 1 ? "" : "s"} ready to contribute
+                        </Typography>
+
+                        {/* Actions */}
+                        <Box sx={{ display: "flex", gap: 1.5 }}>
+                            <Box sx={{ minWidth: 120 }}>
+                                <SecondaryButton fullWidth onClick={onClose}>
+                                    Discard
+                                </SecondaryButton>
+                            </Box>
+                            <PrimaryButton
+                                onClick={handleContribute}
+                                disabled={!hasValidQuestions || contributing}
+                                loading={contributing}
+                            >
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                                    Confirm & Contribute
+                                    <ChevronRight size={16} />
+                                </Box>
+                            </PrimaryButton>
+                        </Box>
+                    </Box>
+                )}
+            </Box>
         </Dialog>
     );
 }

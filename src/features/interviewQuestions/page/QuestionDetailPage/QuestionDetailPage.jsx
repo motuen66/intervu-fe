@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
+    Autocomplete,
     Avatar,
     Box,
     CircularProgress,
@@ -40,7 +41,7 @@ import { homeEndPoints } from "../../../home/services/homeApi";
 import AnswerCard from "./AnswerCard";
 import ReportDialog from "./ReportDialog";
 import { timeAgo } from "../../../../common/utils/dateFormatter";
-import { SORT_OPTIONS } from "../../../../common/constants/types";
+import { ROLES as ROLE_OPTIONS, SORT_OPTIONS } from "../../../../common/constants/types";
 import { ROLES } from "../../../../common/constants/common";
 import ConfirmModal from "../../../../common/components/ConfirmModal";
 import { CompanyLogo } from "../../../../common/utils/logoImageGenerator";
@@ -73,11 +74,33 @@ export default function QuestionDetailPage() {
     /* ── Question editing ── */
     const [editing, setEditing] = useState(false);
     const [editContent, setEditContent] = useState("");
+    const [editBodyContent, setEditBodyContent] = useState("");
+    const [editRoles, setEditRoles] = useState([]);
+    const [editCompanyIds, setEditCompanyIds] = useState([]);
     const [savingEdit, setSavingEdit] = useState(false);
     const [allCompanies, setAllCompanies] = useState([]);
     const [editCompanies, setEditCompanies] = useState([]);
     const callApiLocal = (options) => callApi({ ...options, useGlobalLoading: false });
     const getQuestionLikeCount = (question) => question?.vote ?? question?.likeCount ?? 0;
+    const normalizeRoleToValue = (role) => {
+        const norm = (s) => String(s ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+        if (typeof role === "number") return role;
+        if (typeof role === "string") {
+            if (/^\d+$/.test(role)) return Number(role);
+            const foundByLabel = ROLE_OPTIONS.find((opt) => norm(opt.label) === norm(role));
+            if (foundByLabel) return foundByLabel.value;
+            return role;
+        }
+        if (typeof role === "object" && role) {
+            if (role.value != null) return role.value;
+            if (role.id != null) return role.id;
+            if (role.name) {
+                const foundByName = ROLE_OPTIONS.find((opt) => norm(opt.label) === norm(role.name));
+                return foundByName?.value ?? role.name;
+            }
+        }
+        return role;
+    };
 
     useEffect(() => {
         callApiLocal({ method: METHOD.GET, endpoint: homeEndPoints.GET_ALL_COMPANIES, arg: { page: 1, pageSize: 200 } })
@@ -360,7 +383,26 @@ export default function QuestionDetailPage() {
 
     /* ── Edit question ── */
     const requestSaveEdit = () => {
-        if (!editContent.trim() || editContent.trim() === data.content) {
+        const originalTitle = (data.title ?? data.content ?? "").trim();
+        const originalContent = (data.content ?? "").trim();
+        const originalCompanyIds = (
+            data.companyIds && data.companyIds.length > 0
+                ? data.companyIds
+                : (data.companyNames ?? []).map((name) => editCompanies.find((c) => c.name === name)?.id).filter(Boolean)
+        )
+            .map(String)
+            .sort();
+        const nextCompanyIds = (editCompanyIds ?? []).map(String).sort();
+        const originalRoles = (data.roles ?? []).map(normalizeRoleToValue).map(String).sort();
+        const nextRoles = (editRoles ?? []).map(String).sort();
+
+        const noChanges =
+            editContent.trim() === originalTitle &&
+            editBodyContent.trim() === originalContent &&
+            JSON.stringify(nextCompanyIds) === JSON.stringify(originalCompanyIds) &&
+            JSON.stringify(nextRoles) === JSON.stringify(originalRoles);
+
+        if (!editContent.trim() || noChanges) {
             setEditing(false);
             return;
         }
@@ -385,17 +427,19 @@ export default function QuestionDetailPage() {
                 endpoint: interviewQuestionEndPoints.UPDATE_QUESTION(id),
                 arg: {
                     title: editContent.trim(),
-                    content: editContent.trim(),
+                    content: editBodyContent.trim(),
                     level: data.level,
                     round: data.round,
                     category: data.category ?? data.questionType,
                     companyIds:
-                        (data.companyIds && data.companyIds.length > 0
-                            ? data.companyIds
-                            : (data.companyNames ?? [])
-                                  .map((name) => editCompanies.find((c) => c.name === name)?.id)
-                                  .filter(Boolean)),
-                    roles: data.roles ?? [],
+                        editCompanyIds.length > 0
+                            ? editCompanyIds
+                            : data.companyIds && data.companyIds.length > 0
+                              ? data.companyIds
+                              : (data.companyNames ?? [])
+                                    .map((name) => editCompanies.find((c) => c.name === name)?.id)
+                                    .filter(Boolean),
+                    roles: editRoles ?? [],
                     tagIds: data.tagIds ?? [],
                 },
             });
@@ -403,7 +447,19 @@ export default function QuestionDetailPage() {
             setData((prev) => ({
                 ...prev,
                 title: editContent.trim(),
-                content: editContent.trim(),
+                content: editBodyContent.trim(),
+                category: prev?.category || prev?.questionType,
+                questionType: prev?.questionType || prev?.category,
+                companyIds: editCompanyIds,
+                companyNames:
+                    editCompanyIds.length > 0
+                        ? editCompanyIds
+                              .map((cid) => editCompanies.find((c) => String(c.id) === String(cid))?.name)
+                              .filter(Boolean)
+                        : prev?.companyNames ?? [],
+                roles: editRoles,
+                tagIds: prev?.tagIds ?? [],
+                tags: prev?.tags ?? [],
             }));
 
             toast.success("Question updated");
@@ -441,9 +497,14 @@ export default function QuestionDetailPage() {
 
     /* ── Normalized fields from QuestionDetailDto ── */
     const companyNames = data.companyNames ?? [];
-    console.log("Data:", data);
     const companyLabel = companyNames.length ? `Asked at ${companyNames.join(", ")}` : "Community question";
     const roles = data.roles ?? [];
+    const rolesDisplay = roles
+        .map((role) => {
+            const value = normalizeRoleToValue(role);
+            return ROLE_OPTIONS.find((opt) => String(opt.value) === String(value))?.label ?? String(value);
+        })
+        .filter(Boolean);
     const tags = data.tags ?? [];
     const isAdmin = currentUser?.role === ROLES.ADMIN;
     const isOwner = !!currentUser?.id && String(currentUser.id) === String(data.createdBy ?? data.authorId);
@@ -459,26 +520,26 @@ export default function QuestionDetailPage() {
             tooltip: "",
             show: !isAdmin,
         },
-        {
-            icon: <AddCircleOutlineIcon sx={{ fontSize: 15 }} />,
-            label: "I was asked this",
-            tooltip: "",
-            onClick: () =>
-                navigate("/questions/share", {
-                    state: {
-                        linkedQuestion: {
-                            id: data.id,
-                            content: data.content,
-                            companyIds: data.companyIds?.[0] ?? data.companyId ?? null,
-                            roles: data.roles ?? [],
-                            tags: data.tags ?? [],
-                            category: data.category ?? data.questionType,
-                            answerCount: data.answerCount,
-                        },
-                    },
-                }),
-            show: !isAdmin,
-        },
+        // {
+        //     icon: <AddCircleOutlineIcon sx={{ fontSize: 15 }} />,
+        //     label: "I was asked this",
+        //     tooltip: "",
+        //     onClick: () =>
+        //         navigate("/questions/share", {
+        //             state: {
+        //                 linkedQuestion: {
+        //                     id: data.id,
+        //                     content: data.content,
+        //                     companyIds: data.companyIds?.[0] ?? data.companyId ?? null,
+        //                     roles: data.roles ?? [],
+        //                     tags: data.tags ?? [],
+        //                     category: data.category ?? data.questionType,
+        //                     answerCount: data.answerCount,
+        //                 },
+        //             },
+        //         }),
+        //     show: !isAdmin,
+        // },
         {
             icon: <ShareIcon sx={{ fontSize: 15 }} />,
             label: "Share",
@@ -502,7 +563,7 @@ export default function QuestionDetailPage() {
 
     const detailRows = [
         { label: "Companies", items: companyNames },
-        { label: "Roles", items: roles },
+        { label: "Roles", items: rolesDisplay },
         { label: "Tags", items: tags },
     ].filter(({ items }) => items.length > 0);
 
@@ -609,6 +670,7 @@ export default function QuestionDetailPage() {
                                 fullWidth
                                 multiline
                                 sizeVariant="sm"
+                                label="Question title"
                                 value={editContent}
                                 onChange={(e) => {
                                     const WORD_LIMIT = 60;
@@ -623,6 +685,17 @@ export default function QuestionDetailPage() {
                                     (editContent || "").trim().split(/\s+/).filter(Boolean).length
                                 } / 60 words`}
                                 autoFocus
+                                sx={{ mb: 1 }}
+                            />
+                            <FormTextField
+                                fullWidth
+                                multiline
+                                minRows={3}
+                                sizeVariant="sm"
+                                label="Question content"
+                                value={editBodyContent}
+                                onChange={(e) => setEditBodyContent(e.target.value || "")}
+                                helperText={`${(editBodyContent || "").trim().split(/\s+/).filter(Boolean).length} words`}
                                 sx={{ mb: 1 }}
                             />
                             <Stack direction="row" gap={1}>
@@ -645,7 +718,7 @@ export default function QuestionDetailPage() {
                         </Box>
                     ) : (
                         <Typography variant="h4" flex={1}>
-                            {data.content}
+                            {data.title ?? data.content}
                         </Typography>
                     )}
                     {(isOwner || isAdmin) && !editing && (
@@ -654,7 +727,25 @@ export default function QuestionDetailPage() {
                                 <IconButton
                                     size="small"
                                     onClick={() => {
-                                        setEditContent(data.content ?? "");
+                                        setEditContent(data.title ?? data.content ?? "");
+                                        setEditBodyContent(data.content ?? "");
+                                        setEditCompanyIds(
+                                            (
+                                                data.companyIds && data.companyIds.length > 0
+                                                    ? data.companyIds
+                                                    : (data.companyNames ?? [])
+                                                          .map(
+                                                              (name) =>
+                                                                  editCompanies.find((c) => c.name === name)?.id,
+                                                          )
+                                                          .filter(Boolean)
+                                            )
+                                                .slice(0, 1)
+                                                .map((id) => String(id)),
+                                        );
+                                        setEditRoles(
+                                            (data.roles ?? []).map(normalizeRoleToValue).slice(0, 1),
+                                        );
                                         setEditing(true);
                                     }}
                                     sx={{ color: "text.disabled", "&:hover": { color: "primary.main" } }}
@@ -685,6 +776,16 @@ export default function QuestionDetailPage() {
                         </Stack>
                     )}
                 </Stack>
+
+                {!editing && data.content && (
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2, whiteSpace: "pre-wrap", lineHeight: 1.7 }}
+                    >
+                        {data.content}
+                    </Typography>
+                )}
 
                 {/* Author + meta */}
                 <Stack direction="row" alignItems="center" spacing={1} mb={2}>
@@ -927,38 +1028,80 @@ export default function QuestionDetailPage() {
                         Interview Details
                     </Typography>
 
-                    {detailRows.map(({ label, items }) => (
-                        <Box key={label} mb={1.5}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
-                                {label}
-                            </Typography>
-
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-                                {items.map((item) => {
-                                    const isObject = typeof item === "object";
-                                    const itemName = isObject ? item.name : item;
-                                    const matchedCompany =
-                                        label === "Companies" &&
-                                        allCompanies?.find((c) => (c.name || c.companyName) === itemName);
-
-                                    return (
-                                        <Tag
-                                            key={isObject ? item.id : item}
-                                            icon={<CompanyLogo name={matchedCompany?.domain || itemName} size={14} />}
-                                            label={itemName}
-                                            size="sm"
-                                            sx={{
-                                                bgcolor: "grey.100",
-                                                fontSize: 13,
-                                                px: 0.5,
-                                                "& .MuiChip-icon": { ml: 0.5 },
-                                            }}
-                                        />
-                                    );
-                                })}
+                    {editing ? (
+                        <>
+                            <Box mb={1.5}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+                                    Companies
+                                </Typography>
+                                <Autocomplete
+                                    options={editCompanies}
+                                    value={
+                                        editCompanies.find((c) => String(c.id) === String(editCompanyIds?.[0])) ?? null
+                                    }
+                                    onChange={(_, next) => setEditCompanyIds(next?.id ? [String(next.id)] : [])}
+                                    getOptionLabel={(option) => option?.name ?? ""}
+                                    isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
+                                    renderInput={(params) => (
+                                        <FormTextField {...params} sizeVariant="sm" placeholder="Select company" />
+                                    )}
+                                />
                             </Box>
-                        </Box>
-                    ))}
+                            <Box mb={1.5}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+                                    Roles
+                                </Typography>
+                                <Autocomplete
+                                    options={ROLE_OPTIONS.filter((r) => r.value !== "")}
+                                    value={ROLE_OPTIONS.find((r) => String(r.value) === String(editRoles?.[0])) ?? null}
+                                    onChange={(_, next) => setEditRoles(next?.value != null ? [next.value] : [])}
+                                    getOptionLabel={(option) => option?.label ?? ""}
+                                    isOptionEqualToValue={(option, value) => String(option.value) === String(value.value)}
+                                    renderInput={(params) => (
+                                        <FormTextField {...params} sizeVariant="sm" placeholder="Select role" />
+                                    )}
+                                />
+                            </Box>
+                        </>
+                    ) : (
+                        detailRows.map(({ label, items }) => (
+                            <Box key={label} mb={1.5}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+                                    {label}
+                                </Typography>
+
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                                    {items.map((item) => {
+                                        const isObject = typeof item === "object";
+                                        const itemName = isObject ? item.name : item;
+                                        const matchedCompany =
+                                            label === "Companies" &&
+                                            allCompanies?.find((c) => (c.name || c.companyName) === itemName);
+
+                                        const showCompanyIcon = label === "Companies" && typeof itemName === "string";
+                                        return (
+                                            <Tag
+                                                key={isObject ? item.id : item}
+                                                icon={
+                                                    showCompanyIcon ? (
+                                                        <CompanyLogo name={matchedCompany?.domain || itemName} size={14} />
+                                                    ) : undefined
+                                                }
+                                                label={itemName}
+                                                size="sm"
+                                                sx={{
+                                                    bgcolor: "grey.100",
+                                                    fontSize: 13,
+                                                    px: 0.5,
+                                                    "& .MuiChip-icon": { ml: 0.5 },
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </Box>
+                            </Box>
+                        ))
+                    )}
                 </Paper>
 
                 {data.relatedQuestions?.length > 0 && (

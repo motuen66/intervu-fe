@@ -5,14 +5,10 @@ import {
   ArrowRight,
   BrainCircuit,
   CheckCircle2,
-  Github,
-  Linkedin,
   Sparkles,
   Target,
-  Twitter,
   Users,
   Video,
-  Zap
 } from 'lucide-react';
 import {
   Avatar,
@@ -27,6 +23,7 @@ import {
 } from '@mui/material';
 
 import Navbar from '../../../common/components/Navbar/Navbar';
+import Footer from '../../../common/components/Footer/Footer';
 import { PrimaryButton, SecondaryButton, TextButton } from '../../../common/components/buttons';
 import FormTextField from '../../../common/components/form/FormTextField';
 import { Tag } from '../../../common/components';
@@ -166,8 +163,8 @@ function LandingPage() {
         }}
       >
         {/* ─── Hero ─── */}
-        <Container maxWidth="xl" sx={{ pb: 14 }}>
-          <Grid container spacing={8} alignItems="center" justifyContent="center" className="landing-hero-grid">
+        <Container maxWidth="xl" sx={{ pb: 8 }}>
+          <Grid container spacing={6} alignItems="center" justifyContent="center" className="landing-hero-grid">
             {/* Left: copy */}
             <Grid item xs={12} md={6} className="landing-hero-copy">
               <MotionBox
@@ -388,7 +385,7 @@ function LandingPage() {
         <Box
           id="features"
           sx={{
-            py: 12,
+            py: 7,
             borderTop: '1px solid',
             borderBottom: '1px solid',
             borderColor: 'divider',
@@ -436,7 +433,7 @@ function LandingPage() {
                       sx={{
                         p: 3.5,
                         borderRadius: 4,
-                        minHeight: 280,
+                        minHeight: 200,
                         width: '100%',
                         border: '1px solid',
                         borderColor: 'divider',
@@ -473,7 +470,7 @@ function LandingPage() {
         </Box>
 
         {/* ─── Coaches / Apply ─── */}
-        <Box id="coaches" sx={{ py: 12 }}>
+        <Box id="coaches" sx={{ py: 7 }}>
           <Container maxWidth="lg">
             <Grid container spacing={6} alignItems="stretch">
               {/* Left: perks */}
@@ -730,162 +727,7 @@ function LandingPage() {
         </Box> */}
 
         {/* ─── Footer ─── */}
-        <Box
-          component="footer"
-          sx={{
-            py: 10,
-            borderTop: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper'
-          }}
-        >
-          <Container maxWidth="xl">
-            <MotionBox
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.55 }}
-            >
-              <Grid container spacing={{ xs: 5, md: 7 }} justifyContent="center">
-                <Grid item xs={12} md={4}>
-                  <Stack direction="row" alignItems="center" justifyContent={{ xs: 'center', md: 'center' }} gap={1.1} mb={2.5}>
-                    <Box
-                      sx={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 2,
-                        bgcolor: 'secondary.main',
-                        color: 'secondary.contrastText',
-                        display: 'grid',
-                        placeItems: 'center',
-                        boxShadow: '0 10px 24px rgba(59, 130, 246, 0.22)'
-                      }}
-                    >
-                      <Zap size={18} />
-                    </Box>
-                    <Typography
-                      sx={{
-                        fontSize: 22,
-                        fontWeight: 900,
-                        textTransform: 'uppercase',
-                        letterSpacing: '-0.02em',
-                        fontStyle: 'italic'
-                      }}
-                    >
-                      Intervu
-                    </Typography>
-                  </Stack>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ maxWidth: 280, lineHeight: 1.75, mx: { xs: 'auto', md: 'auto' }, textAlign: 'center' }}
-                  >
-                    Redefining technical interview preparation through AI and expert human guidance.
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={6} md={2} sx={{ textAlign: { xs: 'center', md: 'center' } }}>
-                  <Typography sx={{ mb: 2.5, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                    Product
-                  </Typography>
-                  <Stack
-                    gap={1.4}
-                    sx={{
-                      '& a': {
-                        color: 'text.secondary',
-                        textDecoration: 'none',
-                        fontWeight: 700,
-                        fontSize: 13
-                      },
-                      '& a:hover': { color: 'text.primary' }
-                    }}
-                  >
-                    <Link to="/questions">Questions</Link>
-                    <Link to="/find-coach">Find a Coach</Link>
-                    <Link to="/battle-arena">Battle Arena</Link>
-                  </Stack>
-                </Grid>
-
-                <Grid item xs={6} md={2} sx={{ textAlign: { xs: 'center', md: 'center' } }}>
-                  <Typography sx={{ mb: 2.5, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                    Company
-                  </Typography>
-                  <Stack
-                    gap={1.4}
-                    sx={{
-                      '& a': {
-                        color: 'text.secondary',
-                        textDecoration: 'none',
-                        fontWeight: 700,
-                        fontSize: 13
-                      },
-                      '& a:hover': { color: 'text.primary' }
-                    }}
-                  >
-                    <Box component="a" href="#">
-                      About Us
-                    </Box>
-                    <Box component="a" href="#">
-                      Contact
-                    </Box>
-                    <Box component="a" href="#">
-                      Privacy Policy
-                    </Box>
-                  </Stack>
-                </Grid>
-
-                <Grid item xs={12} md={4} sx={{ textAlign: { xs: 'center', md: 'center' } }}>
-                  <Typography sx={{ mb: 2.5, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                    Connect
-                  </Typography>
-                  <Stack direction="row" gap={1.5} justifyContent="center">
-                    {[Github, Twitter, Linkedin].map((Icon, idx) => (
-                      <MotionBox
-                        key={idx}
-                        component="a"
-                        href="#"
-                        whileHover={{ scale: 1.08, y: -4 }}
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 2.5,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          bgcolor: 'grey.50',
-                          color: 'text.secondary',
-                          display: 'grid',
-                          placeItems: 'center',
-                          textDecoration: 'none',
-                          '&:hover': { color: 'text.primary', bgcolor: 'background.paper', boxShadow: 2 }
-                        }}
-                      >
-                        <Icon size={18} />
-                      </MotionBox>
-                    ))}
-                  </Stack>
-                </Grid>
-              </Grid>
-
-              <Stack
-                direction={{ xs: 'column', md: 'row' }}
-                justifyContent="center"
-                alignItems="center"
-                mt={8}
-                pt={3.5}
-                borderTop="1px solid"
-                borderColor="divider"
-                gap={{ xs: 1.2, md: 4 }}
-              >
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                  © 2026 Intervu. All rights reserved.
-                </Typography>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.14em', fontStyle: 'italic' }}>
-                  Made by experts for future leaders.
-                </Typography>
-              </Stack>
-            </MotionBox>
-          </Container>
-        </Box>
+        <Footer />
       </Box>
     </Box>
   );

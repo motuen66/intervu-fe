@@ -125,6 +125,21 @@ const normalizeCandidateProfile = (data) => {
     };
 };
 
+const normalizeSavedQuestionItem = (item) => {
+    const likeCount = item?.vote ?? item?.likeCount ?? 0;
+    const saveCount = item?.saveCount ?? 0;
+    const commentCount = item?.commentCount ?? 0;
+    return {
+        ...item,
+        likeCount,
+        vote: item?.vote ?? likeCount,
+        saveCount,
+        commentCount,
+        answerCount: commentCount,
+        viewCount: item?.viewCount ?? 0,
+    };
+};
+
 function SidebarCard({ icon, title, badge, badgeActive, children, sx = {} }) {
     return (
         <Box
@@ -369,7 +384,7 @@ function CandidateProfilePage() {
         callApiLocal({ method: METHOD.GET, endpoint: interactionEndPoints.GET_SAVED_QUESTIONS })
             .then(({ data }) => {
                 const items = data?.items ?? data?.data ?? (Array.isArray(data) ? data : []);
-                setSavedQuestions(items);
+                setSavedQuestions((items ?? []).map(normalizeSavedQuestionItem));
             })
             .catch(console.error)
             .finally(() => setLoadingSaved(false));
@@ -1718,7 +1733,7 @@ function CandidateProfilePage() {
                                         No saved questions yet.
                                     </AppText>
                                 ) : (
-                                    <Stack spacing={1}>
+                                    <Stack spacing={1.5}>
                                         {savedQuestions.map((q) => (
                                             <QuestionCard key={q.id} item={q} />
                                         ))}

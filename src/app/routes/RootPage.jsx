@@ -17,7 +17,7 @@ function RootPage() {
       return <Navigate to="/dashboard" replace />;
     }
     
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/candidate" replace />;
   }
 
   // If user is not authenticated, show landing page

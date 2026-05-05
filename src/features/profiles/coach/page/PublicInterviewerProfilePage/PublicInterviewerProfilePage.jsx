@@ -197,8 +197,10 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
         setBookingDialogOpen(true);
     };
 
-    const handleBooking = async ({ slot, service, startTime }) => {
+    const handleBooking = async ({ slot, service, startTime, candidateNote }) => {
         const returnUrl = window.location.origin + "/booking-requests";
+        const trimmedNote =
+            typeof candidateNote === "string" ? candidateNote.trim().slice(0, 1000) : "";
         // try {
         const { data } = await callApi({
             method: METHOD.POST,
@@ -210,6 +212,7 @@ const PublicInterviewerProfilePage = ({ initialRatingData = null }) => {
                 startTime: startTime.toISOString(),
                 returnUrl: returnUrl,
                 roadmapNodeId: roadmapNodeId || null,
+                ...(trimmedNote ? { candidateNote: trimmedNote } : {}),
             },
         });
 

@@ -16,10 +16,12 @@ import useNotificationHub from "../../features/notification/hooks/useNotificatio
 import SuspendedGate from "../../common/components/SuspendedGate";
 import CandidateAssessmentGate from "../../common/components/CandidateAssessmentGate";
 import Navbar from "../../common/components/Navbar/Navbar";
+import Footer from "../../common/components/Footer/Footer";
 import AdminSidebar from "../../features/admin/components/AdminSidebar";
 import usePageTracking from "../../hooks/usePageTracking";
 import { isAssessmentForceRequired } from "../../features/profiles/candidate/candidate-assessment/helpers/assessmentHelper";
 import { ProcessingTrayProvider } from "../../common/context/ProcessingTrayContext";
+import { resetNotifications } from "../../features/notification/store/notificationSlice";
 
 const MainLayout = () => {
     // automatic SPA page tracking for routes rendered inside MainLayout
@@ -80,6 +82,7 @@ const MainLayout = () => {
             console.error("Logout error:", error);
         } finally {
             localStorage.clear();
+            dispatch(resetNotifications());
             navigate("/login");
         }
     };
@@ -89,7 +92,8 @@ const MainLayout = () => {
         () => [
             // ROLE: CANDIDATE
             [
-                { label: "Home", path: "/home" },
+                { label: "Home", path: "/candidate" },
+                { label: "Browse coaches", path: "/coaches" },
                 { label: "Questions", path: "/questions" },
                 { label: "Interview", path: "/interview" },
                 { label: "Roadmap", path: "/roadmap" },
@@ -314,11 +318,7 @@ const MainLayout = () => {
 
                 <SuspendedGate />
 
-                <footer className="footer">
-                    <div className="footer-container">
-                        <p>&copy; 2026 Intervu. All rights reserved.</p>
-                    </div>
-                </footer>
+                <Footer />
             </div>
         </ProcessingTrayProvider>
     );
