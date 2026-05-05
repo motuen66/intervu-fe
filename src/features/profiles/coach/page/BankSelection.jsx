@@ -1,7 +1,7 @@
 import { Autocomplete, createFilterOptions } from "@mui/material";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import FormTextField from "../../../../common/components/form/FormTextField";
+import { getVietQrBanks } from "../../components/bankDisplay";
 
 const filter = createFilterOptions({
     stringify: (option) => `${option.shortName ?? ""} ${option.name ?? ""} ${option.code ?? ""}`,
@@ -23,8 +23,8 @@ function BankSelection({ selectedBin, valueBin, accountNumber, onChange, onBankB
 
     const fetchBanks = async () => {
         try {
-            const res = await axios.get("https://api.vietqr.io/v2/banks");
-            setBanks(res.data.data);
+            const banksData = await getVietQrBanks();
+            setBanks(banksData);
         } catch (error) {
             console.error("Error fetching banks:", error);
         }

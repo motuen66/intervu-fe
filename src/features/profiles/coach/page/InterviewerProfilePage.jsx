@@ -45,6 +45,7 @@ import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPag
 import WorkExperienceModal from "../../components/WorkExperienceModal.jsx";
 import CertificateDialog from "../../components/CertificateDialog.jsx";
 import { interactionEndPoints } from "../../../interviewQuestions/service/interactionApi";
+import { getVietQrBanks, resolveBankNameByBin } from "../../components/bankDisplay";
 import "./PublicInterviewerProfilePage/EliteCoachProfile.css";
 
 function getRoleFromJwt() {
@@ -240,6 +241,8 @@ function InterviewerProfilePage() {
     const [savedQuestions, setSavedQuestions] = useState([]);
     const [loadingSaved, setLoadingSaved] = useState(false);
     const [allIndustries, setAllIndustries] = useState([]);
+    const [banks, setBanks] = useState([]);
+    const [isLoadingBanks, setIsLoadingBanks] = useState(false);
 
     // Work Experience modal state (independent of editMode)
     const [workExperienceModalOpen, setWorkExperienceModalOpen] = useState(false);
@@ -362,6 +365,31 @@ function InterviewerProfilePage() {
         fetchRating();
     }, [profile?.id]);
 
+    useEffect(() => {
+        let isActive = true;
+        const fetchBanks = async () => {
+            setIsLoadingBanks(true);
+            try {
+                const banksData = await getVietQrBanks();
+                if (isActive) {
+                    setBanks(Array.isArray(banksData) ? banksData : []);
+                }
+            } catch (error) {
+                if (isActive) {
+                    setBanks([]);
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoadingBanks(false);
+                }
+            }
+        };
+        fetchBanks();
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
     const skillsDisplay = (profile?.skills || []).map((s) => (typeof s === "object" ? s?.name : s)).filter(Boolean);
     const companiesDisplay = (profile?.companies || [])
         .map((c) => (typeof c === "object" ? c?.name : c))
@@ -379,6 +407,13 @@ function InterviewerProfilePage() {
     const isSelf = !routeId || String(routeId) === String(user?.id);
     const canEdit = isInterviewer && isSelf;
     const canManageBank = isInterviewer && isSelf;
+    const bankBin = profile?.bankBinNumber ? String(profile.bankBinNumber).trim() : "";
+    const maskedAccountNumber = profile?.bankAccountNumber ? String(profile.bankAccountNumber).trim() : "";
+    const resolvedBankName = resolveBankNameByBin(bankBin, banks);
+    const bankNameDisplay = bankBin
+        ? resolvedBankName || (isLoadingBanks ? "Loading..." : `Unknown bank (${bankBin})`)
+        : "Not set";
+    const maskedAccountNumberDisplay = maskedAccountNumber || "Not set";
 
     useEffect(() => {
         if (tabValue !== 1 || !isSelf || !isInterviewer) return;
@@ -1558,6 +1593,33 @@ function InterviewerProfilePage() {
                                                 {email}
                                             </Typography>
                                         </Box>
+
+                                        {isSelf && (
+                                            <>
+                                                <Divider sx={{ my: 1.5, opacity: 0.5 }} />
+                                                <Box>
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.disabled"
+                                                        fontWeight={700}
+                                                        sx={{
+                                                            textTransform: "uppercase",
+                                                            letterSpacing: "0.07em",
+                                                            display: "block",
+                                                            mb: 0.75,
+                                                        }}
+                                                    >
+                                                        Bank Account
+                                                    </Typography>
+                                                    <Typography fontSize="0.9rem" fontWeight={500}>
+                                                        Bank Name: {bankNameDisplay}
+                                                    </Typography>
+                                                    <Typography fontSize="0.9rem" fontWeight={500}>
+                                                        Account Number: {maskedAccountNumberDisplay}
+                                                    </Typography>
+                                                </Box>
+                                            </>
+                                        )}
 
                                         {editMode && canManageBank && (
                                             <Box

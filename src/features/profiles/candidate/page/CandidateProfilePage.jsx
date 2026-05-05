@@ -59,6 +59,7 @@ import QuestionCard from "../../../interviewQuestions/page/InterviewQuestionsPag
 import "../../coach/page/PublicInterviewerProfilePage/EliteCoachProfile.css";
 import BankSelection from "../../coach/page/BankSelection";
 import { formatMonthYear } from "../../../../common/utils/dateFormatter.js";
+import { getVietQrBanks, resolveBankNameByBin } from "../../components/bankDisplay";
 
 const toDateInput = (value) => {
     if (!value) return "";
@@ -233,6 +234,8 @@ function CandidateProfilePage() {
     const [loadingSaved, setLoadingSaved] = useState(false);
     const [allIndustries, setAllIndustries] = useState([]);
     const [allCompanies, setAllCompanies] = useState([]);
+    const [banks, setBanks] = useState([]);
+    const [isLoadingBanks, setIsLoadingBanks] = useState(false);
 
     // Work Experience modal state (independent of editMode)
     const [workExperienceModalOpen, setWorkExperienceModalOpen] = useState(false);
@@ -367,6 +370,31 @@ function CandidateProfilePage() {
         fetchCompanies();
     }, [user?.role]);
 
+    useEffect(() => {
+        let isActive = true;
+        const fetchBanks = async () => {
+            setIsLoadingBanks(true);
+            try {
+                const banksData = await getVietQrBanks();
+                if (isActive) {
+                    setBanks(Array.isArray(banksData) ? banksData : []);
+                }
+            } catch (error) {
+                if (isActive) {
+                    setBanks([]);
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoadingBanks(false);
+                }
+            }
+        };
+        fetchBanks();
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
     const isCandidate = user?.role === ROLES.CANDIDATE || String(user?.role).toLowerCase() === "candidate";
     const isInterviewer = user?.role === ROLES.INTERVIEWER || String(user?.role).toLowerCase() === "interviewer";
     const isCoach = user?.role === ROLES.COACH || String(user?.role).toLowerCase() === "coach" || isInterviewer;
@@ -377,6 +405,13 @@ function CandidateProfilePage() {
     const canEdit = isCandidate && isSelf;
     const canManageBank = isCandidate && isSelf;
     const canView = isSelf || isCandidate || isCoach;
+    const bankBin = profile?.bankBinNumber ? String(profile.bankBinNumber).trim() : "";
+    const maskedAccountNumber = profile?.bankAccountNumber ? String(profile.bankAccountNumber).trim() : "";
+    const resolvedBankName = resolveBankNameByBin(bankBin, banks);
+    const bankNameDisplay = bankBin
+        ? resolvedBankName || (isLoadingBanks ? "Loading..." : `Unknown bank (${bankBin})`)
+        : "Not set";
+    const maskedAccountNumberDisplay = maskedAccountNumber || "Not set";
 
     useEffect(() => {
         if (tabValue !== 1 || !isSelf || !isCandidate) return;
@@ -1601,6 +1636,33 @@ function CandidateProfilePage() {
                                                     {email}
                                                 </AppText>
                                             </Box>
+
+                                            {isSelf && (
+                                                <>
+                                                    <Divider sx={{ my: 1.5, opacity: 0.5 }} />
+                                                    <Box>
+                                                        <AppText
+                                                            variant="caption"
+                                                            sx={{
+                                                                color: "text.disabled",
+                                                                fontWeight: 700,
+                                                                textTransform: "uppercase",
+                                                                letterSpacing: "0.07em",
+                                                                display: "block",
+                                                                mb: 0.75,
+                                                            }}
+                                                        >
+                                                            Bank Account
+                                                        </AppText>
+                                                        <AppText variant="body" sx={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                                                            Bank Name: {bankNameDisplay}
+                                                        </AppText>
+                                                        <AppText variant="body" sx={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                                                            Account Number: {maskedAccountNumberDisplay}
+                                                        </AppText>
+                                                    </Box>
+                                                </>
+                                            )}
 
                                             {editMode && canManageBank && (
                                                 <Box
