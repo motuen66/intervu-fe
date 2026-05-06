@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Box, Card, CardContent, CircularProgress, Stack, Typography } from "@mui/material";
+import { Box, Card, CardContent, CircularProgress, Stack, Typography, IconButton } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { callApi } from "../../../common/utils/apiConnector";
 import { formatCurrency } from "../../../common/utils/dateFormatter";
@@ -19,10 +20,12 @@ export default function AdminPlatformSettingsPage() {
     const [ratePercent, setRatePercent] = useState("");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [showRate, setShowRate] = useState(false);
 
     const [payoutLoading, setPayoutLoading] = useState(true);
     const [payoutData, setPayoutData] = useState(null);
     const [payoutError, setPayoutError] = useState(null);
+    const [showBalance, setShowBalance] = useState(false);
 
     const loadPayoutBalance = useCallback(async () => {
         setPayoutLoading(true);
@@ -110,14 +113,22 @@ export default function AdminPlatformSettingsPage() {
                         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
                             <FormTextField
                                 label="Rate (%)"
-                                value={ratePercent}
-                                onChange={(e) => setRatePercent(e.target.value)}
-                                disabled={loading || saving}
+                                value={showRate ? ratePercent : "••••"}
+                                onChange={(e) => showRate && setRatePercent(e.target.value)}
+                                disabled={loading || saving || !showRate}
                                 type="number"
                                 inputProps={{ min: 0, max: 99.99, step: 0.01 }}
                                 sx={{ width: 160 }}
                             />
-                            <PrimaryButton onClick={handleSave} disabled={loading || saving}>
+                            <IconButton
+                                size="small"
+                                onClick={() => setShowRate(!showRate)}
+                                title={showRate ? "Hide rate" : "Show rate"}
+                                sx={{ color: "primary.main" }}
+                            >
+                                {showRate ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                            <PrimaryButton onClick={handleSave} disabled={loading || saving || !showRate}>
                                 {saving ? "Saving..." : "Save"}
                             </PrimaryButton>
                         </Stack>
@@ -127,14 +138,23 @@ export default function AdminPlatformSettingsPage() {
                 <Card sx={{ bgcolor: "background.paper" }}>
                     <CardContent>
                         <SectionHeading
-                            title="PayOS payout account"
-                            description="Spend account balance used for coach payouts (PayOS channel)."
+                            title="Payout account balance"
                             size="sm"
                             disableGutters
                             action={
-                                <SecondaryButton onClick={loadPayoutBalance} disabled={payoutLoading}>
-                                    Refresh
-                                </SecondaryButton>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => setShowBalance(!showBalance)}
+                                        title={showBalance ? "Hide balance" : "Show balance"}
+                                        sx={{ color: "primary.main" }}
+                                    >
+                                        {showBalance ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                    <SecondaryButton onClick={loadPayoutBalance} disabled={payoutLoading}>
+                                        Refresh
+                                    </SecondaryButton>
+                                </Stack>
                             }
                         />
 
@@ -153,30 +173,28 @@ export default function AdminPlatformSettingsPage() {
                             </Typography>
                         )}
 
-                        {!payoutLoading && !payoutError && payoutData && (() => {
-                            const trimmed = String(payoutData.balance ?? "").trim();
-                            const n = Number(trimmed.replace(/,/g, ""));
-                            const balanceText =
-                                !trimmed
+                        {!payoutLoading &&
+                            !payoutError &&
+                            payoutData &&
+                            (() => {
+                                const trimmed = String(payoutData.balance ?? "").trim();
+                                const n = Number(trimmed.replace(/,/g, ""));
+                                const balanceText = !trimmed
                                     ? "—"
                                     : Number.isFinite(n)
                                       ? formatCurrency(n)
                                       : payoutData.currency
                                         ? `${trimmed} ${payoutData.currency}`.trim()
                                         : trimmed;
-                            return (
-                                <Stack spacing={1} sx={{ mt: 2 }}>
-                                    <Typography variant="h5" component="p" color="text.primary">
-                                        {balanceText}
-                                    </Typography>
-                                    {(payoutData.accountName || payoutData.accountNumber) && (
-                                        <Typography variant="body2" color="text.secondary">
-                                            {[payoutData.accountName, payoutData.accountNumber].filter(Boolean).join(" · ")}
+                                const displayText = showBalance ? balanceText : "••••••";
+                                return (
+                                    <Stack spacing={1} sx={{ mt: 2 }}>
+                                        <Typography variant="h5" component="p" color="text.primary">
+                                            {displayText}
                                         </Typography>
-                                    )}
-                                </Stack>
-                            );
-                        })()}
+                                    </Stack>
+                                );
+                            })()}
                     </CardContent>
                 </Card>
             </Stack>
