@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { Background, Controls, MarkerType, MiniMap, ReactFlow } from "@xyflow/react";
+import { Background, Controls, Handle, MarkerType, MiniMap, Position, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import RoadmapNode from "./RoadmapNode";
 
@@ -64,6 +64,8 @@ function PhaseNode({ data }) {
                     {data.description}
                 </div>
             ) : null}
+            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} isConnectable={false} />
+            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} isConnectable={false} />
         </div>
     );
 }
@@ -80,24 +82,27 @@ const getEdgeVisual = (status) => {
     return { stroke: "#cbd5e1", strokeDasharray: "6,5", animated: false };
 };
 
-const buildPhaseConnections = (previousNodes, currentNodes) => {
-    if (!previousNodes?.length || !currentNodes?.length) {
-        return [];
+/** Derive edge styling for phase→phase links from skills in the target phase. */
+const getAggregateStatusForPhase = (phase) => {
+    const skills = phase?.nodes ?? [];
+    if (!skills.length) {
+        return null;
     }
 
-    if (previousNodes.length === 1) {
-        return currentNodes.map((node) => [previousNodes[0], node]);
+    const statuses = skills.map((s) => s?.assessment?.status).filter(Boolean);
+    if (!statuses.length) {
+        return null;
     }
 
-    if (currentNodes.length === 1) {
-        return previousNodes.map((node) => [node, currentNodes[0]]);
+    if (statuses.every((st) => st === "Complete")) {
+        return "Complete";
     }
 
-    return currentNodes.map((node, index) => {
-        const ratio = index / (currentNodes.length - 1);
-        const sourceIndex = Math.round(ratio * (previousNodes.length - 1));
-        return [previousNodes[sourceIndex], node];
-    });
+    if (statuses.some((st) => st === "Weak")) {
+        return "Weak";
+    }
+
+    return null;
 };
 
 const nodeTypes = {
@@ -185,24 +190,21 @@ function Roadmap({ roadmapData: roadmapInput, onSelectNode, showHeader = true, h
         for (let phaseIndex = 1; phaseIndex < sourceRoadmap.phases.length; phaseIndex += 1) {
             const previousPhase = sourceRoadmap.phases[phaseIndex - 1];
             const currentPhase = sourceRoadmap.phases[phaseIndex];
-            const connections = buildPhaseConnections(previousPhase.nodes, currentPhase.nodes);
+            const aggregateStatus = getAggregateStatusForPhase(currentPhase);
+            const edgeVisual = getEdgeVisual(aggregateStatus);
 
-            connections.forEach(([sourceSkill, targetSkill], connectionIndex) => {
-                const edgeVisual = getEdgeVisual(targetSkill.assessment.status);
-
-                edges.push({
-                    id: `e-${phaseIndex}-${connectionIndex}-${sourceSkill.skill_id}-${targetSkill.skill_id}`,
-                    source: sourceSkill.skill_id,
-                    target: targetSkill.skill_id,
-                    type: "smoothstep",
-                    animated: edgeVisual.animated,
-                    style: {
-                        stroke: edgeVisual.stroke,
-                        strokeWidth: 2,
-                        strokeDasharray: edgeVisual.strokeDasharray,
-                    },
-                    markerEnd: { type: MarkerType.ArrowClosed, color: edgeVisual.stroke },
-                });
+            edges.push({
+                id: `e-phase-${previousPhase.phase_id}-${currentPhase.phase_id}`,
+                source: previousPhase.phase_id,
+                target: currentPhase.phase_id,
+                type: "smoothstep",
+                animated: edgeVisual.animated,
+                style: {
+                    stroke: edgeVisual.stroke,
+                    strokeWidth: 2,
+                    strokeDasharray: edgeVisual.strokeDasharray,
+                },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeVisual.stroke },
             });
         }
 
