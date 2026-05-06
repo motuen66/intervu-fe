@@ -337,7 +337,7 @@ export default function GrowthCharts({
             <Grid size={{ xs: 12, md: 6 }}>
                 <BaseCard sx={{ p: 3, height: 400 }}>
                     <Box sx={{ mb: 2 }}>
-                        <SectionHeading title="Revenue Trend" size="sm" />
+                        <SectionHeading title="Net Revenue Trend" size="sm" />
                     </Box>
                     <Box sx={{ height: 300, width: "100%" }}>
                         <ResponsiveContainer>
@@ -349,7 +349,7 @@ export default function GrowthCharts({
                                 <Area
                                     type="monotone"
                                     dataKey="value"
-                                    name="Revenue"
+                                    name="Net Revenue"
                                     stroke={theme.palette.info.main}
                                     strokeWidth={2.5}
                                     fillOpacity={0.15}
