@@ -28,7 +28,7 @@ import { METHOD } from "../../../../common/constants/api";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 import FormTextField from "../../../../common/components/form/FormTextField";
-import { LEVELS } from "../../../../common/constants/types";
+import { LEVELS, CATEGORIES, ROUNDS } from "../../../../common/constants/types";
 import toast from "react-hot-toast";
 import FormSelect from "../../../../common/components/form/FormSelect";
 
@@ -90,6 +90,8 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                         localContent: q.content,
                         localTitle: q.title,
                         localLevel: q.level ?? 0,
+                        localCategory: q.category ?? 5,
+                        localRound: q.round ?? 5,
                         localTags: q.tags || [],
                         isCustom: false,
                         isNew: false,
@@ -139,6 +141,12 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
         );
     };
 
+    const handleCategoryChange = (id, value) => {
+        setQuestions((prev) =>
+            prev.map((q) => (q.id === id ? { ...q, localCategory: value } : q))
+        );
+    };
+
     const handleDelete = (id, isNew) => {
         if (!isNew) {
             setDeletedExistingIds((prev) => [...prev, id]);
@@ -152,6 +160,8 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
             localTitle: "",
             localContent: "",
             localLevel: 0,
+            localCategory: 5,
+            localRound: 5,
             localTags: [],
             isCustom: true,
             isNew: true,
@@ -192,6 +202,8 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                 content: q.localContent,
                                 title: q.localTitle || "",
                                 level: q.localLevel,
+                                category: q.localCategory,
+                                round: q.localRound,
                                 tags: q.localTags,
                             },
                         });
@@ -203,6 +215,8 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                 content: q.localContent,
                                 title: q.localTitle || "",
                                 level: q.localLevel,
+                                category: q.localCategory,
+                                round: q.localRound,
                                 tagIds: tagIds
                             },
                         });
@@ -214,6 +228,8 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                                 content: q.localContent,
                                 title: q.localTitle || "",
                                 level: q.localLevel,
+                                category: q.localCategory,
+                                round: q.localRound,
                                 tagIds: tagIds
                             },
                         });
@@ -415,30 +431,58 @@ function GeneratedQuestionsModal({ open, onClose, roomId }) {
                 }}
             />
 
-            {/* Level Select */}
-            <Typography variant="caption" sx={{ display: "block", mb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", fontSize: "0.65rem" }}>
-                Experience Level
-            </Typography>
-            <FormSelect
-                fullWidth
-                size="small"
-                value={question.localLevel}
-                onChange={(e) => handleLevelChange(question.id, e.target.value)}
-                renderValue={(v) => LEVELS.find((l) => l.value === v)?.label ?? "Select Level"}
-                sx={{
-                    mb: 1.5,
-                    "& .MuiOutlinedInput-root": {
-                        bgcolor: "white",
-                        borderRadius: "8px",
-                    }
-                }}
-            >
-                {LEVELS.filter(l => l.value !== "").map((l) => (
-                    <MenuItem key={l.value} value={l.value}>
-                        {l.label}
-                    </MenuItem>
-                ))}
-            </FormSelect>
+            {/* Metadata Selects Group */}
+            <Box sx={{ display: "flex", gap: 2, mb: 1.5 }}>
+                <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" sx={{ display: "block", mb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", fontSize: "0.65rem" }}>
+                        Experience Level
+                    </Typography>
+                    <FormSelect
+                        fullWidth
+                        size="small"
+                        value={question.localLevel}
+                        onChange={(e) => handleLevelChange(question.id, e.target.value)}
+                        renderValue={(v) => LEVELS.find((l) => l.value === v)?.label ?? "Select Level"}
+                        sx={{
+                            "& .MuiOutlinedInput-root": {
+                                bgcolor: "white",
+                                borderRadius: "8px",
+                            }
+                        }}
+                    >
+                        {LEVELS.filter(l => l.value !== "").map((l) => (
+                            <MenuItem key={l.value} value={l.value}>
+                                {l.label}
+                            </MenuItem>
+                        ))}
+                    </FormSelect>
+                </Box>
+
+                <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" sx={{ display: "block", mb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", fontSize: "0.65rem" }}>
+                        Category
+                    </Typography>
+                    <FormSelect
+                        fullWidth
+                        size="small"
+                        value={question.localCategory}
+                        onChange={(e) => handleCategoryChange(question.id, e.target.value)}
+                        renderValue={(v) => CATEGORIES.find((c) => c.value === v)?.label ?? "Select Category"}
+                        sx={{
+                            "& .MuiOutlinedInput-root": {
+                                bgcolor: "white",
+                                borderRadius: "8px",
+                            }
+                        }}
+                    >
+                        {CATEGORIES.filter(c => c.value !== "").map((c) => (
+                            <MenuItem key={c.value} value={c.value}>
+                                {c.label}
+                            </MenuItem>
+                        ))}
+                    </FormSelect>
+                </Box>
+            </Box>
 
             {/* Editable textarea */}
             <Typography variant="caption" sx={{ display: "block", mb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase", fontSize: "0.65rem" }}>

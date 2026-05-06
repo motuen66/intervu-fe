@@ -1079,6 +1079,7 @@ export default function QuestionDetailPage() {
                                             allCompanies?.find((c) => (c.name || c.companyName) === itemName);
 
                                         const showCompanyIcon = label === "Companies" && typeof itemName === "string";
+                                        const isAi = itemName === "AI Collected";
                                         return (
                                             <Tag
                                                 key={isObject ? item.id : item}
@@ -1090,7 +1091,9 @@ export default function QuestionDetailPage() {
                                                 label={itemName}
                                                 size="sm"
                                                 sx={{
-                                                    bgcolor: "grey.100",
+                                                    bgcolor: isAi ? "secondary.main" : "grey.100",
+                                                    color: isAi ? "primary.main" : "text.secondary",
+                                                    fontWeight: isAi ? 800 : 500,
                                                     fontSize: 13,
                                                     px: 0.5,
                                                     "& .MuiChip-icon": { ml: 0.5 },
