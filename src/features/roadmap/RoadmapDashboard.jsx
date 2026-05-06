@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Alert, Box, Chip, Stack, Typography, alpha } from "@mui/material";
+import { Alert, Box, Chip, Stack, Typography, alpha, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Check, Layers3, Link2, RefreshCw, Sparkles, Target, TrendingUp, UserRound } from "lucide-react";
 import Roadmap from "./Roadmap";
@@ -272,6 +272,8 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
     const [progressStepIndex, setProgressStepIndex] = useState(0);
     const [cooldownTick, setCooldownTick] = useState(0);
     const [shareCopied, setShareCopied] = useState(false);
+    const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
+    const [openRegenerateConfirm, setOpenRegenerateConfirm] = useState(false);
     const progressTimerRef = useRef(null);
 
     // X3: Rotate through step messages while the LLM call is in flight
@@ -359,6 +361,34 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
             setIsLoadingRoadmap(false);
         }
     }, [effectiveUserId, isLoadingRoadmap, runGenerate]);
+
+    const handleRedoAssessment = useCallback(async () => {
+        if (!effectiveUserId || effectiveUserId === EMPTY_GUID || isDeletingAssessment) return;
+        setIsDeletingAssessment(true);
+        setError(null);
+        try {
+            await callApi({
+                method: METHOD.DELETE,
+                endpoint: assessmentEndPoints.DELETE_ASSESSMENT(effectiveUserId),
+                alertErrorMessage: true,
+                useGlobalLoading: false,
+            });
+            navigate("/assessment");
+        } catch {
+            setError("Could not reset your assessment. Please try again.");
+        } finally {
+            setIsDeletingAssessment(false);
+        }
+    }, [effectiveUserId, isDeletingAssessment, navigate]);
+
+    const requestRegenerate = useCallback(() => {
+        setOpenRegenerateConfirm(true);
+    }, []);
+
+    const handleConfirmRegenerate = useCallback(async () => {
+        setOpenRegenerateConfirm(false);
+        await handleRegenerate();
+    }, [handleRegenerate]);
 
     useEffect(() => {
         if (hasRoadmapContent(roadmap)) {
@@ -724,6 +754,31 @@ function RoadmapDashboard({ roadmap = null, userId: userIdProp = null, readOnly 
                     </Stack>
                 </Box>
             ) : null}
+
+            {!readOnly && sourceRoadmap ? (
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ alignSelf: "flex-end" }}>
+                    <SecondaryButton size="sm" onClick={handleRedoAssessment} loading={isDeletingAssessment} startIcon={<RefreshCw size={16} />}>
+                        Regenerate roadmap
+                    </SecondaryButton>
+                </Stack>
+            ) : null}
+
+            <Dialog open={openRegenerateConfirm} onClose={() => setOpenRegenerateConfirm(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Regenerate roadmap?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        This action will regenerate your roadmap and may replace the current phase layout.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <SecondaryButton size="sm" onClick={() => setOpenRegenerateConfirm(false)}>
+                        Cancel
+                    </SecondaryButton>
+                    <PrimaryButton size="sm" onClick={handleConfirmRegenerate} loading={isLoadingRoadmap}>
+                        Confirm
+                    </PrimaryButton>
+                </DialogActions>
+            </Dialog>
 
             {isLoadingRoadmap && !resolvedRoadmap ? (
                 <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>

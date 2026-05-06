@@ -154,7 +154,7 @@ const formatCompactNumber = (value) =>
     new Intl.NumberFormat("vi-VN", {
         notation: "compact",
         maximumFractionDigits: 1,
-    }).format(value || 0);
+    }).format(value ?? 0);
 
 const toDateKey = (date) => {
     const y = date.getFullYear();
@@ -400,11 +400,11 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         const flowTrend = trendKeys.map((key) => {
             const monthData = trendMap.get(key);
             return {
-                label: monthData?.label || key,
-                inbound: monthData?.inbound || 0,
+                label: monthData?.label ?? key,
+                inbound: monthData?.inbound ?? 0,
                 // Always render outflow below zero for clearer "market-style" reading.
-                outbound: -Math.abs(monthData?.outbound || 0),
-                net: monthData?.net || 0,
+                outbound: -Math.abs(monthData?.outbound ?? 0),
+                net: analyticsScope === "tab" ? 0 : (monthData?.net ?? 0),
             };
         });
 
@@ -443,6 +443,9 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             flowTrend,
         };
     }, [analyticsTransactions, windowDays]);
+
+    const netTrendDelta = analyticsScope === "tab" ? 0 : Math.abs(analytics.netChange);
+    const netCashValue = analyticsScope === "tab" ? 0 : analytics.netValue;
 
     const handleExportCsv = useCallback(() => {
         if (!analyticsTransactions.length) {
@@ -577,7 +580,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                             <Typography
                                 sx={{ fontSize: "13px", fontWeight: 600, color: "text.primary", lineHeight: 1.3 }}
                             >
-                                {val || "-"}
+                                {val ?? "-"}
                             </Typography>
                             <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
                                 {row.userEmail || ""}
@@ -679,10 +682,10 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
                     <MetricCard
                         icon={<Banknote />}
-                        variant={analytics.netValue >= 0 ? "blue" : "rose"}
+                        variant={netCashValue >= 0 ? "blue" : "rose"}
                         label="Net Cash"
-                        value={`${analytics.netValue >= 0 ? "+" : "-"} ${formatCurrency(Math.abs(analytics.netValue))}`}
-                        trend={buildMetricTrend({ delta: analytics.netChange })}
+                        value={`${formatCurrency(Math.abs(netCashValue))}`}
+                        trend={buildMetricTrend({ delta: netTrendDelta })}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
@@ -810,11 +813,11 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                         <ReferenceLine y={0} stroke={theme.palette.divider} />
                                         <Tooltip
                                             formatter={(value, name) => {
-                                                const numeric = Number(value || 0);
+                                                const numeric = Number(value ?? 0);
                                                 if (name === "Money Out") return [formatCurrency(Math.abs(numeric)), name];
                                                 if (name === "Net")
                                                     return [
-                                                        `${numeric >= 0 ? "+" : "-"} ${formatCurrency(Math.abs(numeric))}`,
+                                                        `${formatCurrency(Math.abs(numeric))}`,
                                                         name,
                                                     ];
                                                 return [formatCurrency(Math.abs(numeric)), name];

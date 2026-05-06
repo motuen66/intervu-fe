@@ -13,4 +13,5 @@ export const assessmentEndPoints = {
     GENERATE_ROADMAP: () => `${ASSESSMENT_BASE}/roadmap/generate`,
     GET_ROADMAP: (userId) => `${ASSESSMENT_BASE}/roadmap/${userId}`,
     GET_SKILL_GAPS: (userId) => `${ASSESSMENT_BASE}/${userId}`,
+    DELETE_ASSESSMENT: (userId) => `${ASSESSMENT_BASE}/${userId}`,
 };
