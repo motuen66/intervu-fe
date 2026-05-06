@@ -34,7 +34,7 @@ export default function SystemOverviewRow({ stats, loading }) {
         {
             icon: <TrendingUp />,
             variant: "emerald",
-            label: "Total Revenue",
+            label: "Total Net Revenue",
             value: formatCurrency(stats?.totalRevenue ?? 0),
             growthPercent: stats?.revenueGrowth,
         },

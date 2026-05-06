@@ -23,8 +23,8 @@ import {
     setAssessmentForceRequired,
 } from "../helpers/assessmentHelper";
 
-const statusVisualMap = {
-    good: {
+const scoreVisualBands = {
+    high: {
         label: "Ready",
         main: "#16a34a",
         soft: alpha("#16a34a", 0.12),
@@ -38,14 +38,14 @@ const statusVisualMap = {
         border: alpha("#eab308", 0.36),
         text: "#854d0e",
     },
-    weak: {
-        label: "Needs Work",
+    low: {
+        label: "Missing",
         main: "#f97316",
         soft: alpha("#f97316", 0.12),
         border: alpha("#f97316", 0.28),
         text: "#9a3412",
     },
-    missing: {
+    critical: {
         label: "Missing",
         main: "#ef4444",
         soft: alpha("#ef4444", 0.1),
@@ -168,10 +168,16 @@ const toOverallPercentScore = (value) => {
     return Math.max(0, Math.min(100, asPercent));
 };
 
-const toStatusByScore = (score, isMissing) => {
-    if (isMissing || score <= 0) return "missing";
-    if (score < 50) return "weak";
-    if (score < 75) return "medium";
+const getScoreBandKey = (score) => {
+    if (score < 30) return "critical";
+    if (score < 50) return "low";
+    if (score < 80) return "medium";
+    return "high";
+};
+
+const toStatusByScore = (score) => {
+    if (score < 50) return "missing";
+    if (score < 80) return "medium";
     return "good";
 };
 
@@ -220,7 +226,7 @@ const ResultDashboard = () => {
         }
     }, []);
 
-    const { summaryText, calculatedSkillScores, overallScorePercent, overallLevelText, resolvedProfile } = useMemo(() => {
+    const { summaryText, calculatedSkillScores, overallScorePercent, resolvedProfile } = useMemo(() => {
         const rawPayload = surveyResult?.data || surveyResult || answers?.evaluateResponse || null;
         const normalized = rawPayload ? normalizeEvaluateResponse(rawPayload) : null;
 
@@ -234,40 +240,50 @@ const ResultDashboard = () => {
                 domain: toArray(apiProfile?.domain ?? profile?.domain),
             };
             const responseSkillsList = Array.isArray(answerBlock?.responses) ? answerBlock.responses : [];
-            const calculatedFromResponses = Array.from(
-                responseSkillsList.reduce((acc, item) => {
+            const calculatedFromResponses = responseSkillsList
+                .map((item, index) => {
                     const skillKey = String(item?.skill || "").trim();
-                    if (!skillKey) return acc;
-                    const responseScore = toPercentScore(item?.score);
+                    if (!skillKey) return null;
+                    const score = toPercentScore(item?.score);
                     const levelCode = toNumericLevelCode(item?.selectedLevel);
-                    const numericLevel = Number(levelCode);
-                    const bucket = acc.get(skillKey) || { scoreTotal: 0, count: 0, levelTotal: 0, missingCount: 0 };
-                    bucket.scoreTotal +=
-                        responseScore > 0
-                            ? responseScore
-                            : Math.max(0, Math.min(100, Math.round((numericLevel / 4) * 100)));
-                    bucket.levelTotal += numericLevel;
-                    bucket.count += 1;
-                    if (Boolean(item?.isMissing)) {
-                        bucket.missingCount += 1;
-                    }
-                    acc.set(skillKey, bucket);
-                    return acc;
-                }, new Map()),
-            )
-                .map(([skillKey, aggregated]) => {
-                    const avgScore = aggregated.count ? Math.round(aggregated.scoreTotal / aggregated.count) : 0;
-                    const avgLevel = aggregated.count ? Math.round(aggregated.levelTotal / aggregated.count) : 0;
-                    const levelCode = String(avgLevel);
-                    const isMissing = levelCode === "0" || avgScore <= 0 || aggregated.missingCount > 0;
                     return {
+                        id: String(item?.questionId || `${skillKey}-${index}`),
                         skillKey,
-                        status: toStatusByScore(avgScore, isMissing),
+                        score,
+                        levelCode,
+                        numericLevel: Number(levelCode),
+                    };
+                })
+                .filter(Boolean)
+                .reduce((acc, item) => {
+                    const existing = acc.get(item.skillKey) || {
+                        skillKey: item.skillKey,
+                        scoreTotal: 0,
+                        levelTotal: 0,
+                        count: 0,
+                    };
+                    existing.scoreTotal += item.score;
+                    existing.levelTotal += item.numericLevel;
+                    existing.count += 1;
+                    acc.set(item.skillKey, existing);
+                    return acc;
+                }, new Map())
+                .values();
+
+            const dedupedSkillScores = Array.from(calculatedFromResponses)
+                .map((item) => {
+                    const avgScore = item.count > 0 ? Math.round(item.scoreTotal / item.count) : 0;
+                    const avgLevelNumber = item.count > 0 ? Math.round(item.levelTotal / item.count) : 0;
+                    const levelCode = String(Math.max(0, Math.min(4, avgLevelNumber)));
+                    return {
+                        id: item.skillKey,
+                        skillKey: item.skillKey,
+                        status: toStatusByScore(avgScore),
                         score: avgScore,
                         levelCode,
                         sfiaLevel: 0,
                         selectedLevel: levelLabel[levelCode] || levelLabel["0"],
-                        category: inferSkillCategory(skillKey),
+                        category: inferSkillCategory(item.skillKey),
                     };
                 })
                 .sort((a, b) => b.score - a.score);
@@ -276,7 +292,7 @@ const ResultDashboard = () => {
 
             return {
                 summaryText: String(normalized?.summaryText || ""),
-                calculatedSkillScores: calculatedFromResponses,
+                calculatedSkillScores: dedupedSkillScores,
                 overallScorePercent: overallPercent,
                 overallLevelText: String(answerBlock?.overallLevel || "None"),
                 resolvedProfile: mergedProfile,
@@ -349,7 +365,6 @@ const ResultDashboard = () => {
                     : 0,
                 count: displaySkillScores.length,
                 missingCount: displaySkillScores.filter((item) => item?.status === "missing").length,
-                weakCount: displaySkillScores.filter((item) => item?.status === "weak").length,
                 levelBreakdown,
                 skills: displaySkillScores,
             },
@@ -375,7 +390,7 @@ const ResultDashboard = () => {
         [displaySkillScores],
     );
     const blockingSkills = useMemo(
-        () => displaySkillScores.filter((skill) => skill.status === "weak" || skill.status === "missing"),
+        () => displaySkillScores.filter((skill) => skill.status === "missing"),
         [displaySkillScores],
     );
     const interviewReady = displaySkillScores.length > 0 && blockingSkills.length === 0;
@@ -384,22 +399,17 @@ const ResultDashboard = () => {
         () => displaySkillScores.filter((skill) => skill.status === "medium"),
         [displaySkillScores],
     );
-    const summaryTone = interviewReady
-        ? statusVisualMap.good
-        : effectiveMatchPercentage >= 70
-          ? statusVisualMap.medium
-          : statusVisualMap.weak;
+    const summaryTone = scoreVisualBands[getScoreBandKey(effectiveMatchPercentage)];
     const readinessHeadline = interviewReady
         ? `You can start ${resolvedProfile.role || "interview"} practice directly.`
         : focusSkills.length
           ? `Focus next on ${focusSkills.map((skill) => skill.skillKey).join(", ")}.`
           : `Keep strengthening ${resolvedProfile.role || "your interview"} momentum.`;
-    const readinessBody = interviewReady
-        ? `Benchmarked against ${resolvedProfile.level || "your target"} expectations, your current tech stack is ready for mock interviews and real interview reps.`
-        : mediumSkills.length
-          ? `${mediumSkills.map((skill) => skill.skillKey).join(", ")} is already on track for ${resolvedProfile.level || "your target level"}, but you still have a few core gaps to close first.`
-          : `Your score is based on your submitted answers from the assessment.`;
-    const overallCaption = `Overall level: ${overallLevelText || "None"}`;
+        const readinessBody = interviewReady
+                ? "Your current tech stack is ready for mock interviews and real interview reps."
+                : mediumSkills.length
+                    ? `${mediumSkills.map((skill) => skill.skillKey).join(", ")} is already on track, but you still have a few core gaps to close first.`
+                    : "Your score is based on your submitted answers from the assessment.";
     const hasRoadmap = Boolean(
         (Array.isArray(roadmap?.today) && roadmap.today.length > 0) ||
             (Array.isArray(roadmap?.weeks) && roadmap.weeks.length > 0) ||
@@ -411,10 +421,11 @@ const ResultDashboard = () => {
         const isExpanded = expandedSkills[skillId] ?? false;
         const levelCode = toNumericLevelCode(skill.levelCode ?? skill.selectedLevel);
         const resolvedLevelLabel = levelLabel[levelCode] || skill.selectedLevel || "Missing";
+        const scoreBand = scoreVisualBands[getScoreBandKey(skill.score)];
 
         return (
             <Accordion
-                key={skill.skillKey}
+                key={skill.id || `${groupId}-${skill.skillKey}`}
                 expanded={isExpanded}
                 onChange={() =>
                     setExpandedSkills((prev) => ({
@@ -444,20 +455,19 @@ const ResultDashboard = () => {
                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                             <Typography fontWeight={700}>{skill.skillKey}</Typography>
                             <Chip
-                                label={(statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).label}
+                                label={scoreBand.label}
                                 size="small"
                                 variant="outlined"
                                 sx={{
-                                    bgcolor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).soft,
-                                    borderColor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium)
-                                        .border,
-                                    color: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).text,
+                                    bgcolor: scoreBand.soft,
+                                    borderColor: scoreBand.border,
+                                    color: scoreBand.text,
                                     fontWeight: 700,
                                 }}
                             />
                         </Stack>
                         <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                            {skill.score}% - Level {levelCode}
+                            {skill.score}%
                         </Typography>
                     </Stack>
                 </AccordionSummary>
@@ -468,16 +478,13 @@ const ResultDashboard = () => {
                         sx={{
                             height: 10,
                             borderRadius: 999,
-                            bgcolor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).soft,
+                            bgcolor: scoreBand.soft,
                             "& .MuiLinearProgress-bar": {
                                 borderRadius: 999,
-                                bgcolor: (statusVisualMap[skill.status?.toLowerCase()] || statusVisualMap.medium).main,
+                                bgcolor: scoreBand.main,
                             },
                         }}
                     />
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
-                        Level detail: {resolvedLevelLabel} (Level {levelCode})
-                    </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block" }}>
                         {skill.score}% ready for {resolvedProfile.level || "your chosen"} benchmark
                     </Typography>
@@ -558,11 +565,8 @@ const ResultDashboard = () => {
                             </Box>
                         </Box>
                         <Typography color="text.secondary" textAlign="center">
-                            Calibrated for a {resolvedProfile.level || "target"} {resolvedProfile.role || "role"} using your real tech
-                            stack answers, not just a generic average.
-                        </Typography>
-                        <Typography color="text.secondary" textAlign="center" sx={{ mt: 0.75 }}>
-                            {overallCaption}
+                            Calibrated for your {resolvedProfile.role || "role"} using your real tech stack answers, not just a
+                            generic average.
                         </Typography>
                         {summaryText ? (
                             <Typography color="text.secondary" textAlign="center" sx={{ mt: 1.5, whiteSpace: "pre-line" }}>
@@ -623,41 +627,19 @@ const ResultDashboard = () => {
                                                     sx={{
                                                         height: 8,
                                                         borderRadius: 999,
-                                                        bgcolor: alpha("#64748b", 0.16),
+                                                        bgcolor: scoreVisualBands[getScoreBandKey(group.score)].soft,
                                                         "& .MuiLinearProgress-bar": {
                                                             borderRadius: 999,
-                                                            bgcolor:
-                                                                group.score >= 75
-                                                                    ? "#16a34a"
-                                                                    : group.score >= 45
-                                                                      ? "#eab308"
-                                                                      : "#ef4444",
+                                                            bgcolor: scoreVisualBands[getScoreBandKey(group.score)]
+                                                                .main,
                                                         },
                                                     }}
                                                 />
-                                                {group.missingCount > 0 || group.weakCount > 0 ? (
+                                                {group.missingCount > 0 ? (
                                                     <Typography variant="caption" color="text.secondary">
-                                                        {group.missingCount} missing - {group.weakCount} weak
+                                                        {group.missingCount} missing
                                                     </Typography>
                                                 ) : null}
-                                                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-                                                    {[0, 1, 2, 3, 4].map((code) => {
-                                                        const count = Number(group?.levelBreakdown?.[code]) || 0;
-                                                        if (count <= 0) return null;
-                                                        return (
-                                                            <Chip
-                                                                key={`${group.id}-level-${code}`}
-                                                                size="small"
-                                                                variant="outlined"
-                                                                label={`L${code} ${levelLabel[code]}: ${count}`}
-                                                                sx={{
-                                                                    bgcolor: alpha("#ffffff", 0.72),
-                                                                    borderColor: alpha("#94a3b8", 0.5),
-                                                                }}
-                                                            />
-                                                        );
-                                                    })}
-                                                </Stack>
                                             </Stack>
                                         </AccordionSummary>
                                         <AccordionDetails sx={{ px: 2, py: 2 }}>

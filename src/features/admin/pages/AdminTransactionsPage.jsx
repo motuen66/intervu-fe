@@ -6,7 +6,6 @@ import {
     Avatar,
     Grid,
     Stack,
-    Button,
     Skeleton,
     ToggleButton,
     ToggleButtonGroup,
@@ -14,7 +13,18 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { DownloadRounded } from "@mui/icons-material";
 import { Receipt, Banknote, CheckCircle2, Coins } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+    ComposedChart,
+    Bar,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Legend,
+    ReferenceLine,
+} from "recharts";
 import { callApi } from "../../../common/utils/apiConnector";
 import { METHOD } from "../../../common/constants/api";
 import { adminEndPoints } from "../services/adminApi";
@@ -46,6 +56,12 @@ const TYPE_COLOR_MAP = {
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const ANALYTICS_PAGE_SIZE = 100;
 const WINDOW_OPTIONS = [7, 30, 90];
+const FLOW_BAR_SIZE = 14;
+const FLOW_STAGGER_GAP = 2;
+const ANALYTICS_SCOPE_OPTIONS = [
+    { value: "system", label: "System" },
+    { value: "tab", label: "This tab" },
+];
 
 const getInitials = (name = "") =>
     name
@@ -115,11 +131,6 @@ const isPaidStatus = (status) => {
     return value === "paid" || value === "completed" || value === "success";
 };
 
-const isPaidTransaction = (transaction) => {
-    const direction = getDirection(transaction);
-    return isPaidStatus(transaction?.status) && (direction === "inbound" || direction === "outbound");
-};
-
 const getDateSafe = (value) => {
     if (!value) return null;
     const parsed = new Date(value);
@@ -129,8 +140,14 @@ const getDateSafe = (value) => {
 const isReliableBusinessDate = (date) => Boolean(date) && date.getFullYear() >= 2000;
 
 const toPercentChange = (current, previous) => {
-    if (!previous) return current > 0 ? 100 : 0;
-    return ((current - previous) / previous) * 100;
+    const currentValue = Number(current) || 0;
+    const previousValue = Number(previous) || 0;
+
+    if (currentValue === 0 && previousValue === 0) return 0;
+    // Use symmetric percent difference so trend stays within [-100%, 100%]
+    // and avoids misleading spikes when baseline is very small.
+    const denominator = Math.max(Math.abs(currentValue), Math.abs(previousValue), 1);
+    return ((currentValue - previousValue) / denominator) * 100;
 };
 
 const formatCompactNumber = (value) =>
@@ -147,8 +164,6 @@ const toDateKey = (date) => {
 };
 
 export default function AdminTransactionsPage({ filterType, filterStatus, title, subtitle }) {
-    const isOutflowContext = filterType === "Payout" || filterType === "Refund";
-    const isEarningsContext = filterType === "Payment";
     const theme = useTheme();
     const {
         data: transactions,
@@ -166,16 +181,19 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
     const [analyticsTransactions, setAnalyticsTransactions] = useState([]);
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
     const [windowDays, setWindowDays] = useState(30);
+    const [analyticsScope, setAnalyticsScope] = useState("system");
     const transactionsRequestRef = useRef(0);
     const analyticsRequestRef = useRef(0);
 
     const getQueryString = useCallback(
-        (pageValue, pageSizeValue) => {
+        (pageValue, pageSizeValue, includeFilters = true) => {
             const params = new URLSearchParams();
             params.set("page", String(pageValue));
             params.set("pageSize", String(pageSizeValue));
-            if (filterType) params.set("type", filterType);
-            if (filterStatus) params.set("status", filterStatus);
+            if (includeFilters) {
+                if (filterType) params.set("type", filterType);
+                if (filterStatus) params.set("status", filterStatus);
+            }
             return params.toString();
         },
         [filterType, filterStatus],
@@ -220,7 +238,11 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             while (all.length < totalItems) {
                 const response = await callApi({
                     method: METHOD.GET,
-                    endpoint: `${adminEndPoints.GET_TRANSACTIONS}?${getQueryString(currentPage, ANALYTICS_PAGE_SIZE)}`,
+                    endpoint: `${adminEndPoints.GET_TRANSACTIONS}?${getQueryString(
+                        currentPage,
+                        ANALYTICS_PAGE_SIZE,
+                        analyticsScope === "tab",
+                    )}`,
                     useGlobalLoading: false,
                 });
 
@@ -247,7 +269,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 setAnalyticsLoading(false);
             }
         }
-    }, [getQueryString]);
+    }, [analyticsScope, getQueryString]);
 
     useEffect(() => {
         fetchTransactions();
@@ -270,18 +292,28 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
         const previousStart = now - windowDays * 2 * DAY_IN_MS;
 
         const transactionCount = data.length;
-        let grossValue = 0;
+        let grossInValue = 0;
+        let refundOutValue = 0;
+        let payoutOutValue = 0;
+        let totalOutValue = 0;
+        let netValue = 0;
         let paidCount = 0;
         let paidTransactionCount = 0;
 
         let currentCount = 0;
         let previousCount = 0;
-        let currentGross = 0;
-        let previousGross = 0;
+        let currentIn = 0;
+        let previousIn = 0;
+        let currentOut = 0;
+        let previousOut = 0;
+        let currentNet = 0;
+        let previousNet = 0;
         let currentPaid = 0;
         let previousPaid = 0;
         let currentPaidTransactionCount = 0;
         let previousPaidTransactionCount = 0;
+        let currentPaidAbsTotal = 0;
+        let previousPaidAbsTotal = 0;
 
         const trendMap = new Map();
         const trendKeys = Array.from({ length: windowDays }).map((_, index) => {
@@ -290,7 +322,9 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             const key = toDateKey(d);
             trendMap.set(key, {
                 label: d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
-                value: 0,
+                inbound: 0,
+                outbound: 0,
+                net: 0,
             });
             return key;
         });
@@ -299,70 +333,114 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             const amount = Math.abs(transaction.amount || 0);
             const status = transaction.status || "Unknown";
             const createdAt = getDateSafe(transaction.createdAt);
-            const paidTransaction = isPaidTransaction(transaction);
+            const paidStatus = isPaidStatus(status);
+            const direction = getDirection(transaction);
+            const txType = String(transaction?.type || "").toLowerCase();
+            const isPaidInbound = paidStatus && direction === "inbound";
+            const isPaidOutbound = paidStatus && direction === "outbound";
+            const paidTransaction = isPaidInbound || isPaidOutbound;
+            const signedImpact = isPaidInbound ? amount : isPaidOutbound ? -amount : 0;
 
-            if (paidTransaction) {
-                grossValue += amount;
+            if (isPaidInbound) {
+                grossInValue += amount;
                 paidTransactionCount += 1;
             }
+            if (isPaidOutbound) {
+                totalOutValue += amount;
+                paidTransactionCount += 1;
+                if (txType === "refund") refundOutValue += amount;
+                if (txType === "payout") payoutOutValue += amount;
+            }
+            netValue += signedImpact;
             if (isPaidStatus(status)) paidCount += 1;
 
             if (isReliableBusinessDate(createdAt)) {
                 const time = createdAt.getTime();
                 if (time >= currentStart) {
                     currentCount += 1;
-                    if (paidTransaction) {
-                        currentGross += amount;
+                    if (isPaidInbound) {
+                        currentIn += amount;
+                        currentNet += amount;
+                    }
+                    if (isPaidOutbound) {
+                        currentOut += amount;
+                        currentNet -= amount;
+                    }
+                    if (paidTransaction && amount > 0) {
                         currentPaidTransactionCount += 1;
+                        currentPaidAbsTotal += amount;
                     }
                     if (isPaidStatus(status)) currentPaid += 1;
                 } else if (time >= previousStart && time < currentStart) {
                     previousCount += 1;
-                    if (paidTransaction) {
-                        previousGross += amount;
+                    if (isPaidInbound) {
+                        previousIn += amount;
+                        previousNet += amount;
+                    }
+                    if (isPaidOutbound) {
+                        previousOut += amount;
+                        previousNet -= amount;
+                    }
+                    if (paidTransaction && amount > 0) {
                         previousPaidTransactionCount += 1;
+                        previousPaidAbsTotal += amount;
                     }
                     if (isPaidStatus(status)) previousPaid += 1;
                 }
 
                 const monthData = trendMap.get(toDateKey(createdAt));
                 if (monthData) {
-                    monthData.value += amount;
+                    if (isPaidInbound) monthData.inbound += amount;
+                    if (isPaidOutbound) monthData.outbound += amount;
+                    monthData.net += signedImpact;
                 }
             }
         });
 
-        const monthlyTrend = trendKeys.map((key) => {
+        const flowTrend = trendKeys.map((key) => {
             const monthData = trendMap.get(key);
             return {
                 label: monthData?.label || key,
-                value: monthData?.value || 0,
+                inbound: monthData?.inbound || 0,
+                // Always render outflow below zero for clearer "market-style" reading.
+                outbound: -Math.abs(monthData?.outbound || 0),
+                net: monthData?.net || 0,
             };
         });
 
         const successRate = transactionCount ? (paidCount / transactionCount) * 100 : 0;
         const currentSuccessRate = currentCount ? (currentPaid / currentCount) * 100 : 0;
         const previousSuccessRate = previousCount ? (previousPaid / previousCount) * 100 : 0;
-        const averagePaidValue = paidTransactionCount ? grossValue / paidTransactionCount : 0;
-        const currentAveragePaidValue = currentPaidTransactionCount ? currentGross / currentPaidTransactionCount : 0;
+        const averagePaidValue = paidTransactionCount ? (grossInValue + totalOutValue) / paidTransactionCount : 0;
+        const currentAveragePaidValue = currentPaidTransactionCount
+            ? currentPaidAbsTotal / currentPaidTransactionCount
+            : 0;
         const previousAveragePaidValue = previousPaidTransactionCount
-            ? previousGross / previousPaidTransactionCount
+            ? previousPaidAbsTotal / previousPaidTransactionCount
             : 0;
         const countChange = toPercentChange(currentCount, previousCount);
-        const valueChange = toPercentChange(currentGross, previousGross);
+        const grossInChange = toPercentChange(currentIn, previousIn);
+        const outflowChange = toPercentChange(currentOut, previousOut);
+        const netChange = toPercentChange(currentNet, previousNet);
         const successDelta = toPercentChange(currentSuccessRate, previousSuccessRate);
         const averagePaidValueDelta = toPercentChange(currentAveragePaidValue, previousAveragePaidValue);
 
         return {
             transactionCount,
-            grossValue,
+            grossInValue,
+            refundOutValue,
+            payoutOutValue,
+            totalOutValue,
+            netValue,
             successRate,
             averagePaidValue,
             countChange,
-            valueChange,
+            grossInChange,
+            outflowChange,
+            netChange,
             successDelta,
             averagePaidValueDelta,
-            monthlyTrend,
+            flowTrend,
         };
     }, [analyticsTransactions, windowDays]);
 
@@ -395,13 +473,56 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             .trim()
             .toLowerCase()
             .replace(/\s+/g, "-");
+        const now = new Date();
+        const dateSuffix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(
+            now.getDate(),
+        ).padStart(2, "0")}`;
         link.href = url;
-        link.setAttribute("download", `${cleanTitle}-report.csv`);
+        link.setAttribute("download", `${cleanTitle}-report-${dateSuffix}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     }, [analyticsTransactions, title]);
+
+    const renderFlowBarShape = useCallback((props, isOutbound = false) => {
+        const { x, y, width, height, fill, stroke, strokeWidth, payload } = props || {};
+        if (![x, y, width, height].every(Number.isFinite) || height <= 0) {
+            return null;
+        }
+
+        const inboundValue = Math.abs(Number(payload?.inbound || 0));
+        const outboundValue = Math.abs(Number(payload?.outbound || 0));
+        const hasBothFlows = inboundValue > 0 && outboundValue > 0;
+
+        let drawX = x;
+        let drawWidth = width;
+
+        // Stagger only when both money-in and money-out exist on the same day.
+        if (hasBothFlows) {
+            const gap = Math.min(FLOW_STAGGER_GAP, Math.max(1, width * 0.2));
+            drawWidth = Math.max(3, (width - gap) / 2);
+            drawX = isOutbound ? x + width - drawWidth : x;
+        }
+
+        const r = Math.min(3, drawWidth / 2);
+        return (
+            <rect
+                x={drawX}
+                y={y}
+                width={drawWidth}
+                height={height}
+                fill={fill}
+                stroke={stroke}
+                strokeWidth={strokeWidth}
+                rx={r}
+                ry={r}
+            />
+        );
+    }, []);
+
+    const inboundBarShape = useCallback((props) => renderFlowBarShape(props, false), [renderFlowBarShape]);
+    const outboundBarShape = useCallback((props) => renderFlowBarShape(props, true), [renderFlowBarShape]);
 
     const columns = useMemo(
         () => [
@@ -421,6 +542,20 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 headerName: "Type",
                 render: (val) => <StatusChip label={val} color={TYPE_COLOR_MAP[val] || "default"} />,
             },
+            // {
+            //     field: "flow",
+            //     headerName: "Flow",
+            //     render: (_, row) => {
+            //         const direction = getDirection(row);
+            //         if (direction === "inbound") {
+            //             return <StatusChip label="Inbound" color="success" />;
+            //         }
+            //         if (direction === "outbound") {
+            //             return <StatusChip label="Outbound" color="error" />;
+            //         }
+            //         return <StatusChip label="Unknown" color="default" />;
+            //     },
+            // },
             {
                 field: "userName",
                 headerName: "Party",
@@ -453,7 +588,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             },
             {
                 field: "amount",
-                headerName: "Amount",
+                headerName: "Impact",
                 render: (val, row) => {
                     const direction = getDirection(row);
                     const prefix = direction === "inbound" ? "+" : direction === "outbound" ? "-" : "";
@@ -514,7 +649,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
             />
 
             <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
                     <MetricCard
                         icon={<Receipt />}
                         variant="navy"
@@ -523,16 +658,34 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                         trend={buildMetricTrend({ delta: analytics.countChange })}
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
                     <MetricCard
                         icon={<Banknote />}
-                        variant={isOutflowContext ? "rose" : "emerald"}
-                        label={isOutflowContext ? "Money Out" : isEarningsContext ? "Money In" : "Paid Value"}
-                        value={formatCurrency(analytics.grossValue)}
-                        trend={buildMetricTrend({ delta: analytics.valueChange, preferLower: isOutflowContext })}
+                        variant="emerald"
+                        label="Gross In"
+                        value={formatCurrency(analytics.grossInValue)}
+                        trend={buildMetricTrend({ delta: analytics.grossInChange })}
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+                    <MetricCard
+                        icon={<Coins />}
+                        variant="rose"
+                        label="Money Out"
+                        value={formatCurrency(analytics.totalOutValue)}
+                        trend={buildMetricTrend({ delta: analytics.outflowChange, preferLower: true })}
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+                    <MetricCard
+                        icon={<Banknote />}
+                        variant={analytics.netValue >= 0 ? "blue" : "rose"}
+                        label="Net Cash"
+                        value={`${analytics.netValue >= 0 ? "+" : "-"} ${formatCurrency(Math.abs(analytics.netValue))}`}
+                        trend={buildMetricTrend({ delta: analytics.netChange })}
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
                     <MetricCard
                         icon={<CheckCircle2 />}
                         variant="blue"
@@ -541,7 +694,7 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                         trend={buildMetricTrend({ delta: analytics.successDelta })}
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
                     <MetricCard
                         icon={<Coins />}
                         variant="purple"
@@ -562,52 +715,76 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                             spacing={1.25}
                         >
                             <SectionHeading
-                                title={isOutflowContext ? "Money Out Trend" : "Money In Trend"}
-                                description={`Using live data from current ${title?.toLowerCase() || "tab"} (${windowDays} days)`}
+                                title="Cash Flow Breakdown"
+                                description={`Money In, Money Out, and Net over ${windowDays} days (${analyticsScope === "system" ? "system-wide" : "current tab"})`}
                                 disableGutters
                             />
-                            <ToggleButtonGroup
-                                size="small"
-                                value={windowDays}
-                                exclusive
-                                onChange={(_, value) => {
-                                    if (value) setWindowDays(value);
-                                }}
-                            >
-                                {WINDOW_OPTIONS.map((option) => (
-                                    <ToggleButton key={option} value={option} sx={{ px: 1.75, fontWeight: 700 }}>
-                                        {option} days
-                                    </ToggleButton>
-                                ))}
-                            </ToggleButtonGroup>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <ToggleButtonGroup
+                                    size="small"
+                                    value={analyticsScope}
+                                    exclusive
+                                    onChange={(_, value) => {
+                                        if (value) setAnalyticsScope(value);
+                                    }}
+                                >
+                                    {ANALYTICS_SCOPE_OPTIONS.map((option) => (
+                                        <ToggleButton key={option.value} value={option.value} sx={{ px: 1.5, fontWeight: 700 }}>
+                                            {option.label}
+                                        </ToggleButton>
+                                    ))}
+                                </ToggleButtonGroup>
+                                <ToggleButtonGroup
+                                    size="small"
+                                    value={windowDays}
+                                    exclusive
+                                    onChange={(_, value) => {
+                                        if (value) setWindowDays(value);
+                                    }}
+                                >
+                                    {WINDOW_OPTIONS.map((option) => (
+                                        <ToggleButton key={option} value={option} sx={{ px: 1.75, fontWeight: 700 }}>
+                                            {option} days
+                                        </ToggleButton>
+                                    ))}
+                                </ToggleButtonGroup>
+                            </Stack>
                         </Stack>
+                        <Typography sx={{ mt: 0.75, mb: 1.5, fontSize: 12, color: "text.secondary" }}>
+                            Net = Gross In - Refund Out - Payout Out
+                        </Typography>
                         {analyticsLoading ? (
                             <Skeleton variant="rounded" height={320} />
                         ) : (
                             <Box sx={{ height: 320, width: "100%" }}>
                                 <ResponsiveContainer>
-                                    <AreaChart
-                                        data={analytics.monthlyTrend}
+                                    <ComposedChart
+                                        data={analytics.flowTrend}
+                                        stackOffset="sign"
                                         margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
                                     >
                                         <defs>
-                                            <linearGradient id="valueGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <linearGradient id="inboundGradient" x1="0" y1="0" x2="0" y2="1">
                                                 <stop
                                                     offset="5%"
-                                                    stopColor={
-                                                        isOutflowContext
-                                                            ? theme.palette.error.main
-                                                            : theme.palette.secondary.main
-                                                    }
+                                                    stopColor={theme.palette.success.main}
                                                     stopOpacity={0.2}
                                                 />
                                                 <stop
                                                     offset="95%"
-                                                    stopColor={
-                                                        isOutflowContext
-                                                            ? theme.palette.error.main
-                                                            : theme.palette.secondary.main
-                                                    }
+                                                    stopColor={theme.palette.success.main}
+                                                    stopOpacity={0}
+                                                />
+                                            </linearGradient>
+                                            <linearGradient id="outboundGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop
+                                                    offset="5%"
+                                                    stopColor={theme.palette.error.main}
+                                                    stopOpacity={0.2}
+                                                />
+                                                <stop
+                                                    offset="95%"
+                                                    stopColor={theme.palette.error.main}
                                                     stopOpacity={0}
                                                 />
                                             </linearGradient>
@@ -630,8 +807,18 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                             tick={{ fill: theme.palette.text.secondary, fontSize: 11 }}
                                             tickFormatter={(value) => formatCompactNumber(value)}
                                         />
+                                        <ReferenceLine y={0} stroke={theme.palette.divider} />
                                         <Tooltip
-                                            formatter={(value) => formatCurrency(Number(value || 0))}
+                                            formatter={(value, name) => {
+                                                const numeric = Number(value || 0);
+                                                if (name === "Money Out") return [formatCurrency(Math.abs(numeric)), name];
+                                                if (name === "Net")
+                                                    return [
+                                                        `${numeric >= 0 ? "+" : "-"} ${formatCurrency(Math.abs(numeric))}`,
+                                                        name,
+                                                    ];
+                                                return [formatCurrency(Math.abs(numeric)), name];
+                                            }}
                                             contentStyle={{
                                                 border: `1px solid ${theme.palette.divider}`,
                                                 borderRadius: 10,
@@ -639,20 +826,34 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                                             }}
                                             itemStyle={{ color: theme.palette.text.primary, fontWeight: 600 }}
                                         />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="value"
-                                            name={isOutflowContext ? "Money Out" : "Money In"}
-                                            stroke={
-                                                isOutflowContext
-                                                    ? theme.palette.error.main
-                                                    : theme.palette.secondary.main
-                                            }
-                                            strokeWidth={2.5}
-                                            fillOpacity={1}
-                                            fill="url(#valueGradient)"
+                                        <Legend />
+                                        <Bar
+                                            dataKey="inbound"
+                                            name="Money In"
+                                            stackId="flow"
+                                            fill="url(#inboundGradient)"
+                                            stroke={theme.palette.success.main}
+                                            strokeWidth={1.5}
+                                            barSize={14}
                                         />
-                                    </AreaChart>
+                                        <Bar
+                                            dataKey="outbound"
+                                            name="Money Out"
+                                            stackId="flow"
+                                            fill="url(#outboundGradient)"
+                                            stroke={theme.palette.error.main}
+                                            strokeWidth={1.5}
+                                            barSize={14}
+                                        />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="net"
+                                            name="Net"
+                                            stroke={theme.palette.info.main}
+                                            strokeWidth={2.5}
+                                            dot={false}
+                                        />
+                                    </ComposedChart>
                                 </ResponsiveContainer>
                             </Box>
                         )}
