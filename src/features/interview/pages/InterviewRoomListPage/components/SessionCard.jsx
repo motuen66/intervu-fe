@@ -455,13 +455,11 @@ function RoundRow({
                     <Typography
                         variant="subtitle2"
                         fontWeight={700}
-                        color={isCancelled ? "error.main" : "text.primary"}
-                        sx={isCancelled ? { textDecoration: "line-through", textDecorationThickness: "from-font" } : undefined}
+                        color="text.primary"
                     >
                         {title}
                     </Typography>
                     {isHighlighted && <StatusChip label="Nearest" color="success" />}
-                    {isCancelled && <StatusChip label="Cancelled" color="error" />}
                     {!isCancelled && startingIn && (
                         <StatusChip
                             icon={<Clock size={12} />}

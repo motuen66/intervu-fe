@@ -12,6 +12,7 @@ import {
     Divider,
     IconButton,
     Grow,
+    Tooltip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -29,6 +30,7 @@ import toast from "react-hot-toast";
 import { PrimaryButton, SecondaryButton } from "../../../../../common/components/buttons";
 import { formatCurrency } from "../../../../../common/utils/dateFormatter";
 import CalendlyCalendar from "../../../../../common/components/CalendlyCalendar";
+import { validateCandidateNote, getPersonalInfoRestrictionMessage } from "./candidateNoteValidation";
 import "./BookingSlotDialog.css";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -79,6 +81,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
 
     const [error, setError] = useState(null);
     const [candidateNote, setCandidateNote] = useState("");
+    const [noteValidation, setNoteValidation] = useState({ hasPersonalInfo: false, detectedTypes: [], message: "" });
 
     // Data fetching
     useEffect(() => {
@@ -98,6 +101,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
             setCurrentMonth(new Date());
             setError(null);
             setCandidateNote("");
+            setNoteValidation({ hasPersonalInfo: false, detectedTypes: [], message: "" });
         }
     }, [open, interviewerId, initialService]);
 
@@ -260,7 +264,15 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
         return new Set(selectedSlotData.blocks.map((b) => String(b.id)));
     }, [selectedSlotData]);
 
-    const canConfirm = selectedService && selectedSlotData;
+    // Validate candidate note for personal information
+    const handleCandidateNoteChange = (e) => {
+        const note = e.target.value.slice(0, CANDIDATE_NOTE_MAX_LENGTH);
+        setCandidateNote(note);
+        const validation = validateCandidateNote(note);
+        setNoteValidation(validation);
+    };
+
+    const canConfirm = selectedService && selectedSlotData && !noteValidation.hasPersonalInfo;
 
     return (
         <Dialog
@@ -461,9 +473,7 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                         placeholder={selectedSlotData ? "Your note..." : "Select a time slot above first"}
                                         value={candidateNote}
                                         disabled={!selectedSlotData}
-                                        onChange={(e) =>
-                                            setCandidateNote(e.target.value.slice(0, CANDIDATE_NOTE_MAX_LENGTH))
-                                        }
+                                        onChange={handleCandidateNoteChange}
                                         inputProps={{ maxLength: CANDIDATE_NOTE_MAX_LENGTH }}
                                         sx={{
                                             "& .MuiOutlinedInput-root": {
@@ -476,6 +486,11 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75, textAlign: "right" }}>
                                         {candidateNote.length}/{CANDIDATE_NOTE_MAX_LENGTH}
                                     </Typography>
+                                    {noteValidation.hasPersonalInfo && (
+                                        <Alert severity="warning" sx={{ mt: 1.5, fontSize: "0.85rem" }}>
+                                            {noteValidation.message}
+                                        </Alert>
+                                    )}
                                 </Box>
                             </>
                         )}
@@ -508,9 +523,17 @@ const BookingSlotDialog = ({ open, onClose, interviewerId, onSlotSelected, initi
                             Next Step
                         </PrimaryButton>
                     ) : (
-                        <PrimaryButton disabled={!canConfirm} onClick={handleConfirmBooking}>
-                            Confirm & Pay
-                        </PrimaryButton>
+                        <Tooltip
+                            title={noteValidation.hasPersonalInfo ? getPersonalInfoRestrictionMessage() : ""}
+                            arrow
+                            disableHoverListener={!noteValidation.hasPersonalInfo}
+                        >
+                            <span>
+                                <PrimaryButton disabled={!canConfirm} onClick={handleConfirmBooking}>
+                                    Confirm & Pay
+                                </PrimaryButton>
+                            </span>
+                        </Tooltip>
                     )}
                 </Stack>
             </Box>

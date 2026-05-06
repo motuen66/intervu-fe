@@ -18,6 +18,7 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import Divider from "@mui/material/Divider";
+import Tooltip from "@mui/material/Tooltip";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -48,6 +49,7 @@ import { createJDBookingRequest, payBookingRequest } from "../../../../interview
 import { callApi } from "../../../../../common/utils/apiConnector";
 import { METHOD } from "../../../../../common/constants/api";
 import { validateJDBookingRounds, isValidUrl } from "./jdBookingValidation";
+import { validateCandidateNote, getPersonalInfoRestrictionMessage } from "./candidateNoteValidation";
 import toast from "react-hot-toast";
 import { useTheme } from "@mui/material/styles";
 import { dialogStyles } from "../../../../../common/constants/uiStyles";
@@ -367,6 +369,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [candidateNote, setCandidateNote] = useState("");
+    const [noteValidation, setNoteValidation] = useState({ hasPersonalInfo: false, detectedTypes: [], message: "" });
 
     const fetchProfileCvUrl = useCallback(async () => {
         if (!userData?.id) {
@@ -443,8 +446,17 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
             setLoadingProfileCv(false);
             setHasAttemptedProfileCvFetch(false);
             setCandidateNote("");
+            setNoteValidation({ hasPersonalInfo: false, detectedTypes: [], message: "" });
         }
     }, [open, coachId, userData?.id, fetchProfileCvUrl]);
+
+    // Validate candidate note for personal information
+    const handleCandidateNoteChange = (e) => {
+        const note = e.target.value.slice(0, CANDIDATE_NOTE_MAX_LENGTH);
+        setCandidateNote(note);
+        const validation = validateCandidateNote(note);
+        setNoteValidation(validation);
+    };
 
     const loadServices = async () => {
         setLoadingServices(true);
@@ -604,12 +616,16 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                 ),
             );
 
-            // Auto-advance to next unscheduled round
-            const nextRoundIndex = rounds.findIndex((r, i) => i > activeRoundIndex && !r.startTime);
-            if (nextRoundIndex !== -1) {
-                setActiveRoundIndex(nextRoundIndex);
-                setSelectedDate(null);
-            }
+            // Show selection feedback with brief delay to let user see the green highlight
+            const timer = setTimeout(() => {
+                const nextRoundIndex = rounds.findIndex((r, i) => i > activeRoundIndex && !r.startTime);
+                if (nextRoundIndex !== -1) {
+                    setActiveRoundIndex(nextRoundIndex);
+                    setSelectedDate(null);
+                }
+            }, 700);
+
+            return () => clearTimeout(timer);
         },
         [activeRoundIndex, rounds, services, dayTimeBlocks],
     );
@@ -1663,9 +1679,7 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                     size="small"
                                                     placeholder="Your note..."
                                                     value={candidateNote}
-                                                    onChange={(e) =>
-                                                        setCandidateNote(e.target.value.slice(0, CANDIDATE_NOTE_MAX_LENGTH))
-                                                    }
+                                                    onChange={handleCandidateNoteChange}
                                                     inputProps={{ maxLength: CANDIDATE_NOTE_MAX_LENGTH }}
                                                     sx={{
                                                         "& .MuiOutlinedInput-root": {
@@ -1677,6 +1691,11 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                                                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
                                                     {candidateNote.length}/{CANDIDATE_NOTE_MAX_LENGTH}
                                                 </Typography>
+                                                {noteValidation.hasPersonalInfo && (
+                                                    <Alert severity="warning" sx={{ mt: 1.5, fontSize: "0.85rem" }}>
+                                                        {noteValidation.message}
+                                                    </Alert>
+                                                )}
                                             </Box>
                                         </Stack>
                                     </Box>
@@ -1719,19 +1738,35 @@ export default function JDBookingDialog({ open, onClose, coachId }) {
                     )}
                         <TextButton onClick={handleClose}>Cancel</TextButton>
                         <Box sx={{ minWidth: { xs: "100%", sm: 240 } }}>
-                            <PrimaryButton
-                                className="jd-btn-next-footer"
-                                onClick={activeStep === 0 ? handleNextStep : handleSubmit}
-                                disabled={activeStep === 0 ? !canProceedStep1 : !allRoundsConfigured || saving}
-                                endIcon={!saving && <ArrowRight size={20} strokeWidth={2.25} />}
-                                fullWidth
+                            <Tooltip
+                                title={
+                                    activeStep === 1 && noteValidation.hasPersonalInfo
+                                        ? getPersonalInfoRestrictionMessage()
+                                        : ""
+                                }
+                                arrow
+                                disableHoverListener={!(activeStep === 1 && noteValidation.hasPersonalInfo)}
                             >
-                                {activeStep === 0
-                                    ? "Next: Schedule Rounds"
-                                    : saving
-                                      ? "Confirming & Paying..."
-                                      : "Confirm & Pay Now"}
-                            </PrimaryButton>
+                                <span style={{ width: "100%" }}>
+                                    <PrimaryButton
+                                        className="jd-btn-next-footer"
+                                        onClick={activeStep === 0 ? handleNextStep : handleSubmit}
+                                        disabled={
+                                            activeStep === 0
+                                                ? !canProceedStep1
+                                                : !allRoundsConfigured || saving || noteValidation.hasPersonalInfo
+                                        }
+                                        endIcon={!saving && <ArrowRight size={20} strokeWidth={2.25} />}
+                                        fullWidth
+                                    >
+                                        {activeStep === 0
+                                            ? "Next: Schedule Rounds"
+                                            : saving
+                                              ? "Confirming & Paying..."
+                                              : "Confirm & Pay Now"}
+                                    </PrimaryButton>
+                                </span>
+                            </Tooltip>
                         </Box>
                 </Stack>
             </DialogActions>
