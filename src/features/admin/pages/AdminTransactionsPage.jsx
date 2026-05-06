@@ -542,20 +542,20 @@ export default function AdminTransactionsPage({ filterType, filterStatus, title,
                 headerName: "Type",
                 render: (val) => <StatusChip label={val} color={TYPE_COLOR_MAP[val] || "default"} />,
             },
-            {
-                field: "flow",
-                headerName: "Flow",
-                render: (_, row) => {
-                    const direction = getDirection(row);
-                    if (direction === "inbound") {
-                        return <StatusChip label="Inbound" color="success" />;
-                    }
-                    if (direction === "outbound") {
-                        return <StatusChip label="Outbound" color="error" />;
-                    }
-                    return <StatusChip label="Unknown" color="default" />;
-                },
-            },
+            // {
+            //     field: "flow",
+            //     headerName: "Flow",
+            //     render: (_, row) => {
+            //         const direction = getDirection(row);
+            //         if (direction === "inbound") {
+            //             return <StatusChip label="Inbound" color="success" />;
+            //         }
+            //         if (direction === "outbound") {
+            //             return <StatusChip label="Outbound" color="error" />;
+            //         }
+            //         return <StatusChip label="Unknown" color="default" />;
+            //     },
+            // },
             {
                 field: "userName",
                 headerName: "Party",
