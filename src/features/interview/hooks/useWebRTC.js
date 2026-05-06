@@ -161,14 +161,6 @@ export function useWebRTC({ signalingSender, selfId }) {
         selfIdRef.current = selfId;
     }, [selfId]);
 
-    // When selfId arrives (delayed after SignalR connects), retry if we already
-    // have a pending target but couldn't create the PC yet.
-    useEffect(() => {
-        if (!selfId || !targetPeerIdRef.current || pcRef.current) return;
-        initiatePeerConnection(targetPeerIdRef.current);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selfId]); // intentionally omits initiatePeerConnection to avoid circular dep
-
     // ── Speaking detection for local stream ───────────────────────────────────
     useEffect(() => {
         localSpeakingCleanup.current?.();
@@ -294,18 +286,10 @@ export function useWebRTC({ signalingSender, selfId }) {
         (targetId) => {
             if (pcRef.current) return;
 
-            // Always record the target first so the selfId-ready effect can pick it up.
+            isPolite.current = (selfIdRef.current ?? "") < targetId;
             targetPeerIdRef.current = targetId;
-
-            // selfId is set via React state and may not have propagated yet when this
-            // callback fires (ExistingPeers/UserJoined can arrive in the same microtask
-            // as JoinRoom). Bail and let the useEffect above retry once selfId arrives.
-            if (!selfIdRef.current) {
-                tLog("WebRTC", "initiatePeerConnection deferred — selfId not ready, target:", targetId);
-                return;
-            }
-
-            isPolite.current = selfIdRef.current < targetId;
+            const hasLocalTracks =
+                (localStreamRef.current?.getTracks().filter((t) => t.enabled) ?? []).length > 0;
             tLog(
                 "WebRTC",
                 "initiatePeerConnection → target:",
@@ -314,8 +298,13 @@ export function useWebRTC({ signalingSender, selfId }) {
                 selfIdRef.current,
                 "| polite:",
                 isPolite.current,
+                "| hasLocalTracks:",
+                hasLocalTracks,
             );
 
+            // If we already have active local tracks (e.g., user turned camera on
+            // before the peer joined), create the PC now and add them.
+            // This fires onnegotiationneeded → offer sent.
             const activeTracks = localStreamRef.current?.getTracks().filter((t) => t.enabled) ?? [];
 
             if (activeTracks.length > 0) {
@@ -323,11 +312,8 @@ export function useWebRTC({ signalingSender, selfId }) {
                 for (const track of activeTracks) {
                     pc.addTrack(track, localStreamRef.current);
                 }
-            } else if (!isPolite.current) {
-                // Impolite peer: pre-create the PC (no tracks yet) so it is ready to
-                // receive the offer that the polite peer will send on their first track.
-                createPeerConnection(targetId);
             }
+            // Otherwise: PC is created lazily on first toggleCam/toggleMic call.
         },
         [createPeerConnection],
     );
