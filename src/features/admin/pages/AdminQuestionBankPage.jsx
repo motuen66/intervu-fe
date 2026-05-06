@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Container, Tab, Tabs, Tooltip, Typography } from "@mui/material";
+import { Box, Container, Tab, Tabs, Tooltip, Typography, Chip } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -36,14 +36,14 @@ const TAB_KEYS = {
 
 const formatEnumLabel = (value, options) => {
     if (value === null || value === undefined || value === "") return "-";
-    
+
     if (options && typeof value === "number") {
         const option = options.find(o => o.value === value);
         if (option) return option.label;
     }
 
     if (typeof value === "number") return `${value}`;
-    
+
     const text = String(value)
         .replace(/_/g, " ")
         .replace(/([A-Z])/g, ' $1') // Add space before capital letters
@@ -202,7 +202,7 @@ export default function AdminQuestionBankPage() {
                 {
                     field: "category",
                     headerName: "Category",
-                    width: 130,
+                    width: 150,
                     render: (value) => formatEnumLabel(value, CATEGORIES),
                 },
                 {
@@ -216,6 +216,37 @@ export default function AdminQuestionBankPage() {
                     headerName: "Round",
                     width: 100,
                     render: (value) => formatEnumLabel(value, ROUNDS),
+                },
+                {
+                    field: "tags",
+                    headerName: "Tags",
+                    width: 250,
+                    render: (value) => {
+                        if (!Array.isArray(value) || !value.length) return "-";
+                        return (
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                {value.map((tag) => {
+                                    const isAi = tag.name === "AI Collected";
+                                    return (
+                                        <Chip
+                                            key={tag.id}
+                                            label={tag.name}
+                                            size="small"
+                                            sx={{
+                                                height: 20,
+                                                fontSize: "0.65rem",
+                                                fontWeight: isAi ? 800 : 500,
+                                                bgcolor: isAi ? "secondary.main" : "grey.100",
+                                                color: isAi ? "primary.main" : "text.secondary",
+                                                border: "none",
+                                                borderRadius: "4px",
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </Box>
+                        );
+                    }
                 },
             ];
 

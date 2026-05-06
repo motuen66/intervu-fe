@@ -62,29 +62,71 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
         typeof item.role === "number"
             ? ROLES.find((r) => r.value === item.role)?.label
             : roles[0] && (typeof roles[0] === "string" ? roles[0] : roles[0]?.name);
-    const categoryLabel =
-        item.category != null
-            ? QUESTION_TYPES.find((t) => t.value === item.category)?.label
-            : item.questionType != null
-              ? QUESTION_TYPES.find((t) => t.value === item.questionType)?.label
-              : null;
-    const levelLabel = item.level != null ? LEVELS.find((l) => l.value === item.level)?.label : null;
-    const roundLabel = item.round != null ? ROUNDS.find((r) => r.value === item.round)?.label : null;
+    const categoryLabel = (() => {
+        const val = item.category ?? item.questionType;
+        if (val == null || val === "") return null;
+
+        // Try numeric match first
+        const num = Number(val);
+        if (!isNaN(num)) {
+            const match = QUESTION_TYPES.find((t) => t.value === num);
+            if (match) return match.label;
+        }
+
+        // Try string match against labels
+        if (typeof val === "string") {
+            const match = QUESTION_TYPES.find((t) => t.label.toLowerCase() === val.toLowerCase());
+            if (match) return match.label;
+
+            // Fallback: format camelCase or PascalCase strings
+            return val.replace(/([A-Z])/g, ' $1').trim();
+        }
+
+        return null;
+    })();
+    const levelLabel = item.level != null ? LEVELS.find((l) => l.value === Number(item.level) || l.label === item.level)?.label : null;
+    const roundLabel = item.round != null ? ROUNDS.find((r) => r.value === Number(item.round) || r.label === item.round)?.label : null;
+
+    const hasAiTag = Array.isArray(item.tags) && item.tags.some(t => t.name === "AI Collected");
 
     const metaChips = [
+        hasAiTag && {
+            label: "AI Collected",
+            color: "secondary",
+            sx: {
+                fontWeight: 800,
+                fontSize: "0.65rem",
+                height: 22,
+                color: "primary.main",
+                bgcolor: "secondary.main",
+                border: "none"
+            }
+        },
         roleLabel && {
             label: roleLabel,
             color: "default",
             sx: {
-                color: "text.primary",
-                bgcolor: "grey.50",
-                borderColor: "grey.300",
+                color: "indigo.700",
+                bgcolor: "rgba(99, 102, 241, 0.08)",
+                borderColor: "rgba(99, 102, 241, 0.2)",
+                fontWeight: 600,
             },
         },
-        categoryLabel && { label: categoryLabel, color: "default" },
+        categoryLabel && {
+            label: categoryLabel,
+            color: "default",
+            sx: {
+                color: "teal.700",
+                bgcolor: "rgba(20, 184, 166, 0.08)",
+                borderColor: "rgba(20, 184, 166, 0.2)",
+                fontWeight: 600,
+            }
+        },
         levelLabel && { label: levelLabel, color: "info" },
         roundLabel && { label: roundLabel, color: "warning" },
     ].filter(Boolean);
+
+    const otherTags = [];
 
     const answerText = previewAnswer?.content || "";
     const PREVIEW_CHAR_LIMIT = 220;
@@ -110,7 +152,7 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                 const count = data?.totalCount ?? data?.total ?? null;
                 if (count != null) setCommentCount(count);
             })
-            .catch(() => {});
+            .catch(() => { });
     }, [item.id]);
 
     const handleLike = async (event) => {
@@ -371,18 +413,18 @@ export default function QuestionCard({ item, isHot: isHotProp }) {
                             previewAnswer?.authorProfilePicture ??
                             item.authorAvatar ??
                             item.authorProfilePicture) && (
-                            <Avatar
-                                src={
-                                    previewAnswer?.authorAvatar ??
-                                    previewAnswer?.authorProfilePicture ??
-                                    item.authorAvatar ??
-                                    item.authorProfilePicture
-                                }
-                                sx={{ width: 22, height: 22, fontSize: 10, flexShrink: 0 }}
-                            >
-                                {(previewAnswer?.authorName ?? item.authorName)?.[0] ?? "U"}
-                            </Avatar>
-                        )}
+                                <Avatar
+                                    src={
+                                        previewAnswer?.authorAvatar ??
+                                        previewAnswer?.authorProfilePicture ??
+                                        item.authorAvatar ??
+                                        item.authorProfilePicture
+                                    }
+                                    sx={{ width: 22, height: 22, fontSize: 10, flexShrink: 0 }}
+                                >
+                                    {(previewAnswer?.authorName ?? item.authorName)?.[0] ?? "U"}
+                                </Avatar>
+                            )}
                         <Typography
                             variant="caption"
                             color="text.secondary"
