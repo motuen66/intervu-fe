@@ -34,7 +34,6 @@ import { useAssessment } from "../context/AssessmentContext";
 import { assessmentEndPoints } from "../services/assessmentApi.js";
 import {
     mapAssessmentPayloadToResult,
-    saveSkippedAssessment,
     setAssessmentForceRequired,
 } from "../helpers/assessmentHelper";
 import { callApi } from "../../../../../common/utils/apiConnector";
@@ -919,10 +918,6 @@ const ChatSurvey = () => {
 
         if (currentUserId) {
             try {
-                const skipped = await saveSkippedAssessment(currentUserId);
-                if (!skipped) {
-                    return;
-                }
                 setAssessmentForceRequired(currentUserId, false);
             } finally {
                 setIsSkipping(false);

@@ -19,7 +19,7 @@ function CandidateAssessmentGate({ children }) {
         const isRoadmapPath = location.pathname.startsWith("/roadmap");
 
         const shouldSkipCheck =
-            !token || userData?.role !== ROLES.CANDIDATE || location.pathname.startsWith("/assessment");
+            !token || userData?.role !== ROLES.CANDIDATE || !isRoadmapPath;
 
         if (shouldSkipCheck) {
             setIsChecking(false);
@@ -64,7 +64,9 @@ function CandidateAssessmentGate({ children }) {
             } catch (error) {
                 if (!cancelled) {
                     setAssessmentForceRequired(userData?.id, true);
-                    navigate("/assessment", { replace: true });
+                    if (isRoadmapPath) {
+                        navigate("/assessment", { replace: true });
+                    }
                 }
             } finally {
                 if (!cancelled) {

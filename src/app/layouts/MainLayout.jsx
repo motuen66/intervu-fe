@@ -120,7 +120,10 @@ const MainLayout = () => {
     );
 
     const isAdmin = userData?.role === ROLES.ADMIN;
-    const isAssessmentLocked = userData?.role === ROLES.CANDIDATE && isAssessmentForceRequired(userData?.id);
+    const isAssessmentScopePath =
+        location.pathname.startsWith("/assessment") || location.pathname.startsWith("/roadmap");
+    const isAssessmentLocked =
+        userData?.role === ROLES.CANDIDATE && isAssessmentScopePath && isAssessmentForceRequired(userData?.id);
 
     // Extract user ID from token and refresh profile data from server
     useEffect(() => {
@@ -281,7 +284,7 @@ const MainLayout = () => {
     // CANDIDATE / COACH LAYOUT
     return (
         <ProcessingTrayProvider>
-            <CandidateAssessmentGate />
+            {location.pathname.startsWith("/roadmap") ? <CandidateAssessmentGate /> : null}
             <div className="main-layout">
                 {isAssessmentLocked ? (
                     <header

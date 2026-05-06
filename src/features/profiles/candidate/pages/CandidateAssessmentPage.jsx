@@ -7,12 +7,10 @@ import {
     ASSESSMENT_DATA_STATE,
     getAssessmentState,
     isAssessmentForceRequired,
-    saveSkippedAssessment,
     setAssessmentForceRequired,
 } from "../candidate-assessment/helpers/assessmentHelper";
 import { getAssessmentDataFromCache, isAssessmentCacheValid } from "../../../../common/utils/assessmentCache";
 import { AssessmentProvider } from "../candidate-assessment/context/AssessmentContext";
-import AssessmentRequiredDialog from "../candidate-assessment/components/AssessmentRequiredDialog";
 
 const CandidateAssessmentPage = () => {
     const navigate = useNavigate();
@@ -102,16 +100,12 @@ const CandidateAssessmentPage = () => {
 
         setIsSkipping(true);
         try {
-            await saveSkippedAssessment(userData.id);
-
             setAssessmentForceRequired(userData.id, false);
             setOpenPrompt(false);
 
             toast.info("Welcome back! You can complete your assessment anytime from the dashboard.");
             navigate("/candidate", { replace: true });
         } catch (error) {
-            // Silently fail and still try to go home if possible,
-            // or just ensure we don't crash
             setAssessmentForceRequired(userData.id, false);
             navigate("/candidate", { replace: true });
         } finally {
@@ -121,12 +115,13 @@ const CandidateAssessmentPage = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 pt-10 px-4 md:px-8">
-            <AssessmentRequiredDialog
+            {/* TEMP: hide assessment required popup */}
+            {/* <AssessmentRequiredDialog
                 open={openPrompt}
                 onSkip={handleSkipForNow}
                 onProceed={handleLetsGo}
                 loading={isSkipping}
-            />
+            /> */}
 
             <div className="max-w-7xl mx-auto">
                 <AssessmentProvider>

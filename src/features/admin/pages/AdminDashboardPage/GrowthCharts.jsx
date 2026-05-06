@@ -85,13 +85,6 @@ const toHourKey = (date) => {
     return d.toISOString();
 };
 
-const toMonthKey = (date) => {
-    const d = new Date(date);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`;
-};
-
 const getNumeric = (item, keys) => {
     for (const key of keys) {
         const value = Number(item?.[key]);
@@ -313,72 +306,18 @@ export default function GrowthCharts({
     );
 
     const userGrowthSeries = useMemo(() => {
-        const raw = Array.isArray(data?.userGrowth) ? data.userGrowth : [];
-        const mapped = raw.map((item) => {
-            const label =
-                item?.date ||
-                item?.label ||
-                item?.time ||
-                item?.timestamp ||
-                item?.createdAt ||
-                "";
-            const parsed = parseDateLike(label);
-            return {
-                ...item,
-                xLabel: String(label || "").trim(),
-                parsedDate: parsed ? parsed.getTime() : null,
-                candidates: getNumeric(item, ["candidates", "candidate", "candidateCount"]),
-                coaches: getNumeric(item, ["coaches", "coach", "coachCount"]),
-            };
-        });
-
-        const monthMap = new Map();
-        mapped.forEach((item) => {
-            if (!Number.isFinite(item.parsedDate)) return;
-            monthMap.set(toMonthKey(item.parsedDate), item);
-        });
-
-        const now = new Date();
-        const monthStarts = [];
-        for (let i = 5; i >= 0; i -= 1) {
-            monthStarts.push(new Date(now.getFullYear(), now.getMonth() - i, 1, 0, 0, 0, 0));
-        }
-
-        const ensured = monthStarts.map((monthStart) => {
-            const key = toMonthKey(monthStart);
-            const existing = monthMap.get(key);
-            if (existing) return existing;
-            return {
-                xLabel: monthStart.toLocaleDateString("en-US", { month: "short" }),
-                parsedDate: monthStart.getTime(),
-                candidates: 0,
-                coaches: 0,
-            };
-        });
-
-        return ensured;
+        const source = Array.isArray(data?.userGrowth) ? data.userGrowth : [];
+        return source.map((item, idx) => ({
+            xLabel:
+                item?.label ??
+                item?.month ??
+                item?.name ??
+                item?.date ??
+                `M${idx + 1}`,
+            candidates: getNumeric(item, ["candidates", "candidate", "candidateCount"]),
+            coaches: getNumeric(item, ["coaches", "coach", "coachCount"]),
+        }));
     }, [data]);
-
-    // const customRangeActive = Boolean(fromDate || toDate);
-    // const rangeStart = fromDate ? new Date(fromDate) : null;
-    // const rangeEnd = toDate ? new Date(toDate) : null;
-    // const userGrowthSeries = useMemo(() => {
-    //     const source = pickSourceByView(data, timeframe, "userGrowth");
-    //     const resolver = (item) => ({
-    //         candidates: getNumeric(item, ["candidates", "candidate", "candidateCount"]),
-    //         coaches: getNumeric(item, ["coaches", "coach", "coachCount"]),
-    //     });
-    //     if (!customRangeActive && timeframe === "24h") {
-    //         return normalizeHourlySeries({ rawSeries: source, valueResolver: resolver });
-    //     }
-    //     return normalizeDailySeries({
-    //         rawSeries: source,
-    //         days: RANGE_DAY_MAP[timeframe] || 7,
-    //         valueResolver: resolver,
-    //         rangeStart,
-    //         rangeEnd,
-    //     });
-    // }, [data, timeframe, customRangeActive, rangeStart, rangeEnd]);
 
     if (loading && !data) {
         return (

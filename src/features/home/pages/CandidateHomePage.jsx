@@ -11,11 +11,6 @@ import { METHOD } from "../../../common/constants/api";
 import { homeEndPoints } from "../services/homeApi";
 import { interviewQuestionEndPoints } from "../../interviewQuestions/service/interviewQuestionApi";
 import { candidateProfileEndPoints } from "../../profiles/candidate/service/candidateProfileApi";
-import {
-    getAssessmentState,
-    ASSESSMENT_DATA_STATE,
-} from "../../profiles/candidate/candidate-assessment/helpers/assessmentHelper";
-import { assessmentEndPoints } from "../../profiles/candidate/candidate-assessment/services/assessmentApi";
 import SmartMatchModal from "../../smartSearch/components/SmartMatchModal";
 import CoachOrbitHero from "../components/CoachOrbitHero";
 import FeatureCards from "../components/FeatureCards";
@@ -137,7 +132,7 @@ export default function CandidateHomePage() {
 
     const [journeyFlags, setJourneyFlags] = useState({
         profileComplete: false,
-        assessmentDone: false,
+        assessmentDone: false, // TEMP: do not call assessment API on Home
         roadmapExists: false,
         loading: true,
     });
@@ -270,14 +265,8 @@ export default function CandidateHomePage() {
                     "{id}",
                     userData.id,
                 );
-                const [profileResult, assessmentResult, roadmapResult] = await Promise.allSettled([
+                const [profileResult] = await Promise.allSettled([
                     callApi({ method: METHOD.GET, endpoint: profileEndpoint, useGlobalLoading: false }),
-                    getAssessmentState(userData.id),
-                    callApi({
-                        method: METHOD.GET,
-                        endpoint: assessmentEndPoints.GET_ROADMAP(userData.id),
-                        useGlobalLoading: false,
-                    }),
                 ]);
                 if (cancelled) return;
 
@@ -299,17 +288,10 @@ export default function CandidateHomePage() {
                         (profile.user?.fullName ?? profile.fullName ?? userData?.fullName)?.trim(),
                 );
 
-                const assessmentDone =
-                    assessmentResult.status === "fulfilled" &&
-                    assessmentResult.value?.status === ASSESSMENT_DATA_STATE.HAS_DATA;
+                const assessmentDone = false;
 
-                const roadmapData =
-                    roadmapResult.status === "fulfilled"
-                        ? (roadmapResult.value?.data ?? roadmapResult.value)
-                        : null;
-                const roadmapExists = Boolean(
-                    roadmapData && (Array.isArray(roadmapData) ? roadmapData.length > 0 : true),
-                );
+                // TEMP: roadmap API call is disabled above, so keep this as false for now.
+                const roadmapExists = false;
 
                 setJourneyFlags({ profileComplete, assessmentDone, roadmapExists, loading: false });
             } catch {
