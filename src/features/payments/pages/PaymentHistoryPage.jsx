@@ -38,6 +38,8 @@ import { METHOD } from "../../../common/constants/api";
 import { interviewEndPoints } from "../../interview/services/interviewRoomApi";
 import { profileEndPoints } from "../../profile/services/profileApi";
 import { formatCurrency } from "../../../common/utils/dateFormatter";
+import { formatTransactionAmountDisplay } from "../../../common/utils/transactionAmountDisplay";
+import { formatTransactionType } from "../../../common/utils/transactionType";
 import { ROLES } from "../../../common/constants/common";
 import { trackPaymentSuccess } from "../../../utils/analytics";
 import { useSearchParams } from "react-router-dom";
@@ -69,12 +71,6 @@ const mapStatusCodeToString = (statusCode) => {
 
     // If numeric, map to string
     return statusMap[statusCode] || "PENDING";
-};
-
-const formatAmountDisplay = (amount, isCoach) => {
-    const safeAmount = typeof amount === "number" ? amount : Number((amount ?? "").toString().replace(/,/g, "")) || 0;
-    const base = formatCurrency(safeAmount);
-    return isCoach ? { text: `+ ${base}`, color: "#4CAF50" } : { text: `- ${base}`, color: "#F44336" };
 };
 
 const pickFirstString = (...vals) => vals.find((v) => typeof v === "string" && v.trim().length);
@@ -131,6 +127,7 @@ const sanitizeTransactions = (incoming) => {
             candidateName,
             interviewId,
             createdAt,
+            transactionTypeLabel: formatTransactionType(t?.type),
             status: mapStatusCodeToString(t?.status),
             amount: (() => {
                 if (typeof t?.amount === "number") return t.amount;
@@ -365,9 +362,12 @@ const PaymentHistoryPage = () => {
     const getInterviewDetails = (transaction) => {
         if (!transaction) return [];
 
-        // Get interview type (handle both numeric and string)
-        const typeValue = transaction?.type ?? transaction?.interviewType ?? transaction?.interviewRoom?.interviewType;
-        const interviewType = mapInterviewType(typeValue);
+        // Interview room type only — do not use transaction.type (that is TransactionType from API)
+        const interviewTypeRaw =
+            transaction?.interviewType ??
+            transaction?.interviewRoom?.interviewType ??
+            transaction?.interviewRoom?.type;
+        const interviewType = interviewTypeRaw != null ? mapInterviewType(interviewTypeRaw) : "—";
 
         // Get schedule time
         const scheduleTime =
@@ -380,6 +380,7 @@ const PaymentHistoryPage = () => {
         return [
             { label: "Coach", value: transaction.coachName || "-" },
             { label: "Candidate", value: transaction.candidateName || "-" },
+            { label: "Transaction type", value: transaction.transactionTypeLabel || formatTransactionType(transaction?.type) },
             { label: "Interview Type", value: interviewType },
             { label: "Schedule", value: formatDateTimeSafe(scheduleTime) },
             { label: "Payment Date", value: formatDateSafe(transaction.createdAt) },
@@ -595,7 +596,8 @@ const PaymentHistoryPage = () => {
                                     }}
                                 >
                                     <TableCell>Date</TableCell>
-                                    <TableCell>Interview/Coach</TableCell>
+                                    <TableCell>Coach</TableCell>
+                                    <TableCell>Type</TableCell>
                                     <TableCell>Amount</TableCell>
                                     <TableCell>Status</TableCell>
                                     <TableCell align="right">Action</TableCell>
@@ -643,14 +645,28 @@ const PaymentHistoryPage = () => {
                                                     </Typography>
                                                 </TableCell>
                                                 <TableCell sx={highlightCellSx}>
+                                                    <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                                        {transaction.transactionTypeLabel}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell sx={highlightCellSx}>
                                                     <Typography
                                                         fontWeight={700}
                                                         sx={{
-                                                            color: formatAmountDisplay(transaction.amount, isCoach)
-                                                                .color,
+                                                            color: formatTransactionAmountDisplay(
+                                                                transaction.amount,
+                                                                isCoach,
+                                                                transaction.type,
+                                                            ).color,
                                                         }}
                                                     >
-                                                        {formatAmountDisplay(transaction.amount, isCoach).text}
+                                                        {
+                                                            formatTransactionAmountDisplay(
+                                                                transaction.amount,
+                                                                isCoach,
+                                                                transaction.type,
+                                                            ).text
+                                                        }
                                                     </Typography>
                                                 </TableCell>
                                                 <TableCell sx={highlightCellSx}>

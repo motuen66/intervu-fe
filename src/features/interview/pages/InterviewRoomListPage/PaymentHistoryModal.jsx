@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
     Modal,
     Box,
@@ -35,6 +36,9 @@ import { METHOD } from "../../../../common/constants/api.js";
 import { interviewEndPoints } from "../../services/interviewRoomApi";
 import SectionHeading from "../../../../common/components/SectionHeading";
 import { formatCurrency } from "../../../../common/utils/dateFormatter.js";
+import { formatTransactionAmountDisplay } from "../../../../common/utils/transactionAmountDisplay.js";
+import { formatTransactionType } from "../../../../common/utils/transactionType.js";
+import { ROLES } from "../../../../common/constants/common.js";
 import { PrimaryButton, SecondaryButton } from "../../../../common/components/buttons";
 
 const transactionStatusConfig = {
@@ -45,6 +49,9 @@ const transactionStatusConfig = {
 };
 
 function PaymentHistoryModal({ open, onClose }) {
+    const { userData } = useSelector((state) => state.auth || {});
+    const isCoach = userData?.role === ROLES.INTERVIEWER;
+
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filteredTransactions, setFilteredTransactions] = useState([]);
@@ -81,6 +88,7 @@ function PaymentHistoryModal({ open, onClose }) {
             // Normalize status casing and amount type for consistent calculations
             const sanitized = normalized.map((t) => ({
                 ...t,
+                transactionTypeLabel: formatTransactionType(t?.type),
                 status: (t?.status || "").toString().toUpperCase(),
                 amount: (() => {
                     if (typeof t?.amount === "number") return t.amount;
@@ -143,7 +151,7 @@ Interview Booking Receipt
 Date: ${new Date(transaction.createdAt).toLocaleDateString()}
 Transaction ID: ${transaction.id}
 Status: ${transaction.status}
-Amount: ${formatCurrency(transaction.amount)}
+Amount: ${formatTransactionAmountDisplay(transaction.amount, isCoach, transaction.type).text}
 Coach: ${transaction.coachName}
 Interview ID: ${transaction.interviewId}
         `;
@@ -350,7 +358,10 @@ Interview ID: ${transaction.interviewId}
                                                 Date
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: "text.primary" }}>
-                                                Interview/Coach
+                                                Coach
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: "text.primary" }}>
+                                                Type
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: "text.primary" }}>
                                                 Amount
@@ -390,8 +401,28 @@ Interview ID: ${transaction.interviewId}
                                                         </Box>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Typography fontWeight={600}>
-                                                            {formatCurrency(transaction.amount)}
+                                                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                                            {transaction.transactionTypeLabel}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography
+                                                            fontWeight={600}
+                                                            sx={{
+                                                                color: formatTransactionAmountDisplay(
+                                                                    transaction.amount,
+                                                                    isCoach,
+                                                                    transaction.type,
+                                                                ).color,
+                                                            }}
+                                                        >
+                                                            {
+                                                                formatTransactionAmountDisplay(
+                                                                    transaction.amount,
+                                                                    isCoach,
+                                                                    transaction.type,
+                                                                ).text
+                                                            }
                                                         </Typography>
                                                     </TableCell>
                                                     <TableCell>
@@ -499,10 +530,34 @@ Interview ID: ${transaction.interviewId}
                             </Box>
                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                                 <Typography variant="body2" color="text.secondary">
+                                    Transaction type:
+                                </Typography>
+                                <Typography variant="body2" fontWeight={600}>
+                                    {selectedTransaction.transactionTypeLabel}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                                <Typography variant="body2" color="text.secondary">
                                     Amount:
                                 </Typography>
-                                <Typography variant="body2" fontWeight={700}>
-                                    {formatCurrency(selectedTransaction.amount)}
+                                <Typography
+                                    variant="body2"
+                                    fontWeight={700}
+                                    sx={{
+                                        color: formatTransactionAmountDisplay(
+                                            selectedTransaction.amount,
+                                            isCoach,
+                                            selectedTransaction.type,
+                                        ).color,
+                                    }}
+                                >
+                                    {
+                                        formatTransactionAmountDisplay(
+                                            selectedTransaction.amount,
+                                            isCoach,
+                                            selectedTransaction.type,
+                                        ).text
+                                    }
                                 </Typography>
                             </Box>
                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
