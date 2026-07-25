@@ -411,34 +411,7 @@ function InterviewRoomListPage() {
             else previewRefundPercent = 0;
         }
 
-        // #region agent log
-        fetch("http://127.0.0.1:7306/ingest/591499b0-95ba-42d1-a4a3-54eb1a1ebb98", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "fc5a41" },
-            body: JSON.stringify({
-                sessionId: "fc5a41",
-                runId: "post-fix",
-                hypothesisId: "H1",
-                location: "InterviewRoomListPage.jsx:handleCancelInterview",
-                message: "interview tab cancel refund preview inputs",
-                data: {
-                    policyTimeRaw: policyTimeRaw ?? null,
-                    bookingRoundStartTime: room?.bookingRoundStartTime ?? null,
-                    scheduledTime: room?.scheduledTime ?? null,
-                    bookingInterviewRoundId: room?.bookingInterviewRoundId ?? null,
-                    startTimeMs: startTime && !Number.isNaN(startTime.getTime()) ? startTime.getTime() : null,
-                    nowMs: now.getTime(),
-                    hoursBeforeInterview,
-                    previewRefundPercent,
-                    roomId: room?.id ?? null,
-                    roundNumber: room?.roundNumber ?? null,
-                    bookingRequestId: room?.bookingRequestId ?? null,
-                    nestedRoundsCount: Array.isArray(room?.rounds) ? room.rounds.length : 0,
-                },
-                timestamp: Date.now(),
-            }),
-        }).catch(() => {});
-        // #endregion
+
 
         const parseAmount = (value) => {
             if (typeof value === "number") return value;
@@ -569,26 +542,7 @@ function InterviewRoomListPage() {
                     ? bookingRequestEndPoints.CANCEL_ROUND(room.bookingRequestId, room.bookingInterviewRoundId)
                     : interviewEndPoints.CANCEL_INTERVIEW(room.id);
 
-            // #region agent log
-            fetch("http://127.0.0.1:7306/ingest/591499b0-95ba-42d1-a4a3-54eb1a1ebb98", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "fc5a41" },
-                body: JSON.stringify({
-                    sessionId: "fc5a41",
-                    runId: "post-fix",
-                    hypothesisId: "H1",
-                    location: "InterviewRoomListPage.jsx:handleConfirmCancelInterview",
-                    message: "cancel confirm endpoint",
-                    data: {
-                        usesBookingRoundCancel: Boolean(
-                            room?.bookingRequestId && room?.bookingInterviewRoundId,
-                        ),
-                        roomId: room?.id ?? null,
-                    },
-                    timestamp: Date.now(),
-                }),
-            }).catch(() => {});
-            // #endregion
+
 
             const response = await callApiLocal({
                 method: METHOD.POST,
